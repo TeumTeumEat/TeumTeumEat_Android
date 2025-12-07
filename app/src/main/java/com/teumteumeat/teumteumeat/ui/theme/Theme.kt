@@ -42,7 +42,10 @@ fun TeumTeumEatTheme(
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            // todo. question-아래 두 줄의 코드의 차이점과 각 코드는 어느 상황에 최적화된 코드인지 판단하기
+//             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) DarkColorScheme else LightColorScheme
+
         }
 
         darkTheme -> DarkColorScheme
