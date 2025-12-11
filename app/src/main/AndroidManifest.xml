@@ -12,19 +12,30 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TeumTeumEat"
         tools:targetApi="31">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.TeumTeumEat">
 
         </activity>
-        <activity android:name=".ui.screen.a2_welcome.WelcomeActivity"
-            android:exported="true">
+
+        <activity
+            android:name=".ui.screen.a2_on_boarding.OnBoardingActivity"
+            android:exported="true"
+            android:label="@string/title_activity_on_boarding"
+            android:theme="@style/Theme.TeumTeumEat">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.screen.a3_welcome.WelcomeActivity"
+            android:exported="true">
+
         </activity>
     </application>
 
