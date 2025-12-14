@@ -5,6 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.compositionLocalOf
 import androidx.lifecycle.ViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnBoardingMain
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.UiStateMain
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.UiStateLibrary
 import com.teumteumeat.teumteumeat.ui.theme.ExtendedColors
 
 
@@ -26,4 +29,16 @@ val LocalExtendedColors = compositionLocalOf<ExtendedColors> {
 
 val LocalOnBoardingMainUiState = compositionLocalOf<UiStateOnBoardingMain> {
     error("No UiStateWelcome provided")
+}
+
+val LocalMainUiState = compositionLocalOf<UiStateMain> {
+    error("No UiStateMain provided")
+}
+
+val LocalHomeUiState = compositionLocalOf<UiStateHome> {
+    error("No UiStateHome provided")
+}
+
+val LocalLibraryUiState = compositionLocalOf<UiStateLibrary> {
+    error("No UiStateLibrary provided")
 }
