@@ -4,11 +4,35 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+
+
+
+data class ExtendedColors(
+    val secondaryDisabled: Color,
+    val iconBlack: Color,
+    val textColorBlack: Color,
+    val textColorGray60: Color,
+    val textColorGray40: Color,
+    val textColorGray30: Color,
+    val textColorGray20: Color,
+    val textColorGray10: Color,
+    val textColorBlackSecondary: Color,
+    val outLineUnFocused: Color,
+    val textFieldBackground: Color,
+    val scrimLightReverse: Color,
+    val unableVariantSecondary: Color,
+    val onUnableVariantSecondary: Color,
+    val disableTabColor: Color,
+    val mainContentStrokeColor: Color,
+    val mainLearningContentLabel: Color,
+    val bottomSheetHandleColor: Color,
+    val contentBgFoundation400: Color,
+    // 필요한 만큼 추가 가능
+)
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -19,7 +43,7 @@ private val DarkColorScheme = darkColorScheme(
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
-    tertiary = Pink40
+    tertiary = Pink40,
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

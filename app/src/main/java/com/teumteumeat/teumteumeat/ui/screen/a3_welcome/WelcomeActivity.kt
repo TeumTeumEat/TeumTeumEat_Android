@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.screen.a2_welcome
+package com.teumteumeat.teumteumeat.ui.screen.a3_welcome
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
