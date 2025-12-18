@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.teumteumeat.teumteumeat.ui.component.BaseButton
+import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.MockNumberingText
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -69,9 +69,8 @@ fun HomeScreen(
                         ) { Text("-") }
                     }
                 }
-                BaseButton(
+                BaseFillButton(
                     text = "시작하기",
-                    hasOutLine = true,
                     onClick = {
                     }
                 )

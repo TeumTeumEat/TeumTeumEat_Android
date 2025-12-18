@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.component
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,20 +21,14 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 
 @Composable
-fun BaseButton(
-    text: String = "",
+fun BaseFillButton(
     modifier: Modifier = Modifier, // 추가: Modifier 적용 가능
+    text: String = "",
     isEnabled: Boolean = true,
-    isColorReversed: Boolean = false,
-    hasOutLine: Boolean = false,
     onClick: ()-> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
-
-    val containerColor = if (isColorReversed) onPrimaryColor else primaryColor
-    val contentColor = if (isColorReversed) primaryColor else onPrimaryColor
-    val borderColor = if (hasOutLine) primaryColor else Color.Transparent
 
     Row(
         modifier = modifier.fillMaxWidth()
@@ -44,15 +37,14 @@ fun BaseButton(
             onClick = onClick,
             enabled = isEnabled,
             colors = ButtonDefaults.buttonColors(
-                containerColor = containerColor,
-                contentColor = contentColor,
+                containerColor = primaryColor,
+                contentColor = onPrimaryColor,
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                disabledContentColor = Color.White
             ),
-            shape = RoundedCornerShape(8.dp), // border-radius: 8px
-            border = if(isEnabled) BorderStroke(1.5.dp, borderColor) else null, // ✅ 버튼의 테두리 설정
+            shape = RoundedCornerShape(30.dp), // border-radius: 8px
             modifier = Modifier
-                .height(56.dp)
+                .height(60.dp)
                 .fillMaxWidth()
         ) {
             Text(
@@ -60,7 +52,6 @@ fun BaseButton(
                 style = TextStyle(
                     fontSize = 15.sp,
                     fontWeight = FontWeight(600),
-                    color = contentColor,
                     textAlign = TextAlign.Center,
                 )
             )
@@ -71,9 +62,10 @@ fun BaseButton(
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview5() {
+fun BaseFillButtonPreview() {
     TeumTeumEatTheme {
-        BaseButton(text = "로그인",
+        BaseFillButton(text = "로그인",
+            isEnabled = true,
             onClick = {
                 // Utils.UxUtils.moveActivity(context, LoginActivity::class.java, false)
             }

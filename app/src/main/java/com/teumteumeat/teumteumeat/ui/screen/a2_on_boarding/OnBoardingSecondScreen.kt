@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.teumteumeat.teumteumeat.ui.component.BaseButton
+import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.MockNumberingText
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -70,9 +70,8 @@ fun OnBoardingSecondScreen(
                         ) { Text("-") }
                     }
                 }
-                BaseButton(
+                BaseFillButton(
                     text = "다음으로",
-                    hasOutLine = true,
                     onClick = {
                         onNext()
                     }

@@ -35,25 +35,32 @@ data class ExtendedColors(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
+    primary = Blue80,
     secondary = PurpleGrey80,
     tertiary = Pink80
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
+    primary = Blue80,
+    onPrimary = Color.White,
+
     secondary = PurpleGrey40,
     tertiary = Pink40,
 
-    /* Other default colors to override
+    surfaceVariant = Gray50,
+    onSurfaceVariant = Gray30,
+
+    primaryContainer = bgWhite10,
+
+    secondaryContainer = Gray20,
+
+    onTertiary = Black100,
+
     background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
+    surface = Color.White,
     onSecondary = Color.White,
-    onTertiary = Color.White,
     onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    onSurface = Color(0xFFF2F3F5),
 )
 
 @Composable
