@@ -59,5 +59,6 @@ dependencies {
     // -------- 추가 구성 라이브러리  ---------
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
+    implementation("com.github.anhaki:PickTime-Compose:1.1.5")
 
 }
