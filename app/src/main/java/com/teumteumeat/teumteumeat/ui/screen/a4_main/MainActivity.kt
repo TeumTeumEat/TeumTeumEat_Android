@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TeumTeumEatTheme {
-                HomeCompositionProvider(
+                MainCompositionProvider(
                     viewModel = viewModel,
                     context = this.applicationContext,
                     activity = this@MainActivity,

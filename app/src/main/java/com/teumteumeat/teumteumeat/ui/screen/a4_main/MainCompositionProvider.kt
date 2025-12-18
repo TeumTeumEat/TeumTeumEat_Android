@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,22 +37,18 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
-import com.teumteumeat.teumteumeat.utils.LocalHomeUiState
-import com.teumteumeat.teumteumeat.utils.LocalLibraryUiState
 import com.teumteumeat.teumteumeat.utils.LocalMainUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 
 
 @Composable
-fun HomeCompositionProvider(
+fun MainCompositionProvider(
     viewModel: MainViewModel,
     context: Context,
     activity: MainActivity,
 ) {
 
     val mainUiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-
     val navHostController = rememberNavController()
 
     CompositionLocalProvider(
