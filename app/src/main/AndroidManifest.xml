@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+<!--네트워크 연결 사용-->
+    <uses-permission android:name="android.permission.INTERNET" />
+<!--    네트워크 연결 상태 체크-->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
 
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -11,20 +17,41 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TeumTeumEat"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
         <activity
-            android:name=".ui.screen.a1_auth.LoginActivity"
+            android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.screen.a1_login.LoginActivity"
+            android:exported="true">
+            <!--            카카오 웹뷰 딥링크 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="teumteumeatandroid"
+                    android:host="login" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.screen.a1_login.webView.KakaoLoginWebViewActivity"
             android:exported="true"
-            android:theme="@style/Theme.TeumTeumEat"></activity>
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
         <activity
             android:name=".ui.screen.a2_on_boarding.OnBoardingActivity"
             android:exported="true"
@@ -33,7 +60,9 @@
         </activity>
         <activity
             android:name=".ui.screen.a3_welcome.WelcomeActivity"
-            android:exported="true"></activity>
+            android:exported="true">
+
+        </activity>
         <activity
             android:name=".ui.screen.a4_main.MainActivity"
             android:exported="true"

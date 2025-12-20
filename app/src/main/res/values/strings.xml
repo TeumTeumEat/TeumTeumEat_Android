@@ -2,5 +2,5 @@
     <string name="app_name">TeumTeumEat</string>
     <string name="title_activity_on_boarding">OnBoardingActivity</string>
     <string name="title_activity_home">HomeActivity</string>
-
+    <string name="kakao_native_app_key_scheme"></string>
 </resources>

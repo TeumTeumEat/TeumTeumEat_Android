@@ -1,8 +1,7 @@
-package com.teumteumeat.teumteumeat.ui.screen.a1_auth
+package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
-import android.R.attr.onClick
+import android.content.Intent
 import android.util.Log
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,22 +27,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.SocialLoginLogo
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.webView.KakaoLoginWebViewActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
-
+import kotlin.jvm.java
 
 @Composable
 fun LoginScreen(
-    // viewModel: LoginViewModel = hiltViewModel()
 ) {
-    // val uiState = viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     val shape = RoundedCornerShape(28.dp)
 
@@ -78,7 +78,7 @@ fun LoginScreen(
                     .padding(horizontal = 20.dp, vertical = 70.dp),
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally,
-            ){
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -90,9 +90,14 @@ fun LoginScreen(
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
                             Log.d("버튼 탭: ", "카카오 로그인 버튼")
-                            // onClickKaKaoLogin()
-                          },
-                    contentAlignment = Alignment.Center
+                            val intent = Intent(context, KakaoLoginWebViewActivity::class.java)
+                            intent.putExtra(
+                                "url",
+                                "${BuildConfig.BASE_DOMAIN}oauth2/authorization/kakao"
+                            )
+                            context.startActivity(intent)
+                        },
+                    contentAlignment = Alignment.Center,
                 ) {
                     Row(
                         modifier = Modifier
@@ -136,7 +141,13 @@ fun LoginScreen(
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
                             Log.d("버튼 탭: ", "구글 로그인 버튼")
-                            // onClickKaKaoLogin()
+                            val intent = Intent(context, KakaoLoginWebViewActivity::class.java)
+                            Log.d("도메인", BuildConfig.BASE_DOMAIN)
+                            intent.putExtra(
+                                "url",
+                                "${BuildConfig.BASE_DOMAIN}oauth2/authorization/google"
+                            )
+                            context.startActivity(intent)
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -173,6 +184,7 @@ fun LoginScreen(
 
 
 
+
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
@@ -181,7 +193,9 @@ fun LoginScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            LoginScreen()
+            LoginScreen(
+
+            )
         }
     }
 }
