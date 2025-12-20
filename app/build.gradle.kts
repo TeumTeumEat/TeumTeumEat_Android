@@ -1,7 +1,22 @@
+import java.util.Properties
+
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        load(file.inputStream())
+    }
+}
+
+val baseDomainProd: String = localProperties.getProperty("BASE_DOMAIN_PROD") ?: ""
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+
+    id("com.google.dagger.hilt.android")
+
+    id("com.google.devtools.ksp") version "1.9.24-1.0.20"
 }
 
 android {
@@ -16,14 +31,51 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "KAKAO_NATIVE_APP_KEY",
+            "\"${project.properties["KAKAO_NATIVE_APP_KEY"] ?: ""}\""
+        )
+        /*buildConfigField(
+            "String",
+            "KAKAO_DEBUG_SHA1",
+            "\"${project.properties["KAKAO_DEBUG_SHA1"] ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "KAKAO_RELEASE_SHA1",
+            "\"${project.properties["KAKAO_RELEASE_SHA1"] ?: ""}\""
+        )*/
+
+        buildConfigField(
+            "String",
+            "BASE_DOMAIN",
+            "\"https://api.teumteumeat.co.kr/\"",
+        )
+        // kakao{네이티브키} 형태로 스킴 생성
+        manifestPlaceholders["KAKAO_NATIVE_SCHEME"] =
+            "kakao${project.properties["KAKAO_NATIVE_APP_KEY"] ?: ""}"
     }
 
     buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "BASE_DOMAIN",
+                "\"https://api.teumteumeat.co.kr/\"",
+            )
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
+            )
+            buildConfigField(
+                "String",
+                "BASE_DOMAIN",
+                "\"https://api.teumteumeat.co.kr/\"",
             )
         }
     }
@@ -35,8 +87,14 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
+
 }
 
 dependencies {
@@ -64,5 +122,34 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation("com.github.anhaki:PickTime-Compose:1.1.5")
+
+    // Hilt core
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    ksp("com.google.dagger:hilt-compiler:2.51.1")
+
+    // Hilt + ViewModel support
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+    ksp("androidx.hilt:hilt-compiler:1.1.0")
+
+    implementation("androidx.browser:browser:1.9.0")
+
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
+
+    // 카카오 SDK
+    implementation("com.kakao.sdk:v2-user:2.20.0")
+
+    // Theme.AppCompat.*를 쓰려면
+    implementation("androidx.appcompat:appcompat")
+
+    implementation("androidx.datastore:datastore-preferences:1.2.0")
+
+    implementation("com.google.android.gms:play-services-auth:21.4.0")
 
 }
