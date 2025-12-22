@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.domain.model
+package com.teumteumeat.teumteumeat.domain.model.auth
 
 sealed class SessionResult {
     object Success : SessionResult()

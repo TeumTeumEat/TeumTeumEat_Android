@@ -1,8 +1,8 @@
 package com.teumteumeat.teumteumeat.data.api.auth
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
-import com.teumteumeat.teumteumeat.domain.model.ResponseBody
-import com.teumteumeat.teumteumeat.domain.model.UserName
+import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
+import com.teumteumeat.teumteumeat.domain.model.user.UserName
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST

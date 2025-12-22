@@ -2,7 +2,7 @@ package com.teumteumeat.teumteumeat.domain.usecase
 
 import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
-import com.teumteumeat.teumteumeat.domain.model.SessionResult
+import com.teumteumeat.teumteumeat.domain.model.auth.SessionResult
 import javax.inject.Inject
 
 class AutoLoginUseCase @Inject constructor(

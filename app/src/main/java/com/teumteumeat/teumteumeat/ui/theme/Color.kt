@@ -21,3 +21,5 @@ val Gray10 = Color(0xFFEEEEEE)
 val Black100 = Color(0xFF000000)
 
 val bgWhite10 = Color(0xFFF8F9F7)
+
+val Red50 = Color(0xFFFF8181)

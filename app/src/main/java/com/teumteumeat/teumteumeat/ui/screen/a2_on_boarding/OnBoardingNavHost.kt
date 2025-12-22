@@ -26,15 +26,36 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 uiState = uiState,
                 onNext = {
                     viewModel.nextPage()
-                    navController.navigate(OnBoardingScreens.SecondScreen.route)
+                    navController.navigate(OnBoardingScreens.InputNameScreen.route)
                 },
             )
         }
 
         composable(
-            route = OnBoardingScreens.SecondScreen.route,
+            route = OnBoardingScreens.InputNameScreen.route,
         ) {
-            OnBoardingSecondScreen(
+            OnBoardingSetCharNameScreen(
+                onNext = {
+                    viewModel.nextPage()
+                    navController.navigate(OnBoardingScreens.ThirdScreen.route)
+                },
+
+                onPrev = {
+                    navController.navigate(OnBoardingScreens.FirstScreen.route) {
+                        viewModel.prevPage()
+                        popUpTo(OnBoardingScreens.FirstScreen.route) { inclusive = true }
+                    }
+                },
+                name = "InputName",
+                viewModel = viewModel,
+                uiState = uiState,
+            )
+        }
+
+        composable(
+            route = OnBoardingScreens.InputNameScreen.route,
+        ) {
+            OnBoardingSetCharNameScreen(
                 onNext = {
                     viewModel.nextPage()
                     navController.navigate(OnBoardingScreens.ThirdScreen.route)
@@ -65,6 +86,6 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
 sealed class OnBoardingScreens(val route: String) {
     data object FirstScreen : OnBoardingScreens("select_user_default_lang")
-    data object SecondScreen : OnBoardingScreens("select_exam_month")
+    data object InputNameScreen : OnBoardingScreens("input_name")
     data object ThirdScreen : OnBoardingScreens("add_info_complete")
 }

@@ -40,7 +40,10 @@ fun NoLableTextField(
     focusRequesterThis: FocusRequester,
     interactionSource: MutableInteractionSource,
     keyboardType: KeyboardType = KeyboardType.Text,
+    isError: Boolean = false,
 ) {
+    val containerColor = if (!isError) MaterialTheme.colorScheme.onSurfaceVariant
+        else MaterialTheme.colorScheme.error
 
     Box(
         contentAlignment = Alignment.Center,
@@ -49,7 +52,7 @@ fun NoLableTextField(
             .height(50.dp) // 원하는 높이 지정
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = containerColor,
                 shape = RoundedCornerShape(30.dp)
             )
             .padding(horizontal = 25.dp)
@@ -94,7 +97,7 @@ fun NoLableTextField(
         if (showCharCount) {
             Text(
                 text = "${value.length}/$maxLength",
-                style = TextStyle(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant),
+                style = TextStyle(fontSize = 12.sp, color = containerColor),
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
             )
@@ -148,7 +151,6 @@ fun NoLableTextFieldPreview() {
                     modifier = Modifier.fillMaxWidth(),
                     isFocused = inputFocused,
                     focusRequesterThis = focusRequesterInput,
-
                     interactionSource = inputInteractionSource,
                 )
             }

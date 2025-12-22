@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.data.network.interceptor
 
+import com.teumteumeat.teumteumeat.data.network.exception.UnauthorizedException
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -24,6 +25,13 @@ class AuthInterceptor @Inject constructor(
                 addHeader("Authorization", "Bearer $accessToken")
             }
         }.build()
+
+        val response = chain.proceed(request)
+
+/*        if (response.code == 401) {
+            response.close()
+            throw UnauthorizedException()
+        }*/
 
         return chain.proceed(newRequest)
     }

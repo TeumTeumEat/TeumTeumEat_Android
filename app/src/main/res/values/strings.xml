@@ -3,4 +3,7 @@
     <string name="title_activity_on_boarding">OnBoardingActivity</string>
     <string name="title_activity_home">HomeActivity</string>
     <string name="kakao_native_app_key_scheme"></string>
+    <string name="google_web_client_id">
+        158098790378-0bd8k8uhqogamanb2v58hlt3ie3tf6jh.apps.googleusercontent.com
+    </string>
 </resources>

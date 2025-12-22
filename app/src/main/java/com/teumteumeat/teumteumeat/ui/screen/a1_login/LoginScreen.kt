@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
+import android.app.Activity
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.Image
@@ -33,15 +34,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.webView.KakaoLoginWebViewActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import kotlin.jvm.java
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 @Composable
 fun LoginScreen(
+    onGoogleClick: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -141,13 +148,8 @@ fun LoginScreen(
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
                             Log.d("버튼 탭: ", "구글 로그인 버튼")
-                            val intent = Intent(context, KakaoLoginWebViewActivity::class.java)
-                            Log.d("도메인", BuildConfig.BASE_DOMAIN)
-                            intent.putExtra(
-                                "url",
-                                "${BuildConfig.BASE_DOMAIN}oauth2/authorization/google"
-                            )
-                            context.startActivity(intent)
+                            onGoogleClick()
+                            // context.startActivity(intent)
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -180,6 +182,8 @@ fun LoginScreen(
 
         }
     }
+
+
 }
 
 
@@ -193,9 +197,7 @@ fun LoginScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            LoginScreen(
-
-            )
+            LoginScreen {  }
         }
     }
 }
