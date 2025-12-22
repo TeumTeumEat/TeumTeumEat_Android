@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.di
 
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
+import com.teumteumeat.teumteumeat.data.api.on_boarding.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +18,9 @@ object ApiServiceModule {
     fun provideAuthApiService(retrofit: Retrofit): AuthApiService =
         retrofit.create(AuthApiService::class.java)
 
+    @Provides @Singleton
+    fun provideUserApiService(retrofit: Retrofit): UserApiService =
+        retrofit.create(UserApiService::class.java)
     // ---- api 서비스 추가 ----
 
 }

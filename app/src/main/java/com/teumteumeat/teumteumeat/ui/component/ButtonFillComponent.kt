@@ -24,6 +24,7 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 fun BaseFillButton(
     modifier: Modifier = Modifier, // 추가: Modifier 적용 가능
     text: String = "",
+    textStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
     onClick: ()-> Unit
 ) {

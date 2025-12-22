@@ -24,11 +24,7 @@
             android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <activity
@@ -55,8 +51,13 @@
         <activity
             android:name=".ui.screen.a2_on_boarding.OnBoardingActivity"
             android:exported="true"
+            android:windowSoftInputMode="adjustResize"
             android:label="@string/title_activity_on_boarding">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".ui.screen.a3_welcome.WelcomeActivity"
