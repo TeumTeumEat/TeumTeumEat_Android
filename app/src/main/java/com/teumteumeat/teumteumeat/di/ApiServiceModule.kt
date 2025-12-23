@@ -1,7 +1,7 @@
 package com.teumteumeat.teumteumeat.di
 
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
-import com.teumteumeat.teumteumeat.data.api.on_boarding.UserApiService
+import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

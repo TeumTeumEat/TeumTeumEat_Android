@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.domain.model.user
+package com.teumteumeat.teumteumeat.domain.model.on_boarding
 
 data class UserName(
     val name: String,

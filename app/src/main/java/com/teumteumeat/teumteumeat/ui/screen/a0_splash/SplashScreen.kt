@@ -41,7 +41,7 @@ fun SplashScreen(
 
     val isPlaying = remember { mutableStateOf(true) }
     val composition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(R.raw.sample_water_splash)
+        LottieCompositionSpec.RawRes(R.raw.splash_animation)
     )
 
     val progress by animateLottieCompositionAsState(

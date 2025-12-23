@@ -8,6 +8,9 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActionScope
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -20,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,6 +45,8 @@ fun NoLableTextField(
     interactionSource: MutableInteractionSource,
     keyboardType: KeyboardType = KeyboardType.Text,
     isError: Boolean = false,
+    isOneLine: Boolean = true,
+    onDone: KeyboardActionScope.() -> Unit = {}
 ) {
     val containerColor = if (!isError) MaterialTheme.colorScheme.onSurfaceVariant
         else MaterialTheme.colorScheme.error
@@ -91,6 +97,15 @@ fun NoLableTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequesterThis),
+            singleLine = isOneLine,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                // 키보드 완료 버튼 눌렀을 때 처리
+                onDone = { onDone }
+            ),
+
         )
 
         // 글자 수 표시 (옵션)
@@ -152,6 +167,7 @@ fun NoLableTextFieldPreview() {
                     isFocused = inputFocused,
                     focusRequesterThis = focusRequesterInput,
                     interactionSource = inputInteractionSource,
+                    onDone = { focusManager.clearFocus() }
                 )
             }
         }

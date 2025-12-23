@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,7 +33,6 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
-import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -52,7 +53,8 @@ fun OnBoardingSetCharNameScreen(
         remember { MutableInteractionSource() } // 사용자가 특정 UI 요소와 상호작용하고 있는지를 감지하는 객체
     val inputFocused by inputInteractionSource.collectIsFocusedAsState() // ✅ 포커스 여부 감지
     val focusManager = LocalFocusManager.current
-    val isNameValid = uiState.isValid && uiState.errorMessage == ""
+    val isNameValid = uiState.isNameValid && uiState.errorMessage == ""
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
@@ -60,7 +62,8 @@ fun OnBoardingSetCharNameScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .focusable() // ⭐ 포커스 받을 수 있는 영역 ,
             ) {
                 Column(
                     modifier = Modifier
@@ -94,7 +97,11 @@ fun OnBoardingSetCharNameScreen(
                         isFocused = inputFocused,
                         focusRequesterThis = focusRequesterInput,
                         interactionSource = inputInteractionSource,
-                        isError = uiState.charName.isNotEmpty() && uiState.errorMessage != ""
+                        isError = uiState.charName.isNotEmpty() && uiState.errorMessage != "",
+                        onDone = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide() // ⭐ 핵심
+                        }
                     )
                     if(uiState.charName.isNotEmpty()){
                         Row (
@@ -127,6 +134,7 @@ fun OnBoardingSetCharNameScreen(
                         ),
                         isEnabled = isNameValid,
                         onClick = {
+                            viewModel.onConfirmClick()
                             onNext()
                         }
                     )
@@ -140,15 +148,16 @@ fun OnBoardingSetCharNameScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun OnBoardingSecondPreview() {
+fun OnBoardingInputNamePreview() {
 
-    val fakeViewModel = remember { OnBoardingViewModel() }
+    /*val fakeViewModel = remember { OnBoardingViewModel() }
     TeumTeumEatTheme {
-        OnBoardingFirstScreen(
+        OnBoardingSetCharNameScreen(
             name = "Android",
             viewModel = fakeViewModel,
             uiState = UiStateOnBoardingMain(errorMessage = "한글 또는 영문만 입력할 수 있어요", isValid = false),
-            onNext = {}
+            onNext = {},
+            onPrev = {}
         )
-    }
+    }*/
 }

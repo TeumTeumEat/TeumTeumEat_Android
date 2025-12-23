@@ -19,47 +19,7 @@ import com.anhaki.picktime.PickHourMinute
 import com.anhaki.picktime.utils.PickTimeFocusIndicator
 import com.anhaki.picktime.utils.PickTimeTextStyle
 import com.anhaki.picktime.utils.TimeFormat
-
-enum class AmPm { AM, PM }
-
-data class TimeState(
-    val amPm: AmPm = AmPm.AM,
-    val hour: Int = 8,      // 1~12
-    val minute: Int = 0     // 0~59 (여기서는 0,10,20..도 가능)
-)
-
-@Composable
-fun AmPmWheel(
-    amPm: AmPm,
-    onChange: (AmPm) -> Unit,
-) {
-    val items = listOf("오전", "오후")
-    val selectedIndex = if (amPm == AmPm.AM) 0 else 1
-
-    // 아주 간단한 2개짜리 휠: LazyColumn + 중앙 강조는 생략하고,
-    // 사진처럼 가운데 선택만 보이게 하고 싶으면 이후에 스냅/강조 넣어줄 수 있어.
-    Column(
-        modifier = Modifier.width(60.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        items.forEachIndexed { idx, text ->
-            Text(
-                text = text,
-                style = if (idx == selectedIndex)
-                    MaterialTheme.typography.titleMedium
-                else
-                    MaterialTheme.typography.bodyMedium,
-                color = if (idx == selectedIndex)
-                    MaterialTheme.colorScheme.onSurface
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .padding(vertical = 10.dp)
-                    .clickable { onChange(if (idx == 0) AmPm.AM else AmPm.PM) }
-            )
-        }
-    }
-}
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 
 @Composable
 fun TimeSliderWithPickTime(
@@ -67,20 +27,16 @@ fun TimeSliderWithPickTime(
     onChange: (TimeState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+
+    // 변경 (10분 단위)
+    val minuteRange = (0..59 step 10)
+
     Row(
         modifier = modifier
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // ✅ 좌측 AM/PM
-        AmPmWheel(
-            amPm = state.amPm,
-            onChange = { onChange(state.copy(amPm = it)) }
-        )
-
-        Spacer(Modifier.width(12.dp))
-
         // ✅ 가운데: 시/분 휠 (PickTime-Compose)
         PickHourMinute(
             initialHour = state.hour,
@@ -89,11 +45,12 @@ fun TimeSliderWithPickTime(
                 val isForward = state.hour == 11 && newHour == 12
                 val isBackward = state.hour == 12 && newHour == 11
 
-                val newAmPm = when {
+                val newAmPm = state.amPm
+                /*val newAmPm = when {
                     isForward -> if (state.amPm == AmPm.AM) AmPm.PM else AmPm.AM
                     isBackward -> if (state.amPm == AmPm.PM) AmPm.AM else AmPm.PM
                     else -> state.amPm
-                }
+                }*/
 
                 onChange(state.copy(hour = newHour, amPm = newAmPm))
             },

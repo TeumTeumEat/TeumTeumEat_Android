@@ -7,7 +7,7 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin
 import com.teumteumeat.teumteumeat.domain.usecase.AutoLoginUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.GetOnboardingCompletedUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompletedUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a0_splash.SplashUiState.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
