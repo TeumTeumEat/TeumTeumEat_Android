@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,13 +26,22 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 fun BaseOutlineButton(
     modifier: Modifier = Modifier, // 추가: Modifier 적용 가능
     text: String = "",
+    textStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
+    color: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit
 ) {
     val contentColor =
-        if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        if (isEnabled) color else MaterialTheme.colorScheme.onSurfaceVariant
     val outlineColor =
-        if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        if (isEnabled) color else MaterialTheme.colorScheme.onSurfaceVariant
+
+    val textStyle = TextStyle(
+        fontSize = 15.sp,
+        fontWeight = FontWeight(600),
+        color = contentColor,
+        textAlign = TextAlign.Center,
+    )
 
     Row(
         modifier = modifier.fillMaxWidth()
@@ -45,7 +55,7 @@ fun BaseOutlineButton(
                 disabledContainerColor = Color.White,
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
-            shape = RoundedCornerShape(30.dp), // border-radius: 8px
+            shape = RoundedCornerShape(16.dp), // border-radius: 8px
             border = BorderStroke(1.5.dp, outlineColor), // ✅ 버튼의 테두리 설정
             modifier = Modifier
                 .height(60.dp)
@@ -53,12 +63,7 @@ fun BaseOutlineButton(
         ) {
             Text(
                 text = text,
-                style = TextStyle(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight(600),
-                    color = contentColor,
-                    textAlign = TextAlign.Center,
-                )
+                style = textStyle
             )
         }
     }

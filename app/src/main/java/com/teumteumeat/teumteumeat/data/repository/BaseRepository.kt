@@ -14,10 +14,10 @@ abstract class BaseRepository(
     private val tokenLocalDataSource: TokenLocalDataSource
 ) {
 
-    protected suspend fun <T, R> safeApiCall(
-        apiCall: suspend () -> ApiResponse<T>,
+    protected suspend fun <T, R, D> safeApiCall(
+        apiCall: suspend () -> ApiResponse<T, D>,
         mapper: (T) -> R
-    ): ApiResult<R> {
+    ): ApiResult<R, D>{
 
         return try {
             val response = apiCall()
@@ -39,7 +39,8 @@ abstract class BaseRepository(
                 else -> {
                     ApiResult.ServerError(
                         code = response.code ?: "UNKNOWN",
-                        message = response.message ?: "서버 오류가 발생했습니다."
+                        message = response.message ?: "서버 오류가 발생했습니다.",
+                        details = response.details
                     )
                 }
             }
@@ -60,10 +61,11 @@ abstract class BaseRepository(
         }
     }
 
-    private suspend fun <T, R> handleUnauthorized(
-        apiCall: suspend () -> ApiResponse<T>,
+    protected suspend fun <T, R, D> handleUnauthorized(
+        apiCall: suspend () -> ApiResponse<T, D>,
         mapper: (T) -> R
-    ): ApiResult<R> {
+    ): ApiResult<R, D>
+    {
 
         val refreshToken = tokenLocalDataSource.getRefreshToken()
             ?: return ApiResult.SessionExpired(

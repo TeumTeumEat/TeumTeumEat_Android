@@ -5,7 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
 <!--    네트워크 연결 상태 체크-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
+    <!-- 🔔 알림 권한 (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".MyApplication"
@@ -23,6 +24,7 @@
         <activity
             android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
+
 
 
         </activity>
@@ -58,6 +60,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
         <activity
             android:name=".ui.screen.a3_welcome.WelcomeActivity"

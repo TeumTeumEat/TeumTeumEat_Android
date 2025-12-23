@@ -26,18 +26,18 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 uiState = uiState,
                 onNext = {
                     viewModel.nextPage()
-                    navController.navigate(OnBoardingScreens.InputNameScreen.route)
+                    navController.navigate(OnBoardingScreens.SecondInputNameScreen.route)
                 },
             )
         }
 
         composable(
-            route = OnBoardingScreens.InputNameScreen.route,
+            route = OnBoardingScreens.SecondInputNameScreen.route,
         ) {
             OnBoardingSetCharNameScreen(
                 onNext = {
                     viewModel.nextPage()
-                    navController.navigate(OnBoardingScreens.ThirdScreen.route)
+                    navController.navigate(OnBoardingScreens.ThirdSetAppTimeScreen.route)
                 },
 
                 onPrev = {
@@ -53,39 +53,53 @@ fun OnBoardingNavHost(navController: NavHostController) {
         }
 
         composable(
-            route = OnBoardingScreens.InputNameScreen.route,
+            route = OnBoardingScreens.ThirdSetAppTimeScreen.route,
         ) {
-            OnBoardingSetCharNameScreen(
+            OnBoardingSetApptimeScreen(
                 onNext = {
                     viewModel.nextPage()
-                    navController.navigate(OnBoardingScreens.ThirdScreen.route)
+                    // 4번째 화면 이동 로직 구현
+                     navController.navigate(OnBoardingScreens.FourthSetUsingAppTimeScreen.route)
                 },
 
                 onPrev = {
-                    navController.navigate(OnBoardingScreens.FirstScreen.route) {
+                    navController.navigate(OnBoardingScreens.SecondInputNameScreen.route) {
                         viewModel.prevPage()
-                        popUpTo(OnBoardingScreens.FirstScreen.route) { inclusive = true }
+                        popUpTo(OnBoardingScreens.SecondInputNameScreen.route) { inclusive = true }
                     }
                 },
-                name = "OnBoardingSecond",
+                name = "set_app_time",
                 viewModel = viewModel,
                 uiState = uiState,
             )
         }
 
-        /*composable(AddInfoScreens.AddInfoComplete.route) {
-            AddInfoCompleteScreen(
-                onFinish = {
-                    Utils.UxUtils.moveActivity(context, LevelExamStartActivity::class.java, exitFlag = true)
-                    // navController.popBackStack(AddInfoScreens.SelectExamMonth.route, inclusive = true)
-                }
+        // 4️⃣ (NEW) 앱 사용 시간 관련 설정 화면
+        composable(
+            route = OnBoardingScreens.FourthSetUsingAppTimeScreen.route
+        ) {
+            OnBoardingSetUsingApptimeScreen(
+                onNext = {
+                    viewModel.nextPage()
+                    // 👉 다음 온보딩 화면 or 완료 화면으로 이동
+                    // navController.navigate(OnBoardingScreens.FifthScreen.route)
+                },
+                onPrev = {
+                    viewModel.prevPage()
+                    navController.popBackStack()
+                },
+                name = "set_using_app_time",
+                viewModel = viewModel,
+                uiState = uiState,
             )
-        }*/
+        }
     }
 }
 
 sealed class OnBoardingScreens(val route: String) {
-    data object FirstScreen : OnBoardingScreens("select_user_default_lang")
-    data object InputNameScreen : OnBoardingScreens("input_name")
-    data object ThirdScreen : OnBoardingScreens("add_info_complete")
+    data object FirstScreen : OnBoardingScreens("welcome")
+    data object SecondInputNameScreen : OnBoardingScreens("input_name")
+    data object ThirdSetAppTimeScreen : OnBoardingScreens("set_app_time")
+    data object FourthSetUsingAppTimeScreen :
+        OnBoardingScreens("set_using_app_time")
 }

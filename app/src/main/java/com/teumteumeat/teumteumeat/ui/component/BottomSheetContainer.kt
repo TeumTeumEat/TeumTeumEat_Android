@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,11 +35,13 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 fun BottomSheetContainer(
     onDismiss: () -> Unit,
     titleText: String = "타이틀",
+    content: @Composable () -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         dragHandle = null,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
@@ -55,9 +58,9 @@ fun BottomSheetContainer(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
+                    modifier = Modifier.weight(1f),
                     text = titleText,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.tertiary,
                 )
 
@@ -72,6 +75,7 @@ fun BottomSheetContainer(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            content()
             // 🔹 시간 선택 영역 (추후 교체 예정)
             // TimeSliderPlaceholder()
         }
@@ -103,7 +107,8 @@ fun ModalBottomSheetPreview() {
                 ) {
                     BottomSheetContainer(
                         onDismiss = { showSheet = false },
-                        titleText = "집을 나오는 시간"
+                        titleText = "집을 나오는 시간",
+                        content = {}
                     )
                 }
             }

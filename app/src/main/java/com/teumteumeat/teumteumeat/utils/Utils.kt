@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.utils
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.content.edit
 import java.io.FileInputStream
 import java.io.IOException
@@ -12,6 +13,10 @@ import java.net.UnknownHostException
 import java.util.Locale
 import java.util.Properties
 
+sealed interface NotificationPermissionEvent {
+    data object RequestPermission : NotificationPermissionEvent
+    data object AlreadyGranted : NotificationPermissionEvent
+}
 
 class Utils {
 
@@ -109,6 +114,10 @@ class Utils {
             if (exitFlag && context is Activity){
                 context.finish()
             }
+        }
+
+        fun isNotificationPermissionRequired(): Boolean {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         }
 
     }

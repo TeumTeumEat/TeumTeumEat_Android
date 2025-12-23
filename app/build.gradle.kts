@@ -34,6 +34,13 @@ android {
             "BASE_DOMAIN",
             "\"https://api.teumteumeat.co.kr/\"",
         )
+
+        buildConfigField(
+            "String",
+            "ONESIGNAL_APP_ID",
+            "\"a1b2c3d4-e5f6-7890-abcd-1234567890ab\""
+        )
+
         // kakao{네이티브키} 형태로 스킴 생성
         manifestPlaceholders["KAKAO_NATIVE_SCHEME"] =
             "kakao${project.properties["KAKAO_NATIVE_APP_KEY"] ?: ""}"
@@ -58,6 +65,15 @@ android {
                 "BASE_DOMAIN",
                 "\"https://api.teumteumeat.co.kr/\"",
             )
+            buildConfigField(
+                "String",
+                "ONESIGNAL_APP_ID",
+                "\"92286389-415e-4461-85f4-56f3a2736cb3\""
+            )
+
+            // kakao{네이티브키} 형태로 스킴 생성
+            manifestPlaceholders["KAKAO_NATIVE_SCHEME"] =
+                "kakao${project.properties["KAKAO_NATIVE_APP_KEY"] ?: ""}"
         }
     }
     compileOptions {
@@ -141,4 +157,8 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
 
     implementation(libs.lottie.compose)
+
+    implementation("com.github.vsnappy1:ComposeDatePicker:2.2.0")
+
+    implementation("com.onesignal:OneSignal:[5.1.0, 5.1.99]")
 }
