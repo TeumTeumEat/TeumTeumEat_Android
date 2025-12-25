@@ -3,7 +3,9 @@ package com.teumteumeat.teumteumeat.utils
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.OpenableColumns
 import androidx.core.content.edit
 import java.io.FileInputStream
 import java.io.IOException
@@ -118,6 +120,18 @@ class Utils {
 
         fun isNotificationPermissionRequired(): Boolean {
             return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        }
+
+        // 1단계: Context 확장 함수 (UI 전용)
+        fun Context.extractFileName(uri: Uri): String {
+            var name = "unknown"
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0 && cursor.moveToFirst()) {
+                    name = cursor.getString(index)
+                }
+            }
+            return name
         }
 
     }

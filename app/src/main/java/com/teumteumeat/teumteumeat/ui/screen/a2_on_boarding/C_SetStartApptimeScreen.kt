@@ -124,6 +124,10 @@ fun OnBoardingSetApptimeScreen(
                     BaseOutlineButton(
                         text = uiState.workInTime.toDisplayText(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textStyle = Typography.titleSmall.copy(
+                            fontSize = 18.sp,
+                            lineHeight = 24.sp,
+                        ),
                         onClick = {
                             viewModel.openTimeSheet(TimeType.IN)
                         }
@@ -146,9 +150,9 @@ fun OnBoardingSetApptimeScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     BaseOutlineButton(
                         text = uiState.workOutTime.toDisplayText(),
-                        textStyle = Typography.labelSmall.copy(
-                            fontSize = 50.sp,
-                            lineHeight = 30.sp,
+                        textStyle = Typography.titleSmall.copy(
+                            fontSize = 18.sp,
+                            lineHeight = 24.sp,
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         onClick = {

@@ -1,10 +1,12 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,27 +19,225 @@ import javax.inject.Inject
 @HiltViewModel
 class OnBoardingViewModel @Inject constructor(
     val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
-    val registerUserNameUseCase: RegisterUserNameUseCase
+    val registerUserNameUseCase: RegisterUserNameUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
 ) : ViewModel() {
 
+    // 이름 입력 제약조건 부분
     companion object {
         private const val MIN_LENGTH = 1
         private const val MAX_LENGTH = 10
         private val ALLOWED_REGEX = Regex("^[가-힣a-zA-Z0-9]*$")
     }
 
+    // Flow 값으로 currentPage 읽기
+    private val currentPage get() = uiState.value.currentPage
+    private val totalPage get() = uiState.value.totalPage
+
     private val _uiState = MutableStateFlow<UiStateOnBoardingMain>(UiStateOnBoardingMain())
     val uiState = _uiState.asStateFlow()
+
+    fun loadCategories() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            when (val result = getCategoriesUseCase()) {
+
+                is ApiResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            categories = result.data
+                        )
+                    }
+                }
+
+                is ApiResult.SessionExpired -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isSessionExpired = true,
+                            pageErrorMessage = result.message
+                        )
+                    }
+                }
+
+                is ApiResult.ServerError -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            pageErrorMessage = result.message
+                        )
+                    }
+                }
+
+                is ApiResult.NetworkError -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            pageErrorMessage = result.message
+                        )
+                    }
+                }
+
+                is ApiResult.UnknownError -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            pageErrorMessage = result.message
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun calculateTargetPageForItemUnChecked(
+        selection: CategorySelectionState
+    ): Int {
+        return when {
+            selection.depth1 == null -> 0
+            selection.depth2 == null -> 1
+            else -> 2
+        }
+    }
+
+
+    fun toggleDepth1(category: Category) {
+        _uiState.update { state ->
+            val newSelection =
+                if (state.categorySelection.depth1?.id == category.id) {
+                    CategorySelectionState() // 전체 해제
+                } else {
+                    CategorySelectionState(depth1 = category)
+                }
+
+            state.copy(
+                categorySelection = newSelection,
+                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+            )
+        }
+    }
+
+
+    fun toggleDepth2(category: Category) {
+        _uiState.update { state ->
+            val current = state.categorySelection.depth2
+
+            val newSelection =
+                if (current?.id == category.id) {
+                    state.categorySelection.copy(
+                        depth2 = null,
+                        depth3 = null
+                    )
+                } else {
+                    state.categorySelection.copy(
+                        depth2 = category,
+                        depth3 = null
+                    )
+                }
+
+            state.copy(
+                categorySelection = newSelection,
+                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+            )
+        }
+    }
+
+
+    fun toggleDepth3(category: Category) {
+        _uiState.update { state ->
+            val current = state.categorySelection.depth3
+
+            val newSelection =
+                if (current?.id == category.id) {
+                    // 🔁 3뎁스 해제 → 2뎁스 리스트로 이동
+                    state.categorySelection.copy(depth3 = null)
+                } else {
+                    state.categorySelection.copy(depth3 = category)
+                }
+
+            state.copy(
+                categorySelection = newSelection,
+                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+            )
+        }
+    }
+
+
+    fun clearDepth1() {
+        _uiState.update {
+            it.copy(
+                categorySelection = CategorySelectionState(),
+                targetCategoryPage = 0
+            )
+        }
+    }
+
+    fun clearDepth2() {
+        _uiState.update { state ->
+            val newSelection =
+                state.categorySelection.copy(
+                    depth2 = null,
+                    depth3 = null
+                )
+
+            state.copy(
+                categorySelection = newSelection,
+                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+            )
+        }
+    }
+
+    fun clearDepth3() {
+        _uiState.update { state ->
+            val newSelection =
+                state.categorySelection.copy(depth3 = null)
+
+            state.copy(
+                categorySelection = newSelection,
+                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+            )
+        }
+    }
+
+
+
+
+    fun onFileDeleted(
+    ) {
+        _uiState.update {
+            it.copy(
+                selectedFileUri = null,
+                selectedFileName = ""
+            )
+        }
+    }
+
+    fun onFileSelected(
+        uri: Uri,
+        fileName: String
+    ) {
+        _uiState.update {
+            it.copy(
+                selectedFileUri = uri,
+                selectedFileName = fileName
+            )
+        }
+    }
+
+
+    fun selectLearningMethod(type: SelectType) {
+        _uiState.update {
+            it.copy(selectedType = type)
+        }
+    }
 
     fun onMinuteSelected(minute: Int) {
         _uiState.update {
             it.copy(selectedMinute = minute)
         }
     }
-
-    // Flow 값으로 currentPage 읽기
-    private val currentPage get() = uiState.value.currentPage
-    private val totalPage get() = uiState.value.totalPage
 
     fun updateCommuteTime() {
         viewModelScope.launch {
