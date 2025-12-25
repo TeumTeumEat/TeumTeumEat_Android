@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.MockNumberingText
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeScreen
@@ -76,7 +76,8 @@ fun LibraryScreen(
                     text = "시작하기",
                     onClick = {
                         onClickOtherTab()
-                    }
+                    },
+                    conerRadius = 16.dp
                 )
             }
         },

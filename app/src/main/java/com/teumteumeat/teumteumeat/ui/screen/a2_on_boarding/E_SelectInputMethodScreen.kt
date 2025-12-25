@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.BoxButtonRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.theme.Typography
@@ -123,7 +123,8 @@ fun SelectInputMethodScreen(
                                 SelectType.FILE_UPLOAD -> onNextFileUpload()
                                 SelectType.NONE -> {}
                             }
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
                 }
             }

@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.BaseOutlineButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
 import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
@@ -193,7 +193,8 @@ fun OnBoardingSetApptimeScreen(
                         isEnabled = isSetAllTimeValid,
                         onClick = {
                             onNext()
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
                 }
 

@@ -20,7 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
@@ -90,7 +90,8 @@ fun OnBoardingFirstScreen(
                         ),
                         onClick = {
                             onNext()
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
                 }
             }

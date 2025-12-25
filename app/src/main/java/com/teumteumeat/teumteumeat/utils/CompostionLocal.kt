@@ -2,12 +2,17 @@ package com.teumteumeat.teumteumeat.utils
 
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnBoardingMain
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.UiStateMain
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.UiStateLibrary
+import com.teumteumeat.teumteumeat.ui.theme.AppTypography
+import com.teumteumeat.teumteumeat.ui.theme.DefaultAppTypography
 import com.teumteumeat.teumteumeat.ui.theme.ExtendedColors
 
 
@@ -19,13 +24,23 @@ val LocalActivityContext = compositionLocalOf<ComponentActivity> {
     error("No ComponentActivity provided")
 }
 
+val LocalAppTypography = staticCompositionLocalOf { DefaultAppTypography }
+
+val MaterialTheme.appTypography: AppTypography
+    @Composable
+    get() = LocalAppTypography.current
+
+val LocalExtendedColors = compositionLocalOf<ExtendedColors> { error("No ExtendedColors provided") }
+val MaterialTheme.extendedColors: ExtendedColors
+    @Composable
+    get() = LocalExtendedColors.current
+
+
+
 val LocalViewModelContext = compositionLocalOf<ViewModel>{
     error("No ViewModel provided")
 }
 
-val LocalExtendedColors = compositionLocalOf<ExtendedColors> {
-    error("No ExtendedColors provided")
-}
 
 val LocalOnBoardingMainUiState = compositionLocalOf<UiStateOnBoardingMain> {
     error("No UiStateWelcome provided")
@@ -34,6 +49,7 @@ val LocalOnBoardingMainUiState = compositionLocalOf<UiStateOnBoardingMain> {
 val LocalMainUiState = compositionLocalOf<UiStateMain> {
     error("No UiStateMain provided")
 }
+
 
 val LocalHomeUiState = compositionLocalOf<UiStateHome> {
     error("No UiStateHome provided")

@@ -4,35 +4,47 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-
+import com.teumteumeat.teumteumeat.utils.LocalExtendedColors
 
 
 data class ExtendedColors(
-    val secondaryDisabled: Color,
-    val iconBlack: Color,
-    val textColorBlack: Color,
-    val textColorGray60: Color,
-    val textColorGray40: Color,
-    val textColorGray30: Color,
-    val textColorGray20: Color,
-    val textColorGray10: Color,
-    val textColorBlackSecondary: Color,
-    val outLineUnFocused: Color,
-    val textFieldBackground: Color,
-    val scrimLightReverse: Color,
-    val unableVariantSecondary: Color,
-    val onUnableVariantSecondary: Color,
-    val disableTabColor: Color,
-    val mainContentStrokeColor: Color,
-    val mainLearningContentLabel: Color,
-    val bottomSheetHandleColor: Color,
-    val contentBgFoundation400: Color,
-    // 필요한 만큼 추가 가능
+    val primary: Color,
+    val error: Color,
+    val buttonFillSecondary: Color,
+    val modalShadow: Color,
+    val errorContainer: Color,
+    val primaryContainer: Color,
+    val background: Color,
+    val unableContainer: Color,
+    val unableContent: Color,
+    val textOnError: Color,
+    val textOnPrimary: Color,
 )
+
+val LightExtendedColors = ExtendedColors(
+    primary = Blue80,
+    primaryContainer = Blue10,
+    textOnPrimary = White100,
+
+    unableContent = Gray50,
+    unableContainer = Gray20,
+
+    error = Red80,
+    errorContainer = Red10,
+    textOnError = White100,
+
+    background = White10,
+    buttonFillSecondary = Blue10,
+    modalShadow = BlackTrp15,
+)
+
 
 private val DarkColorScheme = darkColorScheme(
     primary = Blue80,
@@ -42,17 +54,16 @@ private val DarkColorScheme = darkColorScheme(
 
 private val LightColorScheme = lightColorScheme(
     primary = Blue80,
+    primaryContainer = White10,
     onPrimary = Color.White,
 
     secondary = PurpleGrey40,
+    secondaryContainer = Gray20,
+
     tertiary = Black100,
 
     surfaceVariant = Gray50,
     onSurfaceVariant = Gray30,
-
-    primaryContainer = bgWhite10,
-
-    secondaryContainer = Gray20,
 
     onTertiary = Black100,
 
@@ -68,26 +79,39 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun TeumTeumEatTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // ⭐ 기본값 false 추천
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            // todo. question-아래 두 줄의 코드의 차이점과 각 코드는 어느 상황에 최적화된 코드인지 판단하기
-//             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            if (darkTheme) DarkColorScheme else LightColorScheme
+    val context = LocalContext.current
 
+    val colorScheme = when {
+        // ✅ Android 12+ & 동적 컬러 허용
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
         }
 
+        // ✅ 우리가 정의한 컬러
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+
+    val extendedColors = when {
+        darkTheme -> LightExtendedColors
+        else -> LightExtendedColors
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
-    )
+    ) {
+        CompositionLocalProvider(
+            LocalExtendedColors provides extendedColors
+        ) {
+            content()
+        }
+    }
 }
