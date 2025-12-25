@@ -26,7 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 class WelcomeActivity : ComponentActivity() {
@@ -91,15 +91,18 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                         text = "카카오 로그인",
                         onClick = {
                             // Utils.UxUtils.moveActivity(context, LoginActivity::class.java, false)
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
 
                     Spacer(modifier = Modifier.height(15.dp))
 
-                    BaseFillButton(text = "일반 로그인?",
+                    BaseFillButton(
+                        text = "일반 로그인?",
                         onClick = {
                             // Utils.UxUtils.moveActivity(context, SignUpActivity::class.java, false)
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
 
                 }

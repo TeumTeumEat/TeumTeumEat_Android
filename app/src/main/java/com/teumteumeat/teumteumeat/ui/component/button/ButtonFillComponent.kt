@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.component
+package com.teumteumeat.teumteumeat.ui.component.button
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +15,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -26,7 +27,8 @@ fun BaseFillButton(
     text: String = "",
     textStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
-    onClick: ()-> Unit
+    onClick: () -> Unit,
+    conerRadius: Dp = 16.dp
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
@@ -43,7 +45,7 @@ fun BaseFillButton(
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 disabledContentColor = Color.White
             ),
-            shape = RoundedCornerShape(30.dp), // border-radius: 8px
+            shape = RoundedCornerShape(conerRadius), // border-radius: 8px
             modifier = Modifier
                 .height(60.dp)
                 .fillMaxWidth()
@@ -65,11 +67,12 @@ fun BaseFillButton(
 @Composable
 fun BaseFillButtonPreview() {
     TeumTeumEatTheme {
-        BaseFillButton(text = "로그인",
-            isEnabled = true,
+        BaseFillButton(
+            text = "로그인",
             onClick = {
                 // Utils.UxUtils.moveActivity(context, LoginActivity::class.java, false)
-            }
+            },
+            conerRadius = 16.dp
         )
     }
 }

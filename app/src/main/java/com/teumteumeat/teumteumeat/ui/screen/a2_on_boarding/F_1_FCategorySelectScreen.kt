@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavBackStackEntry
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryBreadcrumb
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
@@ -393,7 +392,8 @@ fun CategorySelectScreen(
                         isEnabled = selection.depth3 != null,
                         onClick = {
                             // todo. viewModel 함수 구현 후 호출
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
                 }
             }

@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.ContentSelectableBoxButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.ContentSelectableBoxButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.extractFileName
@@ -159,7 +159,8 @@ fun FileUploadScreen(
                         // todo. uiStateMain 에 파일 가져옴 상태를 정의 후 해당 값으로 버튼 활성화
                         isEnabled = uiState.selectedFileName != "",
                         onClick = {
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
                 }
             }

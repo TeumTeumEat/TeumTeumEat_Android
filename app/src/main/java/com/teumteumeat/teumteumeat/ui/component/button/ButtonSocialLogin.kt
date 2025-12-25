@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.component
+package com.teumteumeat.teumteumeat.ui.component.button
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image

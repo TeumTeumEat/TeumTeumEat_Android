@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.component
+package com.teumteumeat.teumteumeat.ui.component.button
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable

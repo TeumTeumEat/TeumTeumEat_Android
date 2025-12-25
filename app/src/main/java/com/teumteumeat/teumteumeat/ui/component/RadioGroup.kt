@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
+import com.teumteumeat.teumteumeat.ui.component.button.SelectableBoxButton
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.SelectType
 
 @Composable
@@ -30,7 +32,7 @@ fun MinuteRadioGroup(
             val isSelected = minute == selectedMinute
 
             BaseOutlineButton(
-                text = if(minute == options.lastIndex) "${minute}분 +" else "${minute}분",
+                text = if (minute == options.lastIndex) "${minute}분 +" else "${minute}분",
                 color = if (isSelected) {
                     MaterialTheme.colorScheme.primary   // ✅ 선택됨 (파란색)
                 } else {

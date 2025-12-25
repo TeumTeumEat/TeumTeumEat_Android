@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
 import com.teumteumeat.teumteumeat.ui.theme.Typography
@@ -136,7 +136,8 @@ fun OnBoardingSetCharNameScreen(
                         onClick = {
                             viewModel.onConfirmClick()
                             onNext()
-                        }
+                        },
+                        conerRadius = 16.dp
                     )
                 }
             }
