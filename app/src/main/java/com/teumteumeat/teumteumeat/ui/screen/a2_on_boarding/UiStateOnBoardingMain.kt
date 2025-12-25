@@ -1,7 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
+import android.net.Uri
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
-import com.teumteumeat.teumteumeat.ui.component.AmPm
 
 data class UiStateOnBoardingMain(
     val currentPage: Int = 0,
@@ -13,8 +13,8 @@ data class UiStateOnBoardingMain(
     val isNameValid: Boolean = false,
     val violation: NameViolation = NameViolation.None,
 
-    val isSetWorkInTime: Boolean= false,
-    val isSetWorkOutTime: Boolean= false,
+    val isSetWorkInTime: Boolean = false,
+    val isSetWorkOutTime: Boolean = false,
 
     // 🔹 출/퇴근 시간 설정
     val workInTime: TimeState = TimeState.amTime(),  // 집에서 나오는 시간
@@ -39,8 +39,65 @@ data class UiStateOnBoardingMain(
     val selectedMinute: Int? = null,
 
     val isLoading: Boolean = false,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
+
+    // 학습 방법 선택 여부
+    val selectedType: SelectType = SelectType.NONE,
+
+    // pdf 학습시 필요한 자료
+    val selectedFileUri: Uri? = null,
+    val selectedFileName: String = "",
+
+
+    // 카테고리 명 리스트
+    val categories: List<Category> = emptyList(),
+
+    // ✅ 카테고리 선택 상태 (추가)
+    val categorySelection: CategorySelectionState = CategorySelectionState(),
+
+    // 🔹 Pager 제어용 (UI가 이 값을 observe)
+    val targetCategoryPage: Int = 0,
+
+    // 온보딩 응답 요청 별 에러 메시지
+    val pageErrorMessage: String? = null,
+    val isSessionExpired: Boolean = false
 )
+
+data class CategorySelectionState(
+    val depth1: Category? = null,
+    val depth2: Category? = null,
+    val depth3: Category? = null
+){
+    /** 현재 선택된 가장 깊은 depth → Pager의 currentPage */
+    val currentPage: Int
+        get() = when {
+            depth3 != null -> 2
+            depth2 != null -> 1
+            depth1 != null -> 0
+            else -> 0
+        }
+
+    /** 총 보여줘야 할 페이지 수 */
+    val totalPage: Int
+        get() = when {
+            depth1 == null -> 1
+            depth2 == null -> 2
+            depth3 == null -> 3
+            else -> 3
+        }
+}
+
+data class Category(
+    val id: String,
+    val name: String,
+    val children: List<Category> = emptyList()
+)
+
+enum class SelectType {
+    FILE_UPLOAD,
+    CATEGORY,
+    NONE,
+}
 
 enum class TimeType {
     OUT, // 집을 나오는 시간

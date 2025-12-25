@@ -25,8 +25,6 @@
             android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
 
-
-
         </activity>
 
         <activity
@@ -55,6 +53,7 @@
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             android:label="@string/title_activity_on_boarding">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

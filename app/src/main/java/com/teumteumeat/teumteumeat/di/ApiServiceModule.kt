@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.di
 
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
+import com.teumteumeat.teumteumeat.data.api.user.CategoryApiService
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import dagger.Module
 import dagger.Provides
@@ -21,6 +22,10 @@ object ApiServiceModule {
     @Provides @Singleton
     fun provideUserApiService(retrofit: Retrofit): UserApiService =
         retrofit.create(UserApiService::class.java)
+
+    @Provides @Singleton
+    fun provideCategoryApiService(retrofit: Retrofit): CategoryApiService =
+        retrofit.create(CategoryApiService::class.java)
     // ---- api 서비스 추가 ----
 
 }

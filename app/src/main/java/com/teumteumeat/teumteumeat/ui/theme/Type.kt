@@ -56,20 +56,20 @@ val Typography = Typography(
 
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.W500,
+        fontWeight = FontWeight.W400,
         fontSize = 14.sp,
     ),
 
     // display 를 caption 옵션으로 사용
     displayMedium =  TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.W500,
+        fontWeight = FontWeight.W400,
         fontSize = 14.sp,
     ),
 
     displaySmall =  TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.W500,
+        fontWeight = FontWeight.W400,
         fontSize = 12.sp,
     ),
 

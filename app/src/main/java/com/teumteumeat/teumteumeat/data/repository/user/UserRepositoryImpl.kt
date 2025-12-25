@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.data.repository.user
 
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
+import com.teumteumeat.teumteumeat.data.api.user.CategoryApiService
 import com.teumteumeat.teumteumeat.data.api.user.CommuteTimeRequest
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
@@ -9,10 +10,14 @@ import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import com.teumteumeat.teumteumeat.data.api.user.UpdateNameRequest
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.CategoriesResponseDto
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.toCategoryTree
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomain
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
+    private val categoryApiService: CategoryApiService,
     private val userApi: UserApiService,
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource
@@ -51,6 +56,18 @@ class UserRepositoryImpl @Inject constructor(
             mapper = {
                 // data는 {} 이므로 의미 없음
                 Unit
+            }
+        )
+    }
+
+    override suspend fun getCategories(): ApiResult<List<Category>, Any?> {
+        return safeApiCall(
+            apiCall = {
+                categoryApiService.getCategories()
+            },
+            mapper = { data: CategoriesResponseDto ->
+                // 🔽 DTO → 트리 도메인 변환
+                data.categoryResponses.toCategoryTree()
             }
         )
     }

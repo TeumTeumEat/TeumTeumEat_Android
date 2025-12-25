@@ -15,7 +15,10 @@ fun OnBoardingNavHost(navController: NavHostController) {
     val viewModel = LocalViewModelContext.current as OnBoardingViewModel
     val uiState = LocalOnBoardingMainUiState.current
 
-    NavHost(navController = navController, startDestination = OnBoardingScreens.FirstScreen.route) {
+    NavHost(
+        navController = navController,
+        startDestination = OnBoardingScreens.SixthCategorySelectScreen.route
+    ) {
 
         composable(
             route = OnBoardingScreens.FirstScreen.route,
@@ -59,7 +62,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 onNext = {
                     viewModel.nextPage()
                     // 4번째 화면 이동 로직 구현
-                     navController.navigate(OnBoardingScreens.FourthSetUsingAppTimeScreen.route)
+                    navController.navigate(OnBoardingScreens.FourthSetUsingAppTimeScreen.route)
                 },
 
                 onPrev = {
@@ -74,21 +77,83 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // 4️⃣ (NEW) 앱 사용 시간 관련 설정 화면
+        // 4️⃣ 앱 사용 시간 관련 설정 화면
         composable(
             route = OnBoardingScreens.FourthSetUsingAppTimeScreen.route
         ) {
             OnBoardingSetUsingApptimeScreen(
                 onNext = {
                     viewModel.nextPage()
-                    // 👉 다음 온보딩 화면 or 완료 화면으로 이동
-                    // navController.navigate(OnBoardingScreens.FifthScreen.route)
+                    navController.navigate(OnBoardingScreens.FifthSelectInputMethodScreen.route)
                 },
                 onPrev = {
                     viewModel.prevPage()
                     navController.popBackStack()
                 },
                 name = "set_using_app_time",
+                viewModel = viewModel,
+                uiState = uiState,
+            )
+        }
+
+        // 5️⃣ 정보 입력 방법 지정 화면
+        composable(
+            route = OnBoardingScreens.FifthSelectInputMethodScreen.route
+        ) {
+            SelectInputMethodScreen(
+                name = OnBoardingScreens.FifthSelectInputMethodScreen.route,
+                onNextFileUpload = {
+                    viewModel.nextPage()
+                    navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
+                },
+
+                onNextCateGorySelct = {
+                    viewModel.nextPage()
+                    navController.navigate(OnBoardingScreens.SixthCategorySelectScreen.route)
+                },
+                onPrev = {
+                    viewModel.prevPage()
+                    navController.popBackStack()
+                },
+                viewModel = viewModel,
+                uiState = uiState,
+            )
+        }
+
+        // ✅ 6-1 카테고리 선택 화면
+        composable(
+            route = OnBoardingScreens.SixthCategorySelectScreen.route
+        ) { backStackEntry ->
+            CategorySelectScreen(
+                name = OnBoardingScreens.SixthCategorySelectScreen.route,
+                onNext = {
+                    viewModel.nextPage()
+                    // navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
+                },
+                onPrev = {
+                    viewModel.prevPage()
+                    navController.popBackStack()
+                },
+                viewModel = viewModel,
+                uiState = uiState,
+                navBackStackEntry = backStackEntry,
+            )
+        }
+
+        // ✅ 6-2 파일 업로드 입력 화면
+        composable(
+            route = OnBoardingScreens.SixthFileUploadScreen.route
+        ) {
+            FileUploadScreen(
+                name = OnBoardingScreens.SixthFileUploadScreen.route,
+                onNext = {
+                    viewModel.nextPage()
+                    // navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
+                },
+                onPrev = {
+                    viewModel.prevPage()
+                    navController.popBackStack()
+                },
                 viewModel = viewModel,
                 uiState = uiState,
             )
@@ -100,6 +165,9 @@ sealed class OnBoardingScreens(val route: String) {
     data object FirstScreen : OnBoardingScreens("welcome")
     data object SecondInputNameScreen : OnBoardingScreens("input_name")
     data object ThirdSetAppTimeScreen : OnBoardingScreens("set_app_time")
-    data object FourthSetUsingAppTimeScreen :
-        OnBoardingScreens("set_using_app_time")
+    data object FourthSetUsingAppTimeScreen : OnBoardingScreens("set_using_app_time")
+    data object FifthSelectInputMethodScreen : OnBoardingScreens("select_input_method")
+
+    data object SixthCategorySelectScreen : OnBoardingScreens("select_category")
+    data object SixthFileUploadScreen : OnBoardingScreens("file_upload")
 }
