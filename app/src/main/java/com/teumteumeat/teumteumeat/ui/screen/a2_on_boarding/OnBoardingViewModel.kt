@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.NameUpdateError
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
@@ -37,6 +38,35 @@ class OnBoardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateOnBoardingMain>(UiStateOnBoardingMain())
     val uiState = _uiState.asStateFlow()
 
+    fun openBottomSheet(type: BottomSheetType) {
+        _uiState.update {
+            it.copy(
+                bottomSheetType = type,
+                showBottomSheet = true,
+            )
+        }
+    }
+
+    fun closeBottomSheet() {
+        _uiState.update {
+            it.copy(
+                bottomSheetType = BottomSheetType.NONE,
+                showBottomSheet = false,
+            )
+        }
+    }
+
+
+    fun onDifficultySelected(difficulty: String) {
+        _uiState.update {
+            it.copy(
+                isDiffculty = difficulty,
+                bottomSheetType = BottomSheetType.NONE,
+                showBottomSheet = false,
+            )
+        }
+    }
+
     fun loadCategories() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -44,6 +74,7 @@ class OnBoardingViewModel @Inject constructor(
             when (val result = getCategoriesUseCase()) {
 
                 is ApiResult.Success -> {
+                    Log.d("카테고리 로직: ", "카테고리 데이터: ${result.data}")
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -202,8 +233,6 @@ class OnBoardingViewModel @Inject constructor(
     }
 
 
-
-
     fun onFileDeleted(
     ) {
         _uiState.update {
@@ -269,7 +298,7 @@ class OnBoardingViewModel @Inject constructor(
                 is ApiResult.SessionExpired -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = result.message
+                        pageErrorMessage = result.message
                     )
                     // 🔔 여기서 로그인 화면 이동 이벤트 트리거 가능
                 }
@@ -277,14 +306,14 @@ class OnBoardingViewModel @Inject constructor(
                 is ApiResult.NetworkError -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "네트워크 연결을 확인해주세요."
+                        pageErrorMessage = "네트워크 연결을 확인해주세요."
                     )
                 }
 
                 is ApiResult.ServerError -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = result.message
+                        pageErrorMessage = result.message
                             ?: "요청 처리 중 오류가 발생했습니다."
                     )
                 }
@@ -292,13 +321,12 @@ class OnBoardingViewModel @Inject constructor(
                 else -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "알 수 없는 오류가 발생했습니다."
+                        pageErrorMessage = "알 수 없는 오류가 발생했습니다."
                     )
                 }
             }
         }
     }
-
 
 
     /**
@@ -456,7 +484,8 @@ class OnBoardingViewModel @Inject constructor(
                 else -> NameViolation.None
             }
 
-            val isValid = violation == NameViolation.None && trimmedToMax.length in MIN_LENGTH..MAX_LENGTH
+            val isValid =
+                violation == NameViolation.None && trimmedToMax.length in MIN_LENGTH..MAX_LENGTH
 
             val message = when (violation) {
                 NameViolation.None -> ""
@@ -470,7 +499,7 @@ class OnBoardingViewModel @Inject constructor(
                 it.copy(
                     charName = trimmedToMax,
                     isNameValid = isValid,
-                    errorMessage =  message,
+                    errorMessage = message,
                     violation = violation
                 )
             }
@@ -488,61 +517,53 @@ class OnBoardingViewModel @Inject constructor(
                 registerUserNameUseCase(state.charName)
             ) {
 
-                is ApiResult.Success<*> -> {
+                is ApiResult.Success -> {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             isSuccess = true,
+                            errorMessage = ""
                         )
                     }
                 }
 
-                is ApiResult.ServerError<*> -> {
-                    /*val nameErrorMessage =
-                        result.details
-                            ?.toDomain()
-                            ?.filter { it.field == "name" }
-                            ?.joinToString("\n") { it.message }*/
+                is ApiResult.ServerError -> {
+                    val message = when (val error = result.details) {
+                        is NameUpdateError.Validation ->
+                            error.messages.joinToString("\n")
 
+                        is NameUpdateError.Message ->
+                            error.message
+
+                        NameUpdateError.None ->
+                            result.message
+
+                        null -> ""
+                        is NameUpdateError.CommonMessage -> ""
+                    }
+
+                    // todo. 추후 레포지 토리에서 응답 반환 모델 처리 정리후 해당 코드 수정 예정
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            isNameValid = false,
-                            errorMessage = result.message
+                            isNameValid = true,
+                            errorMessage = message
                         )
                     }
                 }
 
-                is ApiResult.SessionExpired -> {
+                else -> {
+                    // TODO: 공통 에러 처리 필요 (UseCase에서 ServerError로 통합 예정)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResult.NetworkError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResult.UnknownError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
+                            errorMessage = result.toString()
                         )
                     }
                 }
             }
         }
     }
-
 
 
     fun nextPage() {

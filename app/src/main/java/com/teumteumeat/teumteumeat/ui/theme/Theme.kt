@@ -26,12 +26,18 @@ data class ExtendedColors(
     val unableContent: Color,
     val textOnError: Color,
     val textOnPrimary: Color,
+    val unselectedContainer: Color,
+    val textOnUnselected: Color,
+    val backgroundW100: Color,
 )
 
 val LightExtendedColors = ExtendedColors(
     primary = Blue80,
     primaryContainer = Blue10,
     textOnPrimary = White100,
+
+    unselectedContainer = Gray15,
+    textOnUnselected = Gray80,
 
     unableContent = Gray50,
     unableContainer = Gray20,
@@ -41,6 +47,8 @@ val LightExtendedColors = ExtendedColors(
     textOnError = White100,
 
     background = White10,
+    backgroundW100 = White100,
+
     buttonFillSecondary = Blue10,
     modalShadow = BlackTrp15,
 )

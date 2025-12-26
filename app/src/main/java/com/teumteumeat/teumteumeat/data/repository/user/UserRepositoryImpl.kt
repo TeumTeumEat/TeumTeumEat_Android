@@ -11,8 +11,8 @@ import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import com.teumteumeat.teumteumeat.data.api.user.UpdateNameRequest
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.CategoriesResponseDto
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.toCategoryTree
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomain
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomainCategoryTree
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import javax.inject.Inject
 
@@ -35,15 +35,31 @@ class UserRepositoryImpl @Inject constructor(
         name: String
     ): ApiResult<String, List<FieldErrorDetail>> {
 
-        return safeApiCall(
-            apiCall = {
-                userApi.updateUserName(
-                    UpdateNameRequest(name)
+        return when (
+            val result = safeApiCall(
+                apiCall = {
+                    userApi.updateUserName(UpdateNameRequest(name))
+                },
+                mapper = { name }
+            )
+        ) {
+            is ApiResult.ServerError -> {
+                val details = when (val d = result.details) {
+                    is List<*> -> d.filterIsInstance<FieldErrorDetail>()
+                    else -> emptyList()
+                }
+
+                ApiResult.ServerError(
+                    code = result.code,
+                    message = result.message,
+                    details = details
                 )
-            },
-            mapper = { name }
-        )
+            }
+
+            else -> result
+        }
     }
+
 
     override suspend fun updateCommuteTime(
         request: CommuteTimeRequest
@@ -67,7 +83,7 @@ class UserRepositoryImpl @Inject constructor(
             },
             mapper = { data: CategoriesResponseDto ->
                 // 🔽 DTO → 트리 도메인 변환
-                data.categoryResponses.toCategoryTree()
+                data.categoryResponses.toDomainCategoryTree()
             }
         )
     }

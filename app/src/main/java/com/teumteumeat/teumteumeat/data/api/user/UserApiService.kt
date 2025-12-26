@@ -13,7 +13,7 @@ interface UserApiService {
     @GET("/api/v1/users/onboarding-completed")
     suspend fun getOnboardingCompleted(): ApiResponse<OnboardingStatus, Unit>
 
-    @POST("/api/v1/users/name")
+    @PATCH("/api/v1/users/name")
     suspend fun updateUserName(
         @Body request: UpdateNameRequest
     ): ApiResponse<UpdateNameRequest, List<FieldErrorDetail>>

@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.component.quiz_card
+package com.teumteumeat.teumteumeat.ui.component.quiz.ox
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,7 +31,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 enum class CardStatus { Default, Accept, Reject}
 
 @Composable
-fun QuizCard(
+fun QuizOXCard(
     modifier: Modifier = Modifier,
     questionIndex: Int,
     question: String,
@@ -39,6 +39,7 @@ fun QuizCard(
     isCardStatus: CardStatus = CardStatus.Default,
     onNo: () -> Unit,
 ) {
+
     val theme = MaterialTheme.extendedColors
     val containerColor = when(isCardStatus) {
         CardStatus.Accept -> theme.primaryContainer
@@ -155,14 +156,14 @@ fun QuizCardPreview() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            QuizCard(
+            QuizOXCard(
                 questionIndex = 1,
                 question = "이거는 저거일까 ?",
                 onYes = {},
                 onNo = {}
             )
 
-            QuizCard(
+            QuizOXCard(
                 questionIndex = 2,
                 question = "이 음식은 다이어트에 도움이 될까?",
                 onYes = {},
@@ -170,7 +171,7 @@ fun QuizCardPreview() {
                 isCardStatus = CardStatus.Accept,
             )
 
-            QuizCard(
+            QuizOXCard(
                 questionIndex = 3,
                 question = "하루 10분 공부는 의미가 있을까?",
                 onYes = {},
