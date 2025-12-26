@@ -32,7 +32,7 @@ fun MinuteRadioGroup(
             val isSelected = minute == selectedMinute
 
             BaseOutlineButton(
-                text = if (minute == options.lastIndex) "${minute}분 +" else "${minute}분",
+                text = if (minute == options.lastIndex) "${minute}분 +" else "${minute}분+",
                 color = if (isSelected) {
                     MaterialTheme.colorScheme.primary   // ✅ 선택됨 (파란색)
                 } else {
@@ -45,6 +45,36 @@ fun MinuteRadioGroup(
         }
     }
 }
+
+@Composable
+fun TextRadioGroup(
+    modifier: Modifier = Modifier,
+    options: List<String>,
+    selectedOption: String?,
+    onSelect: (String) -> Unit
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        options.forEach { option ->
+            val isSelected = option == selectedOption
+
+            BaseOutlineButton(
+                text = option,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary            // ✅ 선택됨
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant  // ❌ 미선택
+                },
+                onClick = {
+                    onSelect(option)
+                }
+            )
+        }
+    }
+}
+
 
 @Composable
 fun BoxButtonRadioGroup(

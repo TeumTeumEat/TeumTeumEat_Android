@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.net.Uri
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import org.checkerframework.common.subtyping.qual.Bottom
 
 data class UiStateOnBoardingMain(
     val currentPage: Int = 0,
@@ -60,8 +61,17 @@ data class UiStateOnBoardingMain(
 
     // 온보딩 응답 요청 별 에러 메시지
     val pageErrorMessage: String? = null,
-    val isSessionExpired: Boolean = false
+    val isSessionExpired: Boolean = false,
+
+    val isDiffculty: String? = null,
+    val bottomSheetType: BottomSheetType = BottomSheetType.NONE,
 )
+
+sealed interface BottomSheetType {
+    data object NONE : BottomSheetType
+    data object DIFFICULTY : BottomSheetType
+    data object TIME : BottomSheetType
+}
 
 data class CategorySelectionState(
     val depth1: Category? = null,

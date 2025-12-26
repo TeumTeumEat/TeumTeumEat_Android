@@ -4,15 +4,12 @@ import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,7 +59,7 @@ fun OnBoardingCompositionProvider(
             ) {
                 Row(
                     modifier = Modifier.padding(
-                        start = 22.dp, end = 28.dp
+                        horizontal = 24.dp,
                     ),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically,
@@ -76,25 +73,27 @@ fun OnBoardingCompositionProvider(
                                 viewModel.prevPage()
                                 navHostController.popBackStack()
                             },
-                            modifier = Modifier.size(30.dp),
 
                             ) {
                             Icon(
-                                modifier = Modifier.padding(0.dp),
                                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                                contentDescription = "previous page"
+                                contentDescription = "previous page",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .padding(0.dp),
                             )
                         }
                     }
 
+
                     CustomProgressBar(
                         modifier = Modifier
-                            .weight(1f),
+                            .weight(1f)
+                            .padding(horizontal = 16.dp),
                         currentStep = uiState.currentPage,
                         totalSteps = uiState.totalPage,
                     )
 
-                    Spacer(modifier = Modifier.width(16.dp))
 
                     Text(
                         "${uiState.currentPage}/${uiState.totalPage}",

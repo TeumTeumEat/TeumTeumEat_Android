@@ -3,7 +3,7 @@ package com.teumteumeat.teumteumeat.data.network.model
 data class ApiResponse<T, D>(
     val code: String?,
     val message: String?,
-    val details: D,
+    val details: D?,
     val data: T
 )
 

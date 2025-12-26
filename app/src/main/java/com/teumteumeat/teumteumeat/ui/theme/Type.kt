@@ -42,10 +42,19 @@ data class AppTypography(
     // button
     val buttonBold20: TextStyle,
     val buttonBold18: TextStyle,
+    val btnSemiBold18: TextStyle,
     val titleSemiBold24: TextStyle,
     val bodyMedium16Reg: TextStyle,
     val bodyMedium14Reg: TextStyle,
     val titleBold32: TextStyle,
+    val captionSemiBold16: TextStyle,
+    val bodySemiBold18: TextStyle,
+    val btnSemiBold20_h24: TextStyle,
+    val lableMedium12_h14: TextStyle,
+    val btnSemiBold18_h24: TextStyle,
+    val btnSemiBold20_h24_g50: TextStyle,
+    val btnSemiBold18_h24_g50: TextStyle,
+    val btnBold20_h24: TextStyle,
 )
 
 private val DefaultTextColor = Black100
@@ -100,10 +109,13 @@ val DefaultAppTypography = AppTypography(
     ),
 
     // body
+    bodySemiBold18 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+    ),
     bodyMedium16 = BaseTextStyle.copy(
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
-        lineHeight = 16.sp,
     ),
     bodyMedium14 = BaseTextStyle.copy(
         fontWeight = FontWeight.Medium,
@@ -121,7 +133,17 @@ val DefaultAppTypography = AppTypography(
         lineHeight = 14.sp,
     ),
 
+    lableMedium12_h14 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 14.sp,
+    ),
+
     // caption
+    captionSemiBold16 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+    ),
     captionRegular14 = BaseTextStyle.copy(
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
@@ -137,13 +159,44 @@ val DefaultAppTypography = AppTypography(
     buttonBold20 = BaseTextStyle.copy(
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
-        lineHeight = 20.sp,
+    ),
+    btnBold20_h24 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+        lineHeight = 24.sp,
     ),
     buttonBold18 = BaseTextStyle.copy(
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
         lineHeight = 18.sp,
     ),
+    btnSemiBold20_h24 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
+        lineHeight = 24.sp,
+    ),
+    btnSemiBold20_h24_g50 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
+        lineHeight = 24.sp,
+        color = Gray40
+    ),
+    btnSemiBold18 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+    ),
+    btnSemiBold18_h24 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+    ),
+    btnSemiBold18_h24_g50 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        color = Gray40
+    ),
+
 )
 
 

@@ -17,7 +17,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = OnBoardingScreens.SixthCategorySelectScreen.route
+        startDestination = OnBoardingScreens.SeventhOptimizerDataScreen.route
     ) {
 
         composable(
@@ -128,7 +128,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 name = OnBoardingScreens.SixthCategorySelectScreen.route,
                 onNext = {
                     viewModel.nextPage()
-                    // navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
+                    navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -148,7 +148,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 name = OnBoardingScreens.SixthFileUploadScreen.route,
                 onNext = {
                     viewModel.nextPage()
-                    // navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
+                    navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -158,6 +158,26 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 uiState = uiState,
             )
         }
+
+        // ✅ 7. 옵티마이저 데이터 입력 화면
+        composable(
+            route = OnBoardingScreens.SeventhOptimizerDataScreen.route
+        ) {
+            OptimizerDataScreen(
+                name = OnBoardingScreens.SeventhOptimizerDataScreen.route,
+                onNext = {
+                    viewModel.nextPage()
+                    // navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
+                },
+                onPrev = {
+                    viewModel.prevPage()
+                    navController.popBackStack()
+                },
+                viewModel = viewModel,
+                uiState = uiState,
+            )
+        }
+
     }
 }
 
@@ -167,7 +187,7 @@ sealed class OnBoardingScreens(val route: String) {
     data object ThirdSetAppTimeScreen : OnBoardingScreens("set_app_time")
     data object FourthSetUsingAppTimeScreen : OnBoardingScreens("set_using_app_time")
     data object FifthSelectInputMethodScreen : OnBoardingScreens("select_input_method")
-
     data object SixthCategorySelectScreen : OnBoardingScreens("select_category")
     data object SixthFileUploadScreen : OnBoardingScreens("file_upload")
+    data object SeventhOptimizerDataScreen : OnBoardingScreens("optimizer_data")
 }

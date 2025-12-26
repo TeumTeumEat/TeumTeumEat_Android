@@ -96,7 +96,9 @@ fun SelectableBaseOutlineButton(
         ) {
             Text(
                 text = text,
-                style = textStyle,
+                style = textStyle.copy(
+                    color = contentColor
+                ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )

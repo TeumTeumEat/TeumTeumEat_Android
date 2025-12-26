@@ -33,6 +33,8 @@ import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryBreadcrumb
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
 import com.teumteumeat.teumteumeat.ui.theme.Typography
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 private fun calculatePage(sel: CategorySelectionState): Int =
     when {
@@ -331,29 +333,29 @@ fun CategorySelectScreen(
                             when (page) {
 
                                 // 1뎁스
-                                0 -> Column(modifier = Modifier.fillMaxSize()) {
-                                    CategoryGrid(
-                                        categories = mockAllCategories,
-                                        // todo. 실제 서버로부터 전체 카테고리 목록 응답 확인되면 UI 고도화 구현하기
-                                        // categories = uiState.categories,
-                                        selectedId = selection.depth1?.id,
-                                        onItemClick = viewModel::toggleDepth1,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
+                                0 -> CategoryGrid(
+                                    // categories = mockAllCategories,
+                                    // todo. 실제 서버로부터 전체 카테고리 목록 응답 확인되면 UI 고도화 구현하기
+                                    categories = uiState.categories,
+                                    selectedId = selection.depth1?.id,
+                                    onItemClick = viewModel::toggleDepth1,
+                                    currentPage = page,
+                                )
 
                                 // 2뎁스
                                 1 -> CategoryGrid(
                                     categories = selection.depth1?.children.orEmpty(),
                                     selectedId = selection.depth2?.id,
-                                    onItemClick = viewModel::toggleDepth2
+                                    onItemClick = viewModel::toggleDepth2,
+                                    currentPage = page,
                                 )
 
                                 // 3뎁스
                                 2 -> CategoryGrid(
                                     categories = selection.depth2?.children.orEmpty(),
                                     selectedId = selection.depth3?.id,
-                                    onItemClick = viewModel::toggleDepth3
+                                    onItemClick = viewModel::toggleDepth3,
+                                    currentPage = page,
                                 )
                             }
                         }
@@ -386,8 +388,8 @@ fun CategorySelectScreen(
                 ) {
                     BaseFillButton(
                         text = "다음으로",
-                        textStyle = Typography.labelMedium.copy(
-                            lineHeight = 24.sp
+                        textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
+                            color = MaterialTheme.extendedColors.backgroundW100
                         ),
                         isEnabled = selection.depth3 != null,
                         onClick = {

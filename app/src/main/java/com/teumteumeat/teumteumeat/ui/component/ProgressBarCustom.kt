@@ -49,7 +49,7 @@ fun CustomProgressBar(
     // 3️⃣ UI
     Box(
         modifier = modifier
-            .height(12.dp) // 이미지와 유사한 높이
+            .height(15.dp) // 이미지와 유사한 높이
             .clip(RoundedCornerShape(50)) // 완전 pill
             .background(MaterialTheme.colorScheme.onSurfaceVariant)
     ) {

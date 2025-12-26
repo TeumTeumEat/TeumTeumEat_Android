@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -31,9 +32,10 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 @Composable
 fun CheckToggleButton(
+    modifier: Modifier = Modifier,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    isShowedIcon: Boolean = true,
 ) {
     val toggleWidth = 64.dp
     val toggleHeight = 36.dp
@@ -55,6 +57,7 @@ fun CheckToggleButton(
                 indication = null
             ) { onCheckedChange(!checked) }
     ) {
+
         Box(
             modifier = Modifier
                 .offset(x = offsetX)
@@ -64,11 +67,13 @@ fun CheckToggleButton(
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = if (checked) Icons.Default.Check else Icons.Default.Close,
-                contentDescription = null,
-                tint = if (checked) materialTheme.primary else materialTheme.secondaryContainer
-            )
+            if (isShowedIcon){
+                Icon(
+                    imageVector = if (checked) Icons.Default.Check else Icons.Default.Close,
+                    contentDescription = null,
+                    tint = if (checked) materialTheme.primary else materialTheme.secondaryContainer
+                )
+            }
         }
     }
 }
@@ -85,7 +90,8 @@ fun CheckToggleButtonThemePreview() {
         ) {
             CheckToggleButton(
                 checked = checked,
-                onCheckedChange = { checked = it }
+                onCheckedChange = { checked = it },
+                isShowedIcon = false
             )
         }
     }

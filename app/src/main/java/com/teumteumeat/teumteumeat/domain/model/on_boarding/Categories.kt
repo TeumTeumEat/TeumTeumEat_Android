@@ -13,49 +13,46 @@ data class CategoryDto(
     val description: String?
 )
 
-fun List<CategoryDto>.toCategoryTree(): List<Category> {
-    val rootMap = mutableMapOf<String, Category>()
+fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
+    val root = mutableMapOf<String, MutableCategory>()
 
     forEach { dto ->
         val segments = dto.path
             .split("/")
             .filter { it.isNotBlank() }
 
-        var currentLevel = rootMap
+        var currentLevel = root
 
-        segments.forEachIndexed { index, name ->
-            val id = segments
-                .take(index + 1)
-                .joinToString(separator = "/")
-
-            val existing = currentLevel[id]
-
-            if (existing == null) {
-                val newCategory = Category(
-                    id = id,
-                    name = name,
-                    children = emptyList()
-                )
-                currentLevel[id] = newCategory
-            }
-
-            // 다음 depth로 이동
-            val currentCategory = currentLevel[id]!!
-            currentLevel = currentCategory.children
-                .associateBy { it.id }
-                .toMutableMap()
+        // 1️⃣ path 기반 depth 생성
+        segments.forEach { segment ->
+            currentLevel = currentLevel
+                .getOrPut(segment) { MutableCategory(segment, segment) }
+                .children
         }
+
+        // 2️⃣ 실제 카테고리(name)를 마지막 depth의 child로 추가
+        currentLevel[dto.name] = MutableCategory(
+            id = dto.categoryId.toString(),
+            name = dto.name
+        )
     }
 
-    return buildTree(rootMap)
+    return root.values.map { it.toImmutable() }
 }
 
-private fun buildTree(map: Map<String, Category>): List<Category> {
-    return map.values.map { category ->
-        category.copy(
-            children = buildTree(
-                category.children.associateBy { it.id }
-            )
+/**
+ * 내부 전용 Mutable 모델
+ */
+private class MutableCategory(
+    val id: String,
+    val name: String,
+    val children: MutableMap<String, MutableCategory> = mutableMapOf()
+) {
+    fun toImmutable(): Category {
+        return Category(
+            id = id,
+            name = name,
+            children = children.values.map { it.toImmutable() }
         )
     }
 }

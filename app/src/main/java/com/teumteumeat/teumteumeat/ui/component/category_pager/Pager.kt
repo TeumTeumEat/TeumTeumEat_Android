@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.ui.component.category_pager
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,9 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.button.SelectableBaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
+import java.time.format.TextStyle
 
 
 private val previewCategoryTree = listOf(
@@ -57,6 +62,7 @@ private val previewCategoryTree = listOf(
         )
     )
 )
+
 @OptIn(ExperimentalFoundationApi::class)
 @Preview(
     name = "Category Depth Paging Full Flow",
@@ -197,20 +203,23 @@ fun CategoryDepthPagingFullFlowPreview() {
 }
 
 
-
-
 @Composable
 fun CategoryGrid(
     categories: List<Category>,
     selectedId: String?,
     onItemClick: (Category) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bottomPadding: Dp = 170.dp, // ✅ 하단 버튼 + 여백
+    currentPage: Int = 0,
 ) {
     LazyVerticalStaggeredGrid(
         modifier = modifier,
         columns = StaggeredGridCells.Fixed(2), // ✅ 정책 A: 2열 고정
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 12.dp,
+        contentPadding = PaddingValues(
+            top = 0.dp, bottom = bottomPadding
+        )
     ) {
         itemsIndexed(
             items = categories,
@@ -218,6 +227,8 @@ fun CategoryGrid(
         ) { _, category ->
             SelectableBaseOutlineButton(
                 text = category.name,
+                textStyle = if (currentPage == 0) MaterialTheme.appTypography.btnSemiBold20_h24
+                    else MaterialTheme.appTypography.btnSemiBold18_h24,
                 isSelected = category.id == selectedId,
                 modifier = Modifier
                     .fillMaxWidth()

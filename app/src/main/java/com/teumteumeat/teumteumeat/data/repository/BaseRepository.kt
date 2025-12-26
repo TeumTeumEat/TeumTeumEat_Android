@@ -5,6 +5,8 @@ import com.teumteumeat.teumteumeat.data.network.exception.UnauthorizedException
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.AuthToken
+import com.teumteumeat.teumteumeat.data.network.model.DomainError
+import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
 import java.io.IOException
@@ -13,6 +15,18 @@ abstract class BaseRepository(
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource
 ) {
+
+    private fun Any?.toDomainError(): DomainError {
+        return when (this) {
+            null -> DomainError.None
+            is String -> DomainError.Message(this)
+            is List<*> -> {
+                val errors = this.filterIsInstance<FieldErrorDetail>()
+                DomainError.FieldErrors(errors)
+            }
+            else -> DomainError.Message("알 수 없는 오류 형식")
+        }
+    }
 
     protected suspend fun <T, R, D> safeApiCall(
         apiCall: suspend () -> ApiResponse<T, D>,
