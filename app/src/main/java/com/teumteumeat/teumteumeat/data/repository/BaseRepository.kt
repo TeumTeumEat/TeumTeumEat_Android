@@ -37,60 +37,135 @@ abstract class BaseRepository(
     }
     protected suspend fun <T, R> safeApiVer2(
         apiCall: suspend () -> ApiResponse<T, Any?>,
-        mapper: (T) -> R
-    ): ApiResult<R, DomainError?> {
+        mapper: (T?) -> R
+    ): ApiResultV2<R> {
+        val response = apiCall()
+        // 🔍 [디버깅 로그] 실제 서버가 보낸 code와 message 확인
+        println("DEBUG: Server Code=[${response.code}], Type=[${response.code?.javaClass?.simpleName}]")
+        println("DEBUG: Server Message=[${response.message}]")
+        println("DEBUG: isSuccessCode() result=[${response.code.isSuccessCode()}]")
 
+        // 수정된 코드
         return try {
-            val response = apiCall()
-
-            when (response.code) {
-
-                "OK", "CREATED" -> {
-                    ApiResult.Success(
+            // return@try 제거함. when의 결과가 자동으로 try의 반환값이 됩니다.
+            when {
+                // ✅ 성공 응답
+                response.code.isSuccessCode() -> {
+                    ApiResultV2.Success(
                         message = response.message,
                         data = mapper(response.data)
                     )
                 }
 
-                "AUTH-002" -> {
-                    ApiResult.SessionExpired(
-                        message = response.message ?: "토큰이 만료되었습니다."
+                // 🔐 인증 관련 에러 (AUTH-001 ~ AUTH-005)
+                response.code.isAuthErrorCode() -> {
+                    ApiResultV2.SessionExpired(
+                        message = response.message
+                            ?: "인증 정보가 유효하지 않습니다. 다시 로그인해주세요."
                     )
                 }
 
+                // ❌ 그 외 모든 서버 에러
                 else -> {
-                    ApiResult.ServerError(
+                    ApiResultV2.ServerError(
                         code = response.code ?: "UNKNOWN",
                         message = response.message ?: "서버 오류가 발생했습니다.",
-                        details = response.details?.toDomainError()
+                        errorType = response.details?.toDomainError()
+                            ?: DomainError.None
                     )
                 }
             }
+
+        } catch (e: retrofit2.HttpException) {
+            // ⭐ 핵심: HTTP 에러를 ApiResult로 변환
+            handleHttpException(e)
 
         } catch (e: UnauthorizedException) {
             handleUnauthorizedVer2(apiCall, mapper)
 
         } catch (e: IOException) {
-            ApiResult.NetworkError(
+            ApiResultV2.NetworkError(
                 message = "네트워크 연결을 확인해주세요."
             )
 
         } catch (e: Exception) {
-            ApiResult.UnknownError(
+            // ⭐ 여기가 범인인지 확인하는 로그
+            println("DEBUG: Exception caught! message=[${e.message}]")
+            e.printStackTrace() // 스택 트레이스를 보면 mapper 어디서 터졌는지 알 수 있음
+
+            ApiResultV2.UnknownError(
+                message = "알 수 없는 오류가 발생했습니다.",
+                throwable = e
+            )
+            ApiResultV2.UnknownError(
                 message = "알 수 없는 오류가 발생했습니다.",
                 throwable = e
             )
         }
+
     }
 
+    private fun handleHttpException(
+        e: retrofit2.HttpException
+    ): ApiResultV2<Nothing> {
+
+        return try {
+            val errorJson = e.response()?.errorBody()?.string()
+
+            if (errorJson.isNullOrBlank()) {
+                return ApiResultV2.ServerError(
+                    code = e.code().toString(),
+                    message = "서버 오류가 발생했습니다.",
+                    errorType = DomainError.None
+                )
+            }
+
+            val errorResponse =
+                Gson().fromJson(errorJson, ApiResponse::class.java)
+
+            when {
+                errorResponse.code.isAuthErrorCode() -> {
+                    ApiResultV2.SessionExpired(
+                        message = errorResponse.message
+                            ?: "인증 정보가 유효하지 않습니다."
+                    )
+                }
+
+                else -> {
+                    ApiResultV2.ServerError(
+                        code = errorResponse.code ?: "UNKNOWN",
+                        message = errorResponse.message ?: "서버 오류가 발생했습니다.",
+                        errorType = errorResponse.details?.toDomainError()
+                            ?: DomainError.None
+                    )
+                }
+            }
+
+        } catch (ex: Exception) {
+            ApiResultV2.UnknownError(
+                message = "서버 오류가 발생했습니다.",
+                throwable = ex
+            )
+        }
+    }
+
+    private fun String?.isSuccessCode(): Boolean {
+        if (this == null) return false
+        // 공백 제거 후 대소문자 무시하고 비교
+        val code = this.trim().uppercase()
+        return code == "OK" || code == "CREATED" || code == "SUCCESS" || code == "200"
+    }
+
+    private fun String?.isAuthErrorCode(): Boolean =
+        this?.startsWith("AUTH-") == true
 
     protected suspend fun <T, R> handleUnauthorizedVer2(
         apiCall: suspend () -> ApiResponse<T, Any?>,
         mapper: (T) -> R
-    ): ApiResult<R, DomainError?> {
+    ): ApiResultV2<R> {
 
         val refreshToken = tokenLocalDataSource.getRefreshToken()
-            ?: return ApiResult.SessionExpired(
+            ?: return ApiResultV2.SessionExpired(
                 message = "로그인이 만료되었습니다. 다시 로그인해주세요."
             )
 
@@ -107,18 +182,19 @@ abstract class BaseRepository(
 
             val retryResponse = apiCall()
 
-            ApiResult.Success(
+            ApiResultV2.Success(
                 message = retryResponse.message,
                 data = mapper(retryResponse.data)
             )
 
         } catch (e: Exception) {
             tokenLocalDataSource.clear()
-            ApiResult.SessionExpired(
+            ApiResultV2.SessionExpired(
                 message = "로그인이 만료되었습니다. 다시 로그인해주세요."
             )
         }
     }
+
 
     protected suspend fun <T, R, D> safeApiCall(
         apiCall: suspend () -> ApiResponse<T, D>,

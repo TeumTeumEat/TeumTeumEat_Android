@@ -34,6 +34,16 @@ sealed class ApiResult<out T, out D> {
     ) : ApiResult<Nothing, Nothing>()
 }
 
+// 어디든 접근 가능한 파일 (ex: ApiResultExt.kt)
+val ApiResult<*, *>.uiMessage: String
+    get() = when (this) {
+        is ApiResult.Success -> this.message ?: ""
+        is ApiResult.ServerError -> this.message
+        is ApiResult.SessionExpired -> this.message
+        is ApiResult.NetworkError -> this.message
+        is ApiResult.UnknownError -> this.message
+    }
+
 // 2️⃣ ApiResultV2 정의: 제네릭 D를 제거하고 DomainError를 내장
 sealed class ApiResultV2<out T> {
 
@@ -66,4 +76,36 @@ sealed class ApiResultV2<out T> {
         val throwable: Throwable? = null
     ) : ApiResultV2<Nothing>()
 }
+
+val ApiResultV2<*>.uiMessage: String
+    get() = when (this) {
+
+        is ApiResultV2.Success ->
+            this.message ?: ""
+
+        is ApiResultV2.ServerError -> {
+            when (val error = this.errorType) {
+
+                is DomainError.Validation ->
+                    error.errors.joinToString("\n") { it.message }
+
+                is DomainError.Message ->
+                    error.message
+
+                DomainError.None ->
+                    this.message
+            }
+        }
+
+        is ApiResultV2.SessionExpired ->
+            this.message
+
+        is ApiResultV2.NetworkError ->
+            this.message
+
+        is ApiResultV2.UnknownError ->
+            this.message
+    }
+
+
 
