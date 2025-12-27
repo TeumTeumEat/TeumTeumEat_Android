@@ -97,7 +97,8 @@ fun SetStudyRangeScreen(
                         ),
                         isEnabled = uiState.selectedStudyWeek != null,
                         onClick = {
-                            // todo. 뷰모델 함수로 서버로 유저 목표 학습 정보 등록 요청하기
+                            // todo. 뷰모델 함수로 서버로 학습 목표 생성 요청하기
+                            viewModel.onCreateGoalClick()
                             onNext()
                         },
                         conerRadius = 16.dp

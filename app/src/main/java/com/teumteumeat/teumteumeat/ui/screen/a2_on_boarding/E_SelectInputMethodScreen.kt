@@ -24,6 +24,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.BoxButtonRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -100,7 +101,7 @@ fun SelectInputMethodScreen(
                     Spacer(modifier = Modifier.height(25.dp))
 
                     BoxButtonRadioGroup(
-                        selectedType = uiState.selectedType,
+                        selectedType = uiState.goalType,
                         onSelected = { viewModel.selectLearningMethod(it) },
                     )
                 }
@@ -116,12 +117,12 @@ fun SelectInputMethodScreen(
                         textStyle = Typography.labelMedium.copy(
                             lineHeight = 24.sp
                         ),
-                        isEnabled = uiState.selectedType != SelectType.NONE,
+                        isEnabled = uiState.goalType != GoalType.NONE,
                         onClick = {
-                            when(uiState.selectedType){
-                                SelectType.CATEGORY -> onNextCateGorySelct()
-                                SelectType.FILE_UPLOAD -> onNextFileUpload()
-                                SelectType.NONE -> {}
+                            when(uiState.goalType){
+                                GoalType.CATEGORY -> onNextCateGorySelct()
+                                GoalType.DOCUMENT -> onNextFileUpload()
+                                GoalType.NONE -> {}
                             }
                         },
                         conerRadius = 16.dp

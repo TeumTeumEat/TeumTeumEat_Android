@@ -67,11 +67,27 @@ abstract class BaseRepository(
 
                 // ❌ 그 외 모든 서버 에러
                 else -> {
+                    val domainError = when {
+                        // 1️⃣ details가 있는 경우 (검증 에러 등)
+                        response.details != null -> {
+                            response.details.toDomainError()
+                        }
+
+                        // 2️⃣ details는 없고 message만 있는 경우
+                        !response.message.isNullOrBlank() -> {
+                            DomainError.Message(response.message)
+                        }
+
+                        // 3️⃣ 둘 다 없는 경우
+                        else -> {
+                            DomainError.None
+                        }
+                    }
+
                     ApiResultV2.ServerError(
                         code = response.code ?: "UNKNOWN",
                         message = response.message ?: "서버 오류가 발생했습니다.",
-                        errorType = response.details?.toDomainError()
-                            ?: DomainError.None
+                        errorType = domainError
                     )
                 }
             }
@@ -94,13 +110,10 @@ abstract class BaseRepository(
             e.printStackTrace() // 스택 트레이스를 보면 mapper 어디서 터졌는지 알 수 있음
 
             ApiResultV2.UnknownError(
-                message = "알 수 없는 오류가 발생했습니다.",
+                message = e.message.toString(),
                 throwable = e
             )
-            ApiResultV2.UnknownError(
-                message = "알 수 없는 오류가 발생했습니다.",
-                throwable = e
-            )
+
         }
 
     }

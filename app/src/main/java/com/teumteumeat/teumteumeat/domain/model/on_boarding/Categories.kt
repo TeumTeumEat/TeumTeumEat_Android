@@ -7,11 +7,12 @@ data class CategoriesResponseDto(
 )
 
 data class CategoryDto(
-    val categoryId: Long,
+    val categoryId: Int,
     val name: String,
     val path: String,
     val description: String?
 )
+
 
 fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
     val root = mutableMapOf<String, MutableCategory>()
@@ -23,17 +24,23 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
 
         var currentLevel = root
 
-        // 1️⃣ path 기반 depth 생성
+        // 1️⃣ path 기반 depth 생성 (UI 전용)
         segments.forEach { segment ->
             currentLevel = currentLevel
-                .getOrPut(segment) { MutableCategory(segment, segment) }
+                .getOrPut(segment) {
+                    MutableCategory(
+                        id = segment,       // UI 식별자
+                        name = segment
+                    )
+                }
                 .children
         }
 
-        // 2️⃣ 실제 카테고리(name)를 마지막 depth의 child로 추가
+        // 2️⃣ 실제 카테고리 (leaf)
         currentLevel[dto.name] = MutableCategory(
-            id = dto.categoryId.toString(),
-            name = dto.name
+            id = dto.name,                  // UI 식별자
+            name = dto.name,
+            serverCategoryId = dto.categoryId // ⭐ 서버 ID는 여기!
         )
     }
 
@@ -46,12 +53,14 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
 private class MutableCategory(
     val id: String,
     val name: String,
+    val serverCategoryId: Int? = null,
     val children: MutableMap<String, MutableCategory> = mutableMapOf()
 ) {
     fun toImmutable(): Category {
         return Category(
             id = id,
             name = name,
+            serverCategoryId = serverCategoryId,
             children = children.values.map { it.toImmutable() }
         )
     }

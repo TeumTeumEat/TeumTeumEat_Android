@@ -1,5 +1,11 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
+import android.app.Activity
+import android.content.Intent
+import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -23,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
@@ -45,46 +52,47 @@ fun FileUploadScreen(
     val currentPage = uiState.currentPage
     val totalPages = uiState.totalPage
 
-    val isSetAllTimeValid = uiState.isSetWorkInTime && uiState.isSetWorkOutTime
+    // 🔔 에러 메시지 변경 감지 → Toast 표시
+    uiState.pageErrorMessage?.let { message ->
+        LaunchedEffect(message) {
+            Toast
+                .makeText(context, message, Toast.LENGTH_SHORT)
+                .show()
 
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
+            // ✅ 토스트 표시 후 메시지 초기화
+            viewModel.clearPageErrorMessage()
+        }
+    }
+
+    val downloadLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+
+        val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+
+
+        val contentResolver = context.contentResolver
 
         val fileName = context.extractFileName(uri)
+        val mimeType = contentResolver.getType(uri) ?: "application/pdf"
+
+        // 🔹 선택한 파일의 "실제 크기(Byte 단위)"를 가져오기 위한 코드
+        // - S3 presigned 업로드 전, 클라이언트 단에서 파일 크기 제한(예: 50MB)을 검증하기 위함
+        // - ContentResolver는 Android에서 외부 파일에 접근하기 위한 표준 인터페이스
+        // - openFileDescriptor("r") : 읽기 전용으로 파일 디스크립터를 열고
+        // - statSize : 해당 파일의 전체 크기를 Byte 단위로 반환
+        // - 만약 파일 정보를 가져오지 못하면 0L로 처리하여 안전하게 방어
+        val size = contentResolver
+            .openFileDescriptor(uri, "r")
+            ?.statSize ?: 0L
 
         viewModel.onFileSelected(
             uri = uri,
-            fileName = fileName
+            fileName = fileName,
+            mimeType = mimeType,
+            size = size
         )
-    }
-
-    /**
-     * 🔹 화면 최초 진입 시
-     * 🔹 권한 상태만 확인 (팝업 ❌)
-     */
-    LaunchedEffect(Unit) {
-        val granted = OneSignal.Notifications.permission
-        viewModel.syncNotificationPermission(granted)
-    }
-
-
-    // 🔔 권한 팝업은 "이 상태가 true일 때만" 실행
-    LaunchedEffect(uiState.requestNotificationPermission) {
-        if (uiState.requestNotificationPermission) {
-            // 1️⃣ 시스템 권한 팝업 호출
-            OneSignal.Notifications.requestPermission(true)
-
-            // 2️⃣ 현재 권한 상태 확인
-            val granted = OneSignal.Notifications.permission
-
-            // 3️⃣ ViewModel에 결과 전달
-            viewModel.onNotificationPermissionResult(granted)
-
-            // 이벤트 소비
-            viewModel.consumeNotificationPermissionRequest()
-        }
     }
 
     DefaultMonoBg(
@@ -127,17 +135,25 @@ fun FileUploadScreen(
                         titleText = "파일 업로드",
                         lableText = "공부하고 싶은\n내용이 있어요.",
                         onClick = {
-                            // todo. 추후에 서버에 실제 파일 전송을 위한 설계 작업 필요
-                            //  1. 서버에 한번에 보낼때 적절한 데이터의 양?
-                            //  2. 데이터의 형식?
-                            //  3. 이외에 설정하면 좋을 제약사항
-                            launcher.launch(
-                                arrayOf(
-                                    "application/pdf",
-                                    "image/*",
-                                    "text/plain"
-                                )
-                            )
+                            //  1. 서버에 한번에 보낼때 적절한 데이터의 양의 한계 50MB
+                            //  2. 데이터의 형식 - .pdf 로 제한
+                            //  3. 다운로드 폴더를 초기 위치로 설정
+                            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                                addCategory(Intent.CATEGORY_OPENABLE)
+                                type = "application/pdf"
+
+                                // ⭐ 다운로드 폴더를 초기 위치로 설정
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    putExtra(
+                                        DocumentsContract.EXTRA_INITIAL_URI,
+                                        Environment.getExternalStoragePublicDirectory(
+                                            Environment.DIRECTORY_DOWNLOADS
+                                        ).toUri()
+                                    )
+                                }
+                            }
+
+                            downloadLauncher.launch(intent)
                         },
                         isSelectableContent = uiState.selectedFileName != "",
                         contentFileName = uiState.selectedFileName,
@@ -159,6 +175,8 @@ fun FileUploadScreen(
                         // todo. uiStateMain 에 파일 가져옴 상태를 정의 후 해당 값으로 버튼 활성화
                         isEnabled = uiState.selectedFileName != "",
                         onClick = {
+                            onNext()
+                            // viewModel.issuePresignedUrl()
                         },
                         conerRadius = 16.dp
                     )
