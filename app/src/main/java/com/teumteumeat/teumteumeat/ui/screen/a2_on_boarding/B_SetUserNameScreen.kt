@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -99,6 +100,7 @@ fun OnBoardingSetCharNameScreen(
                         interactionSource = inputInteractionSource,
                         isError = uiState.charName.isNotEmpty() && uiState.errorMessage != "",
                         onDone = {
+                            Log.d("IME", "onDone called")
                             focusManager.clearFocus()
                             keyboardController?.hide() // ⭐ 핵심
                         }

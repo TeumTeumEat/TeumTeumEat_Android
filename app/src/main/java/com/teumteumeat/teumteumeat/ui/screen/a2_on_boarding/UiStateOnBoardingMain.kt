@@ -63,9 +63,27 @@ data class UiStateOnBoardingMain(
     val pageErrorMessage: String? = null,
     val isSessionExpired: Boolean = false,
 
-    val isDiffculty: String? = null,
+    val isDiffculty: String = "",
     val bottomSheetType: BottomSheetType = BottomSheetType.NONE,
+
+    val isPromptVaild: Boolean = true,
+    val promptInput: String = "",
+    val promptInputErrMsg: String? = null,
+
+    val selectedStudyWeek: Int? = null,
 )
+
+data class DifficultyOption(
+    val label: String, // 화면 표시용
+    val value: Int     // 서버/로직용
+)
+
+sealed interface PromptViolation {
+    data object None : PromptViolation
+    data object Empty : PromptViolation
+    data object TooShort : PromptViolation
+    data object TooLong : PromptViolation
+}
 
 sealed interface BottomSheetType {
     data object NONE : BottomSheetType
@@ -96,6 +114,11 @@ data class CategorySelectionState(
             else -> 3
         }
 }
+
+data class StudyWeekOption(
+    val label: String, // 화면 표시용 ("1주")
+    val value: Int     // 실제 의미 값 (1)
+)
 
 data class Category(
     val id: String,

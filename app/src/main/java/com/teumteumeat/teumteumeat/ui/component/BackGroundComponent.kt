@@ -90,7 +90,7 @@ fun DefaultMonoBg(
     color: Color,
     content: @Composable BoxScope.() -> Unit = {} // ✅ Box 내부에 Composable 추가 가능
 ) {
-    val view = LocalView.current
+/*    val view = LocalView.current
     var isKeyboardOpen by remember { mutableStateOf(false) }
 
     // 🔹 키보드 상태 감지 (모든 Android 버전에서 동작)
@@ -109,19 +109,14 @@ fun DefaultMonoBg(
         }
     }
 
-    val bottomPadding = if (isKeyboardOpen) 0.dp else innerPadding.calculateBottomPadding()
+    val bottomPadding = if (isKeyboardOpen) 0.dp else innerPadding.calculateBottomPadding()*/
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(
-                top = 0.dp,
-                bottom = bottomPadding
-            )
-            .background(color = color),
-    ) {
-        content() // ✅ 내부에서 Composable UI를 받을 수 있도록 설정
-    }
+            .background(color),
+        content = content
+    )
 }
 
 @Composable

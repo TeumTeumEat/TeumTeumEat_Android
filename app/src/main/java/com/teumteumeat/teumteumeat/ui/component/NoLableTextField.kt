@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.appTypography
 
 @Composable
 fun NoLableTextField(
@@ -49,7 +50,7 @@ fun NoLableTextField(
     onDone: KeyboardActionScope.() -> Unit = {}
 ) {
     val containerColor = if (!isError) MaterialTheme.colorScheme.onSurfaceVariant
-        else MaterialTheme.colorScheme.error
+    else MaterialTheme.colorScheme.error
 
     Box(
         contentAlignment = Alignment.Center,
@@ -59,7 +60,7 @@ fun NoLableTextField(
             .border(
                 width = 1.dp,
                 color = containerColor,
-                shape = RoundedCornerShape(30.dp)
+                shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 25.dp)
     ) {
@@ -77,7 +78,10 @@ fun NoLableTextField(
         if (value.isEmpty()) {
             Text(
                 text = placeholderText,
-                style = TextStyle(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,),
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -102,9 +106,10 @@ fun NoLableTextField(
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
-                // 키보드 완료 버튼 눌렀을 때 처리
-                onDone = { onDone }
-            ),
+                onDone = {
+                    this.onDone()
+                }
+            )
 
         )
 
@@ -115,6 +120,101 @@ fun NoLableTextField(
                 style = TextStyle(fontSize = 12.sp, color = containerColor),
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
+            )
+        }
+    }
+}
+
+
+@Composable
+fun NoLableMultiLineTextField(
+    modifier: Modifier = Modifier,
+    value: String,
+    labelText: String = "",
+    placeholderText: String,
+    onValueChange: (String) -> Unit,
+    showCharCount: Boolean = true, // ← 글자 수 표시 ON/OFF
+    minLines: Int = 2,                 // ✅ 기본 2줄
+    maxLines: Int = 4,     // ✅ 2줄 이상 입력 허용
+    maxLength: Int = 30,
+    isFocused: Boolean,
+    focusRequesterThis: FocusRequester,
+    interactionSource: MutableInteractionSource,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    isError: Boolean = false,
+    isOneLine: Boolean = false,
+) {
+    val containerColor = if (!isError) MaterialTheme.colorScheme.onSurfaceVariant
+    else MaterialTheme.colorScheme.error
+
+    Box(
+        // contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .border(
+                width = 1.dp,
+                color = containerColor,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(all = 18.dp)
+    ) {
+        // label 고정
+        Text(
+            text = labelText,
+            style = TextStyle(fontSize = 14.sp, color = Color.Gray),
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+        )
+
+        // 🔹 Placeholder (중앙 정렬)
+        if (value.isEmpty()) {
+            Text(
+                text = placeholderText,
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.Center)
+            )
+        }
+
+        // 🔹 입력 텍스트 (좌상단부터 시작)
+        BasicTextField(
+            value = value,
+            onValueChange = { text ->
+                if (text.length <= maxLength) {
+                    onValueChange(text)
+                }
+            },
+            textStyle = MaterialTheme.appTypography.bodyMedium16.copy(
+                textAlign = TextAlign.Start,
+                lineHeight = 22.sp,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopStart)
+                .padding(top = if (labelText.isNotEmpty()) 24.dp else 0.dp)
+                .focusRequester(focusRequesterThis),
+            singleLine = false,
+            minLines = minLines,
+            maxLines = maxLines,
+        )
+
+        // 🔹 글자 수 표시
+        if (value.isNotEmpty()) {
+            Text(
+                text = "${value.length}/$maxLength",
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    color = containerColor
+                ),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
             )
         }
     }
@@ -154,7 +254,7 @@ fun NoLableTextFieldPreview() {
                         focusManager.clearFocus() // 포커스 해제
                     }
                     .padding(16.dp),
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 NoLableTextField(
                     value = text,
@@ -169,7 +269,23 @@ fun NoLableTextFieldPreview() {
                     interactionSource = inputInteractionSource,
                     onDone = { focusManager.clearFocus() }
                 )
+
+                NoLableMultiLineTextField(
+                    value = text,
+                    labelText = "",
+                    placeholderText = "상황설정 예시가 필요합니다.\n" +
+                            "어떤 식으로 할지 어떤 상황인지 입력해주세요\n"+
+                            "ex) IT 트렌드나 프로그래밍 관련 퀴즈를 \n풀고 싶어요",
+                    onValueChange = {
+                        text = it // viewModel set 함수 위치
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    isFocused = inputFocused,
+                    focusRequesterThis = focusRequesterInput,
+                    interactionSource = inputInteractionSource,
+                )
             }
+
         }
     }
 }
