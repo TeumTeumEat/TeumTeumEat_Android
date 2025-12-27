@@ -23,12 +23,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.MinuteRadioGroup
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
-
 
 @Composable
 fun OnBoardingSetUsingApptimeScreen(
@@ -75,31 +74,31 @@ fun OnBoardingSetUsingApptimeScreen(
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .fillMaxSize()
                     .padding(horizontal = 20.dp),
             ) {
                 Column(
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .fillMaxSize()
                         .padding(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.Companion.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
+                    Spacer(modifier = Modifier.Companion.height(60.dp))
                     Text(
                         "틈틈잇 몇 분 이용할 건지",
                         style = Typography.headlineMedium.copy(
                             fontSize = 18.sp,
                         )
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.Companion.height(20.dp))
                     Image(
                         painter = painterResource(R.drawable.character_front),
                         contentDescription = "앞을 보는 케릭터",
-                        modifier = Modifier.size(width = 200.dp, height = 162.dp),
-                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.Companion.size(width = 200.dp, height = 162.dp),
+                        contentScale = ContentScale.Companion.Fit,
                     )
-                    Spacer(modifier = Modifier.height(25.dp))
+                    Spacer(modifier = Modifier.Companion.height(25.dp))
 
                     MinuteRadioGroup(
                         options = listOf(5, 7, 10, 15),
@@ -109,7 +108,7 @@ fun OnBoardingSetUsingApptimeScreen(
                 }
 
                 Column(
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .fillMaxSize()
                         .padding(bottom = 32.dp),
                     verticalArrangement = Arrangement.Bottom,
@@ -131,7 +130,6 @@ fun OnBoardingSetUsingApptimeScreen(
         },
     )
 }
-
 
 
 @Preview(showBackground = true)

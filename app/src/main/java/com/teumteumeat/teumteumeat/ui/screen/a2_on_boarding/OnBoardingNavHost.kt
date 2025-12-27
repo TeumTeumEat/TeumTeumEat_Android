@@ -167,7 +167,9 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 name = OnBoardingScreens.SeventhOptimizerDataScreen.route,
                 onNext = {
                     viewModel.nextPage()
-                    // navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
+                    navController.navigate(
+                        OnBoardingScreens.EighthSetStudyRangeScreen.route
+                    )
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -177,6 +179,26 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 uiState = uiState,
             )
         }
+
+        // ✅ 8. 학습 범위 설정 화면
+        composable(
+            route = OnBoardingScreens.EighthSetStudyRangeScreen.route
+        ) {
+            SetStudyRangeScreen(
+                name = OnBoardingScreens.EighthSetStudyRangeScreen.route,
+                onNext = {
+                    viewModel.nextPage()
+                    // 다음 온보딩 화면이 있다면 여기서 navigate
+                },
+                onPrev = {
+                    viewModel.prevPage()
+                    navController.popBackStack()
+                },
+                viewModel = viewModel,
+                uiState = uiState,
+            )
+        }
+
 
     }
 }
@@ -190,4 +212,5 @@ sealed class OnBoardingScreens(val route: String) {
     data object SixthCategorySelectScreen : OnBoardingScreens("select_category")
     data object SixthFileUploadScreen : OnBoardingScreens("file_upload")
     data object SeventhOptimizerDataScreen : OnBoardingScreens("optimizer_data")
+    data object EighthSetStudyRangeScreen : OnBoardingScreens("set_study_range")
 }

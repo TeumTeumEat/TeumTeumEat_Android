@@ -16,6 +16,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.button.SelectableBoxButton
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.SelectType
+import com.teumteumeat.teumteumeat.utils.appTypography
 
 @Composable
 fun MinuteRadioGroup(
@@ -62,18 +63,26 @@ fun TextRadioGroup(
 
             BaseOutlineButton(
                 text = option,
+                textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                ),
                 color = if (isSelected) {
-                    MaterialTheme.colorScheme.primary            // ✅ 선택됨
+                    MaterialTheme.colorScheme.primary
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant  // ❌ 미선택
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 },
                 onClick = {
                     onSelect(option)
-                }
+                },
             )
         }
     }
 }
+
 
 
 @Composable

@@ -38,6 +38,60 @@ class OnBoardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateOnBoardingMain>(UiStateOnBoardingMain())
     val uiState = _uiState.asStateFlow()
 
+    fun onStudyWeekSelected(week: Int) {
+        _uiState.update {
+            it.copy(selectedStudyWeek = week)
+        }
+    }
+
+    private val PROMPT_MIN_LENGTH = 0
+    private val PROMPT_MAX_LENGTH = 30
+
+    fun onPromptInputChanged(input: String) {
+        viewModelScope.launch {
+
+            // ✅ 입력은 최대 길이까지만 저장
+            val trimmedToMax =
+                if (input.length > PROMPT_MAX_LENGTH)
+                    input.take(PROMPT_MAX_LENGTH)
+                else
+                    input
+
+            // ✅ 유효성 판단 (입력은 허용, 상태만 invalid)
+            val violation = when {
+                trimmedToMax.isBlank() ->
+                    PromptViolation.Empty
+
+                trimmedToMax.length < PROMPT_MIN_LENGTH ->
+                    PromptViolation.TooShort
+
+                trimmedToMax.length > PROMPT_MAX_LENGTH ->
+                    PromptViolation.TooLong
+
+                else ->
+                    PromptViolation.None
+            }
+
+            val isValid = violation == PromptViolation.None
+
+            val errorMessage = when (violation) {
+                PromptViolation.None -> ""
+                PromptViolation.Empty -> "프롬프트를 입력해주세요"
+                PromptViolation.TooShort -> "최소 ${PROMPT_MIN_LENGTH}자 이상 입력해주세요"
+                PromptViolation.TooLong -> "최대 ${PROMPT_MAX_LENGTH}자까지 입력할 수 있어요"
+            }
+
+            _uiState.update {
+                it.copy(
+                    promptInput = trimmedToMax,
+                    promptInputErrMsg = errorMessage,
+                    isPromptVaild = isValid
+                )
+            }
+        }
+    }
+
+
     fun openBottomSheet(type: BottomSheetType) {
         _uiState.update {
             it.copy(
