@@ -8,16 +8,23 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.NameUpdateError
+import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
+import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.IssuePresignedUrlUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,6 +32,8 @@ class OnBoardingViewModel @Inject constructor(
     val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     val registerUserNameUseCase: RegisterUserNameUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val issuePresignedUrlUseCase: IssuePresignedUrlUseCase,
+    private val createGoalUseCase: CreateGoalUseCase,
 ) : ViewModel() {
 
     // 이름 입력 제약조건 부분
@@ -41,9 +50,78 @@ class OnBoardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateOnBoardingMain>(UiStateOnBoardingMain())
     val uiState = _uiState.asStateFlow()
 
+    fun onCreateGoalClick() {
+        viewModelScope.launch {
+            val request = _uiState.value.run {
+                CreateGoalRequest(
+                    type = goalType,
+                    endDate = endDate,
+                    difficulty = difficulty,
+                    prompt = promptInput.takeIf { it.isNotBlank() },
+                    categoryId = if (goalType == GoalType.CATEGORY) {
+                        selectedCategoryId
+                    } else {
+                        null                 // DOCUMENT → categoryId 미포함
+                    }
+                )
+            }
+
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    pageErrorMessage = null
+                )
+            }
+
+            when (val result = createGoalUseCase(request)) {
+
+                is ApiResultV2.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true
+                        )
+                    }
+                }
+
+                is ApiResultV2.ServerError -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            pageErrorMessage = result.uiMessage
+                        )
+                    }
+                }
+
+                else -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            pageErrorMessage = result.uiMessage
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun onStudyWeekSelected(week: Int) {
+        // 🔹 1. 오늘 날짜 (기준 날짜)
+        val today = LocalDate.now()
+
+        // 🔹 2. 선택한 주(week) 만큼 더해서 종료 날짜 계산
+        val endDate = today.plusWeeks(week.toLong())
+
+        // 🔹 3. 서버/기획 요구사항에 맞는 포맷 ("yyyy-MM-dd")
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val formattedEndDate = endDate.format(formatter)
+
+        // 🔹 4. UI 상태 업데이트
         _uiState.update {
-            it.copy(selectedStudyWeek = week)
+            it.copy(
+                selectedStudyWeek = week,
+                endDate = formattedEndDate,
+            )
         }
     }
 
@@ -114,12 +192,11 @@ class OnBoardingViewModel @Inject constructor(
     }
 
 
-    fun onDifficultySelected(difficulty: String) {
+    fun onDifficultySelected(difficulty: Difficulty) {
         _uiState.update {
             it.copy(
-                isDiffculty = difficulty,
+                difficulty = difficulty,
                 bottomSheetType = BottomSheetType.NONE,
-                showBottomSheet = false,
             )
         }
     }
@@ -210,24 +287,31 @@ class OnBoardingViewModel @Inject constructor(
 
     fun toggleDepth2(category: Category) {
         _uiState.update { state ->
-            val current = state.categorySelection.depth2
+            val currentDepth2 = state.categorySelection.depth2
+            val isUnselecting = currentDepth2?.id == category.id
 
-            val newSelection =
-                if (current?.id == category.id) {
-                    state.categorySelection.copy(
-                        depth2 = null,
-                        depth3 = null
-                    )
-                } else {
-                    state.categorySelection.copy(
-                        depth2 = category,
-                        depth3 = null
-                    )
-                }
+            val newSelection = if (isUnselecting) {
+                // 🔁 2뎁스 해제 → 1뎁스로 복귀
+                state.categorySelection.copy(
+                    depth2 = null,
+                    depth3 = null
+                )
+            } else {
+                // ✅ 2뎁스 선택
+                state.categorySelection.copy(
+                    depth2 = category,
+                    depth3 = null
+                )
+            }
 
             state.copy(
                 categorySelection = newSelection,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+                selectedCategoryId = null, // 2뎁스에서는 서버 id 확정 ❌
+                targetCategoryPage = if (isUnselecting) {
+                    0   // ⭐ 2뎁스 해제 → 1뎁스 페이지
+                } else {
+                    2   // 2뎁스 선택 → 3뎁스 페이지
+                }
             )
         }
     }
@@ -235,19 +319,24 @@ class OnBoardingViewModel @Inject constructor(
 
     fun toggleDepth3(category: Category) {
         _uiState.update { state ->
-            val current = state.categorySelection.depth3
+            val currentDepth3 = state.categorySelection.depth3
+            val isUnselecting = currentDepth3?.id == category.id
 
-            val newSelection =
-                if (current?.id == category.id) {
-                    // 🔁 3뎁스 해제 → 2뎁스 리스트로 이동
-                    state.categorySelection.copy(depth3 = null)
-                } else {
-                    state.categorySelection.copy(depth3 = category)
-                }
+            val newSelection = if (isUnselecting) {
+                state.categorySelection.copy(depth3 = null)
+            } else {
+                state.categorySelection.copy(depth3 = category)
+            }
+
 
             state.copy(
                 categorySelection = newSelection,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+                selectedCategoryId = category.serverCategoryId,
+                targetCategoryPage = if (isUnselecting) {
+                    1   // ⭐ 3뎁스 해제 → 2뎁스 페이지
+                } else {
+                    2   // 3뎁스 선택 → 3뎁스 페이지 유지
+                }
             )
         }
     }
@@ -302,20 +391,162 @@ class OnBoardingViewModel @Inject constructor(
 
     fun onFileSelected(
         uri: Uri,
-        fileName: String
+        fileName: String,
+        mimeType: String,
+        size: Long
     ) {
+        // 🔍 DEBUG 1: 원본 파일명 그대로 출력
+        println("DEBUG: Selected fileName = [$fileName]")
+        println("DEBUG: Selected mimeType = [$mimeType]")
+        println("DEBUG: Selected fileSize = [$size] bytes")
+
+        // 🔹 1. MIME 타입 검증
+        if (mimeType != "application/pdf") {
+            println("DEBUG: MIME type validation failed")
+
+            _uiState.update {
+                it.copy(
+                    pageErrorMessage = "PDF 파일만 업로드할 수 있어요. (파일 형식 오류)"
+                )
+            }
+            return
+        }
+
+        // 🔹 2. 파일 크기 검증 (50MB)
+        val maxSize = 50L * 1024 * 1024
+        if (size > maxSize) {
+            println("DEBUG: File size validation failed")
+
+            _uiState.update {
+                it.copy(
+                    pageErrorMessage = "파일 용량은 최대 50MB까지 업로드할 수 있어요."
+                )
+            }
+            return
+        }
+
+        // 🔹 3. 확장자 검증 (대소문자 확인용)
+        val lowerCaseFileName = fileName.lowercase()
+        val isPdfExtension = lowerCaseFileName.endsWith(".pdf")
+
+        // 🔍 DEBUG 2: 확장자 관련 디버깅
+        val actualExtension = fileName.substringAfterLast('.', missingDelimiterValue = "")
+        println("DEBUG: Actual file extension = [$actualExtension]")
+        println("DEBUG: isPdfExtension (case-insensitive) = [$isPdfExtension]")
+
+        if (!isPdfExtension) {
+            _uiState.update {
+                it.copy(
+                    pageErrorMessage = "확장자가 .pdf 인 파일만 업로드할 수 있어요."
+                )
+            }
+            return
+        }
+
+        if (!isPdfExtension) {
+            _uiState.update {
+                it.copy(
+                    pageErrorMessage = "PDF 파일만 업로드할 수 있어요."
+                )
+            }
+            return
+        }
+
+        // 🔹 4. 모든 검증 통과 → UI 상태에 저장
+        println("DEBUG: File validation passed")
+
+        val normalizedFileName = fileName
+            .substringBeforeLast('.', fileName)
+            .lowercase() + ".pdf"
+
+        // 🔹 3. 모든 검증 통과 → UI 상태에 저장
+        // 이 시점부터 presignedUrl 발급 → PUT 업로드가 가능해짐
         _uiState.update {
             it.copy(
                 selectedFileUri = uri,
-                selectedFileName = fileName
+                selectedFileName = normalizedFileName,
+                selectedFileMimeType = mimeType,
+                selectedFileSize = size,
+                pageErrorMessage = null
             )
         }
     }
 
-
-    fun selectLearningMethod(type: SelectType) {
+    fun clearPageErrorMessage() {
         _uiState.update {
-            it.copy(selectedType = type)
+            it.copy(pageErrorMessage = null)
+        }
+    }
+
+    fun issuePresignedUrl() {
+        val fileName = _uiState.value.selectedFileName
+        if (fileName.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    pageErrorMessage = null
+                )
+            }
+
+            val result = issuePresignedUrlUseCase(fileName)
+
+            handlePresignedResult(result)
+        }
+    }
+
+    private fun handlePresignedResult(
+        result: ApiResultV2<PresignedResponse>
+    ) {
+        when (result) {
+
+            is ApiResultV2.Success -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        presignedUrl = result.data.presignedUrl,
+                        fileKey = result.data.key
+                    )
+                }
+            }
+
+            is ApiResultV2.ServerError -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        pageErrorMessage = result.message
+                    )
+                }
+            }
+
+            is ApiResultV2.SessionExpired -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        pageErrorMessage = result.message
+                    )
+                }
+                // TODO 로그인 이동
+            }
+
+            is ApiResultV2.NetworkError,
+            is ApiResultV2.UnknownError -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        pageErrorMessage = result.uiMessage
+                    )
+                }
+            }
+        }
+    }
+
+
+
+    fun selectLearningMethod(type: GoalType) {
+        _uiState.update {
+            it.copy(goalType = type)
         }
     }
 

@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.component.button
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,7 +72,8 @@ fun SelectableBaseOutlineButton(
     textStyle: TextStyle = TextStyle(),
     isSelected: Boolean = true,
     color: Color = MaterialTheme.colorScheme.primary,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    contentAligment: Arrangement.Horizontal = Arrangement.Center
 ) {
     val contentColor =
         if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant
@@ -78,7 +81,8 @@ fun SelectableBaseOutlineButton(
         if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = contentAligment
     ) {
         Button(
             onClick = onClick,
@@ -92,12 +96,12 @@ fun SelectableBaseOutlineButton(
             border = BorderStroke(1.5.dp, outlineColor), // ✅ 버튼의 테두리 설정
             modifier = Modifier
                 .height(60.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(),
         ) {
             Text(
                 text = text,
                 style = textStyle.copy(
-                    color = contentColor
+                    color = contentColor,
                 ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -130,7 +134,7 @@ fun BaseOutlineButtonPreview() {
                 isSelected = false,
                 onClick = {
                     // Utils.UxUtils.moveActivity(context, LoginActivity::class.java, false)
-                }
+                },
             )
         }
     }

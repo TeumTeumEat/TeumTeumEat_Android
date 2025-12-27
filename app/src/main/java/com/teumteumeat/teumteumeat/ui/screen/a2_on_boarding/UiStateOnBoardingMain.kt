@@ -2,7 +2,8 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.net.Uri
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
-import org.checkerframework.common.subtyping.qual.Bottom
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 
 data class UiStateOnBoardingMain(
     val currentPage: Int = 0,
@@ -43,12 +44,16 @@ data class UiStateOnBoardingMain(
     val isSuccess: Boolean = false,
 
     // 학습 방법 선택 여부
-    val selectedType: SelectType = SelectType.NONE,
+    val goalType: GoalType = GoalType.NONE,
 
     // pdf 학습시 필요한 자료
     val selectedFileUri: Uri? = null,
     val selectedFileName: String = "",
+    val selectedFileMimeType: String = "",
+    val selectedFileSize: Long = 0L,
 
+    val presignedUrl: String? = null,
+    val fileKey: String? = null,
 
     // 카테고리 명 리스트
     val categories: List<Category> = emptyList(),
@@ -59,11 +64,15 @@ data class UiStateOnBoardingMain(
     // 🔹 Pager 제어용 (UI가 이 값을 observe)
     val targetCategoryPage: Int = 0,
 
+    // ⭐ 서버에 보낼 실제 categoryId
+    val selectedCategoryId: Int? = null,
+
     // 온보딩 응답 요청 별 에러 메시지
     val pageErrorMessage: String? = null,
     val isSessionExpired: Boolean = false,
 
-    val isDiffculty: String = "",
+    val difficulty: Difficulty = Difficulty.NONE,
+
     val bottomSheetType: BottomSheetType = BottomSheetType.NONE,
 
     val isPromptVaild: Boolean = true,
@@ -71,11 +80,12 @@ data class UiStateOnBoardingMain(
     val promptInputErrMsg: String? = null,
 
     val selectedStudyWeek: Int? = null,
+    val endDate: String = "",
 )
 
 data class DifficultyOption(
     val label: String, // 화면 표시용
-    val value: Int     // 서버/로직용
+    val value: Difficulty     // 서버/로직용
 )
 
 sealed interface PromptViolation {
@@ -95,7 +105,7 @@ data class CategorySelectionState(
     val depth1: Category? = null,
     val depth2: Category? = null,
     val depth3: Category? = null
-){
+) {
     /** 현재 선택된 가장 깊은 depth → Pager의 currentPage */
     val currentPage: Int
         get() = when {
@@ -113,6 +123,7 @@ data class CategorySelectionState(
             depth3 == null -> 3
             else -> 3
         }
+
 }
 
 data class StudyWeekOption(
@@ -120,17 +131,27 @@ data class StudyWeekOption(
     val value: Int     // 실제 의미 값 (1)
 )
 
+data class MutableCategory(
+    val id: String,
+    val name: String,
+    val serverCategoryId: Int? = null,
+    val children: MutableMap<String, MutableCategory> = mutableMapOf()
+) {
+    fun toImmutable(): Category =
+        Category(
+            id = id,
+            name = name,
+            serverCategoryId = serverCategoryId,
+            children = children.values.map { it.toImmutable() }
+        )
+}
+
 data class Category(
     val id: String,
     val name: String,
+    val serverCategoryId: Int? = null, // ⭐ 서버용 ID (leaf만 가짐)
     val children: List<Category> = emptyList()
 )
-
-enum class SelectType {
-    FILE_UPLOAD,
-    CATEGORY,
-    NONE,
-}
 
 enum class TimeType {
     OUT, // 집을 나오는 시간

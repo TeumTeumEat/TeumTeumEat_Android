@@ -24,14 +24,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.button.SelectableBaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import com.teumteumeat.teumteumeat.utils.appTypography
-import com.teumteumeat.teumteumeat.utils.extendedColors
-import java.time.format.TextStyle
 
 
 private val previewCategoryTree = listOf(
@@ -214,7 +213,7 @@ fun CategoryGrid(
 ) {
     LazyVerticalStaggeredGrid(
         modifier = modifier,
-        columns = StaggeredGridCells.Fixed(2), // ✅ 정책 A: 2열 고정
+        columns = StaggeredGridCells.Fixed(1), // ✅ 정책 A: 2열 고정
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 12.dp,
         contentPadding = PaddingValues(
@@ -226,14 +225,16 @@ fun CategoryGrid(
             key = { _, item -> item.id }
         ) { _, category ->
             SelectableBaseOutlineButton(
-                text = category.name,
-                textStyle = if (currentPage == 0) MaterialTheme.appTypography.btnSemiBold20_h24
-                    else MaterialTheme.appTypography.btnSemiBold18_h24,
-                isSelected = category.id == selectedId,
                 modifier = Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 52.dp),
-                onClick = { onItemClick(category) }
+                text = category.name,
+
+                textStyle = if (currentPage == 0) MaterialTheme.appTypography.btnSemiBold20_h24
+                    else MaterialTheme.appTypography.btnSemiBold18_h24,
+                isSelected = category.id == selectedId,
+                onClick = { onItemClick(category) },
+                contentAligment = Arrangement.Start
             )
         }
     }

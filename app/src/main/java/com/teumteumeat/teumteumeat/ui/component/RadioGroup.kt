@@ -15,7 +15,9 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.button.SelectableBoxButton
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.SelectType
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.DifficultyOption
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import com.teumteumeat.teumteumeat.utils.appTypography
 
 @Composable
@@ -33,7 +35,11 @@ fun MinuteRadioGroup(
             val isSelected = minute == selectedMinute
 
             BaseOutlineButton(
-                text = if (minute == options.lastIndex) "${minute}분 +" else "${minute}분+",
+                text = if (minute == options.last()) "${minute}분+" else "${minute}분",
+                textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
+                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                ),
                 color = if (isSelected) {
                     MaterialTheme.colorScheme.primary   // ✅ 선택됨 (파란색)
                 } else {
@@ -82,13 +88,50 @@ fun TextRadioGroup(
         }
     }
 }
+@Composable
+fun DifficultyRadioGroup(
+    modifier: Modifier = Modifier,
+    options: List<DifficultyOption>,
+    selected: Difficulty?,
+    onSelect: (Difficulty) -> Unit
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        options.forEach { option ->
+            val isSelected = option.value == selected
+
+            BaseOutlineButton(
+                modifier = Modifier.weight(1f),
+                text = option.label,
+                textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                ), // ✅ UI에는 "상/중/하"만 노출
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                onClick = {
+                    onSelect(option.value) // ✅ ViewModel에는 enum만 전달
+                }
+            )
+        }
+    }
+}
+
 
 
 
 @Composable
 fun BoxButtonRadioGroup(
-    selectedType: SelectType,
-    onSelected: (SelectType) -> Unit,
+    selectedType: GoalType,
+    onSelected: (GoalType) -> Unit,
 ) {
     BoxWithConstraints {
         val itemWidth = maxWidth / 2
@@ -103,12 +146,12 @@ fun BoxButtonRadioGroup(
                 modifier = Modifier
                     .width(itemWidth)
                     .padding(vertical = 27.dp, horizontal = 14.dp),
-                isSelected = selectedType == SelectType.FILE_UPLOAD,
+                isSelected = selectedType == GoalType.DOCUMENT,
                 titleText = "파일 업로드",
                 labelText = "공부하고 싶은\n내용이 있어요.",
                 iconRes = R.drawable.icon_files,
                 onClick = {
-                    onSelected(SelectType.FILE_UPLOAD)
+                    onSelected(GoalType.DOCUMENT)
                 }
             )
 
@@ -119,12 +162,12 @@ fun BoxButtonRadioGroup(
                 modifier = Modifier
                     .width(itemWidth)
                     .padding(vertical = 27.dp, horizontal = 14.dp),
-                isSelected = selectedType == SelectType.CATEGORY,
+                isSelected = selectedType == GoalType.CATEGORY,
                 titleText = "카테고리 선택",
                 labelText = "공부하고 싶은 걸\n골라볼게요.",
                 iconRes = R.drawable.icon_category,
                 onClick = {
-                    onSelected(SelectType.CATEGORY)
+                    onSelected(GoalType.CATEGORY)
                 }
             )
         }

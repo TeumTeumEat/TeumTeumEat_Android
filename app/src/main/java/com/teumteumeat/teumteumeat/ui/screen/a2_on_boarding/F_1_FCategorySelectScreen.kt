@@ -252,7 +252,6 @@ fun CategorySelectScreen(
 
         )
 
-    // todo. 페이지 로드 시 선택된 카테고리 데이터 가져오기 -> 백엔드에 Get 요청 구현
     //  - 전체 상태 초기화
     // ✅ 핵심: backStackEntry를 key로 사용
     LaunchedEffect(navBackStackEntry.id) {
@@ -304,7 +303,7 @@ fun CategorySelectScreen(
 
                     // 3뎁스 카테고리 컴포넌트 구현
                     // ✅ Breadcrumb (3뎁스)
-                    CategoryBreadcrumb(
+                    /*CategoryBreadcrumb(
                         depth1Name = selection.depth1?.name,
                         depth2Name = selection.depth2?.name,
                         depth3Name = selection.depth3?.name,
@@ -313,7 +312,7 @@ fun CategorySelectScreen(
                         onClearDepth3 = { viewModel.clearDepth3() },
                         modifier = Modifier
                             .fillMaxWidth() // ✅ 전체 너비 사용
-                    )
+                    )*/
 
                     Spacer(modifier = Modifier.height(15.dp))
 
@@ -393,7 +392,7 @@ fun CategorySelectScreen(
                         ),
                         isEnabled = selection.depth3 != null,
                         onClick = {
-                            // todo. viewModel 함수 구현 후 호출
+                            onNext()
                         },
                         conerRadius = 16.dp
                     )

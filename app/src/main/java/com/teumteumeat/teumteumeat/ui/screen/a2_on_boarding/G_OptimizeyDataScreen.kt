@@ -42,11 +42,10 @@ import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
-import com.teumteumeat.teumteumeat.ui.component.TextRadioGroup
-import com.teumteumeat.teumteumeat.ui.component.WeekRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -68,8 +67,8 @@ fun OptimizerDataScreen(
         remember { MutableInteractionSource() } // 사용자가 특정 UI 요소와 상호작용하고 있는지를 감지하는 객체
     val inputFocused by inputInteractionSource.collectIsFocusedAsState() // ✅ 포커스 여부 감지
     val focusManager = LocalFocusManager.current
-    val isPromptValid = uiState.promptInput.length <= 30
-            uiState.isDiffculty.isNotEmpty()
+    val isPromptValid = uiState.promptInput.length <= 30 &&
+            uiState.difficulty != Difficulty.NONE
     val keyboardController = LocalSoftwareKeyboardController.current
 
 
@@ -79,9 +78,9 @@ fun OptimizerDataScreen(
     val scope = rememberCoroutineScope()
 
     val difficultyOptions = listOf(
-        DifficultyOption("상", 3),
-        DifficultyOption("중", 2),
-        DifficultyOption("하", 1),
+        DifficultyOption("상", Difficulty.HARD),
+        DifficultyOption("중", Difficulty.MEDIUM),
+        DifficultyOption("하", Difficulty.EASY),
     )
 
     DefaultMonoBg(
@@ -152,18 +151,14 @@ fun OptimizerDataScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(10.dp))
-                        BaseOutlineButton(
-                            text = if (uiState.isDiffculty.isNotEmpty()) uiState.isDiffculty
-                            else "난이도를 선택해주세요.",
-                            textStyle = Typography.titleSmall.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = {
-                                viewModel.openBottomSheet(BottomSheetType.DIFFICULTY)
+                        DifficultyRadioGroup(
+                            options = difficultyOptions,
+                            selected = uiState.difficulty,
+                            onSelect = { difficulty ->
+                                viewModel.onDifficultySelected(difficulty)
                             }
                         )
+
                         Spacer(Modifier.height(30.dp))
 
                         Row(
@@ -220,13 +215,7 @@ fun OptimizerDataScreen(
                                 viewModel.closeBottomSheet()
                             }
                         ) {
-                            TextRadioGroup(
-                                options = listOf("상", "중", "하"),
-                                selectedOption = uiState.isDiffculty,
-                                onSelect = {
-                                    viewModel.onDifficultySelected(it)
-                                },
-                            )
+
                         }
                     }
                 }
