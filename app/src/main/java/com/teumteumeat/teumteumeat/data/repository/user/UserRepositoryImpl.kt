@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.data.repository.user
 
+import android.util.Log
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.user.CategoryApiService
 import com.teumteumeat.teumteumeat.data.api.user.CommuteTimeRequest
@@ -10,6 +11,9 @@ import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import com.teumteumeat.teumteumeat.data.api.user.UpdateNameRequest
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model.DomainError
+import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.CategoriesResponseDto
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomain
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomainCategoryTree
@@ -28,6 +32,19 @@ class UserRepositoryImpl @Inject constructor(
         return safeApiCall(
             apiCall = { userApi.getOnboardingCompleted() },
             mapper = { it.toDomain() }
+        )
+    }
+
+    override suspend fun updateUserNameV2(
+        name: String
+    ): ApiResultV2<String> {
+
+
+        return safeApiVer2<Any, String>(
+            apiCall = {
+                userApi.updateUserNameV2(UpdateNameRequest(name))
+            },
+            mapper = { _ -> "" }
         )
     }
 

@@ -18,6 +18,11 @@ interface UserApiService {
         @Body request: UpdateNameRequest
     ): ApiResponse<UpdateNameRequest, List<FieldErrorDetail>>
 
+    @PATCH("/api/v1/users/name")
+    suspend fun updateUserNameV2(
+        @Body request: UpdateNameRequest
+    ): ApiResponse<Any, Any?>
+
     @PATCH("/api/v1/users/commute-info")
     suspend fun updateCommuteTime(
         @Body request: CommuteTimeRequest

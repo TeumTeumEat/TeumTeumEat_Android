@@ -1,6 +1,8 @@
 package com.teumteumeat.teumteumeat.domain.usecase.on_boarding
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.NameUpdateError
@@ -9,9 +11,9 @@ import javax.inject.Inject
 class RegisterUserNameUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    suspend operator fun invoke(name: String): ApiResult<String, NameUpdateError> {
-
-        return when (val result = userRepository.updateUserName(name)) {
+    suspend operator fun invoke(name: String): ApiResultV2<String> {
+        return userRepository.updateUserNameV2(name)
+        /*return when (val result = userRepository.updateUserName(name)) {
 
             is ApiResult.Success -> result
 
@@ -57,6 +59,6 @@ class RegisterUserNameUseCase @Inject constructor(
                     message = result.message,
                     details = NameUpdateError.CommonMessage(result.message)
                 )
-        }
+        }*/
     }
 }

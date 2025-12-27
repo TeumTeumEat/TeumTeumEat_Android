@@ -5,6 +5,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model.DomainError
+import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.NameUpdateError
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
@@ -565,53 +568,73 @@ class OnBoardingViewModel @Inject constructor(
         if (!state.isNameValid || state.isLoading) return
 
         viewModelScope.launch {
+            Log.d("VM", "▶️ onConfirmClick start")
+
+            val result = registerUserNameUseCase(state.charName)
+
+            Log.d("VM", "✅ result type = ${result::class.simpleName}")
+            Log.d("VM", "✅ result.uiMessage = ${result.uiMessage}")
+
+            when (result) {
+                is ApiResultV2.ServerError -> {
+                    Log.d("VM", "❌ ServerError.code = ${result.code}")
+                    Log.d("VM", "❌ ServerError.message = ${result.message}")
+                    Log.d("VM", "❌ ServerError.errorType = ${result.errorType}")
+                }
+
+                else -> result.uiMessage
+            }
+        }
+
+        viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
             when (val result =
                 registerUserNameUseCase(state.charName)
             ) {
-
-                is ApiResult.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSuccess = true,
-                            errorMessage = ""
-                        )
-                    }
-                }
-
-                is ApiResult.ServerError -> {
-                    val message = when (val error = result.details) {
-                        is NameUpdateError.Validation ->
-                            error.messages.joinToString("\n")
-
-                        is NameUpdateError.Message ->
-                            error.message
-
-                        NameUpdateError.None ->
-                            result.message
-
-                        null -> ""
-                        is NameUpdateError.CommonMessage -> ""
-                    }
-
-                    // todo. 추후 레포지 토리에서 응답 반환 모델 처리 정리후 해당 코드 수정 예정
+                is ApiResultV2.Success -> {
+                    // ✅ 성공 시: 에러 메시지 완전 제거
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             isNameValid = true,
-                            errorMessage = message
+                            errorMessage = "" // ← 핵심
+                        )
+                    }
+                }
+
+                is ApiResultV2.ServerError -> {
+                    // 특정 필드(name)에 대한 커스텀 처리가 필요하다면 여기서 로직 수행
+                    // uiMessage는 전체 에러를 문자열로 합쳐주므로,
+                    // 특정 필드만 콕 집어서 UI에 빨간불을 켜야 한다면 아래처럼 직접 접근하는 게 좋습니다.
+
+                    val errorMessage = when (val error = result.errorType) {
+                        is DomainError.Validation -> {
+                            // "name" 필드 에러만 찾아내기
+                            val nameError = error.errors.find { it.field == "name" }
+                            nameError?.message ?: result.uiMessage // 없으면 전체 메시지
+                        }
+                        // 그 외(Message, None)는 확장 프로퍼티가 주는 메시지 그대로 사용
+                        else -> result.uiMessage
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isNameValid = false,
+                            errorMessage = errorMessage
                         )
                     }
                 }
 
                 else -> {
-                    // TODO: 공통 에러 처리 필요 (UseCase에서 ServerError로 통합 예정)
+                    // 나머지 모든 에러(네트워크, 세션, 알 수 없음 등)는
+                    // 이미 정의해둔 확장 프로퍼티 uiMessage가 알아서 메시지를 꺼내줍니다.
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.toString()
+                            isNameValid = false,
+                            errorMessage = result.uiMessage // 깔끔하게 해결!
                         )
                     }
                 }

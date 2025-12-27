@@ -17,7 +17,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = OnBoardingScreens.SeventhOptimizerDataScreen.route
+        startDestination = OnBoardingScreens.SecondInputNameScreen.route
     ) {
 
         composable(
