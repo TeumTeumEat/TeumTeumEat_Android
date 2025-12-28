@@ -1,17 +1,27 @@
 package com.teumteumeat.teumteumeat.utils
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.ui.component.AmPm
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.Properties
 
@@ -66,6 +76,88 @@ class Utils {
             return result.joinToString("\n") // 줄바꿈으로 연결하여 반환
         }
 
+        /**
+         * 서버 날짜 포맷("yyyy-MM-dd")을
+         * UI 표시용 포맷으로 변환
+         */
+        fun String.toUiDateFormat(
+            outputPattern: String = "yyyy.MM.dd"
+        ): String {
+            return try {
+                val serverFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                val uiFormatter = DateTimeFormatter.ofPattern(outputPattern)
+
+                LocalDate
+                    .parse(this, serverFormatter)
+                    .format(uiFormatter)
+            } catch (e: Exception) {
+                this // 파싱 실패 시 원본 반환 (안전장치)
+            }
+        }
+
+        private val TIME_FORMATTER: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("HH:mm:ss")
+
+        fun isValidTime(time: String?): Boolean {
+            if (time.isNullOrBlank()) return false
+
+            return try {
+                LocalTime.parse(time, TIME_FORMATTER)
+                true
+            } catch (e: DateTimeParseException) {
+                false
+            }
+        }
+
+        fun TimeState.to24HourString(): String? {
+            val hour24 = when (amPm) {
+                AmPm.AM -> {
+                    if (hour == 12) 0 else hour
+                }
+                AmPm.PM -> {
+                    if (hour == 12) 12 else hour + 12
+                }
+            }
+
+            // 🚫 24시 이상 차단
+            if (hour24 !in 0..23) return null
+
+            return "%02d:%02d:00".format(hour24, minute)
+        }
+
+        fun TimeState.normalizeTo12Hour(): TimeState {
+            // 이미 정상 범위면 그대로
+            if (hour in 1..12) return this
+
+            val hour12 = when {
+                hour == 0 -> 12
+                hour in 1..12 -> hour
+                hour in 13..23 -> hour - 12
+                else -> 12
+            }
+
+            val newAmPm = if (hour in 0..11) AmPm.AM else AmPm.PM
+
+            return copy(
+                hour = hour12,
+                amPm = newAmPm
+            )
+        }
+
+        fun isPostNotificationsGranted(context: Context): Boolean {
+            return if (Build.VERSION.SDK_INT >= 33) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        }
+
+        fun areAppNotificationsEnabled(context: Context): Boolean {
+            return NotificationManagerCompat.from(context).areNotificationsEnabled()
+        }
 
     }
 
@@ -189,8 +281,29 @@ class Utils {
         private const val NICK_NAME = "user_nick_name"
         private const val EXAM_MONTH = "user_exam_month"
 
+        // 🔔 알림 권한 한 번이라도 거부했는지
+        private const val KEY_NOTIFICATION_DENIED_ONCE = "notification_denied_once"
 
         private val IS_USER_REGISTER_STATE = USER_REGISTER_STATE.LOGIN.name
+
+
+        /**
+         * 🔴 알림 권한을 한 번이라도 거부했을 때 저장
+         */
+        fun saveNotificationDeniedOnce(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                putBoolean(KEY_NOTIFICATION_DENIED_ONCE, true)
+            }
+        }
+
+        /**
+         * 🔍 알림 권한 거부 이력이 있는지 확인
+         */
+        fun hasNotificationDeniedOnce(context: Context): Boolean {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            return prefs.getBoolean(KEY_NOTIFICATION_DENIED_ONCE, false)
+        }
 
         // 유저 id 저장
         fun saveUserId(context: Context, userId: String) {

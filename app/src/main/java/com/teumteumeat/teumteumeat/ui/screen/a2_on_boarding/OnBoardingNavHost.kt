@@ -17,7 +17,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = OnBoardingScreens.SecondInputNameScreen.route
+        startDestination = OnBoardingScreens.ThirdSetAppTimeScreen.route
     ) {
 
         composable(
@@ -188,7 +188,9 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 name = OnBoardingScreens.EighthSetStudyRangeScreen.route,
                 onNext = {
                     viewModel.nextPage()
-                    // 다음 온보딩 화면이 있다면 여기서 navigate
+                    navController.navigate(
+                        OnBoardingScreens.CheckSetMyInfoScreen.route
+                    )
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -199,6 +201,23 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
+        // ✅ 9. 내 정보 확인 화면
+        composable(
+            route = OnBoardingScreens.CheckSetMyInfoScreen.route
+        ) {
+            CheckSetMyInfoScreen(
+                onNext = {
+                    viewModel.nextPage()
+                    // TODO: 온보딩 종료 → 메인 이동
+                },
+                onPrev = {
+                    viewModel.prevPage()
+                    navController.popBackStack()
+                },
+                viewModel = viewModel,
+                uiState = uiState,
+            )
+        }
 
     }
 }
@@ -213,4 +232,5 @@ sealed class OnBoardingScreens(val route: String) {
     data object SixthFileUploadScreen : OnBoardingScreens("file_upload")
     data object SeventhOptimizerDataScreen : OnBoardingScreens("optimizer_data")
     data object EighthSetStudyRangeScreen : OnBoardingScreens("set_study_range")
+    data object CheckSetMyInfoScreen : OnBoardingScreens("check_set_my_info")
 }

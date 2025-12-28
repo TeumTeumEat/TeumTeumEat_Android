@@ -22,6 +22,9 @@ data class UiStateOnBoardingMain(
     val workInTime: TimeState = TimeState.amTime(),  // 집에서 나오는 시간
     val workOutTime: TimeState = TimeState.pmTime(), // 집으로 가는 시간
 
+    // ✅ 바텀시트에서 조작 중인 임시 시간
+    val tempTime: TimeState = TimeState.amTime(),
+
     // 🔹 BottomSheet 상태
     val showBottomSheet: Boolean = false,
     val currentTimeType: TimeType = TimeType.NOTTING,
@@ -38,6 +41,18 @@ data class UiStateOnBoardingMain(
     // 🔔 권한 요청 트리거 (이벤트성)
     val requestNotificationPermission: Boolean = false,
 
+    // 🔔 권한 해제 안내 트리거
+    val showNotificationDisableGuide: Boolean = false,
+
+    // 🔹 한 번 거부 후 재시도 상태
+    val showNotificationSettingGuide: Boolean = false,
+
+    // 설정 안내 팝업 타입
+    val notificationGuideType: NotificationSettingGuideType = NotificationSettingGuideType.NONE,
+
+    /**
+     * 앱 이용시간
+     */
     val selectedMinute: Int? = null,
 
     val isLoading: Boolean = false,
@@ -82,6 +97,12 @@ data class UiStateOnBoardingMain(
     val selectedStudyWeek: Int? = null,
     val endDate: String = "",
 )
+
+enum class NotificationSettingGuideType {
+    NONE,
+    ENABLE,  // 🔔 알림 켜기(권한 없음 → 설정으로 유도)
+    DISABLE  // 🔕 알림 끄기(권한 있음 → 설정으로 유도)
+}
 
 data class DifficultyOption(
     val label: String, // 화면 표시용

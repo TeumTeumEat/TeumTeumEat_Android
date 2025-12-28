@@ -25,6 +25,8 @@
             android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
 
+
+
         </activity>
 
         <activity
@@ -41,6 +43,8 @@
                     android:scheme="teumteumeatandroid"
                     android:host="login" />
             </intent-filter>
+
+
         </activity>
 
         <activity

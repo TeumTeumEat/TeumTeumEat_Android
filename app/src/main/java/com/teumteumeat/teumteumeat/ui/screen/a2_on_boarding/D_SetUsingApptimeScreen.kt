@@ -120,7 +120,7 @@ fun OnBoardingSetUsingApptimeScreen(
                         ),
                         isEnabled = uiState.selectedMinute != null,
                         onClick = {
-                            viewModel.updateCommuteTime()
+                            viewModel.saveCommuteInfo()
                             onNext()
                         },
                         conerRadius = 16.dp
