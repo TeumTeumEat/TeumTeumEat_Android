@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.component.button
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -31,7 +33,9 @@ fun BaseOutlineButton(
     textStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
     color: Color = MaterialTheme.colorScheme.primary,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    contentAligment: Alignment = Alignment.Center,
+    btnHeight: Int = 60,
 ) {
     val contentColor =
         if (isEnabled) color else MaterialTheme.colorScheme.onSurfaceVariant
@@ -39,7 +43,7 @@ fun BaseOutlineButton(
         if (isEnabled) color else MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Button(
             onClick = onClick,
@@ -53,13 +57,18 @@ fun BaseOutlineButton(
             shape = RoundedCornerShape(16.dp), // border-radius: 8px
             border = BorderStroke(1.5.dp, outlineColor), // ✅ 버튼의 테두리 설정
             modifier = Modifier
-                .height(60.dp)
-                .fillMaxWidth()
+                .height(btnHeight.dp)
+                .fillMaxWidth(),
         ) {
-            Text(
-                text = text,
-                style = textStyle
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = contentAligment
+            ) {
+                Text(
+                    text = text,
+                    style = textStyle
+                )
+            }
         }
     }
 }

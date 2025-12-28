@@ -27,4 +27,9 @@ interface UserApiService {
     suspend fun updateCommuteTime(
         @Body request: CommuteTimeRequest
     ): ApiResponse<EmptyResponse, Unit>
+
+    @PATCH("/api/v1/users/commute-info")
+    suspend fun updateCommuteInfo(
+        @Body request: CommuteTimeRequest
+    ): ApiResponse<Unit, Any?>
 }

@@ -78,6 +78,22 @@ class UserRepositoryImpl @Inject constructor(
     }
 
 
+    override suspend fun updateCommuteInfo(
+        request: CommuteTimeRequest
+    ): ApiResultV2<Unit> {
+
+        return safeApiVer2(
+            apiCall = {
+                userApi.updateCommuteInfo(request)
+            },
+            mapper = {
+                // Unit 응답이므로 그대로 반환
+                Unit
+            }
+        )
+    }
+
+
     override suspend fun updateCommuteTime(
         request: CommuteTimeRequest
     ): ApiResult<Unit, Unit> {
