@@ -1,16 +1,22 @@
 package com.teumteumeat.teumteumeat.data.repository.login
 
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.AuthToken
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
+import com.teumteumeat.teumteumeat.data.network.model_request.AuthResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.SocialLoginRequest
+import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
 import com.teumteumeat.teumteumeat.domain.model.auth.SessionResult
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import javax.inject.Inject
 
 class SocialLoginRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource
-) : SocialLoginRepository {
+) : BaseRepository(authApiService, tokenLocalDataSource), SocialLoginRepository {
+
 
     override suspend fun validateSession(): SessionResult {
 
@@ -39,5 +45,23 @@ class SocialLoginRepositoryImpl @Inject constructor(
         )
 
         return SessionResult.Success
+    }
+
+    override suspend fun socialLogin(
+        provider: String,
+        request: SocialLoginRequest,
+    ): ApiResultV2<AuthResponse?> {
+
+        return safeApiVer2(
+            apiCall = {
+                authApiService.socialLogin(
+                    provider = provider,
+                    request = request,
+                )
+            },
+            mapper = {
+                it
+            }
+        )
     }
 }

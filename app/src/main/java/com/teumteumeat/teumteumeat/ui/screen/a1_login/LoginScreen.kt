@@ -1,8 +1,8 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
-import android.app.Activity
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,27 +35,61 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.loading.FullScreenLoading
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.webView.KakaoLoginWebViewActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import kotlin.jvm.java
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 
 @Composable
 fun LoginScreen(
-    onGoogleClick: () -> Unit
+    onGoogleClick: () -> Unit,
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-
     val shape = RoundedCornerShape(28.dp)
+    val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
+
+    // 🔥 이벤트 수신
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+
+                is LoginUiEvent.LoginSuccess -> {
+                    if (event.isOnboardingCompleted) {
+                        // 메인 이동
+                        Log.d("Login", "navigate main")
+                    } else {
+                        // 온보딩 이동
+                        Log.d("Login", "navigate onboarding")
+                    }
+                }
+
+                LoginUiEvent.NeedTermsAgreement -> {
+                    Log.d("Login", "navigate terms")
+                }
+            }
+        }
+    }
+
+
+
+    // ❌ 에러 표시
+    uiState.errorMessage?.let { message ->
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
 
     TeumTeumEatTheme {
+        // 🔄 로딩 표시
+        if (uiState.isLoading) {
+            FullScreenLoading()
+        }
+
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
@@ -192,12 +227,13 @@ fun LoginScreen(
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
+    val fakeViewModel : LoginViewModel = hiltViewModel()
     TeumTeumEatTheme {
         DefaultMonoBg(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            LoginScreen {  }
+            LoginScreen({  }, fakeViewModel)
         }
     }
 }
