@@ -39,14 +39,14 @@ abstract class BaseRepository(
         apiCall: suspend () -> ApiResponse<T, Any?>,
         mapper: (T?) -> R
     ): ApiResultV2<R> {
-        val response = apiCall()
-        // 🔍 [디버깅 로그] 실제 서버가 보낸 code와 message 확인
-        println("DEBUG: Server Code=[${response.code}], Type=[${response.code?.javaClass?.simpleName}]")
-        println("DEBUG: Server Message=[${response.message}]")
-        println("DEBUG: isSuccessCode() result=[${response.code.isSuccessCode()}]")
-
         // 수정된 코드
         return try {
+            val response = apiCall()
+            // 🔍 [디버깅 로그] 실제 서버가 보낸 code와 message 확인
+            println("DEBUG: Server Code=[${response.code}], Type=[${response.code?.javaClass?.simpleName}]")
+            println("DEBUG: Server Message=[${response.message}]")
+            println("DEBUG: isSuccessCode() result=[${response.code.isSuccessCode()}]")
+
             // return@try 제거함. when의 결과가 자동으로 try의 반환값이 됩니다.
             when {
                 // ✅ 성공 응답

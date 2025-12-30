@@ -7,7 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -16,11 +18,14 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
+import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class LoginActivity : ComponentActivity()  {
     private lateinit var googleClient: GoogleSignInClient
+
+    private val viewModel: LoginViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +59,7 @@ class LoginActivity : ComponentActivity()  {
                 val idToken = account.idToken
                 Log.d("GoogleLogin", "idToken=$idToken")
                 // todo: viewModel 에서 idToken 으로 레포지토리(api호출) 하는 로직 구현
+                viewModel.loginWithGoogle(idToken.toString())
 
             } catch (e: ApiException) {
                 Log.e("GoogleLogin", "ApiException code=${e.statusCode}", e)
@@ -62,12 +68,15 @@ class LoginActivity : ComponentActivity()  {
 
         setContent {
             TeumTeumEatTheme {
+                val viewModel: LoginViewModel = hiltViewModel()
                 CompositionLocalProvider(
                     LocalAppContext provides this.applicationContext,
                     LocalActivityContext provides this,
+                    LocalViewModelContext provides viewModel,
                 ){
                     LoginScreen(
-                        onGoogleClick = { launcher.launch(googleClient.signInIntent) }
+                        onGoogleClick = { launcher.launch(googleClient.signInIntent) },
+                        viewModel = viewModel
                     )
                 }
 //                MainCompositionProvider(
