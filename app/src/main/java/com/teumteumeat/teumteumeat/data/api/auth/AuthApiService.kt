@@ -6,6 +6,7 @@ import com.teumteumeat.teumteumeat.data.network.model_response.SocialLoginReques
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.UserName
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
@@ -24,4 +25,7 @@ interface AuthApiService {
         @Query("provider") provider: String,
         @Body request: SocialLoginRequest
     ): ApiResponse<AuthResponse?, Any?>
+
+    @DELETE("/api/v1/users/withdrawal")
+    suspend fun withdrawUser(): ApiResponse<String, Any?>
 }

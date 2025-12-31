@@ -5,13 +5,18 @@ import com.teumteumeat.teumteumeat.data.network.model.EmptyResponse
 import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 
 interface UserApiService {
+
     @GET("/api/v1/users/onboarding-completed")
     suspend fun getOnboardingCompleted(): ApiResponse<OnboardingStatus, Unit>
+
+    @GET("/api/v1/users/onboarding-completed")
+    suspend fun getOnboardingCompletedV2(): ApiResponse<OnboardingStatus?, Any?>
 
     @PATCH("/api/v1/users/name")
     suspend fun updateUserName(

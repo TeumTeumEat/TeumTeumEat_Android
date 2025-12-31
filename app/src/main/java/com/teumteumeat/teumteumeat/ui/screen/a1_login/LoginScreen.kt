@@ -39,50 +39,62 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.loading.FullScreenLoading
-import com.teumteumeat.teumteumeat.ui.screen.a1_login.webView.KakaoLoginWebViewActivity
+import com.teumteumeat.teumteumeat.ui.component.login.TermsAgreementBottomSheetContent
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 import kotlin.jvm.java
 
 @Composable
 fun LoginScreen(
+    onKakaoLoginClick: () -> Unit,
     onGoogleClick: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val shape = RoundedCornerShape(28.dp)
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
+    val theme = MaterialTheme.extendedColors
+    val typo = MaterialTheme.appTypography
 
     // 🔥 이벤트 수신
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
 
-                is LoginUiEvent.LoginSuccess -> {
-                    if (event.isOnboardingCompleted) {
-                        // 메인 이동
-                        Log.d("Login", "navigate main")
-                    } else {
-                        // 온보딩 이동
-                        Log.d("Login", "navigate onboarding")
-                    }
-                }
-
                 LoginUiEvent.NeedTermsAgreement -> {
                     Log.d("Login", "navigate terms")
+                    viewModel.openTermsBottomSheet()
+                }
+
+                LoginUiEvent.NavigateToOnboarding -> {
+                    Log.d("Login", "navigate onboarding")
+                    moveActivity(context, OnBoardingActivity::class.java, exitFlag = true)
+                }
+
+                LoginUiEvent.NavigateToMain -> {
+                    Log.d("Login", "navigate Main")
+                    moveActivity(context, MainActivity::class.java, exitFlag = true)
+                }
+
+                LoginUiEvent.NavigateToLogin -> {
+                    Log.d("Login", "return to login")
                 }
             }
         }
     }
-
-
-
+    
     // ❌ 에러 표시
     uiState.errorMessage?.let { message ->
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
-
 
     TeumTeumEatTheme {
         // 🔄 로딩 표시
@@ -121,6 +133,22 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                if (BuildConfig.DEBUG) {
+                    BaseOutlineButton(
+                        modifier = Modifier.padding(20.dp),
+                        text = "회원탈퇴",
+                        textStyle = typo.bodyMedium14_20.copy(
+                            color = theme.error
+                        ),
+                        isEnabled = true,
+                        onClick = {
+                            // 회원탈퇴 기능 구현
+                            viewModel.withdrawUser()
+                        },
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -132,12 +160,13 @@ fun LoginScreen(
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
                             Log.d("버튼 탭: ", "카카오 로그인 버튼")
-                            val intent = Intent(context, KakaoLoginWebViewActivity::class.java)
-                            intent.putExtra(
-                                "url",
-                                "${BuildConfig.BASE_DOMAIN}oauth2/authorization/kakao"
-                            )
-                            context.startActivity(intent)
+                            onKakaoLoginClick()
+//                            val intent = Intent(context, KakaoLoginWebViewActivity::class.java)
+//                            intent.putExtra(
+//                                "url",
+//                                "${BuildConfig.BASE_DOMAIN}oauth2/authorization/kakao"
+//                            )
+//                            context.startActivity(intent)
                         },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -184,7 +213,6 @@ fun LoginScreen(
                         ) {
                             Log.d("버튼 탭: ", "구글 로그인 버튼")
                             onGoogleClick()
-                            // context.startActivity(intent)
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -215,13 +243,39 @@ fun LoginScreen(
                 }
             }
 
+
+            if (uiState.showBottomSheet &&
+                uiState.bottomSheetType == LoginBottomSheetType.TERMS_AGREEMENT
+            ) {
+                BottomSheetContainerRightTopConfirm(
+                    titleText = "이용약관",
+                    onConfirm = {
+                        viewModel.closeBottomSheet()
+                        viewModel.agreeTermsAndRegister() // termsAgreed=true 재요청
+                    },
+                    onDismiss = {
+                        viewModel.closeBottomSheet()
+                    },
+                    onCompleteEnable = uiState.termsAgreement.allRequiredAgreed,
+                    content = {
+                        TermsAgreementBottomSheetContent(
+                            uiState = uiState,
+                            onOver14Checked = viewModel::onOver14Checked,
+                            onTermsOfServiceChecked = viewModel::onTermsOfServiceChecked,
+                            onPrivacyPolicyChecked = viewModel::onPrivacyPolicyChecked,
+                            onAllChecked = viewModel::onAllTermsChecked,
+                            onConfirm = {
+                                viewModel.closeBottomSheet()
+                                viewModel.agreeTermsAndRegister() // termsAgreed=true 재요청
+                            }
+                        )
+                    },
+                    tittleBottomPadding = 24
+                )
+            }
         }
     }
-
-
 }
-
-
 
 
 @Preview(showBackground = true)
@@ -233,7 +287,7 @@ fun LoginScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            LoginScreen({  }, fakeViewModel)
+            LoginScreen(viewModel = fakeViewModel, onKakaoLoginClick = {}, onGoogleClick = {})
         }
     }
 }

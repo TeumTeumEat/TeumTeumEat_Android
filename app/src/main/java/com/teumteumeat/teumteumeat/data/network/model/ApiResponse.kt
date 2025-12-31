@@ -1,5 +1,7 @@
 package com.teumteumeat.teumteumeat.data.network.model
 
+import com.teumteumeat.teumteumeat.data.repository.BaseRepository
+
 data class ApiResponse<T, D>(
     val code: String?,
     val message: String?,
@@ -53,6 +55,7 @@ sealed class ApiResultV2<out T> {
     ) : ApiResultV2<T>()
 
     data class SessionExpired(
+        val code: BaseRepository.SessionErrorCode,
         val message: String
     ) : ApiResultV2<Nothing>()
 
@@ -97,8 +100,17 @@ val ApiResultV2<*>.uiMessage: String
             }
         }
 
-        is ApiResultV2.SessionExpired ->
-            this.message
+        is ApiResultV2.SessionExpired -> {
+            when (this.code) {
+                BaseRepository.SessionErrorCode.RETRY ->
+                    "인증이 만료되어 다시 시도합니다."
+
+                BaseRepository.SessionErrorCode.FAIL ->
+                    this.message.ifBlank {
+                        "로그인이 만료되었습니다. 다시 로그인해주세요."
+                    }
+            }
+        }
 
         is ApiResultV2.NetworkError ->
             this.message

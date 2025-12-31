@@ -38,21 +38,36 @@ android {
         buildConfigField(
             "String",
             "ONESIGNAL_APP_ID",
-            "\"a1b2c3d4-e5f6-7890-abcd-1234567890ab\""
+            "\"2d5b8758966c24367eebd1926dd090bf\""
         )
 
-        // kakao{네이티브키} 형태로 스킴 생성
-        manifestPlaceholders["KAKAO_NATIVE_SCHEME"] =
-            "kakao${project.properties["KAKAO_NATIVE_APP_KEY"] ?: ""}"
     }
 
     buildTypes {
         debug {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
             buildConfigField(
                 "String",
                 "BASE_DOMAIN",
                 "\"https://api.teumteumeat.co.kr/\"",
             )
+            buildConfigField(
+                "String",
+                "ONESIGNAL_APP_ID",
+                "\"92286389-415e-4461-85f4-56f3a2736cb3\""
+            )
+
+            buildConfigField(
+                "String",
+                "KAKAO_NATIVE_APP_KEY",
+                "\"2d5b8758966c24367eebd1926dd090bf\""
+            )
+
         }
         release {
             isMinifyEnabled = false
@@ -71,9 +86,13 @@ android {
                 "\"92286389-415e-4461-85f4-56f3a2736cb3\""
             )
 
-            // kakao{네이티브키} 형태로 스킴 생성
-            manifestPlaceholders["KAKAO_NATIVE_SCHEME"] =
-                "kakao${project.properties["KAKAO_NATIVE_APP_KEY"] ?: ""}"
+            buildConfigField(
+                "String",
+                "KAKAO_NATIVE_APP_KEY",
+                "\"2d5b8758966c24367eebd1926dd090bf\""
+
+            )
+
         }
     }
     compileOptions {
@@ -135,6 +154,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.10.0")

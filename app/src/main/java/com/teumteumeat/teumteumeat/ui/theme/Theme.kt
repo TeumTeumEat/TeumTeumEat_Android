@@ -29,12 +29,18 @@ data class ExtendedColors(
     val unselectedContainer: Color,
     val textOnUnselected: Color,
     val backgroundW100: Color,
+    val textPrimary: Color,
+    val textGhost: Color,
+    val textPointBlue: Color,
 )
 
 val LightExtendedColors = ExtendedColors(
-    primary = Blue80,
+    primary = Blue500,
     primaryContainer = Blue10,
     textOnPrimary = White100,
+    textPrimary = Black100,
+    textGhost = Gray60,
+    textPointBlue = Blue500,
 
     unselectedContainer = Gray15,
     textOnUnselected = Gray80,
@@ -55,13 +61,13 @@ val LightExtendedColors = ExtendedColors(
 
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Blue80,
+    primary = Blue500,
     secondary = PurpleGrey80,
     tertiary = Pink80
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Blue80,
+    primary = Blue500,
     primaryContainer = White10,
     onPrimary = Color.White,
 

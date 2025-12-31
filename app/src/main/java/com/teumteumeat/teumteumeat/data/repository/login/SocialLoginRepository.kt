@@ -8,8 +8,12 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 
 interface SocialLoginRepository {
     suspend fun validateSession(): SessionResult
+
     suspend fun socialLogin(
         provider: String,
-        request: SocialLoginRequest,
+        request: SocialLoginRequest
     ): ApiResultV2<AuthResponse?>
+
+    suspend fun withdrawUser(): ApiResultV2<Unit>
+
 }

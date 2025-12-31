@@ -13,6 +13,9 @@ import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
 import okhttp3.Response
 import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 abstract class BaseRepository(
     private val authApiService: AuthApiService,
@@ -35,6 +38,7 @@ abstract class BaseRepository(
                 DomainError.Message("알 수 없는 오류 형식입니다.")
         }
     }
+
     protected suspend fun <T, R> safeApiVer2(
         apiCall: suspend () -> ApiResponse<T, Any?>,
         mapper: (T?) -> R
@@ -57,11 +61,12 @@ abstract class BaseRepository(
                     )
                 }
 
-                // 🔐 인증 관련 에러 (AUTH-001 ~ AUTH-005)
-                response.code.isAuthErrorCode() -> {
-                    ApiResultV2.SessionExpired(
-                        message = response.message
-                            ?: "인증 정보가 유효하지 않습니다. 다시 로그인해주세요."
+                // ❗ refresh 대상이 아님 (비즈니스 인증 에러)
+                response.code == "AUTH-006" -> {
+                    ApiResultV2.ServerError(
+                        code = response.code,
+                        message = response.message ?: "",
+                        errorType = DomainError.None,
                     )
                 }
 
@@ -93,9 +98,24 @@ abstract class BaseRepository(
             }
 
         } catch (e: retrofit2.HttpException) {
-            // ⭐ 핵심: HTTP 에러를 ApiResult로 변환
-            handleHttpException(e)
+            // 🔥 서버 에러 body 파싱
+            val errorResponse = parseErrorResponse(e)
 
+            // ✅ 서버 code가 있으면 → 무조건 그 code 사용
+            if (errorResponse?.code != null) {
+                return ApiResultV2.ServerError(
+                    code = errorResponse.code,
+                    message = errorResponse.message ?: "서버 오류가 발생했습니다.",
+                    errorType = DomainError.None
+                )
+            }
+
+            // ✅ 오직 HTTP 401만 refresh 시도
+            if (e.code() == 401) {
+                handleUnauthorizedVer2(apiCall, mapper)
+            } else {
+                handleHttpException(e)
+            }
         } catch (e: UnauthorizedException) {
             handleUnauthorizedVer2(apiCall, mapper)
 
@@ -115,8 +135,32 @@ abstract class BaseRepository(
             )
 
         }
-
     }
+    private fun parseErrorResponse(
+        e: retrofit2.HttpException
+    ): ApiResponse<Nothing, Any?>? {
+
+        return try {
+            // 1️⃣ errorBody 문자열 추출
+            val errorBody = e.response()
+                ?.errorBody()
+                ?.string()
+                ?.takeIf { it.isNotBlank() }
+                ?: return null
+
+            // 2️⃣ JSON → ApiResponse 파싱
+            Gson().fromJson(
+                errorBody,
+                object : com.google.gson.reflect.TypeToken<
+                        ApiResponse<Nothing, Any?>
+                        >() {}.type
+            )
+        } catch (ex: Exception) {
+            // 3️⃣ 파싱 실패 → 서버 code 없음으로 간주
+            null
+        }
+    }
+
 
     private fun handleHttpException(
         e: retrofit2.HttpException
@@ -137,8 +181,10 @@ abstract class BaseRepository(
                 Gson().fromJson(errorJson, ApiResponse::class.java)
 
             when {
+                // 인증 관련 에러 처리
                 errorResponse.code.isAuthErrorCode() -> {
                     ApiResultV2.SessionExpired(
+                        code = SessionErrorCode.FAIL,
                         message = errorResponse.message
                             ?: "인증 정보가 유효하지 않습니다."
                     )
@@ -169,8 +215,18 @@ abstract class BaseRepository(
         return code == "OK" || code == "CREATED" || code == "SUCCESS" || code == "200"
     }
 
-    private fun String?.isAuthErrorCode(): Boolean =
-        this?.startsWith("AUTH-") == true
+    private fun String?.isAuthErrorCode(): Boolean {
+        return this in listOf(
+            "AUTH-001",
+            "AUTH-002",
+            "AUTH-003",
+            "AUTH-004",
+            "AUTH-005"
+            // ❌ AUTH-006 제거
+        )
+    }
+
+    enum class SessionErrorCode { RETRY, FAIL }
 
     protected suspend fun <T, R> handleUnauthorizedVer2(
         apiCall: suspend () -> ApiResponse<T, Any?>,
@@ -179,6 +235,7 @@ abstract class BaseRepository(
 
         val refreshToken = tokenLocalDataSource.getRefreshToken()
             ?: return ApiResultV2.SessionExpired(
+                code = SessionErrorCode.RETRY,
                 message = "로그인이 만료되었습니다. 다시 로그인해주세요."
             )
 
@@ -203,6 +260,7 @@ abstract class BaseRepository(
         } catch (e: Exception) {
             tokenLocalDataSource.clear()
             ApiResultV2.SessionExpired(
+                code = SessionErrorCode.FAIL,
                 message = "로그인이 만료되었습니다. 다시 로그인해주세요."
             )
         }
@@ -212,7 +270,7 @@ abstract class BaseRepository(
     protected suspend fun <T, R, D> safeApiCall(
         apiCall: suspend () -> ApiResponse<T, D>,
         mapper: (T) -> R
-    ): ApiResult<R, D>{
+    ): ApiResult<R, D> {
 
         return try {
             val response = apiCall()
@@ -244,9 +302,21 @@ abstract class BaseRepository(
             handleUnauthorized(apiCall, mapper)
 
         } catch (e: IOException) {
-            ApiResult.NetworkError(
-                message = "네트워크 연결을 확인해주세요."
-            )
+            val message = when (e) {
+                is SocketTimeoutException ->
+                    "요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."
+
+                is UnknownHostException ->
+                    "인터넷 연결이 없습니다. 네트워크 상태를 확인해주세요."
+
+                is ConnectException ->
+                    "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."
+
+                else ->
+                    "네트워크 오류가 발생했습니다. 연결 상태를 확인해주세요."
+            }
+
+            ApiResult.NetworkError(message = message)
 
         } catch (e: Exception) {
             ApiResult.UnknownError(
@@ -259,8 +329,7 @@ abstract class BaseRepository(
     protected suspend fun <T, R, D> handleUnauthorized(
         apiCall: suspend () -> ApiResponse<T, D>,
         mapper: (T) -> R
-    ): ApiResult<R, D>
-    {
+    ): ApiResult<R, D> {
 
         val refreshToken = tokenLocalDataSource.getRefreshToken()
             ?: return ApiResult.SessionExpired(
