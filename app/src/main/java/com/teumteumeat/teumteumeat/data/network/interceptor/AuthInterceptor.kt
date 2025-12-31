@@ -14,8 +14,9 @@ class AuthInterceptor @Inject constructor(
         val request = chain.request()
         val path = request.url.encodedPath
 
-        // 🔴 reissue API는 인증 헤더를 붙이지 않는다
-        if (path == "/api/v1/users/reissue") {
+        // 🔴 reissue 와 회원가입 API는 인증 헤더를 붙이지 않는다
+        if (path == "/api/v1/users/reissue" ||
+            path == "/api/v1/auth/oauth/register") {
             return chain.proceed(request)
         }
 
@@ -25,13 +26,6 @@ class AuthInterceptor @Inject constructor(
                 addHeader("Authorization", "Bearer $accessToken")
             }
         }.build()
-
-        val response = chain.proceed(request)
-
-/*        if (response.code == 401) {
-            response.close()
-            throw UnauthorizedException()
-        }*/
 
         return chain.proceed(newRequest)
     }

@@ -28,10 +28,20 @@ class UserRepositoryImpl @Inject constructor(
 ) : BaseRepository(authApiService, tokenLocalDataSource),
     UserRepository {
 
+
     override suspend fun getOnboardingStatus(): ApiResult<OnboardingStatus, Unit> {
         return safeApiCall(
             apiCall = { userApi.getOnboardingCompleted() },
             mapper = { it.toDomain() }
+        )
+    }
+
+    override suspend fun getOnboardingCompletedV2(): ApiResultV2<OnboardingStatus> {
+        return safeApiVer2(
+            apiCall = {
+                userApi.getOnboardingCompletedV2()
+            },
+            mapper = { it?.toDomain() ?: OnboardingStatus(false) }
         )
     }
 

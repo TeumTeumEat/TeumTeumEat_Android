@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.data.repository.login
 
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
+import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.AuthToken
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
@@ -13,10 +14,20 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import javax.inject.Inject
 
 class SocialLoginRepositoryImpl @Inject constructor(
+    private val userApiService: UserApiService,
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource
 ) : BaseRepository(authApiService, tokenLocalDataSource), SocialLoginRepository {
 
+
+    override suspend fun withdrawUser(): ApiResultV2<Unit> =
+        safeApiVer2(
+            apiCall = { authApiService.withdrawUser() },
+            mapper = {
+                // data는 의미 없으므로 버림
+                Unit
+            }
+        )
 
     override suspend fun validateSession(): SessionResult {
 
@@ -64,4 +75,6 @@ class SocialLoginRepositoryImpl @Inject constructor(
             }
         )
     }
+
+
 }

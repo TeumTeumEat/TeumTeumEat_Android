@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat
 
 import android.app.Application
+import com.kakao.sdk.common.KakaoSdk
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
 import dagger.hilt.android.HiltAndroidApp
@@ -15,6 +16,6 @@ class MyApplication : Application(){
         // Initialize with your OneSignal App ID
         OneSignal.initWithContext(this, BuildConfig.ONESIGNAL_APP_ID)
 
-        // KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
+         KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
     }
 }

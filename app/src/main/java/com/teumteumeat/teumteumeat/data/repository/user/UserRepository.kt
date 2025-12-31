@@ -10,6 +10,8 @@ import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 
 interface UserRepository {
     suspend fun getOnboardingStatus(): ApiResult<OnboardingStatus, Unit>
+    suspend fun getOnboardingCompletedV2(): ApiResultV2<OnboardingStatus>
+
     suspend fun updateUserName(name: String): ApiResult<String, List<FieldErrorDetail>>
 
     suspend fun updateCommuteTime(request: CommuteTimeRequest): ApiResult<Unit, Unit>

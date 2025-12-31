@@ -34,6 +34,7 @@ data class AppTypography(
     // body
     val bodyMedium16: TextStyle,
     val bodyMedium14: TextStyle,
+    val bodyMedium14_20: TextStyle,
 
     // caption
     val captionRegular14: TextStyle,
@@ -121,6 +122,11 @@ val DefaultAppTypography = AppTypography(
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 14.sp,
+    ),
+    bodyMedium14_20 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
     ),
     bodyMedium16Reg = BaseTextStyle.copy(
         fontWeight = FontWeight.Normal,

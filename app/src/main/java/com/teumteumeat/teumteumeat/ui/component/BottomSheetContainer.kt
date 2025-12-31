@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,11 +39,21 @@ fun BottomSheetContainer(
     titleText: String = "타이틀",
     content: @Composable () -> Unit,
 ) {
+    // ✅ [변경 1] 항상 Expanded로 시작하는 SheetState
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { newValue ->
+            // ⭐ 핵심: Partial 상태 차단
+            newValue != SheetValue.PartiallyExpanded
+        }
+    )
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState, // ✅ 직접 전달
         dragHandle = null,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier
@@ -74,6 +86,70 @@ fun BottomSheetContainer(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            content()
+            // 🔹 시간 선택 영역 (추후 교체 예정)
+            // TimeSliderPlaceholder()
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BottomSheetContainerRightTopConfirm(
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    titleText: String = "타이틀",
+    content: @Composable () -> Unit,
+    tittleBottomPadding: Int = 24,
+    onCompleteEnable: Boolean = false,
+) {
+    // ✅ [변경 1] 항상 Expanded로 시작하는 SheetState
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { newValue ->
+            // ⭐ 핵심: Partial 상태 차단
+            newValue != SheetValue.PartiallyExpanded
+        }
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState, // ✅ 직접 전달
+        dragHandle = null,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp)
+                .padding(vertical = 15.dp)
+        ) {
+
+            // 🔹 헤더 영역
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = titleText,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+
+                BaseFillSmallButton(
+                    onClick = onConfirm,
+                    isEnabled = onCompleteEnable,
+                    text = "완료"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(tittleBottomPadding.dp))
 
             content()
             // 🔹 시간 선택 영역 (추후 교체 예정)

@@ -21,10 +21,15 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
+        <!-- 카카오 앱 키 -->
+        <meta-data
+            android:name="com.kakao.sdk.AppKey"
+            android:value="@string/kakao_native_app_key_scheme"/>
+
+
         <activity
             android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
-
 
 
         </activity>
@@ -40,8 +45,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="teumteumeatandroid"
-                    android:host="login" />
+                    android:scheme="@string/kakao_native_app_key_scheme"
+                    android:host="oauth" />
             </intent-filter>
 
             <intent-filter>
