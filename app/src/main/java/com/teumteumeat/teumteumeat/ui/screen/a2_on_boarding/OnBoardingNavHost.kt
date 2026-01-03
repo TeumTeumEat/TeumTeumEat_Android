@@ -17,7 +17,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = OnBoardingScreens.ThirdSetAppTimeScreen.route
+        startDestination = OnBoardingScreens.FirstScreen.route
     ) {
 
         composable(
@@ -208,7 +208,12 @@ fun OnBoardingNavHost(navController: NavHostController) {
             CheckSetMyInfoScreen(
                 onNext = {
                     viewModel.nextPage()
-                    // TODO: 온보딩 종료 → 메인 이동
+                    navController.navigate(OnBoardingScreens.CompleteScreen.route) {
+                        // 🔑 온보딩 스택 정리 (뒤로가기 방지)
+                        popUpTo(OnBoardingScreens.FirstScreen.route) {
+                            inclusive = true
+                        }
+                    }
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -223,14 +228,78 @@ fun OnBoardingNavHost(navController: NavHostController) {
 }
 
 sealed class OnBoardingScreens(val route: String) {
-    data object FirstScreen : OnBoardingScreens("welcome")
-    data object SecondInputNameScreen : OnBoardingScreens("input_name")
-    data object ThirdSetAppTimeScreen : OnBoardingScreens("set_app_time")
-    data object FourthSetUsingAppTimeScreen : OnBoardingScreens("set_using_app_time")
-    data object FifthSelectInputMethodScreen : OnBoardingScreens("select_input_method")
-    data object SixthCategorySelectScreen : OnBoardingScreens("select_category")
-    data object SixthFileUploadScreen : OnBoardingScreens("file_upload")
-    data object SeventhOptimizerDataScreen : OnBoardingScreens("optimizer_data")
-    data object EighthSetStudyRangeScreen : OnBoardingScreens("set_study_range")
-    data object CheckSetMyInfoScreen : OnBoardingScreens("check_set_my_info")
+
+    data object FirstScreen :
+        OnBoardingScreens("welcome")
+
+    data object SecondInputNameScreen :
+        OnBoardingScreens("input_name")
+
+    data object ThirdSetAppTimeScreen :
+        OnBoardingScreens("set_app_time")
+
+    data object FourthSetUsingAppTimeScreen :
+        OnBoardingScreens("set_using_app_time")
+
+    data object FifthSelectInputMethodScreen :
+        OnBoardingScreens("select_input_method")
+
+    data object SixthCategorySelectScreen :
+        OnBoardingScreens("select_category")
+
+    data object SixthFileUploadScreen :
+        OnBoardingScreens("file_upload")
+
+    data object SeventhOptimizerDataScreen :
+        OnBoardingScreens("optimizer_data")
+
+    data object EighthSetStudyRangeScreen :
+        OnBoardingScreens("set_study_range")
+
+    data object CheckSetMyInfoScreen :
+        OnBoardingScreens("check_set_my_info")
+
+    data object CompleteScreen :
+            OnBoardingScreens("complete")
 }
+
+object OnBoardingFlow {
+
+    /** ✅ 온보딩 순서의 단일 소스 */
+    val screens: List<OnBoardingScreens> = listOf(
+        OnBoardingScreens.FirstScreen,
+        OnBoardingScreens.SecondInputNameScreen,
+        OnBoardingScreens.ThirdSetAppTimeScreen,
+        OnBoardingScreens.FourthSetUsingAppTimeScreen,
+        OnBoardingScreens.FifthSelectInputMethodScreen,
+        OnBoardingScreens.SixthCategorySelectScreen,
+        OnBoardingScreens.SixthFileUploadScreen,
+        OnBoardingScreens.SeventhOptimizerDataScreen,
+        OnBoardingScreens.EighthSetStudyRangeScreen,
+        OnBoardingScreens.CheckSetMyInfoScreen,
+    )
+
+    /** 전체 페이지 수 */
+    val totalCount: Int
+        get() = screens.size
+
+    /** 현재 페이지 (1부터 시작)
+     * FirstScreen 은 카운트에 포함X
+     * */
+    fun currentPage(screen: OnBoardingScreens): Int {
+        return screens.indexOf(screen)
+    }
+
+    /** 이전 화면 */
+    fun prev(screen: OnBoardingScreens): OnBoardingScreens? {
+        val index = screens.indexOf(screen)
+        return screens.getOrNull(index - 1)
+    }
+
+    /** 다음 화면 */
+    fun next(screen: OnBoardingScreens): OnBoardingScreens? {
+        val index = screens.indexOf(screen)
+        return screens.getOrNull(index + 1)
+    }
+}
+

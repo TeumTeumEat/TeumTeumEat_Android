@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.domain.usecase.on_boarding
+package com.teumteumeat.teumteumeat.domain.usecase.document
 
 import android.net.Uri
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -10,7 +10,7 @@ class UploadDocumentUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(
-        goalId: Long,
+        goalId: Int,
         uri: Uri,
         fileName: String,
         mimeType: String

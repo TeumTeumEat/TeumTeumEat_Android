@@ -136,7 +136,7 @@ fun OnBoardingSetCharNameScreen(
                         ),
                         isEnabled = isNameValid,
                         onClick = {
-                            viewModel.onConfirmClick()
+                            // viewModel.onConfirmClick()
                             onNext()
                         },
                         conerRadius = 16.dp

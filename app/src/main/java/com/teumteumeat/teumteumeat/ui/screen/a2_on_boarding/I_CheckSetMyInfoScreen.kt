@@ -12,13 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -26,24 +24,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastCbrt
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
-import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
-import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
-import com.teumteumeat.teumteumeat.utils.Utils
-import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.toUiDateFormat
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -114,7 +103,7 @@ fun CheckSetMyInfoScreen(
                         BaseOutlineButton(
                             text = uiState.workInTime.toDisplayText(),
                             isEnabled = false,
-                            contentAligment = Alignment.CenterStart,
+                            contentAligment = Alignment.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                                 fontSize = 18.sp,
@@ -142,7 +131,7 @@ fun CheckSetMyInfoScreen(
                         Spacer(modifier = Modifier.height(10.dp))
                         BaseOutlineButton(
                             text = uiState.workOutTime.toDisplayText(),
-                            contentAligment = Alignment.CenterStart,
+                            contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                                 fontSize = 18.sp,
@@ -169,7 +158,7 @@ fun CheckSetMyInfoScreen(
                         }
                         BaseOutlineButton(
                             text = uiState.selectedMinute.toString() + "분",
-                            contentAligment = Alignment.CenterStart,
+                            contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                                 fontSize = 18.sp,
@@ -189,7 +178,8 @@ fun CheckSetMyInfoScreen(
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
-                                text = "주제 지정",
+                                text = if(uiState.goalType == GoalType.CATEGORY) "관심분야"
+                                    else "문서이름",
                                 style = Typography.bodyLarge.copy(fontSize = 18.sp)
                             )
                         }
@@ -210,7 +200,7 @@ fun CheckSetMyInfoScreen(
                         }
                         BaseOutlineButton(
                             text = subjectText,
-                            contentAligment = Alignment.CenterStart,
+                            contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                                 fontSize = 18.sp,
@@ -219,7 +209,9 @@ fun CheckSetMyInfoScreen(
                             ),
                             btnHeight = 50,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { /* 클릭 시직 정의 필요 시 추가 */ }
+                            onClick = { /* 클릭 시직 정의 필요 시 추가 */ },
+                            maxLine = 1,
+                            overFlowSetting = TextOverflow.Ellipsis
                         )
 
 // ===== 6. 난이도 =====
@@ -238,7 +230,7 @@ fun CheckSetMyInfoScreen(
 // Difficulty Enum 값을 한글 표기 등으로 변환 필요 (여기서는 name 사용하거나 별도 매핑)
                         BaseOutlineButton(
                             text = uiState.difficulty.name, // 필요하다면 별도 mapper 함수 사용 (ex: Difficulty.MIDDLE -> "중")
-                            contentAligment = Alignment.CenterStart,
+                            contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                                 fontSize = 18.sp,
@@ -269,7 +261,7 @@ fun CheckSetMyInfoScreen(
 
                         BaseOutlineButton(
                             text = promptText,
-                            contentAligment = Alignment.CenterStart,
+                            contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                                 fontSize = 18.sp,
@@ -278,7 +270,9 @@ fun CheckSetMyInfoScreen(
                             ),
                             btnHeight = 50,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { /* 클릭 로직 */ }
+                            onClick = { /* 클릭 로직 */ },
+                            maxLine = 2,
+                            overFlowSetting = TextOverflow.Ellipsis
                         )
 
 // === 8.공부기간 ====
@@ -296,11 +290,11 @@ fun CheckSetMyInfoScreen(
                             )
                         }
 
-                        val studyWeekText = uiState.selectedStudyWeek?.let { "${it}주" } ?: "기간 설정 안함"
+                        val studyWeekText = uiState.studyPeriod?.let { "${it}주" } ?: "기간 설정 안함"
 
                         BaseOutlineButton(
                             text = studyWeekText,
-                            contentAligment = Alignment.CenterStart,
+                            contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                                 fontSize = 18.sp,
@@ -355,7 +349,13 @@ fun CheckSetMyInfoScreen(
                         ),
                         isEnabled = true,
                         onClick = {
-                            onNext()
+                            // todo. 0.5±1(로딩시간 커스텀 가능하게)초 로딩페이지 표시 하는 뷰모델 함수 구현
+//                            viewModel.submitOnBoardingTestError()
+                            // todo. 각 usecase 진행하면서 에러가 발생하면 뷰에 에러화면 표시
+                            viewModel.submitOnBoarding()
+//                            viewModel.setUserName()
+//                            viewModel.saveCommuteInfo()
+//                            viewModel.onCreateGoalClick()
                         },
                         conerRadius = 16.dp
                     )

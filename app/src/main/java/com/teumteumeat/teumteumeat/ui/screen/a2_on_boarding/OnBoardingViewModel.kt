@@ -1,7 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.app.Application
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -12,21 +11,28 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
+import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
+import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCaseV1
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.IssuePresignedUrlUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
+import com.teumteumeat.teumteumeat.ui.screen.a0_splash.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.normalizeTo12Hour
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
-import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -48,6 +54,10 @@ class OnBoardingViewModel @Inject constructor(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val issuePresignedUrlUseCase: IssuePresignedUrlUseCase,
     private val createGoalUseCase: CreateGoalUseCase,
+    private val createGoalUseCaseV1: CreateGoalUseCaseV1,
+    private val getGoalListUseCase: GetGoalListUseCase,
+    val uploadDocumentUseCase: UploadDocumentUseCase,
+    val getDocumentsUseCase: GetDocumentsUseCase,
     application: Application,
 ) : ViewModel() {
     private val appContext = application.applicationContext
@@ -66,8 +76,378 @@ class OnBoardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateOnBoardingMain>(UiStateOnBoardingMain())
     val uiState = _uiState.asStateFlow()
 
+    // 2️⃣ 플로우 상태 (Idle / Loading / Success / Error)
+    private val _mainState =
+        MutableStateFlow<UiStateOnBoardingMainState>(
+            UiStateOnBoardingMainState.Idle
+        )
+    val mainState = _mainState.asStateFlow()
+
     private val _effect = MutableSharedFlow<UiEffect>(extraBufferCapacity = 1)
     val effect: SharedFlow<UiEffect> = _effect
+
+
+    init {
+        Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
+    }
+
+    fun submitOnBoarding() {
+        // 중복 클릭 방지
+        if (_mainState.value == UiStateOnBoardingMainState.Loading) return
+
+        viewModelScope.launch {
+            _mainState.value = UiStateOnBoardingMainState.Loading
+
+            val state = _uiState.value
+
+            val startTime = System.currentTimeMillis()
+
+            // 1️⃣ 이름 등록
+            val nameResult = setUserNameInternal()
+            if (nameResult !is ApiResultV2.Success) {
+                moveToError(nameResult)
+                return@launch
+            }
+
+            // 2️⃣ 출퇴근 정보 저장
+            val commuteResult = saveCommuteInfoInternal()
+            if (commuteResult !is ApiResultV2.Success) {
+                moveToError(commuteResult)
+                return@launch
+            }
+
+            // 3️⃣ 목표 생성
+            val goalResult = createGoalRequest()
+            if (goalResult !is ApiResultV2.Success) {
+                moveToError(goalResult)
+                return@launch
+            }
+
+            // 3-1. 목표 생성 ID 저장
+            val getGoalIdResult = fetchLatestGoalId()
+            if (getGoalIdResult !is ApiResultV2.Success) {
+                moveToError(getGoalIdResult)
+                return@launch
+            }
+
+            // 5. 문서 업로드 documentID 생성
+            Log.d("OnBoardingVM", "타입: ${state.goalType}의 퀴즈 생성")
+            PrefsUtil.saveGoalType(appContext, state.goalType)
+            when(state.goalType){
+                GoalType.DOCUMENT -> {
+                    // 4️⃣ 문서 확인
+                    val uri = state.selectedFileUri
+                    if (uri == null) {
+                        moveToError(
+                            ApiResultV2.ServerError(
+                                code = "FILE_URI_MISSING",
+                                message = "업로드할 파일을 선택해주세요.",
+                                errorType = DomainError.Message("selectedFileUri is null")
+                            )
+                        )
+                        return@launch
+                    }
+
+                    val uploadDocumentResult = uploadDocumentInternal(
+                        uri = state.selectedFileUri,
+                        fileName = state.selectedFileName,
+                        mimeType = state.selectedFileMimeType
+                    )
+                    if (uploadDocumentResult !is ApiResultV2.Success) {
+                        moveToError(uploadDocumentResult)
+                        return@launch
+                    }
+
+                    val fetchDocumentResult = fetchCompletedDocument()
+                    if (fetchDocumentResult !is ApiResultV2.Success) {
+                        moveToError(uploadDocumentResult)
+                        return@launch
+                    }
+                }
+                GoalType.CATEGORY -> {
+                    PrefsUtil.saveCategoryId(context = appContext, state.selectedCategoryId?: -1)
+                }
+                GoalType.NONE -> {}
+            }
+
+            // 🔹 최소 로딩 1.8초 보장
+            val elapsed = System.currentTimeMillis() - startTime
+            val remain = 1800L - elapsed
+            if (remain > 0) delay(remain)
+
+
+            _mainState.value = UiStateOnBoardingMainState.Success
+
+            // todo. 테스트 코드!
+//            _mainState.value = UiStateOnBoardingMainState.Error(
+//                message = "테스트 에러 페이지입니다.\n잠시 후 다시 시도해주세요."
+//            )
+        }
+    }
+
+    private fun moveToError(result: ApiResultV2<*>) {
+        _mainState.value = UiStateOnBoardingMainState.Error(
+            message = result.uiMessage
+        )
+    }
+
+
+    private suspend fun setUserNameInternal(): ApiResultV2<Any> {
+        val state = _uiState.value
+
+        if (!state.isNameValid) {
+            return ApiResultV2.UnknownError(
+                message = "이름이 올바르지 않습니다."
+            )
+        }
+
+        return when (val result = registerUserNameUseCase(state.charName)) {
+
+            is ApiResultV2.Success -> {
+                _uiState.update {
+                    it.copy(
+                        isNameValid = true,
+                        errorMessage = ""
+                    )
+                }
+                ApiResultV2.Success(result.message, Unit)
+            }
+
+            is ApiResultV2.ServerError -> {
+                val errorMessage = when (val error = result.errorType) {
+                    is DomainError.Validation -> {
+                        error.errors.find { it.field == "name" }?.message
+                            ?: result.uiMessage
+                    }
+                    else -> result.uiMessage
+                }
+
+                _uiState.update {
+                    it.copy(
+                        isNameValid = false,
+                        errorMessage = errorMessage
+                    )
+                }
+
+                result
+            }
+
+            else -> result
+        }
+    }
+    private suspend fun saveCommuteInfoInternal(): ApiResultV2<Unit> {
+        val current = _uiState.value
+
+        val usageTime = current.selectedMinute
+            ?: return ApiResultV2.UnknownError("사용 시간을 선택해주세요.")
+
+        return updateCommuteTimeUseCase(
+            startTime = current.workInTime.toServerTime(),
+            endTime = current.workOutTime.toServerTime(),
+            usageTime = usageTime
+        )
+    }
+    private suspend fun createGoalRequest(): ApiResultV2<Int> {
+        val state = _uiState.value
+
+        val studyPeriodStr =
+            state.studyPeriod?.toString()?.plus("주") ?: "기간 설정 안함"
+
+        val request = CreateGoalRequest(
+            type = state.goalType,
+            studyPeriod = studyPeriodStr,
+            difficulty = state.difficulty,
+            prompt = state.promptInput.takeIf { it.isNotBlank() },
+            categoryId = if (state.goalType == GoalType.CATEGORY) {
+                state.selectedCategoryId
+            } else {
+                null                 // DOCUMENT → categoryId 미포함
+            }
+        )
+
+        return createGoalUseCase(request)
+    }
+    private suspend fun fetchLatestGoalId(): ApiResultV2<Unit> {
+        return when (val result = getGoalListUseCase()) {
+
+            is ApiResultV2.Success -> {
+                val data : GoalsData = result.data
+                val list: List<GetGoalResponse> = data.goalResponses
+
+                Log.d("OnBoardingVM", "goal list size = ${list.size}")
+
+                val latestGoalId = list[0].goalId
+                    ?: return ApiResultV2.ServerError(
+                        code = "EMPTY_GOAL_LIST",
+                        message = "목표가 존재하지 않습니다.",
+                        errorType = DomainError.Message("goal list is empty")
+                    )
+
+                Log.d("DEBUG", "state.goalId(before save) = ${latestGoalId}")
+
+                PrefsUtil.saveGoalId(appContext, latestGoalId)
+
+                Log.d("DEBUG", "saved goalId = ${PrefsUtil.getGoalId(appContext)}")
+
+
+                // ⭐ 성공 시 내부에서 상태 반영
+                _uiState.update {
+                    it.copy(goalId = latestGoalId)
+                }
+
+                Log.d("OnBoardingVM", "최신 목표 ID: ${_uiState.value.goalId}")
+
+                ApiResultV2.Success(
+                    message = result.message,
+                    data = Unit
+                )
+            }
+
+            is ApiResultV2.ServerError -> result
+            is ApiResultV2.NetworkError -> result
+            is ApiResultV2.SessionExpired -> result
+            is ApiResultV2.UnknownError -> result
+        }
+    }
+    private suspend fun uploadDocumentInternal(
+        uri: Uri,
+        fileName: String,
+        mimeType: String
+    ): ApiResultV2<Unit> {
+
+        val goalId = _uiState.value.goalId
+
+        return when (
+            val result = uploadDocumentUseCase(
+                goalId = goalId,
+                uri = uri,
+                fileName = fileName,
+                mimeType = mimeType
+            )
+        ) {
+
+            is ApiResultV2.Success -> {
+                // ✅ 성공 시 필요한 상태 변경이 있다면 여기서
+                _uiState.update {
+                    it.copy(
+                        // todo. documentID 넘어올시 저장
+                    )
+                }
+                result
+            }
+
+            is ApiResultV2.ServerError -> result
+            is ApiResultV2.NetworkError -> result
+            is ApiResultV2.SessionExpired -> result
+            is ApiResultV2.UnknownError -> result
+        }
+    }
+    private suspend fun fetchCompletedDocument(): ApiResultV2<Unit> {
+
+        val goalId = _uiState.value.goalId
+
+        return when (val result = getDocumentsUseCase(goalId)) {
+
+            is ApiResultV2.Success -> {
+                val documents = result.data
+
+                val documentId = documents
+                    .firstOrNull()
+                    ?.documentId
+                    ?: return ApiResultV2.ServerError(
+                        code = "DOCUMENT_NOT_FOUND",
+                        message = "문서를 찾을 수 없습니다.",
+                        errorType = DomainError.Message("no document")
+                    )
+
+                Log.d("OnBoardingVM", "문서 ID: $documentId")
+                // 위 documentId를 SharedPreference에 저장
+                PrefsUtil.saveDocumentId(context = appContext, documentId)
+                // ✅ 성공 시 UiState에 documentId 저장
+                _uiState.update {
+                    it.copy(documentId = documentId)
+                }
+
+                ApiResultV2.Success(
+                    message = result.message,
+                    data = Unit
+                )
+            }
+
+            is ApiResultV2.ServerError -> result
+            is ApiResultV2.NetworkError -> result
+            is ApiResultV2.SessionExpired -> result
+            is ApiResultV2.UnknownError -> result
+        }
+    }
+
+
+    /*
+    private suspend fun createGoalId(): ApiResultV2<Int> {
+        val state = _uiState.value
+
+        val studyPeriodStr =
+            state.studyPeriod?.toString()?.plus("주") ?: "기간 설정 안함"
+
+        val request = CreateGoalRequest(
+            type = state.goalType,
+            studyPeriod = studyPeriodStr,
+            difficulty = state.difficulty,
+            prompt = state.promptInput.takeIf { it.isNotBlank() },
+            categoryId = if (state.goalType == GoalType.CATEGORY) {
+                state.selectedCategoryId
+            } else {
+                null                 // DOCUMENT → categoryId 미포함
+            }
+        )
+
+        return createGoalUseCase(request)
+    }*/
+
+    fun submitOnBoardingTestError() {
+        // 중복 실행 방지
+        Log.d("OnBoardingVM", "온보딩UiState 상태: ${_mainState.value}")
+        if (_mainState.value == UiStateOnBoardingMainState.Loading) return
+
+        viewModelScope.launch {
+            _mainState.value = UiStateOnBoardingMainState.Loading
+
+            // ✅ 최소 1초 로딩 보장
+            delay(1800)
+
+            // ✅ 테스트용 에러 상태 진입
+            _mainState.value = UiStateOnBoardingMainState.Error(
+                message = "테스트 에러 페이지입니다.\n잠시 후 다시 시도해주세요."
+            )
+        }
+    }
+
+    fun getErrorState(
+        message: String,
+        onRetry: () -> Unit
+    ): ErrorState {
+        return ErrorState(
+            title = "문제가 발생했어요",
+            description = message,
+            retryLabel = "다시 시도",
+            onRetry = onRetry
+        )
+    }
+
+    fun showTestError() {
+        viewModelScope.launch {
+            _mainState.value = UiStateOnBoardingMainState.Loading
+            kotlinx.coroutines.delay(500)
+
+            _mainState.value = UiStateOnBoardingMainState.Error(
+                message = "테스트용 에러입니다.\n네트워크 상태를 확인해주세요."
+            )
+        }
+    }
+
+    fun resetMainState() {
+        _mainState.value = UiStateOnBoardingMainState.Idle
+    }
 
     private fun sendEffect(effect: UiEffect) {
         // suspend가 아니라도 보낼 수 있게 tryEmit 사용
@@ -77,9 +457,11 @@ class OnBoardingViewModel @Inject constructor(
     fun onCreateGoalClick() {
         viewModelScope.launch {
             val request = _uiState.value.run {
+                val studyPeriodStr: String =
+                    if (studyPeriod != null) studyPeriod.toString() + "주" else "기간 설정 안함"
                 CreateGoalRequest(
                     type = goalType,
-                    endDate = endDate,
+                    studyPeriod = studyPeriodStr,
                     difficulty = difficulty,
                     prompt = promptInput.takeIf { it.isNotBlank() },
                     categoryId = if (goalType == GoalType.CATEGORY) {
@@ -143,7 +525,7 @@ class OnBoardingViewModel @Inject constructor(
         // 🔹 4. UI 상태 업데이트
         _uiState.update {
             it.copy(
-                selectedStudyWeek = week,
+                studyPeriod = week,
                 endDate = formattedEndDate,
             )
         }
@@ -361,6 +743,16 @@ class OnBoardingViewModel @Inject constructor(
                 } else {
                     2   // 3뎁스 선택 → 3뎁스 페이지 유지
                 }
+            )
+        }
+    }
+
+    fun resetCategorySelection() {
+        _uiState.update { state ->
+            state.copy(
+                categorySelection = CategorySelectionState(), // depth1,2,3 전부 초기화
+                selectedCategoryId = null,
+                targetCategoryPage = 0 // ⭐ 1뎁스 페이지로 이동
             )
         }
     }
@@ -623,12 +1015,13 @@ class OnBoardingViewModel @Inject constructor(
         }
 
         _uiState.update {
+            if (it.isNotificationGranted == isGranted) return@update it
+
             it.copy(
                 isNotificationGranted = isGranted,
                 isNotificationChecked = isGranted
             )
         }
-
     }
 
     fun hasDeniedBefore(): Boolean {
@@ -643,22 +1036,28 @@ class OnBoardingViewModel @Inject constructor(
     fun onNotificationOptionClicked() {
         val state = _uiState.value
 
-        val deniedBefore = hasDeniedBefore()
+        val hasRequestedBefore = hasDeniedBefore()
+        val deniedBefore = hasRequestedBefore && !state.isNotificationGranted
+
+        // val deniedBefore = hasDeniedBefore()
         Log.d("NotificationDebug", "clicked, deniedBefore=$deniedBefore")
 
         when {
-            !state.isNotificationGranted && deniedBefore -> {
-                _uiState.update {
-                    it.copy(notificationGuideType = NotificationSettingGuideType.ENABLE)
-                }
-            }
-
+            // 1️⃣ 이미 권한 허용 → 해제 안내
             state.isNotificationGranted -> {
                 _uiState.update {
                     it.copy(notificationGuideType = NotificationSettingGuideType.DISABLE)
                 }
             }
 
+            // 3️⃣ 한 번 거부 후 재시도 → 설정 이동 안내
+            !state.isNotificationGranted && deniedBefore -> {
+                _uiState.update {
+                    it.copy(notificationGuideType = NotificationSettingGuideType.ENABLE)
+                }
+            }
+
+            // 2️⃣ 최초 요청 → 시스템 기본 팝업
             else -> {
                 _uiState.update {
                     it.copy(requestNotificationPermission = true)
@@ -838,21 +1237,21 @@ class OnBoardingViewModel @Inject constructor(
             it.copy(tempTime = newTime)
         }
 
-/*        _uiState.update { state ->
-            when (state.currentTimeType) {
-                TimeType.OUT -> state.copy(
-                    workOutTime = newTime,
-                    isSetWorkOutTime = true
-                )
+        /*        _uiState.update { state ->
+                    when (state.currentTimeType) {
+                        TimeType.OUT -> state.copy(
+                            workOutTime = newTime,
+                            isSetWorkOutTime = true
+                        )
 
-                TimeType.IN -> state.copy(
-                    workInTime = newTime,
-                    isSetWorkInTime = true
-                )
+                        TimeType.IN -> state.copy(
+                            workInTime = newTime,
+                            isSetWorkInTime = true
+                        )
 
-                TimeType.NOTTING -> state.copy()
-            }
-        }*/
+                        TimeType.NOTTING -> state.copy()
+                    }
+                }*/
     }
 
     /* -----------------------------
@@ -873,8 +1272,8 @@ class OnBoardingViewModel @Inject constructor(
 
     fun getSheetTitle(): String {
         return when (uiState.value.currentTimeType) {
-            TimeType.OUT -> "집을 나오는 시간"
-            TimeType.IN -> "집을 들어가는 시간"
+            TimeType.OUT -> "집을 들어가는 시간"
+            TimeType.IN -> "집을 나오는 시간"
             TimeType.NOTTING -> "시간"
         }
     }
@@ -916,7 +1315,7 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun onConfirmClick() {
+    fun setUserName() {
         val state = _uiState.value
         if (!state.isNameValid || state.isLoading) return
 
@@ -995,32 +1394,40 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-
     fun nextPage() {
-        if (currentPage < totalPage) {
-            Log.d("1증가 전", "증가함, ${currentPage}/${totalPage}")
-            viewModelScope.launch {
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        currentPage = currentPage + 1
-                    )
-                }
+        _uiState.update { currentState ->
+            val nextScreen = OnBoardingFlow.next(currentState.currentScreen)
+
+            if (nextScreen != null) {
+                Log.d(
+                    "OnBoarding",
+                    "nextPage: ${currentState.currentPage} → ${currentState.currentPage + 1}"
+                )
+                currentState.copy(
+                    currentScreen = nextScreen
+                )
+            } else {
+                currentState
             }
-            Log.d("1증가 후", "증가함, ${currentPage}/${totalPage}")
         }
     }
 
     fun prevPage() {
-        if (currentPage > 0) {
-            Log.d("1감소 전", "감소함, ${currentPage}/${totalPage}")
-            viewModelScope.launch {
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        currentPage = currentPage - 1
-                    )
-                }
+        _uiState.update { currentState ->
+            val prevScreen = OnBoardingFlow.prev(currentState.currentScreen)
+
+            if (prevScreen != null && currentState.currentPage > 0) {
+                Log.d(
+                    "OnBoarding",
+                    "prevPage: ${currentState.currentPage} → ${currentState.currentPage - 1}"
+                )
+                currentState.copy(
+                    currentScreen = prevScreen
+                )
+            } else {
+                currentState
             }
-            Log.d("1감소 후", "감소함, ${currentPage}/${totalPage}")
         }
     }
+
 }

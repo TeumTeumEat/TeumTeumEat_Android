@@ -1,0 +1,106 @@
+package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Devices
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
+
+
+@Composable
+fun OnBoardingSuccessScreen(
+    nickname: String,
+    onStartClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .windowInsetsPadding(WindowInsets.systemBars) // ✅ SafeArea,
+    ) {
+
+        // 🔹 상단 ~ 중앙 콘텐츠
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Spacer(modifier = Modifier.height(80.dp))
+
+            // 🗨️ 말풍선 이미지
+            Image(
+                painter = painterResource(id = R.drawable.chat_complete),
+                contentDescription = "성공 안내 말풍선",
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // 🐧 캐릭터 이미지
+            Image(
+                painter = painterResource(id = R.drawable.onboarding_ch_pdf),
+                contentDescription = "성공 캐릭터",
+                modifier = Modifier.size(260.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 🙌 환영 문구
+            Text(
+                text = "$nickname 님 환영합니다!",
+                style = MaterialTheme.appTypography.btnSemiBold18_h24,
+                color = MaterialTheme.extendedColors.text_teritory
+            )
+
+            Spacer(Modifier.height(50.dp))
+            BaseFillButton(
+                text = "시작하기",
+                textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
+                    Color.White
+                ),
+                isEnabled = true,
+                onClick = onStartClick,
+            )
+        }
+
+        // 🔵 하단 위치
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(20.dp)
+        ) {
+
+        }
+
+    }
+}
+
+
+@Preview(
+    showBackground = true,
+    device = Devices.PIXEL_4
+)
+@Composable
+fun OnBoardingSuccessScreenPreview() {
+    OnBoardingSuccessScreen(
+        nickname = "닉네임",
+        onStartClick = {}
+    )
+}

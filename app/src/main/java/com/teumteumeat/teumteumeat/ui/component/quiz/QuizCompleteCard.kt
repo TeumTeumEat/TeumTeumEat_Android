@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.component.quiz
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -18,8 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -53,15 +57,11 @@ fun QuizCompleteCard(
         ) {
 
             // 🔹 상단 이미지 영역 (추후 이미지/일러스트 대체 가능)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(240.dp)
-                    .background(
-                        color = Color(0xFFF3F3F3),
-                        shape = RoundedCornerShape(16.dp)
-                    )
+            Image(
+                painter = painterResource(id = R.drawable.char_goood_quiz_complete),
+                contentDescription = ""
             )
+
 
             // 🔹 완료 메시지
             Text(
@@ -73,13 +73,14 @@ fun QuizCompleteCard(
             // 🔹 CTA 버튼
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .wrapContentWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.extendedColors.primaryContainer,
                 onClick = onButtonClick
             ) {
                 Box(
+                    modifier = Modifier.padding(horizontal = 20.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -92,6 +93,8 @@ fun QuizCompleteCard(
         }
     }
 }
+
+
 
 @Preview(
     name = "QuizCompleteCard - Gallery",

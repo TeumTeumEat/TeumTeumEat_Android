@@ -4,14 +4,18 @@ import android.content.Context
 import android.net.Uri
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.document.DocumentApiService
-import com.teumteumeat.teumteumeat.data.network.model.ApiResult // 현재 반환 타입이 ApiResult로 되어 있어 추가
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2 // safeApiVer2가 반환하는 타입
+import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model_request.PresignedRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.RegisterDocumentRequest
+import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository // safeApiVer2 사용을 위해 필요
+import com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -25,6 +29,83 @@ class DocumentRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), DocumentRepository{
+
+    override suspend fun getDocumentSummary(
+        goalId: Int,
+        documentId: Int,
+    ): ApiResultV2<DocumentSummaryResponse> {
+
+        return safeApiVer2(
+            apiCall = {
+                documentApiService.getDocumentSummary(
+                    goalId = goalId,
+                    documentId = documentId
+                )
+            },
+            mapper = { data ->
+                data // ✅ 단건 조회이므로 그대로 반환
+            }
+        ).let { result ->
+            when (result) {
+
+                is ApiResultV2.Success -> {
+                    val summary = result.data
+                        ?: return ApiResultV2.ServerError(
+                            code = "INVALID_DOCUMENT_SUMMARY_RESPONSE",
+                            message = "문서 요약을 불러오지 못했습니다.",
+                            errorType = DomainError.Message("document summary is null")
+                        )
+
+                    ApiResultV2.Success(
+                        message = result.message,
+                        data = summary
+                    )
+                }
+
+                is ApiResultV2.ServerError -> result
+                is ApiResultV2.NetworkError -> result
+                is ApiResultV2.SessionExpired -> result
+                is ApiResultV2.UnknownError -> result
+            }
+        }
+    }
+
+
+    override suspend fun getDocuments(
+        goalId: Int
+    ): ApiResultV2<List<DocumentResponse>> {
+
+        return safeApiVer2(
+            apiCall = {
+                documentApiService.getDocuments(goalId)
+            },
+            mapper = { data ->
+                data?.documents
+            }
+        ).let { result ->
+            when (result) {
+
+                is ApiResultV2.Success -> {
+                    val documents = result.data
+                        ?: return ApiResultV2.ServerError(
+                            code = "INVALID_DOCUMENT_RESPONSE",
+                            message = "문서 목록을 불러오지 못했습니다.",
+                            errorType = DomainError.Message("documents is null")
+                        )
+
+                    ApiResultV2.Success(
+                        message = result.message,
+                        data = documents
+                    )
+                }
+
+                is ApiResultV2.ServerError -> result
+                is ApiResultV2.NetworkError -> result
+                is ApiResultV2.SessionExpired -> result
+                is ApiResultV2.UnknownError -> result
+            }
+        }
+    }
 
     override suspend fun issuePresignedUrl(
         fileName: String
@@ -42,32 +123,36 @@ class DocumentRepositoryImpl @Inject constructor(
         )
     }
 
+
     override suspend fun uploadFileToS3(
         presignedUrl: String,
         uri: Uri,
         mimeType: String
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
 
-        val inputStream = context.contentResolver.openInputStream(uri)
-            ?: throw IllegalStateException("파일을 열 수 없습니다.")
+            val inputStream = context.contentResolver.openInputStream(uri)
+                ?: throw IllegalStateException("파일을 열 수 없습니다.")
 
-        val requestBody = inputStream.readBytes()
-            .toRequestBody(mimeType.toMediaType())
+            val requestBody = inputStream
+                .readBytes()
+                .toRequestBody(mimeType.toMediaType())
 
-        val request = Request.Builder()
-            .url(presignedUrl)
-            .put(requestBody)
-            .build()
+            val request = Request.Builder()
+                .url(presignedUrl)
+                .put(requestBody)
+                .build()
 
-        okHttpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IllegalStateException("S3 업로드 실패")
+            okHttpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IllegalStateException("S3 업로드 실패")
+                }
             }
         }
     }
 
     override suspend fun registerDocument(
-        goalId: Long,
+        goalId: Int,
         fileName: String,
         fileKey: String
     ): ApiResultV2<Unit> {

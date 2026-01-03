@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.appTypography
 
 
 @Composable
@@ -28,10 +29,12 @@ fun BaseFillButton(
     textStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
     onClick: () -> Unit,
-    conerRadius: Dp = 16.dp
+    conerRadius: Dp = 16.dp,
+    btnContainerColor: Color = MaterialTheme.colorScheme.primary,
+    btnContentColor: Color = MaterialTheme.colorScheme.onPrimary
 ) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+    val primaryColor = btnContainerColor
+    val onPrimaryColor = btnContentColor
 
     Row(
         modifier = modifier.fillMaxWidth()
@@ -52,11 +55,8 @@ fun BaseFillButton(
         ) {
             Text(
                 text = text,
-                style = TextStyle(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight(600),
-                    textAlign = TextAlign.Center,
-                )
+                style = MaterialTheme.appTypography.btnBold20_h24
+                    .copy(color = btnContentColor)
             )
         }
     }

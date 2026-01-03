@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.di
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.document.DocumentApiService
 import com.teumteumeat.teumteumeat.data.api.goal.GoalApiService
+import com.teumteumeat.teumteumeat.data.api.quiz.QuizApiService
 import com.teumteumeat.teumteumeat.data.api.user.CategoryApiService
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import dagger.Module
@@ -36,6 +37,10 @@ object ApiServiceModule {
     @Provides @Singleton
     fun provideGoalApiService(retrofit: Retrofit): GoalApiService =
         retrofit.create(GoalApiService::class.java)
+
+    @Provides @Singleton
+    fun provideQuizApiService(retrofit: Retrofit): QuizApiService =
+        retrofit.create(QuizApiService::class.java)
 
     // ---- api 서비스 추가 ----
 

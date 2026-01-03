@@ -41,18 +41,29 @@ fun TimeSliderWithPickTime(
         PickHourMinute(
             initialHour = state.hour,
             onHourChange = { newHour ->
+
+                val newAmPm =
+                    if (newHour in 1..11) AmPm.AM else AmPm.PM
+
+                onChange(
+                    state.copy(
+                        hour = newHour.coerceIn(1, 12),
+                        amPm = newAmPm
+                    )
+                )
+
                 // ✅ 11 ↔ 12 넘어갈 때 AM/PM 자동 변경
-                val isForward = state.hour == 11 && newHour == 12
+/*                val isForward = state.hour == 11 && newHour == 12
                 val isBackward = state.hour == 12 && newHour == 11
 
-                val newAmPm = state.amPm
-                /*val newAmPm = when {
+                // val newAmPm = state.amPm
+                val newAmPm = when {
                     isForward -> if (state.amPm == AmPm.AM) AmPm.PM else AmPm.AM
                     isBackward -> if (state.amPm == AmPm.PM) AmPm.AM else AmPm.PM
                     else -> state.amPm
-                }*/
+                }
 
-                onChange(state.copy(hour = newHour, amPm = newAmPm))
+                onChange(state.copy(hour = newHour, amPm = newAmPm))*/
             },
             initialMinute = state.minute,
             onMinuteChange = { newMinute ->
