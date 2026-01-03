@@ -1,11 +1,8 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kakao.sdk.auth.model.OAuthToken
-import com.kakao.sdk.user.UserApiClient
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.AuthToken
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
@@ -14,8 +11,6 @@ import com.teumteumeat.teumteumeat.data.network.model_request.AuthResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.SocialLoginRequest
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
-import com.teumteumeat.teumteumeat.domain.usecase.AutoLoginUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompletedUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -118,6 +113,28 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    fun loginWithKakaoServer(
+        idToken: String,
+        authCode: String?
+    ) {
+        viewModelScope.launch {
+
+            // 1️⃣ pendingSocialLogin 세팅
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    pendingSocialLogin = PendingSocialLogin(
+                        provider = SocialProvider.KAKAO,
+                        idToken = idToken,
+                        authCode = authCode // ✅ 추후 Apple 대비용 (현재 미사용)
+                    )
+                )
+            }
+
+            // 2️⃣ 서버 로그인 요청 (약관 미동의 상태)
+            requestSocialLogin(termsAgreed = false)
+        }
+    }
 
 
     fun agreeTermsAndRegister() {
@@ -236,6 +253,7 @@ class LoginViewModel @Inject constructor(
             AuthToken(
                 accessToken = data.accessToken,
                 refreshToken = data.refreshToken,
+                socialLoginType = uiState.value.pendingSocialLogin.provider.name,
             )
         )
     }

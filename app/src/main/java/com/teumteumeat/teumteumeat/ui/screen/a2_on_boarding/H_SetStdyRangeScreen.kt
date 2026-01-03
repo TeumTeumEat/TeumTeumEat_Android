@@ -77,7 +77,7 @@ fun SetStudyRangeScreen(
 
                     WeekRadioGroup(
                         options = studyWeekOptions,
-                        selectedValue = uiState.selectedStudyWeek,
+                        selectedValue = uiState.studyPeriod,
                         onSelect = { option ->
                             viewModel.onStudyWeekSelected(option.value)
                         }
@@ -95,10 +95,10 @@ fun SetStudyRangeScreen(
                         textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
                             color = MaterialTheme.extendedColors.backgroundW100
                         ),
-                        isEnabled = uiState.selectedStudyWeek != null,
+                        isEnabled = uiState.studyPeriod != null,
                         onClick = {
                             // todo. 뷰모델 함수로 서버로 학습 목표 생성 요청하기
-                            viewModel.onCreateGoalClick()
+                            // viewModel.onCreateGoalClick()
                             onNext()
                         },
                         conerRadius = 16.dp

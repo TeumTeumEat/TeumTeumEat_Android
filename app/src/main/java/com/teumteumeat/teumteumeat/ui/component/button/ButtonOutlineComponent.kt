@@ -36,6 +36,8 @@ fun BaseOutlineButton(
     onClick: () -> Unit,
     contentAligment: Alignment = Alignment.Center,
     btnHeight: Int = 60,
+    maxLine: Int = 1,
+    overFlowSetting: TextOverflow = TextOverflow.Clip,
 ) {
     val contentColor =
         if (isEnabled) color else MaterialTheme.colorScheme.onSurfaceVariant
@@ -66,7 +68,9 @@ fun BaseOutlineButton(
             ) {
                 Text(
                     text = text,
-                    style = textStyle
+                    style = textStyle,
+                    maxLines = maxLine,
+                    overflow = overFlowSetting
                 )
             }
         }

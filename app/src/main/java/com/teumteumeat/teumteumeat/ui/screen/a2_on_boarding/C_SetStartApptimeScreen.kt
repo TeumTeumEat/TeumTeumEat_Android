@@ -43,6 +43,7 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.Button
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -50,6 +51,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.areAppNotificationsEnabled
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.isPostNotificationsGranted
@@ -234,12 +236,19 @@ fun OnBoardingSetApptimeScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(18.dp))
+
+                    /*Button(onClick = {
+                        Utils.PrefsUtil.clearNotificationDeniedOnce(context)
+                    }) {
+                        Text("알림 권한 이력 초기화 (DEBUG)")
+                    }*/
+
                     BaseFillButton(
                         text = "다음으로",
                         textStyle = Typography.labelMedium.copy(
                             lineHeight = 24.sp
                         ),
-                        isEnabled = isSetAllTimeValid,
+                        isEnabled = isSetAllTimeValid && uiState.isNotificationChecked,
                         onClick = {
                             onNext()
                         },
@@ -250,29 +259,26 @@ fun OnBoardingSetApptimeScreen(
 
                 // 🔹 바텀시트
                 if (uiState.showBottomSheet) {
-                    BottomSheetContainer(
-                        titleText = viewModel.getSheetTitle(),
+                    BottomSheetContainerRightTopConfirm(
                         onDismiss = {
                             viewModel.closeTimeSheet()
-                        }
-                    ) {
-                        TimeSliderWithPickTime(
-                            state = uiState.tempTime,
-                            onChange = { viewModel.onTimeChanged(it) }
-                        )
-                        Spacer(Modifier.height(20.dp))
-                        BaseFillButton(
-                            text = "확인하기",
-                            textStyle = Typography.labelMedium.copy(
-                                lineHeight = 24.sp
-                            ),
-                            onClick = {
-                                viewModel.confirmTime()
-                                viewModel.closeTimeSheet()
-                            },
-                            conerRadius = 16.dp
-                        )
-                    }
+                        },
+                        onConfirm = {
+                            viewModel.confirmTime()
+                            viewModel.closeTimeSheet()
+                        },
+                        titleText = viewModel.getSheetTitle(),
+                        content = {
+                            TimeSliderWithPickTime(
+                                state = uiState.tempTime,
+                                onChange = {
+                                    viewModel.onTimeChanged(it)
+                                }
+                            )
+                            Spacer(Modifier.height(20.dp))
+                        },
+                        onCompleteEnable = true,
+                    )
                 }
             }
         },

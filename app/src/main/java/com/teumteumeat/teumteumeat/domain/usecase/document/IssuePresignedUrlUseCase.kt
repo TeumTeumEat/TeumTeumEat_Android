@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.domain.usecase.on_boarding
+package com.teumteumeat.teumteumeat.domain.usecase.document
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse

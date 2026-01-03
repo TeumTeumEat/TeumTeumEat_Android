@@ -3,15 +3,17 @@ package com.teumteumeat.teumteumeat.ui.screen.a0_splash
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingDecision
 import com.teumteumeat.teumteumeat.domain.usecase.AutoLoginUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompletedUseCase
-import com.teumteumeat.teumteumeat.ui.screen.a0_splash.SplashUiState.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,8 +24,14 @@ class SplashViewModel @Inject constructor(
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<SplashUiState>(SplashUiState.Idle)
+    private val _uiState = MutableStateFlow<SplashUiState>(SplashUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<SplashUiEvent>(
+        replay = 0,
+        extraBufferCapacity = 1
+    )
+    val uiEvent = _uiEvent.asSharedFlow()
 
     init {
         // todo: testCode. 구글로그인 테스트 위해 리프레쉬 토큰 초기화용 함수
@@ -35,11 +43,11 @@ class SplashViewModel @Inject constructor(
      * 🔥 로티 애니메이션 종료 시 호출
      */
     fun onAnimationFinished() {
-        socialLogin()
+        tryAutoLogin()
     }
 
     /**
-     * 테스트용 (구글 로그인 테스트 시)
+     * 토큰 및 로그인 정보 삭제: 인증에러가 발생해서 로그인 화면으로 이동시, 기기에 저장된 토큰 삭제
      */
     fun clearAllToken() {
         viewModelScope.launch {
@@ -47,78 +55,131 @@ class SplashViewModel @Inject constructor(
         }
     }
 
-    private fun socialLogin() {
+    private fun tryAutoLogin() {
         Log.d("소셜 로그인", "뷰모델 함수 호출")
         viewModelScope.launch {
-            _uiState.value = SplashUiState.Loading
-
-            val result = autoLoginUseCase()
-            Log.d("자동 로그인 로직", "결과: ${result}")
-
-            when (val loginResult = autoLoginUseCase()) {
-                is AutoLogin.Success -> handleAutoLoginSuccess()
-                is AutoLogin.Fail -> handleLoginFail(loginResult)
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorState = null
+                )
             }
+
+            when (val result = autoLoginUseCase()) {
+
+                is AutoLogin.Success -> {
+                    checkOnboardingCompleted()
+                }
+
+                is AutoLogin.SessionExpired -> {
+                    Log.d("소셜 로그인", "세션 만료, 리프레쉬 토큰으로 재발급 필요")
+                    showNetworkError(
+                        message = result.message,
+                        retry = { viewModelScope.launch { tryAutoLogin() } }
+                    )
+                    setLoginRequiredState(result.message)
+                }
+
+                is AutoLogin.Fail -> {
+                    showNetworkError(
+                        message = result.message,
+                        retry = { viewModelScope.launch { tryAutoLogin() } }
+                    )
+                    setLoginRequiredState(result.message)
+                }
+
+                is AutoLogin.NetWorkError -> {
+                    showNetworkError(
+                        message = result.message,
+                        retry = { viewModelScope.launch { tryAutoLogin() } }
+                    )
+                    setNetworkRequiredState(result.message)
+                }
+            }
+
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 
-    /**
-     * 자동 로그인 성공 → 온보딩 여부 확인
-     */
-    private suspend fun handleAutoLoginSuccess() {
+    private suspend fun checkOnboardingCompleted() {
         when (val result = getOnboardingCompletedUseCase()) {
 
-            is ApiResult.Success -> {
-                val completed = result.data.completed
-                Log.d("온보딩 로직: ", "온보딩 완료 여부")
-
-                _uiState.value = SplashUiState.Success(
-                    nextRoute = if (completed) {
-                        SplashRoute.MAIN
-                    } else {
-                        SplashRoute.ON_BOARDING
-                    }
-                )
+            is OnboardingDecision.GoMain -> {
+                _uiEvent.emit(SplashUiEvent.NavigateToMain)
             }
 
-            is ApiResult.SessionExpired -> {
-                _uiState.value = SplashUiState.Error(
-                    message = result.message,
-                    nextRoute = SplashRoute.LOGIN
-                )
+            is OnboardingDecision.GoOnboarding -> {
+                _uiEvent.emit(SplashUiEvent.NavigateToOnboarding)
             }
 
-            is ApiResult.NetworkError -> {
-                _uiState.value = SplashUiState.Error(
+            is OnboardingDecision.NeedLogin -> {
+                showNetworkError(
                     message = result.message,
-                    nextRoute = SplashRoute.LOGIN
-                )
-            }
-
-            is ApiResult.ServerError -> {
-                _uiState.value = SplashUiState.Error(
-                    message = result.message,
-                    nextRoute = SplashRoute.LOGIN
-                )
-            }
-
-            is ApiResult.UnknownError -> {
-                _uiState.value = SplashUiState.Error(
-                    message = result.message,
-                    nextRoute = SplashRoute.LOGIN
+                    retry =  { viewModelScope.launch { checkOnboardingCompleted() } }
                 )
             }
         }
     }
 
-    private fun handleLoginFail(result: AutoLogin.Fail) {
-        _uiState.value = SplashUiState.Error(
-            message = result.message,
-            nextRoute = SplashRoute.LOGIN
-        )
+    private fun showNetworkError(
+        message: String,
+        retry: () -> Unit
+    ) {
+        _uiState.update {
+            it.copy(
+                errorState = ErrorState(
+                    title = "다시 한번 접속해주세요!",
+                    description = message,
+                    onRetry = retry
+                )
+            )
+        }
+    }
+
+    private fun setLoginRequiredState(message: String) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorState = ErrorState(
+                    title = "인증 에러가 발생하였습니다!",
+                    description = message,
+                    retryLabel = "로그인 화면으로 이동",
+                    onRetry = {
+                        viewModelScope.launch {
+                            clearAllToken()
+                            _uiEvent.emit(SplashUiEvent.NavigateToLogin)
+                        }
+                    }
+                )
+            )
+        }
     }
 
 
+    private fun setNetworkRequiredState(message: String) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorState = ErrorState(
+                    title = "다시한번 접속해주세요",
+                    description = message,
+                    retryLabel = "다시 시도하기",
+                    onRetry = {
+                        viewModelScope.launch {
+                            tryAutoLogin()
+                        }
+                    }
+                )
+            )
+        }
+    }
 
+    fun dismissError() {
+        _uiState.update {
+            it.copy(
+                errorState = null
+            )
+        }
+    }
 
 }

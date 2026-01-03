@@ -157,7 +157,7 @@ fun FileUploadScreen(
                         },
                         isSelectableContent = uiState.selectedFileName != "",
                         contentFileName = uiState.selectedFileName,
-                        onDelContentClick = { viewModel.onFileDeleted()},
+                        onDelContentClick = { viewModel.onFileDeleted() },
                     )
                 }
 

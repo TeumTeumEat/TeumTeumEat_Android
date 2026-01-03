@@ -13,11 +13,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.AmPm
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import java.io.FileInputStream
-import java.io.IOException
-import java.net.ConnectException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -272,6 +269,28 @@ class Utils {
         }
     }*/
 
+    object DateUtil {
+
+        fun todayText(): String {
+            val today = java.time.LocalDate.now()
+            return "${today.monthValue}월 ${today.dayOfMonth}일"
+        }
+    }
+
+    object InfoUtil{
+        fun getAppVersion(context: Context): String {
+            return try {
+                val packageInfo = context.packageManager.getPackageInfo(
+                    context.packageName,
+                    0
+                )
+                "v${packageInfo.versionName}"
+            } catch (e: Exception) {
+                "v1.0.0"
+            }
+        }
+    }
+
     enum class USER_REGISTER_STATE { LOGIN, ADD_INFO, LEVEL_EXAM, MAIN }
     // 유저의 언어 정보값을 SharedPref 에 저장하는 Utile 함수 만들기
     object PrefsUtil {
@@ -280,11 +299,108 @@ class Utils {
         private const val ID = "user_id"
         private const val NICK_NAME = "user_nick_name"
         private const val EXAM_MONTH = "user_exam_month"
+        private const val KEY_GOAL_ID = "goal_id"
+        private const val KEY_CATEGORY_ID = "category_id"
+        private const val KEY_DOCUMENT_ID = "document_id"
+        private const val KEY_GOAL_TYPE = "goal_type"
+
 
         // 🔔 알림 권한 한 번이라도 거부했는지
         private const val KEY_NOTIFICATION_DENIED_ONCE = "notification_denied_once"
 
         private val IS_USER_REGISTER_STATE = USER_REGISTER_STATE.LOGIN.name
+
+        fun saveGoalType(context: Context, goalType: GoalType) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString(KEY_GOAL_TYPE, goalType.name)
+                .apply()
+        }
+
+        fun getGoalType(context: Context): GoalType {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getString(KEY_GOAL_TYPE, null)
+
+            return runCatching {
+                if (value != null) GoalType.valueOf(value)
+                else GoalType.NONE
+            }.getOrElse {
+                GoalType.NONE
+            }
+        }
+
+        fun clearGoalType(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_GOAL_TYPE)
+            }
+        }
+
+        fun saveDocumentId(context: Context, documentId: Int) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putInt(KEY_DOCUMENT_ID, documentId)
+                .commit()
+        }
+
+        fun getDocumentId(context: Context): Int? {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getInt(KEY_DOCUMENT_ID, -1)
+            return if (value == -1) null else value
+        }
+
+        fun clearDocumentId(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_DOCUMENT_ID)
+            }
+        }
+
+
+        fun saveGoalId(context: Context, goalId: Int) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putInt(KEY_GOAL_ID, goalId)
+                .commit() // 🔴 동기 저장
+        }
+
+
+        fun getGoalId(context: Context): Int? {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getInt(KEY_GOAL_ID, -1)
+            return if (value == -1) null else value
+        }
+
+
+        fun clearGoalId(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_GOAL_ID)
+            }
+        }
+
+
+        fun saveCategoryId(context: Context, categoryId: Int) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putInt(KEY_CATEGORY_ID, categoryId)
+                .commit()
+        }
+
+
+        fun getCategoryId(context: Context): Int? {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getInt(KEY_CATEGORY_ID, -1)
+            return if (value == -1) null else value
+        }
+
+
+        fun clearCategoryId(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_CATEGORY_ID)
+            }
+        }
 
 
         /**
@@ -303,6 +419,18 @@ class Utils {
         fun hasNotificationDeniedOnce(context: Context): Boolean {
             val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             return prefs.getBoolean(KEY_NOTIFICATION_DENIED_ONCE, false)
+        }
+
+        /**
+         * 🔄 알림 권한 거부 이력 초기화
+         * - 최초 권한 요청 상태로 되돌림
+         */
+        fun clearNotificationDeniedOnce(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_NOTIFICATION_DENIED_ONCE)
+                // 또는 putBoolean(KEY_NOTIFICATION_DENIED_ONCE, false)
+            }
         }
 
         // 유저 id 저장

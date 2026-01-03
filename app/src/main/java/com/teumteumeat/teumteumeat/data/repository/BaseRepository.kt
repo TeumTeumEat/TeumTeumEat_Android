@@ -246,7 +246,7 @@ abstract class BaseRepository(
             tokenLocalDataSource.save(
                 AuthToken(
                     accessToken = tokenResponse.data,
-                    refreshToken = refreshToken
+                    refreshToken = refreshToken,
                 )
             )
 

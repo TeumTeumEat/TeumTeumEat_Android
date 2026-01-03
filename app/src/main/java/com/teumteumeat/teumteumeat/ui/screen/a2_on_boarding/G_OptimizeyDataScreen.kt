@@ -109,7 +109,7 @@ fun OptimizerDataScreen(
                             ),
                             isEnabled = isPromptValid,
                             onClick = {
-                                viewModel.onConfirmClick()
+                                viewModel.setUserName()
                                 onNext()
                             },
                             conerRadius = 16.dp

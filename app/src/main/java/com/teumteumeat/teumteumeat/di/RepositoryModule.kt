@@ -6,6 +6,8 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepositoryImpl
+import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
+import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepositoryImpl
 import dagger.Binds
@@ -32,6 +34,10 @@ abstract class RepositoryModule {
     @Binds abstract fun bindGoalRepository(
         impl: GoalRepositoryImpl
     ): GoalRepository
+
+    @Binds abstract fun bindQuizRepository(
+        impl: QuizRepositoryImpl
+    ): QuizRepository
 
 }
 

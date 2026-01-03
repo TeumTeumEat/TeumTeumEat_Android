@@ -181,4 +181,10 @@ dependencies {
     implementation("com.github.vsnappy1:ComposeDatePicker:2.2.0")
 
     implementation("com.onesignal:OneSignal:[5.1.0, 5.1.99]")
+
+    implementation("io.noties.markwon:core:4.6.2")
+
+    implementation("org.jetbrains:markdown:0.7.3")
+
+
 }

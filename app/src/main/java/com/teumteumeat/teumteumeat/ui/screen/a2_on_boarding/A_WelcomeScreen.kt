@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
@@ -53,9 +54,11 @@ fun OnBoardingFirstScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "서비스소개소개소개",
+                        "매일 소모되는 이동 시간,\n" +
+                                "틈틈잇과 성장하는 시간으로 바꿔봐요!",
                         style = Typography.headlineMedium.copy(
                             fontSize = 18.sp,
+                            textAlign = TextAlign.Center
                         )
                     )
 

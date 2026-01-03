@@ -12,3 +12,9 @@ fun OnboardingStatus.toDomain(): OnboardingStatus =
     OnboardingStatus(
         completed = completed
     )
+
+sealed class OnboardingDecision {
+    object GoMain : OnboardingDecision()
+    object GoOnboarding : OnboardingDecision()
+    data class NeedLogin(val message: String) : OnboardingDecision()
+}

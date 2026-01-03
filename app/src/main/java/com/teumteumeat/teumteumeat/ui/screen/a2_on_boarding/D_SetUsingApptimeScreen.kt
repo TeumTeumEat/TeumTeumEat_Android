@@ -43,32 +43,6 @@ fun OnBoardingSetUsingApptimeScreen(
 
     val isSetAllTimeValid = uiState.isSetWorkInTime && uiState.isSetWorkOutTime
 
-    /**
-     * 🔹 화면 최초 진입 시
-     * 🔹 권한 상태만 확인 (팝업 ❌)
-     */
-    LaunchedEffect(Unit) {
-        val granted = OneSignal.Notifications.permission
-        viewModel.syncNotificationPermission(granted)
-    }
-
-
-    // 🔔 권한 팝업은 "이 상태가 true일 때만" 실행
-    LaunchedEffect(uiState.requestNotificationPermission) {
-        if (uiState.requestNotificationPermission) {
-            // 1️⃣ 시스템 권한 팝업 호출
-            OneSignal.Notifications.requestPermission(true)
-
-            // 2️⃣ 현재 권한 상태 확인
-            val granted = OneSignal.Notifications.permission
-
-            // 3️⃣ ViewModel에 결과 전달
-            viewModel.onNotificationPermissionResult(granted)
-
-            // 이벤트 소비
-            viewModel.consumeNotificationPermissionRequest()
-        }
-    }
 
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
@@ -120,7 +94,7 @@ fun OnBoardingSetUsingApptimeScreen(
                         ),
                         isEnabled = uiState.selectedMinute != null,
                         onClick = {
-                            viewModel.saveCommuteInfo()
+                            // viewModel.saveCommuteInfo()
                             onNext()
                         },
                         conerRadius = 16.dp

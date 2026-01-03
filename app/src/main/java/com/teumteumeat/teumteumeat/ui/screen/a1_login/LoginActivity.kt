@@ -1,7 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
-import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -29,7 +29,6 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.IOException
-import kotlin.math.log
 
 @AndroidEntryPoint
 class LoginActivity : ComponentActivity()  {
@@ -91,7 +90,7 @@ class LoginActivity : ComponentActivity()  {
                                 context = this@LoginActivity,
                                 onSuccess = { idToken, authCode ->
                                     Log.d("kakao 로그인", "idToken: ${idToken}, authCode: ${authCode}")
-                                    // viewModel.loginWithKakao(idToken, authCode)
+                                    viewModel.loginWithKakaoServer(idToken, authCode)
                                 },
                                 onError = { error ->
                                     when (error) {
@@ -118,11 +117,6 @@ class LoginActivity : ComponentActivity()  {
                         viewModel = viewModel
                     )
                 }
-//                MainCompositionProvider(
-//                    viewModel = viewModel,
-//                    context = this.applicationContext,
-//                    activity = this@MainActivity,
-//                )
             }
         }
     }
@@ -131,6 +125,7 @@ class LoginActivity : ComponentActivity()  {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
+
     fun loginWithKakao(
         context: Context,
         onSuccess: (idToken: String, authCode: String?) -> Unit,
@@ -138,6 +133,7 @@ class LoginActivity : ComponentActivity()  {
     ) {
         val callback: (OAuthToken?, Throwable?) -> Unit =
             callback@{ token, error ->
+                Log.d("KakaoRedirect", "callback entered. token=$token, error=$error")
 
             // 1️⃣ 에러 우선 처리
             if (error != null) {
@@ -209,13 +205,14 @@ class LoginActivity : ComponentActivity()  {
                     // 🔥 해결책 1의 핵심
                     if (
                         error is AuthError &&
-                        error.response?.error == "NotSupportError"
+                        error.response.error == "NotSupportError"
                     ) {
                         // 👉 카카오톡은 있으나 계정 로그인 안 됨 → 계정 로그인으로 fallback
-                        UserApiClient.instance.loginWithKakaoAccount(
-                            context = context,
-                            callback = callback
-                        )
+                        showToast("카카오톡 앱이 필요합니다")
+//                        UserApiClient.instance.loginWithKakaoAccount(
+//                            context = context,
+//                            callback = callback
+//                        )
                         return@loginWithKakaoTalk
                     }
 
@@ -225,11 +222,15 @@ class LoginActivity : ComponentActivity()  {
             )
         } else {
             // ✅ 카카오톡 미설치 → 바로 계정 로그인
-            UserApiClient.instance.loginWithKakaoAccount(
-                context = context,
-                callback = callback
-            )
+            showToast("카카오톡 앱이 필요합니다")
+            return
+//            UserApiClient.instance.loginWithKakaoAccount(
+//                context = context,
+//                callback = callback
+//            )
         }
+
+
     }
 
     private fun logKakaoError(tag: String = "KakaoLogin", t: Throwable) {
@@ -245,4 +246,7 @@ class LoginActivity : ComponentActivity()  {
             android.util.Log.e(tag, "KakaoSdkError.toString=${t.toString()}")
         }
     }
+
+
+
 }

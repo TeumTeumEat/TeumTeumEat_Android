@@ -2,7 +2,9 @@ package com.teumteumeat.teumteumeat.data.repository.document
 
 import android.net.Uri
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
+import com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse
 
 interface DocumentRepository {
 
@@ -31,9 +33,20 @@ interface DocumentRepository {
      * - 서버 API 호출
      */
     suspend fun registerDocument(
-        goalId: Long,
+        goalId: Int,
         fileName: String,
         fileKey: String
     ): ApiResultV2<Unit>
+
+    suspend fun getDocuments(
+        goalId: Int
+    ): ApiResultV2<List<DocumentResponse>>
+
+    suspend fun getDocumentSummary(
+        goalId: Int,
+        documentId: Int,
+    ): ApiResultV2<DocumentSummaryResponse>
+
+
 }
 

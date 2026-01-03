@@ -11,12 +11,12 @@ data class TimeState(
     companion object {
         fun amTime() = TimeState(
             amPm = AmPm.AM,
-            hour = 0,
+            hour = 12,
             minute = 0,
         )
         fun pmTime() = TimeState(
             amPm = AmPm.PM,
-            hour = 13,
+            hour = 12,
             minute = 0,
         )
     }

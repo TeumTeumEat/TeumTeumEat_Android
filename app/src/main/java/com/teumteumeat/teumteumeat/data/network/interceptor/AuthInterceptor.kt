@@ -12,7 +12,14 @@ class AuthInterceptor @Inject constructor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
+        val url = request.url
+
+        // ✅ S3 presigned URL은 인증 헤더 제외
+        if (url.host.contains("amazonaws.com")) {
+            return chain.proceed(request)
+        }
         val path = request.url.encodedPath
+
 
         // 🔴 reissue 와 회원가입 API는 인증 헤더를 붙이지 않는다
         if (path == "/api/v1/users/reissue" ||

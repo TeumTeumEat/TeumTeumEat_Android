@@ -30,7 +30,7 @@ fun CustomProgressBar(
     modifier: Modifier = Modifier,
     currentStep: Int = 0,
     totalSteps: Int = 5,
-    animationDuration: Int = 300
+    animationDuration: Int = 300,
 ) {
     // 1) Progress 계산 (0f ~ 1f)
     val targetProgress = (currentStep.toFloat() / totalSteps.toFloat())

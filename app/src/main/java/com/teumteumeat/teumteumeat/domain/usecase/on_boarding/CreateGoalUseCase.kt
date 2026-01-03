@@ -10,7 +10,7 @@ class CreateGoalUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         request: CreateGoalRequest
-    ): ApiResultV2<Unit> {
+    ): ApiResultV2<Int> {
         return goalRepository.createGoal(request)
     }
 }

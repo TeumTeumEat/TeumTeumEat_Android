@@ -2,12 +2,38 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.net.Uri
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.ui.component.AmPm
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import java.sql.Time
+
+sealed class UiStateOnBoardingMainState {
+
+    /** 아무 일도 하지 않는 초기 상태 */
+    data object Idle : UiStateOnBoardingMainState()
+
+    /** 로딩 화면 표시 */
+    data object Loading : UiStateOnBoardingMainState()
+
+    /** 등록 성공 */
+    data object Success : UiStateOnBoardingMainState()
+
+    /** 오류 발생 */
+    data class Error(
+        val message: String
+    ) : UiStateOnBoardingMainState()
+}
 
 data class UiStateOnBoardingMain(
-    val currentPage: Int = 0,
-    val totalPage: Int = 5,
+//    val currentPage: Int = 0,
+//    val totalPage: Int = 5,
+
+    // ⭐ 서버에 보낼 실제 categoryId
+    val selectedCategoryId: Int? = null,
+
+    val documentId: Int = 0,
+    val goalId: Int = 0,
+    val currentScreen: OnBoardingScreens = OnBoardingScreens.FirstScreen,
 
     // 이름 설정
     val charName: String = "",
@@ -79,8 +105,6 @@ data class UiStateOnBoardingMain(
     // 🔹 Pager 제어용 (UI가 이 값을 observe)
     val targetCategoryPage: Int = 0,
 
-    // ⭐ 서버에 보낼 실제 categoryId
-    val selectedCategoryId: Int? = null,
 
     // 온보딩 응답 요청 별 에러 메시지
     val pageErrorMessage: String? = null,
@@ -94,9 +118,18 @@ data class UiStateOnBoardingMain(
     val promptInput: String = "",
     val promptInputErrMsg: String? = null,
 
-    val selectedStudyWeek: Int? = null,
+    val studyPeriod: Int? = null,
     val endDate: String = "",
-)
+){
+    val currentPage: Int
+        get() = OnBoardingFlow.currentPage(currentScreen)
+
+    val totalPage: Int
+        get() = OnBoardingFlow.totalCount
+
+    val canGoBack: Boolean
+        get() = currentPage > 1
+}
 
 enum class NotificationSettingGuideType {
     NONE,
@@ -182,14 +215,14 @@ enum class TimeType {
 
 
 fun TimeState.toDisplayText(): String {
-    val isAm = hour in 0..11
+    val isAm = amPm == AmPm.AM
 
     val amPmText = if (isAm) "오전" else "오후"
 
     val displayHour = when {
-        hour == 0 -> 12          // 00:xx → 오전 12시
-        hour in 1..12 -> hour    // 01~12
-        else -> hour - 12        // 13~23 → 오후
+        hour == 0 || hour == 12 -> 12
+        hour in 1..12 -> hour
+        else -> hour - 12
     }
 
     return "%s %02d시 %02d분".format(

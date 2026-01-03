@@ -1,9 +1,11 @@
 package com.teumteumeat.teumteumeat.ui.screen.a0_splash
 
 
-sealed interface SplashUiState {
-
-    val nextRoute: SplashRoute?
+data class SplashUiState (
+    val isLoading: Boolean = false,
+    // val errorMessage: String? = null,
+    val errorState: ErrorState? = null,
+    /*val nextRoute: SplashRoute?
 
     data object Idle : SplashUiState {
         override val nextRoute: SplashRoute? = null
@@ -20,11 +22,29 @@ sealed interface SplashUiState {
     data class Error(
         val message: String,
         override val nextRoute: SplashRoute
-    ) : SplashUiState
-}
+    ) : SplashUiState*/
+)
 
 enum class SplashRoute {
     LOGIN,
     MAIN,
     ON_BOARDING,
+}
+
+data class ErrorState(
+    val title: String,
+    val description: String,
+    val retryLabel: String = "다시 시도하기",
+    val onRetry: () -> Unit
+)
+
+sealed class SplashUiEvent {
+
+    // 화면 이동
+    data object NavigateToLogin : SplashUiEvent()
+    data object NavigateToMain : SplashUiEvent()
+    data object NavigateToOnboarding : SplashUiEvent()
+
+    // 기타 (필요 시 확장)
+    data class ShowErrorMessage(val message: String) : SplashUiEvent()
 }
