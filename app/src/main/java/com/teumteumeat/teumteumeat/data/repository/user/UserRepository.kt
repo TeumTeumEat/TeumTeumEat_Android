@@ -1,0 +1,28 @@
+package com.teumteumeat.teumteumeat.data.repository.user
+
+import com.teumteumeat.teumteumeat.data.api.user.CommuteTimeRequest
+import com.teumteumeat.teumteumeat.data.network.model.ApiResult
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
+import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfoResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoResponse
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.UserName
+
+interface UserRepository {
+    suspend fun getCommuteInfo(): ApiResultV2<CommuteInfoResponse>
+    suspend fun getUserName(): ApiResultV2<UserName>
+    suspend fun getAccountInfo(): ApiResultV2<AccountInfoResponse>
+
+    suspend fun getOnboardingStatus(): ApiResult<OnboardingStatus, Unit>
+    suspend fun getOnboardingCompletedV2(): ApiResultV2<OnboardingStatus>
+
+    suspend fun updateUserName(name: String): ApiResult<String, List<FieldErrorDetail>>
+
+    suspend fun updateCommuteTime(request: CommuteTimeRequest): ApiResult<Unit, Unit>
+    suspend fun updateCommuteInfo(request: CommuteTimeRequest): ApiResultV2<Unit>
+
+    suspend fun getCategories(): ApiResult<List<Category>, Any?>
+    suspend fun updateUserNameV2(name: String): ApiResultV2<String>
+}

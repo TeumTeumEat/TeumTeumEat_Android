@@ -1,5 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -7,11 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryScreen
@@ -26,7 +26,7 @@ fun MainNavHost(navController: NavHostController, startDestination: String, modi
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
     ) {
         composable(BottomNavItem.Home.route) {
             val parentEntry = remember(it) {
@@ -41,6 +41,7 @@ fun MainNavHost(navController: NavHostController, startDestination: String, modi
                 viewModel = viewModel,
                 uiState = uiStateHome,
                 onTabOther = {},
+                modifier = modifier,
             )
         }
 
