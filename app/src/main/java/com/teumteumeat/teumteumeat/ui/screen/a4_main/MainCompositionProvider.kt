@@ -2,11 +2,12 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
 import android.content.Context
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -35,44 +36,46 @@ import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
+import com.teumteumeat.teumteumeat.ui.screen.c1_mypage.MyPageActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
-import com.teumteumeat.teumteumeat.utils.LocalHomeUiState
-import com.teumteumeat.teumteumeat.utils.LocalLibraryUiState
 import com.teumteumeat.teumteumeat.utils.LocalMainUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
+import com.teumteumeat.teumteumeat.utils.Utils
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 @Composable
-fun HomeCompositionProvider(
+fun MainCompositionProvider(
     viewModel: MainViewModel,
     context: Context,
     activity: MainActivity,
 ) {
 
     val mainUiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-
     val navHostController = rememberNavController()
+    val theme = MaterialTheme.extendedColors
 
     CompositionLocalProvider(
         LocalAppContext provides context,
         LocalActivityContext provides activity,
         LocalMainUiState provides mainUiState,
         LocalViewModelContext provides viewModel,
-
-        ) {
+    ) {
         DefaultMonoBg(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surface,
+            color = theme.backSurface,
         ) {
             Scaffold(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = theme.backSurface),
                 content = { padding ->
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .background(color = theme.backSurface)
                             .systemBarsPadding()
                             .padding(),
                         verticalArrangement = Arrangement.SpaceBetween,
@@ -112,6 +115,11 @@ fun HomeCompositionProvider(
                             }
                             IconButton(
                                 onClick = {
+                                    Utils.UxUtils.moveActivity(
+                                        context,
+                                        MyPageActivity::class.java,
+                                        exitFlag = false,
+                                    )
                                 },
                                 modifier = Modifier.size(30.dp),
 
@@ -125,7 +133,7 @@ fun HomeCompositionProvider(
 
                         }
 
-                        Column(
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
@@ -133,31 +141,23 @@ fun HomeCompositionProvider(
                             MainNavHost(
                                 navController = navHostController,
                                 startDestination = BottomNavItem.Home.route,
-                                modifier = Modifier.padding(),
+                                modifier = Modifier.padding(padding),
                             )
                         }
                     }
                 },
                 bottomBar = {
-                    BottomNavigationBar(navHostController)
+                    Box(
+                        modifier = Modifier
+                            .background(color = theme.backSurface),
+                    ) {
+                        BottomNavigationBar(navHostController)
+                    }
                 }
             )
 
         }
 
-        /*viewModel?.let { viewModel ->
-            val splashResult by viewModel..collectAsState()
-            splashResult?.let { result ->
-                CompositionLocalProvider(LocalSplashResult provides result) {
-                    // Log.d(activity.TAG, "Result: welComeResult")
-                }
-            } ?: Scaffold(content = { paddingValues ->
-                DefaultMonoBg(
-                    innerPadding = paddingValues,
-                    color = MaterialTheme.colorScheme.surface
-                )
-            })
-        }*/
     }
 
 }

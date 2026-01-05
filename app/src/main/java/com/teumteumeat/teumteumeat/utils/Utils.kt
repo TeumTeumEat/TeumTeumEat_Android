@@ -1,19 +1,47 @@
 package com.teumteumeat.teumteumeat.utils
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.OpenableColumns
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.ui.component.AmPm
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import java.io.FileInputStream
-import java.io.IOException
-import java.net.ConnectException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.Properties
+import androidx.core.net.toUri
+import java.time.LocalDateTime
 
+sealed interface NotificationPermissionEvent {
+    data object RequestPermission : NotificationPermissionEvent
+    data object AlreadyGranted : NotificationPermissionEvent
+}
 
 class Utils {
+
+    object TypeUtils{
+        fun Difficulty.toUiText(): String =
+            when (this) {
+                Difficulty.EASY -> "난이도 하"
+                Difficulty.MEDIUM -> "난이도 중"
+                Difficulty.HARD -> "난이도 상"
+                Difficulty.NONE -> ""
+            }
+
+    }
 
     object UiUtils{
 
@@ -59,6 +87,102 @@ class Utils {
             return result.joinToString("\n") // 줄바꿈으로 연결하여 반환
         }
 
+        /**
+         * 서버 날짜 포맷("yyyy-MM-dd")을
+         * UI 표시용 포맷으로 변환
+         */
+        fun String.toUiDateFormat(
+            outputPattern: String = "yyyy.MM.dd"
+        ): String {
+            return try {
+                val serverFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                val uiFormatter = DateTimeFormatter.ofPattern(outputPattern)
+
+                LocalDate
+                    .parse(this, serverFormatter)
+                    .format(uiFormatter)
+            } catch (e: Exception) {
+                this // 파싱 실패 시 원본 반환 (안전장치)
+            }
+        }
+
+        private val TIME_FORMATTER: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("HH:mm:ss")
+
+        fun isValidTime(time: String?): Boolean {
+            if (time.isNullOrBlank()) return false
+
+            return try {
+                LocalTime.parse(time, TIME_FORMATTER)
+                true
+            } catch (e: DateTimeParseException) {
+                false
+            }
+        }
+
+        fun TimeState.to24HourString(): String? {
+            val hour24 = when (amPm) {
+                AmPm.AM -> {
+                    if (hour == 12) 0 else hour
+                }
+                AmPm.PM -> {
+                    if (hour == 12) 12 else hour + 12
+                }
+            }
+
+            // 🚫 24시 이상 차단
+            if (hour24 !in 0..23) return null
+
+            return "%02d:%02d:00".format(hour24, minute)
+        }
+
+        fun TimeState.to24Hour(): Pair<Int, Int> {
+            val hour24 = when (amPm) {
+                AmPm.AM -> {
+                    if (hour == 12) 0 else hour
+                }
+                AmPm.PM -> {
+                    if (hour == 12) 12 else hour + 12
+                }
+            }.coerceIn(0, 23) // 🔒 24시 초과 방지
+
+            return hour24 to minute
+        }
+
+
+        fun TimeState.normalizeTo12Hour(): TimeState {
+            // 이미 정상 범위면 그대로
+            if (hour in 1..12) return this
+
+            val hour12 = when {
+                hour == 0 -> 12
+                hour in 1..12 -> hour
+                hour in 13..23 -> hour - 12
+                else -> 12
+            }
+
+            val newAmPm = if (hour in 0..11) AmPm.AM else AmPm.PM
+
+            return copy(
+                hour = hour12,
+                amPm = newAmPm
+            )
+        }
+
+        fun isPostNotificationsGranted(context: Context): Boolean {
+            return if (Build.VERSION.SDK_INT >= 33) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        }
+
+        fun areAppNotificationsEnabled(context: Context): Boolean {
+            return NotificationManagerCompat.from(context).areNotificationsEnabled()
+        }
 
     }
 
@@ -111,6 +235,30 @@ class Utils {
             }
         }
 
+        fun isNotificationPermissionRequired(): Boolean {
+            return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        }
+
+        // 1단계: Context 확장 함수 (UI 전용)
+        fun Context.extractFileName(uri: Uri): String {
+            var name = "unknown"
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0 && cursor.moveToFirst()) {
+                    name = cursor.getString(index)
+                }
+            }
+            return name
+        }
+
+        fun openExternalBrowser(
+            context: Context,
+            url: String
+        ) {
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            context.startActivity(intent)
+        }
+
     }
 
     object ConfigUtils {
@@ -124,6 +272,8 @@ class Utils {
             return properties.getProperty("BASE_URL", "")
         }
     }
+
+
 
     /*object NetworkUtil {
         suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): ApiResult<T> {
@@ -157,6 +307,82 @@ class Utils {
         }
     }*/
 
+    object TimeUtil {
+
+        fun TimeState.Companion.fromServerTime(
+            time: String // "HH:mm:ss"
+        ): TimeState {
+            val parts = time.split(":")
+            val hour24 = parts[0].toInt()
+            val minute = parts[1].toInt()
+
+            return if (hour24 < 12) {
+                TimeState(
+                    hour = if (hour24 == 0) 12 else hour24,
+                    minute = minute,
+                    amPm = AmPm.AM
+                )
+            } else {
+                TimeState(
+                    hour = if (hour24 == 12) 12 else hour24 - 12,
+                    minute = minute,
+                    amPm = AmPm.PM
+                )
+            }
+        }
+
+        fun todayText(): String {
+            val today = java.time.LocalDate.now()
+            return "${today.monthValue}월 ${today.dayOfMonth}일"
+        }
+
+        fun String.toTimeState(): TimeState {
+            val (h, m) = this.split(":").map { it.toInt() }
+
+            val amPm = if (h < 12) AmPm.AM else AmPm.PM
+            val hour12 = when {
+                h == 0 -> 12
+                h > 12 -> h - 12
+                else -> h
+            }
+
+            return TimeState(
+                hour = hour12,
+                minute = m,
+                amPm = amPm
+            )
+        }
+
+        private val serverFormatter =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS")
+
+        fun toMonthDay(createdAt: String): String {
+            return try {
+                val dateTime = LocalDateTime.parse(createdAt, serverFormatter)
+                "${dateTime.monthValue}월 ${dateTime.dayOfMonth}일"
+            } catch (e: Exception) {
+                // 파싱 실패 시 안전 장치
+                ""
+            }
+        }
+
+
+    }
+
+    object InfoUtil{
+        fun getAppVersion(context: Context): String {
+            return try {
+                val packageInfo = context.packageManager.getPackageInfo(
+                    context.packageName,
+                    0
+                )
+                "v${packageInfo.versionName}"
+            } catch (e: Exception) {
+                "v1.0.0"
+            }
+        }
+    }
+
     enum class USER_REGISTER_STATE { LOGIN, ADD_INFO, LEVEL_EXAM, MAIN }
     // 유저의 언어 정보값을 SharedPref 에 저장하는 Utile 함수 만들기
     object PrefsUtil {
@@ -165,9 +391,139 @@ class Utils {
         private const val ID = "user_id"
         private const val NICK_NAME = "user_nick_name"
         private const val EXAM_MONTH = "user_exam_month"
+        private const val KEY_GOAL_ID = "goal_id"
+        private const val KEY_CATEGORY_ID = "category_id"
+        private const val KEY_DOCUMENT_ID = "document_id"
+        private const val KEY_GOAL_TYPE = "goal_type"
 
+
+        // 🔔 알림 권한 한 번이라도 거부했는지
+        private const val KEY_NOTIFICATION_DENIED_ONCE = "notification_denied_once"
 
         private val IS_USER_REGISTER_STATE = USER_REGISTER_STATE.LOGIN.name
+
+        fun saveGoalType(context: Context, goalType: GoalType) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString(KEY_GOAL_TYPE, goalType.name)
+                .apply()
+        }
+
+        fun getGoalType(context: Context): GoalType {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getString(KEY_GOAL_TYPE, null)
+
+            return runCatching {
+                if (value != null) GoalType.valueOf(value)
+                else GoalType.NONE
+            }.getOrElse {
+                GoalType.NONE
+            }
+        }
+
+        fun clearGoalType(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_GOAL_TYPE)
+            }
+        }
+
+        fun saveDocumentId(context: Context, documentId: Int) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putInt(KEY_DOCUMENT_ID, documentId)
+                .commit()
+        }
+
+        fun getDocumentId(context: Context): Int? {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getInt(KEY_DOCUMENT_ID, -1)
+            return if (value == -1) null else value
+        }
+
+        fun clearDocumentId(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_DOCUMENT_ID)
+            }
+        }
+
+
+        fun saveGoalId(context: Context, goalId: Int) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putInt(KEY_GOAL_ID, goalId)
+                .commit() // 🔴 동기 저장
+        }
+
+
+        fun getGoalId(context: Context): Int? {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getInt(KEY_GOAL_ID, -1)
+            return if (value == -1) null else value
+        }
+
+
+        fun clearGoalId(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_GOAL_ID)
+            }
+        }
+
+
+        fun saveCategoryId(context: Context, categoryId: Int) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putInt(KEY_CATEGORY_ID, categoryId)
+                .commit()
+        }
+
+
+        fun getCategoryId(context: Context): Int? {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val value = prefs.getInt(KEY_CATEGORY_ID, -1)
+            return if (value == -1) null else value
+        }
+
+
+        fun clearCategoryId(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_CATEGORY_ID)
+            }
+        }
+
+
+        /**
+         * 🔴 알림 권한을 한 번이라도 거부했을 때 저장
+         */
+        fun saveNotificationDeniedOnce(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                putBoolean(KEY_NOTIFICATION_DENIED_ONCE, true)
+            }
+        }
+
+        /**
+         * 🔍 알림 권한 거부 이력이 있는지 확인
+         */
+        fun hasNotificationDeniedOnce(context: Context): Boolean {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            return prefs.getBoolean(KEY_NOTIFICATION_DENIED_ONCE, false)
+        }
+
+        /**
+         * 🔄 알림 권한 거부 이력 초기화
+         * - 최초 권한 요청 상태로 되돌림
+         */
+        fun clearNotificationDeniedOnce(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit {
+                remove(KEY_NOTIFICATION_DENIED_ONCE)
+                // 또는 putBoolean(KEY_NOTIFICATION_DENIED_ONCE, false)
+            }
+        }
 
         // 유저 id 저장
         fun saveUserId(context: Context, userId: String) {
