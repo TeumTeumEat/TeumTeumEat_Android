@@ -3,14 +3,27 @@ package com.teumteumeat.teumteumeat.data.api.user
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model.EmptyResponse
 import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
+import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfoResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import com.teumteumeat.teumteumeat.data.network.model_response.user.UserNameResponseDto
 
 interface UserApiService {
+
+    @GET("/api/v1/users/commute-info")
+    suspend fun getCommuteInfo():
+            ApiResponse<CommuteInfoResponse, Any?>
+
+    @GET("/api/v1/users/name")
+    suspend fun getUserName(): ApiResponse<UserNameResponseDto, Any?>
+
+    @GET("/api/v1/users/account-info")
+    suspend fun getAccountInfo(): ApiResponse<AccountInfoResponse, Any?>
 
     @GET("/api/v1/users/onboarding-completed")
     suspend fun getOnboardingCompleted(): ApiResponse<OnboardingStatus, Unit>

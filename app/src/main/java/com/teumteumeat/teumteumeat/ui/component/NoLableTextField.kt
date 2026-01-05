@@ -35,7 +35,7 @@ import com.teumteumeat.teumteumeat.utils.appTypography
 @Composable
 fun NoLableTextField(
     value: String,
-    labelText: String,
+    labelText: String = "",
     placeholderText: String,
     modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit,
@@ -89,6 +89,9 @@ fun NoLableTextField(
 
         // 입력 텍스트
         BasicTextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequesterThis),
             value = value,
             onValueChange = { text ->
                 if (text.length <= maxLength) onValueChange(text)
@@ -98,13 +101,11 @@ fun NoLableTextField(
                 color = Color.Black,
                 textAlign = TextAlign.Center
             ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequesterThis),
             singleLine = isOneLine,
             keyboardOptions = KeyboardOptions(
                 imeAction = ImeAction.Done
             ),
+            interactionSource = interactionSource,
             keyboardActions = KeyboardActions(
                 onDone = {
                     this.onDone()

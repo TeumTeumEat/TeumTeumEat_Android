@@ -1,5 +1,7 @@
 package com.teumteumeat.teumteumeat.di
 
+import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
+import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
@@ -38,6 +40,10 @@ abstract class RepositoryModule {
     @Binds abstract fun bindQuizRepository(
         impl: QuizRepositoryImpl
     ): QuizRepository
+
+    @Binds abstract fun bindCategoryRepository(
+        impl: CategoryRepositoryImpl
+    ): CategoryRepository
 
 }
 

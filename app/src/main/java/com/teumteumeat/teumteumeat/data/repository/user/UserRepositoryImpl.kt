@@ -2,7 +2,7 @@ package com.teumteumeat.teumteumeat.data.repository.user
 
 import android.util.Log
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
-import com.teumteumeat.teumteumeat.data.api.user.CategoryApiService
+import com.teumteumeat.teumteumeat.data.api.category.CategoryApiService
 import com.teumteumeat.teumteumeat.data.api.user.CommuteTimeRequest
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
@@ -14,9 +14,15 @@ import com.teumteumeat.teumteumeat.data.api.user.UpdateNameRequest
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfo
+import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfoResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.toDomain
+import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.CategoriesResponseDto
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.UserName
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomain
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomainCategoryTree
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import javax.inject.Inject
 
@@ -28,6 +34,44 @@ class UserRepositoryImpl @Inject constructor(
 ) : BaseRepository(authApiService, tokenLocalDataSource),
     UserRepository {
 
+    override suspend fun getCommuteInfo(): ApiResultV2<CommuteInfoResponse> {
+        return safeApiVer2(
+            apiCall = {
+                userApi.getCommuteInfo()
+            },
+            mapper = { data ->
+                CommuteInfoResponse(
+                    startTime = data?.startTime.orEmpty(),
+                    endTime = data?.endTime.orEmpty(),
+                    usageTime = data?.usageTime ?: 0
+                )
+            }
+        )
+    }
+
+    override suspend fun getUserName(): ApiResultV2<UserName> {
+        return safeApiVer2(
+            apiCall = { userApi.getUserName() },
+            mapper = { dto ->
+                // dto는 nullable로 들어오니까 NPE 방지
+                UserName(name = dto?.name.orEmpty())
+            }
+        )
+    }
+
+    override suspend fun getAccountInfo(): ApiResultV2<AccountInfoResponse> {
+        return safeApiVer2(
+            apiCall = {
+                userApi.getAccountInfo()
+            },
+            mapper = { response ->
+                response ?: AccountInfoResponse(
+                    socialProvider = SocialProvider.NONE,
+                    email = "잘못된 로그인"
+                )
+            }
+        )
+    }
 
     override suspend fun getOnboardingStatus(): ApiResult<OnboardingStatus, Unit> {
         return safeApiCall(

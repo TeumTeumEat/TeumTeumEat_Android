@@ -29,19 +29,26 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
             currentLevel = currentLevel
                 .getOrPut(segment) {
                     MutableCategory(
-                        id = segment,       // UI 식별자
+                        id = segment,
                         name = segment
                     )
                 }
                 .children
         }
 
-        // 2️⃣ 실제 카테고리 (leaf)
-        currentLevel[dto.name] = MutableCategory(
-            id = dto.name,                  // UI 식별자
-            name = dto.name,
-            serverCategoryId = dto.categoryId // ⭐ 서버 ID는 여기!
-        )
+        // 2️⃣ leaf 처리 (⭐ 핵심 수정)
+        var leaf = currentLevel[dto.name]
+        if (leaf != null) {
+            // 이미 존재하면 serverCategoryId만 세팅
+            leaf.serverCategoryId = dto.categoryId
+        } else {
+            // 없으면 새로 생성
+            currentLevel[dto.name] = MutableCategory(
+                id = dto.name,
+                name = dto.name,
+                serverCategoryId = dto.categoryId
+            )
+        }
     }
 
     return root.values.map { it.toImmutable() }
@@ -53,7 +60,7 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
 private class MutableCategory(
     val id: String,
     val name: String,
-    val serverCategoryId: Int? = null,
+    var serverCategoryId: Int? = null,
     val children: MutableMap<String, MutableCategory> = mutableMapOf()
 ) {
     fun toImmutable(): Category {

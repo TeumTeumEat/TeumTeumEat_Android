@@ -10,7 +10,7 @@ import com.teumteumeat.teumteumeat.data.network.model_response.UserQuiz
 import com.teumteumeat.teumteumeat.data.network.model_response.toDomain
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
-import com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result.QuizHistory
+import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizHistory
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.SubmitQuizResult
 import javax.inject.Inject
 

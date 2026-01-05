@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result
+package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -15,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
-import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizViewModel
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
@@ -37,11 +36,13 @@ class QuizResultActivity : ComponentActivity() {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val navController = rememberNavController()
 
-                val godalId = Utils.PrefsUtil.getGoalId(applicationContext) ?: 0
+                val goalId = Utils.PrefsUtil.getGoalId(applicationContext) ?: 0
                 val documentId = Utils.PrefsUtil.getDocumentId(applicationContext) ?: 0
                 val goalType = Utils.PrefsUtil.getGoalType(applicationContext)
                 // ✅ 현재 날짜 (yyyy-MM-dd)
                 val nowDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                val userGoalType = Utils.PrefsUtil.getGoalType(applicationContext)
+                val categoryId = Utils.PrefsUtil.getCategoryId(applicationContext) ?: -1
 
 
                 // ⭐ 최초 진입 시 API 호출
@@ -51,7 +52,15 @@ class QuizResultActivity : ComponentActivity() {
                         id = documentId,
                         date = nowDate
                     )
-                    viewModel.loadDocumentSummary(godalId, documentId)
+                    when(userGoalType) {
+                        GoalType.DOCUMENT -> {
+                            viewModel.loadDocumentSummary(goalId, documentId)
+                        }
+                        GoalType.CATEGORY -> {
+                            viewModel.loadCategorySummary(categoryId)
+                        }
+                        GoalType.NONE -> TODO()
+                    }
                 }
 
                 CompositionLocalProvider(

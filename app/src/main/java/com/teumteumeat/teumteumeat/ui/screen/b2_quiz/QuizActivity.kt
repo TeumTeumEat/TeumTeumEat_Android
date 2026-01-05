@@ -4,21 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalQuizUiState
+import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
@@ -32,12 +30,14 @@ class QuizActivity : ComponentActivity() {
             TeumTeumEatTheme {
                 val viewModel : QuizViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val screenState by viewModel.screenState.collectAsStateWithLifecycle()
 
                 CompositionLocalProvider(
                     LocalAppContext provides this.applicationContext,
                     LocalActivityContext provides this@QuizActivity,
                     LocalViewModelContext provides viewModel,
                     LocalQuizUiState provides uiState,
+                    LocalScreenState provides screenState,
                 ) {
                     val context = LocalContext.current
                     val goalType: GoalType = Utils.PrefsUtil.getGoalType(context)
@@ -59,11 +59,19 @@ class QuizActivity : ComponentActivity() {
 
                     QuizScreen(
                         uiState = uiState,
+                        onBackClick = {
+                            viewModel.prevQuiz()
+                        },
                         onSelectAnswer = { answer ->
                             viewModel.submitAnswer(answer)
                         },
-                        onBackClick = {
-                            viewModel.prevQuiz()
+                        screenState = screenState,
+                        onRetryApi = { viewModel.loadQuizzes(documentId, goalType) },
+                        onGoBeforeScreen = {
+                            Utils.UxUtils.moveActivity(
+                                context,
+                                SummaryActivity::class.java
+                            )
                         }
                     )
 

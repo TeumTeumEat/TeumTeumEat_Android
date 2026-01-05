@@ -1,6 +1,5 @@
-package com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result
+package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
-import com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 
 data class UiStateQuizResult(
@@ -18,7 +17,7 @@ data class UiStateQuizResult(
     val correctCount: Int = 0,
 
     /** PDF / Summary API */
-    val summary: UiStateSummary = UiStateSummary(),
+    val summary: UiStateSummary = UiStateSummary(isLoading = true),
 
     /** 공통 에러 */
     val errorMessage: String? = null

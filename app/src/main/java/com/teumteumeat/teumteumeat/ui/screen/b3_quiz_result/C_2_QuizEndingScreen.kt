@@ -1,11 +1,10 @@
-package com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result
+package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -17,11 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -59,7 +56,7 @@ fun QuizEndingScreen(
 
             // 캐릭터 이미지
             Image(
-                painter = painterResource(id = R.drawable.char_exited_quiz_finish),
+                painter = painterResource(id = R.drawable.char_walking_quiz_ending),
                 contentDescription = "",
             )
 
@@ -68,7 +65,9 @@ fun QuizEndingScreen(
             // 타이틀
             Text(
                 text = "오늘의 틈틈잇\n완료!",
-                style = MaterialTheme.appTypography.titleSemiBold32,
+                style = MaterialTheme.appTypography.titleSemiBold32.copy(
+                    textAlign = TextAlign.Center
+                ),
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )

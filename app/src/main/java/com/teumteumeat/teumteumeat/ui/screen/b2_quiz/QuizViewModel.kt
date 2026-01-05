@@ -7,6 +7,7 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,10 @@ class QuizViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(UiStateQuiz())
     val uiState = _uiState.asStateFlow()
+
+    private val _screenState =
+        MutableStateFlow<UiScreenState>(UiScreenState.Idle)
+    val screenState = _screenState.asStateFlow()
 
     fun prevQuiz() {
         _uiState.update { state ->
@@ -51,19 +56,28 @@ class QuizViewModel @Inject constructor(
         }
     }
 
+    fun resetIdleState() {
+        _screenState.value = UiScreenState.Idle
+    }
+
 
     fun loadQuizzes(
         documentId: Int,
-        documentType: GoalType,
+        goalType: GoalType,
     ) {
 
-
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _screenState.value = UiScreenState.Loading
+            _uiState.update{
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                )
+            }
 
             when (
                 val result =
-                    quizRepository.getUserQuizzes(documentId, documentType)
+                    quizRepository.getUserQuizzes(documentId, goalType)
             ) {
                 is ApiResultV2.Success -> {
                     // 🔍 1. Domain 단계 quizId 확인
@@ -95,7 +109,7 @@ class QuizViewModel @Inject constructor(
                         )
                     }
 
-
+                    _screenState.value = UiScreenState.Success
                 }
 
                 else -> {
@@ -105,6 +119,8 @@ class QuizViewModel @Inject constructor(
                             errorMessage = result.uiMessage
                         )
                     }
+                    _screenState.value =
+                        UiScreenState.Error(result.uiMessage)
                 }
             }
         }
@@ -167,9 +183,13 @@ class QuizViewModel @Inject constructor(
                 }
 
                 else -> {
+                    val message = result.uiMessage
+
                     _uiState.update {
-                        it.copy(errorMessage = "제출에 실패했습니다.")
+                        it.copy(isLoading = false, errorMessage = message)
                     }
+                    _screenState.value =
+                        UiScreenState.Error(message)
                 }
             }
         }

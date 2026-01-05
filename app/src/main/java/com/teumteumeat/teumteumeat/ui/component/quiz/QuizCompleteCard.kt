@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
@@ -66,8 +67,10 @@ fun QuizCompleteCard(
             // 🔹 완료 메시지
             Text(
                 text = title,
-                style = MaterialTheme.appTypography.titleBold20,
-                color = Color.Black
+                style = MaterialTheme.appTypography.titleBold20.copy(
+                    textAlign = TextAlign.Center
+                ),
+                color = Color.Black,
             )
 
             // 🔹 CTA 버튼
