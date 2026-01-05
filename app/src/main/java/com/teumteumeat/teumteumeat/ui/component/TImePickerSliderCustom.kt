@@ -52,7 +52,7 @@ fun TimePickerLikeImage(
                 .height(240.dp),
             onTimeSelected = { hour, minute ->
                 // 결과는 항상 minute = 0, 10, 20, 30, 40, 50
-                println("선택된 시간: $hour:$minute")
+                // println("선택된 시간: $hour:$minute")
             },
             is24Hour = false,                // 12시간제 (AM/PM)
             minuteGap = MinuteGap.TEN,       // ✅ 핵심: 10분 단위

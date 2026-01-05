@@ -32,7 +32,7 @@ fun BaseFillSmallButton(
     text: String = "",
     textStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
-    onClick: () -> Unit,
+    onClick: () -> Unit = {},
     conerRadius: Dp = 50.dp
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary

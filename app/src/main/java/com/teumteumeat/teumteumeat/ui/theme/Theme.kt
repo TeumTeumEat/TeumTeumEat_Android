@@ -36,6 +36,7 @@ data class ExtendedColors(
 
     val backSurface: Color,
     val btnGray100: Color,
+    val textSecondarty: Color,
 )
 
 val LightExtendedColors = ExtendedColors(
@@ -62,6 +63,7 @@ val LightExtendedColors = ExtendedColors(
 
     // text 관련 색상
     text_teritory=GrayBlue30,
+    textSecondarty= GrayBlue80,
     // text 관련 색상
 
     // 배경 관련 색상

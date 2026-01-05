@@ -11,29 +11,98 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.header.ProgressHeader
 import com.teumteumeat.teumteumeat.ui.component.quiz.QuizCompleteCard
 import com.teumteumeat.teumteumeat.ui.component.quiz.multi_choice.QuizMultiChoiceCard
 import com.teumteumeat.teumteumeat.ui.component.quiz.ox.CardStatus
 import com.teumteumeat.teumteumeat.ui.component.quiz.ox.QuizOXCard
-import com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result.QuizResultActivity
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultActivity
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 
 @Composable
 fun QuizScreen(
     uiState: UiStateQuiz,
     onBackClick: () -> Unit,
-    onSelectAnswer: (String) -> Unit
+    onSelectAnswer: (String) -> Unit,
+    screenState: UiScreenState,
+    onRetryApi: () -> Unit,
+    onGoBeforeScreen: () -> Unit
 ) {
 
     val context = LocalContext.current
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .systemBarsPadding()
-    ) {
+    // 🔴 에러 화면 (핵심)
+    if (screenState is UiScreenState.Error) {
+        val errorMessage =
+            (screenState as UiScreenState.Error).message
 
-        when {
+        FullScreenErrorModal(
+            errorState = ErrorState(
+                title = "문제가 발생했어요",
+                description = errorMessage,
+                retryLabel = "다시 시도하기",
+                onRetry = onRetryApi
+            ),
+            isShowBackBtn = true,
+            onBack = onGoBeforeScreen
+        )
+    }else{
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
+            contentAlignment = Alignment.Center,
+        ) {
+            when (screenState) {
+
+                UiScreenState.Idle -> {
+                    // 진입 직후 (아직 loadQuizzes 안 했을 수도 있음)
+                }
+
+                UiScreenState.Loading -> {
+                    LoadingScreen(
+                        title = "퀴즈 로딩중",
+                        message = "틈틈잇이 퀴즈를 만들고 있어요!",
+                    )
+                }
+
+                UiScreenState.Success -> {
+                    if (uiState.isCompleted){
+                        QuizCompleteCard(
+                            onButtonClick = {
+                                Utils.UxUtils.moveActivity(context, QuizResultActivity::class.java, exitFlag = true)
+                            }
+                        )
+                    }else{
+                        // 🔝 상단 헤더
+                        ProgressHeader(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .fillMaxWidth(),
+                            currentStep = uiState.currentStep,
+                            totalSteps = uiState.totalSteps,
+                            onBackClick = onBackClick
+                        )
+                        QuizCardSection(
+                            modifier = Modifier.align(Alignment.Center),
+                            quiz = uiState.currentQuiz!!,
+                            questionIndex = uiState.currentIndex + 1,
+                            onSelectAnswer = onSelectAnswer
+                        )
+                    }
+
+                }
+
+                is UiScreenState.Error -> {}
+            }
+        }
+
+
+
+        /*when {
             // 1️⃣ 최초 로딩
             uiState.isLoading && uiState.quizzes.isEmpty() -> {
                 Box(contentAlignment = Alignment.Center) {
@@ -90,7 +159,7 @@ fun QuizScreen(
                     )
                 }
             }
-        }
+        }*/
 
         // 🔄 카드 제출 중 오버레이
         if (uiState.currentQuiz?.isSubmitting == true) {

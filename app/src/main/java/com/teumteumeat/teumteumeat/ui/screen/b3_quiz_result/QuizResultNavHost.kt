@@ -1,19 +1,13 @@
-package com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result
+package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
-import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryScreen
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
-import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
 import com.teumteumeat.teumteumeat.utils.LocalQuizResultUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
-import com.teumteumeat.teumteumeat.utils.Utils
 
 
 sealed class QuizResultRoute(val route: String) {

@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
-import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -47,6 +46,7 @@ import com.teumteumeat.teumteumeat.ui.component.login.TermsAgreementBottomSheetC
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -90,7 +90,7 @@ fun LoginScreen(
             }
         }
     }
-    
+
     // ❌ 에러 표시
     uiState.errorMessage?.let { message ->
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -201,7 +201,7 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(44.dp)
                         .clip(RoundedCornerShape(28.dp))
-                        .background(Color(0xFFFFFFF))
+                        .background(MaterialTheme.extendedColors.backgroundW100)
                         .border(
                             width = 1.dp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -267,6 +267,18 @@ fun LoginScreen(
                             onConfirm = {
                                 viewModel.closeBottomSheet()
                                 viewModel.agreeTermsAndRegister() // termsAgreed=true 재요청
+                            },
+                            onGoServiceAgreeWebView = {
+                                UxUtils.openExternalBrowser(
+                                    context,
+                                    "https://resolute-flier-02d.notion.site/2d8151abb62e80cbaefde6ddcef603cc?pvs=74"
+                                )
+                            },
+                            onGoPrivacyPolicyWebView = {
+                                UxUtils.openExternalBrowser(
+                                    context,
+                                    "https://resolute-flier-02d.notion.site/2d8151abb62e8099bfd6d881256a6b4a?source=copy_link"
+                                )
                             }
                         )
                     },
@@ -281,7 +293,7 @@ fun LoginScreen(
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
-    val fakeViewModel : LoginViewModel = hiltViewModel()
+    val fakeViewModel: LoginViewModel = hiltViewModel()
     TeumTeumEatTheme {
         DefaultMonoBg(
             modifier = Modifier.fillMaxSize(),

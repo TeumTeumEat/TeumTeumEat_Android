@@ -1,7 +1,7 @@
 package com.teumteumeat.teumteumeat.data.network.model_response
 
-import com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result.QuizHistory
-import com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result.QuizResultItem
+import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizHistory
+import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultItem
 
 
 data class QuizHistoryData(

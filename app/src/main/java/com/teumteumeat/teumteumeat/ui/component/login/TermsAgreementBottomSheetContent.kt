@@ -28,6 +28,8 @@ fun TermsAgreementBottomSheetContent(
     onPrivacyPolicyChecked: (Boolean) -> Unit,
     onAllChecked: (Boolean) -> Unit,
     onConfirm: () -> Unit,
+    onGoServiceAgreeWebView: () -> Unit,
+    onGoPrivacyPolicyWebView: () -> Unit,
 ) {
     val agreement = uiState.termsAgreement
 
@@ -80,9 +82,7 @@ fun TermsAgreementBottomSheetContent(
                     ) {
                         Text(
                             modifier = Modifier.clickable(
-                                onClick = {
-                                    // TODO: 이용약관 웹뷰
-                                }
+                                onClick = onGoServiceAgreeWebView
                             ),
                             text = "이용약관 ",
                             style = MaterialTheme.appTypography.bodyMedium16.copy(
@@ -109,7 +109,7 @@ fun TermsAgreementBottomSheetContent(
                         Text(
                             modifier = Modifier.clickable(
                                 onClick = {
-                                    // TODO: 이용약관 웹뷰
+                                    onGoPrivacyPolicyWebView()
                                 }
                             ),
                             text = "개인정보처리방침 ",

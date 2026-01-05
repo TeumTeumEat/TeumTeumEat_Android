@@ -6,9 +6,11 @@ data class UiStateSummary(
     val title: String = "휴리스틱 평가",
     val dateText: String = "1월 3일",
     val summary: String = "",
-    val hasSolvedToday: Boolean = false,
+    val hasSolvedToday: Boolean = true,
     val errorMessage: String? = null,
-    val isFirstTime: Boolean = false
+    val isFirstTime: Boolean = false,
+    val categoryDocumentId: Int? = null,
+    val categoryId: Int? = null,
 )
 
 data class DocumentSummaryResponse(
@@ -20,3 +22,4 @@ data class DocumentSummaryResponse(
     val hasSolvedToday: Boolean,
     val isFirstTime: Boolean
 )
+

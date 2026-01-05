@@ -50,13 +50,17 @@ data class AppTypography(
     val titleBold32: TextStyle,
     val captionSemiBold16: TextStyle,
     val bodySemiBold18: TextStyle,
+
+    // button
     val btnSemiBold20_h24: TextStyle,
     val lableMedium12_h14: TextStyle,
     val btnSemiBold18_h24: TextStyle,
     val btnSemiBold20_h24_g50: TextStyle,
     val btnSemiBold18_h24_g50: TextStyle,
     val btnBold20_h24: TextStyle,
+
     val titleSemiBold32: TextStyle,
+    val btnMedium18_h24: TextStyle,
 )
 
 private val DefaultTextColor = Black100
@@ -206,6 +210,11 @@ val DefaultAppTypography = AppTypography(
         fontSize = 18.sp,
         lineHeight = 24.sp,
         color = Gray40
+    ),
+    btnMedium18_h24 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Medium,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
     ),
 
 )

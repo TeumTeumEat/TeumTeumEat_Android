@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.component.category_pager
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -233,7 +234,16 @@ fun CategoryGrid(
                 textStyle = if (currentPage == 0) MaterialTheme.appTypography.btnSemiBold20_h24
                     else MaterialTheme.appTypography.btnSemiBold18_h24,
                 isSelected = category.id == selectedId,
-                onClick = { onItemClick(category) },
+                onClick = {
+                    Log.d(
+                        "CategoryClick",
+                        "CLICK name=${category.name}, " +
+                                "id=${category.id}, " +
+                                "serverId=${category.serverCategoryId}, " +
+                                "children=${category.children.size}"
+                    )
+                    onItemClick(category)
+                },
                 contentAligment = Arrangement.Start
             )
         }

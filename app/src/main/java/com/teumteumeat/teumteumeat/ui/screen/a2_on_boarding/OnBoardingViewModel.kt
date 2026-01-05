@@ -25,7 +25,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseC
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
-import com.teumteumeat.teumteumeat.ui.screen.a0_splash.ErrorState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
@@ -116,25 +116,26 @@ class OnBoardingViewModel @Inject constructor(
                 return@launch
             }
 
-            // 3️⃣ 목표 생성
-            val goalResult = createGoalRequest()
-            if (goalResult !is ApiResultV2.Success) {
-                moveToError(goalResult)
-                return@launch
-            }
-
-            // 3-1. 목표 생성 ID 저장
-            val getGoalIdResult = fetchLatestGoalId()
-            if (getGoalIdResult !is ApiResultV2.Success) {
-                moveToError(getGoalIdResult)
-                return@launch
-            }
 
             // 5. 문서 업로드 documentID 생성
             Log.d("OnBoardingVM", "타입: ${state.goalType}의 퀴즈 생성")
             PrefsUtil.saveGoalType(appContext, state.goalType)
             when(state.goalType){
                 GoalType.DOCUMENT -> {
+                    // 3️⃣ 목표 생성
+                    val goalResult = createGoalRequest()
+                    if (goalResult !is ApiResultV2.Success) {
+                        moveToError(goalResult)
+                        return@launch
+                    }
+
+                    // 3-1. 목표 생성 ID 저장
+                    val getGoalIdResult = fetchLatestGoalId()
+                    if (getGoalIdResult !is ApiResultV2.Success) {
+                        moveToError(getGoalIdResult)
+                        return@launch
+                    }
+
                     // 4️⃣ 문서 확인
                     val uri = state.selectedFileUri
                     if (uri == null) {
@@ -166,6 +167,20 @@ class OnBoardingViewModel @Inject constructor(
                 }
                 GoalType.CATEGORY -> {
                     PrefsUtil.saveCategoryId(context = appContext, state.selectedCategoryId?: -1)
+                    Log.d("OnBoardingVM", "selectedCategoryID: ${state.selectedCategoryId}")
+                    // 3️⃣ 목표 생성
+                    val goalResult = createGoalRequestForCategory(state.selectedCategoryId)
+                    if (goalResult !is ApiResultV2.Success) {
+                        moveToError(goalResult)
+                        return@launch
+                    }
+
+                    // 3-1. 목표 생성 ID 저장
+                    val getGoalIdResult = fetchLatestGoalId()
+                    if (getGoalIdResult !is ApiResultV2.Success) {
+                        moveToError(getGoalIdResult)
+                        return@launch
+                    }
                 }
                 GoalType.NONE -> {}
             }
@@ -246,6 +261,22 @@ class OnBoardingViewModel @Inject constructor(
             endTime = current.workOutTime.toServerTime(),
             usageTime = usageTime
         )
+    }
+    private suspend fun createGoalRequestForCategory(selectedCategoryId: Int?): ApiResultV2<Int> {
+        val state = _uiState.value
+
+        val studyPeriodStr =
+            state.studyPeriod?.toString()?.plus("주") ?: "기간 설정 안함"
+
+        val request = CreateGoalRequest(
+            type = state.goalType,
+            studyPeriod = studyPeriodStr,
+            difficulty = state.difficulty,
+            prompt = state.promptInput.takeIf { it.isNotBlank() },
+            categoryId = state.selectedCategoryId
+        )
+
+        return createGoalUseCase(request)
     }
     private suspend fun createGoalRequest(): ApiResultV2<Int> {
         val state = _uiState.value
@@ -607,6 +638,22 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
+    fun logLeafCategories(categories: List<Category>) {
+        fun traverse(category: Category) {
+            if (category.children.isEmpty()) {
+                Log.d(
+                    "LeafCheck",
+                    "LEAF name=${category.name}, serverId=${category.serverCategoryId}"
+                )
+            } else {
+                category.children.forEach { traverse(it) }
+            }
+        }
+
+        categories.forEach { traverse(it) }
+    }
+
+
     fun loadCategories() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -621,6 +668,8 @@ class OnBoardingViewModel @Inject constructor(
                             categories = result.data
                         )
                     }
+                    Log.d("카테고리 로직: ", "저장된 카테고리 데이터: ${_uiState.value.categories}")
+                    logLeafCategories(result.data)
                 }
 
                 is ApiResult.SessionExpired -> {
@@ -697,55 +746,100 @@ class OnBoardingViewModel @Inject constructor(
             val isUnselecting = currentDepth2?.id == category.id
 
             val newSelection = if (isUnselecting) {
-                // 🔁 2뎁스 해제 → 1뎁스로 복귀
+                // 🔁 2뎁스 해제 → 하위 전부 해제
                 state.categorySelection.copy(
                     depth2 = null,
-                    depth3 = null
+                    depth3 = null,
+                    depth4 = null
                 )
             } else {
-                // ✅ 2뎁스 선택
+                // ✅ 2뎁스 선택 → 하위 초기화
                 state.categorySelection.copy(
                     depth2 = category,
-                    depth3 = null
+                    depth3 = null,
+                    depth4 = null
                 )
             }
 
             state.copy(
                 categorySelection = newSelection,
-                selectedCategoryId = null, // 2뎁스에서는 서버 id 확정 ❌
+                selectedCategoryId = null,
+
+                // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    0   // ⭐ 2뎁스 해제 → 1뎁스 페이지
+                    state.targetCategoryPage // ❗ 페이지 유지
                 } else {
-                    2   // 2뎁스 선택 → 3뎁스 페이지
+                    1 // 3뎁스 페이지
                 }
             )
         }
     }
 
-
     fun toggleDepth3(category: Category) {
+        Log.d(
+            "OnBoardingVM",
+            "toggleDepth3 input → " +
+                    "name=${category.name}, " +
+                    "serverId=${category.serverCategoryId}, " +
+                    "children=${category.children.size}"
+        )
+
         _uiState.update { state ->
             val currentDepth3 = state.categorySelection.depth3
             val isUnselecting = currentDepth3?.id == category.id
 
-            val newSelection = if (isUnselecting) {
-                state.categorySelection.copy(depth3 = null)
-            } else {
-                state.categorySelection.copy(depth3 = category)
-            }
-
+            val newDepth3 = if (isUnselecting) null else category
 
             state.copy(
-                categorySelection = newSelection,
-                selectedCategoryId = category.serverCategoryId,
+                categorySelection = state.categorySelection.copy(
+                    depth3 = newDepth3,
+                    depth4 = null // ⭐ 3뎁스 변경 시 4뎁스 초기화
+                ),
+                selectedCategoryId = null,
+
+                // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    1   // ⭐ 3뎁스 해제 → 2뎁스 페이지
+                    0 // 2뎁스 페이지
                 } else {
-                    2   // 3뎁스 선택 → 3뎁스 페이지 유지
+                    2 // 4뎁스 페이지
                 }
             )
         }
     }
+
+    fun toggleDepth4(category: Category) {
+        if (category.children.isNotEmpty()) return
+        if (category.serverCategoryId == null) return
+
+        _uiState.update { state ->
+            val currentDepth4 = state.categorySelection.depth4
+            val isUnselecting = currentDepth4?.id == category.id
+
+            val newDepth4 = if (isUnselecting) null else category
+
+            state.copy(
+                categorySelection = state.categorySelection.copy(
+                    depth4 = newDepth4
+                ),
+
+                selectedCategoryId = newDepth4?.serverCategoryId,
+
+                // ⭐ 핵심 규칙
+                targetCategoryPage = if (isUnselecting) {
+                    1 // 3뎁스 페이지
+                } else {
+                    state.targetCategoryPage // ❗ 페이지 유지
+                }
+            )
+        }
+
+        Log.d(
+            "OnBoardingVM",
+            "depth4=${_uiState.value.categorySelection.depth4?.name}, " +
+                    "selectedCategoryId=${_uiState.value.selectedCategoryId}"
+        )
+    }
+
 
     fun resetCategorySelection() {
         _uiState.update { state ->

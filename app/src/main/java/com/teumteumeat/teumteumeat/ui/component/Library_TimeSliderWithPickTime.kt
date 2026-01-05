@@ -38,6 +38,7 @@ fun TimeSliderWithPickTime(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // ✅ 가운데: 시/분 휠 (PickTime-Compose)
+
         PickHourMinute(
             initialHour = state.hour,
             onHourChange = { newHour ->
@@ -48,7 +49,7 @@ fun TimeSliderWithPickTime(
                 onChange(
                     state.copy(
                         hour = newHour.coerceIn(1, 12),
-                        amPm = newAmPm
+                         // amPm = newAmPm
                     )
                 )
 

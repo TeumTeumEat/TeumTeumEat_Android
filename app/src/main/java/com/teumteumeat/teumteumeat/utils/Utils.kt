@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.AmPm
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
 import java.io.FileInputStream
 import java.time.LocalDate
@@ -21,6 +22,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.Properties
+import androidx.core.net.toUri
+import java.time.LocalDateTime
 
 sealed interface NotificationPermissionEvent {
     data object RequestPermission : NotificationPermissionEvent
@@ -28,6 +31,17 @@ sealed interface NotificationPermissionEvent {
 }
 
 class Utils {
+
+    object TypeUtils{
+        fun Difficulty.toUiText(): String =
+            when (this) {
+                Difficulty.EASY -> "난이도 하"
+                Difficulty.MEDIUM -> "난이도 중"
+                Difficulty.HARD -> "난이도 상"
+                Difficulty.NONE -> ""
+            }
+
+    }
 
     object UiUtils{
 
@@ -121,6 +135,20 @@ class Utils {
 
             return "%02d:%02d:00".format(hour24, minute)
         }
+
+        fun TimeState.to24Hour(): Pair<Int, Int> {
+            val hour24 = when (amPm) {
+                AmPm.AM -> {
+                    if (hour == 12) 0 else hour
+                }
+                AmPm.PM -> {
+                    if (hour == 12) 12 else hour + 12
+                }
+            }.coerceIn(0, 23) // 🔒 24시 초과 방지
+
+            return hour24 to minute
+        }
+
 
         fun TimeState.normalizeTo12Hour(): TimeState {
             // 이미 정상 범위면 그대로
@@ -223,6 +251,14 @@ class Utils {
             return name
         }
 
+        fun openExternalBrowser(
+            context: Context,
+            url: String
+        ) {
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            context.startActivity(intent)
+        }
+
     }
 
     object ConfigUtils {
@@ -236,6 +272,8 @@ class Utils {
             return properties.getProperty("BASE_URL", "")
         }
     }
+
+
 
     /*object NetworkUtil {
         suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): ApiResult<T> {
@@ -269,12 +307,66 @@ class Utils {
         }
     }*/
 
-    object DateUtil {
+    object TimeUtil {
+
+        fun TimeState.Companion.fromServerTime(
+            time: String // "HH:mm:ss"
+        ): TimeState {
+            val parts = time.split(":")
+            val hour24 = parts[0].toInt()
+            val minute = parts[1].toInt()
+
+            return if (hour24 < 12) {
+                TimeState(
+                    hour = if (hour24 == 0) 12 else hour24,
+                    minute = minute,
+                    amPm = AmPm.AM
+                )
+            } else {
+                TimeState(
+                    hour = if (hour24 == 12) 12 else hour24 - 12,
+                    minute = minute,
+                    amPm = AmPm.PM
+                )
+            }
+        }
 
         fun todayText(): String {
             val today = java.time.LocalDate.now()
             return "${today.monthValue}월 ${today.dayOfMonth}일"
         }
+
+        fun String.toTimeState(): TimeState {
+            val (h, m) = this.split(":").map { it.toInt() }
+
+            val amPm = if (h < 12) AmPm.AM else AmPm.PM
+            val hour12 = when {
+                h == 0 -> 12
+                h > 12 -> h - 12
+                else -> h
+            }
+
+            return TimeState(
+                hour = hour12,
+                minute = m,
+                amPm = amPm
+            )
+        }
+
+        private val serverFormatter =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS")
+
+        fun toMonthDay(createdAt: String): String {
+            return try {
+                val dateTime = LocalDateTime.parse(createdAt, serverFormatter)
+                "${dateTime.monthValue}월 ${dateTime.dayOfMonth}일"
+            } catch (e: Exception) {
+                // 파싱 실패 시 안전 장치
+                ""
+            }
+        }
+
+
     }
 
     object InfoUtil{

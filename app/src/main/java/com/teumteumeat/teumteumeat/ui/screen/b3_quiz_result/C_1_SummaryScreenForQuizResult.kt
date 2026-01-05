@@ -1,7 +1,6 @@
-package com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result
+package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
@@ -15,19 +14,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.MarkdownText
-import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -170,9 +163,6 @@ fun SummaryScreenForQuizResult(
 }
 
 private val previewUiState = UiStateSummary(
-    isLoading = false,
-    title = "휴리스틱 평가",
-    dateText = "1월 3일",
     summary = """
         휴리스틱 평가는 사용성 테스트 기법 중 하나로,
         실제 사용자 대신 전문가가 인터페이스를 점검하여
@@ -181,8 +171,6 @@ private val previewUiState = UiStateSummary(
         닐슨이 제시한 10가지 휴리스틱 원칙을 기준으로
         화면 흐름, 기능 배치, 피드백 방식을 평가한다.
     """.trimIndent(),
-    hasSolvedToday = false,
-    errorMessage = null
 )
 
 

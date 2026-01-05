@@ -331,29 +331,28 @@ fun CategorySelectScreen(
                         ) {
                             when (page) {
 
-                                // 1뎁스
+                                // ⭐ 2뎁스 (기존 depth1.children)
                                 0 -> CategoryGrid(
-                                    // categories = mockAllCategories,
-                                    // todo. 실제 서버로부터 전체 카테고리 목록 응답 확인되면 UI 고도화 구현하기
-                                    categories = uiState.categories,
-                                    selectedId = selection.depth1?.id,
-                                    onItemClick = viewModel::toggleDepth1,
-                                    currentPage = page,
-                                )
-
-                                // 2뎁스
-                                1 -> CategoryGrid(
-                                    categories = selection.depth1?.children.orEmpty(),
+                                    categories = uiState.categories
+                                        .flatMap { it.children }, // depth1 skip
                                     selectedId = selection.depth2?.id,
                                     onItemClick = viewModel::toggleDepth2,
                                     currentPage = page,
                                 )
 
-                                // 3뎁스
-                                2 -> CategoryGrid(
+                                // ⭐ 3뎁스
+                                1 -> CategoryGrid(
                                     categories = selection.depth2?.children.orEmpty(),
                                     selectedId = selection.depth3?.id,
                                     onItemClick = viewModel::toggleDepth3,
+                                    currentPage = page,
+                                )
+
+                                // ⭐ 4뎁스 (진짜 leaf)
+                                2 -> CategoryGrid(
+                                    categories = selection.depth3?.children.orEmpty(),
+                                    selectedId = selection.depth4?.id,
+                                    onItemClick = viewModel::toggleDepth4,
                                     currentPage = page,
                                 )
                             }

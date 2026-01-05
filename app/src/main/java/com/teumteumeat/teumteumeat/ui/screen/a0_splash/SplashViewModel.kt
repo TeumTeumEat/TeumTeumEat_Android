@@ -8,6 +8,7 @@ import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingDecision
 import com.teumteumeat.teumteumeat.domain.usecase.AutoLoginUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompletedUseCase
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

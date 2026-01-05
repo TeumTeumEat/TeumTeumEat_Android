@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.b2_quiz
 
 import com.teumteumeat.teumteumeat.data.network.model_response.UserQuiz
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 
 data class UiStateQuiz(
     val isLoading: Boolean = false,
@@ -14,6 +15,13 @@ data class UiStateQuiz(
     val errorMessage: String? = null,
 
     val isCompleted: Boolean = false,
+    
+    val errorState: ErrorState = ErrorState(
+        title = "",
+        description = "",
+        retryLabel = "",
+        onRetry = { }
+    )
 
 ) {
     val currentQuiz: QuizCardUiState?

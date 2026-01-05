@@ -1,15 +1,16 @@
-package com.teumteumeat.teumteumeat.ui.screen.b2_1_quiz_result
+package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.onesignal.common.DateUtils
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.utils.Utils
+import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class QuizResultViewModel @Inject constructor(
     private val documentRepository: DocumentRepository,
-    private val quizRepository: QuizRepository
+    private val quizRepository: QuizRepository,
+    private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateQuizResult())
@@ -136,13 +138,12 @@ class QuizResultViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             summary = UiStateSummary(
-                                isLoading = false,
                                 title = data.fileName,
-                                dateText = Utils.DateUtil.todayText(), // ⭐ 아래 유틸 참고
-                                summary = data.summary,
+                                dateText = Utils.TimeUtil.todayText(),
+                                summary = data.summary, // ⭐ 아래 유틸 참고
                                 hasSolvedToday = data.hasSolvedToday,
                                 isFirstTime = data.isFirstTime,
-                                errorMessage = null
+                                isLoading = true
                             )
                         )
                     }
@@ -192,6 +193,88 @@ class QuizResultViewModel @Inject constructor(
                         )
                     }
                 }*/
+            }
+        }
+    }
+
+    fun loadCategorySummary(categoryId: Int) {
+        viewModelScope.launch {
+            _uiState.update{
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                )
+            }
+
+            if (categoryId == -1 ){
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "goalId 나 documentId 가 등록되지 않았습니다."
+                    )
+                }
+            }
+
+            // 2️⃣ 레포 호출
+            when (
+                val result =
+                    categoryRepository.getDailyCategoryDocument(categoryId.toLong())
+            ) {
+
+                is ApiResultV2.Success -> {
+                    val data = result.data
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            summary = UiStateSummary(
+                                dateText = toMonthDay(data.createdAt),
+                                summary = data.content,
+                                isFirstTime = data.isFirstTime,
+                                categoryDocumentId = data.documentId.toInt(),
+                                isLoading = true,
+                            ),
+                            errorMessage = null,
+                        )
+                    }
+
+                }
+
+                is ApiResultV2.ServerError -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.uiMessage
+                        )
+                    }
+                }
+
+                is ApiResultV2.NetworkError -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message
+                        )
+                    }
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.uiMessage
+                        )
+                    }
+                }
+
+                is ApiResultV2.UnknownError -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message
+                        )
+                    }
+                }
             }
         }
     }

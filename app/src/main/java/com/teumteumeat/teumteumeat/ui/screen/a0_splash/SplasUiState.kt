@@ -1,5 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a0_splash
 
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+
 
 data class SplashUiState (
     val isLoading: Boolean = false,
@@ -30,13 +32,6 @@ enum class SplashRoute {
     MAIN,
     ON_BOARDING,
 }
-
-data class ErrorState(
-    val title: String,
-    val description: String,
-    val retryLabel: String = "다시 시도하기",
-    val onRetry: () -> Unit
-)
 
 sealed class SplashUiEvent {
 
