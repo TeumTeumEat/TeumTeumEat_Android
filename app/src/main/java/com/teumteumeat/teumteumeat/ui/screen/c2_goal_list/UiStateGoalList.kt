@@ -1,8 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.c2_goal_list
 
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toUiText
 
 
@@ -35,17 +34,17 @@ fun GetGoalResponse.toUiModel(
 
     val (title, description) =
         when (type) {
-            GoalType.CATEGORY -> {
+            GoalTypeUiState.CATEGORY -> {
                 (category?.path ?: "미설정") to
                         (prompt ?: "")
             }
 
-            GoalType.DOCUMENT -> {
+            GoalTypeUiState.DOCUMENT -> {
                 (fileName ?: "문서") to
                         (prompt ?: "")
             }
 
-            GoalType.NONE -> {
+            GoalTypeUiState.NONE -> {
                 "잘못된 목표" to ""
             }
         }

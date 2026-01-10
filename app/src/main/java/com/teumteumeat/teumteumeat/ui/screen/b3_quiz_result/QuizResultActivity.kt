@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
@@ -53,13 +53,13 @@ class QuizResultActivity : ComponentActivity() {
                         date = nowDate
                     )
                     when(userGoalType) {
-                        GoalType.DOCUMENT -> {
+                        GoalTypeUiState.DOCUMENT -> {
                             viewModel.loadDocumentSummary(goalId, documentId)
                         }
-                        GoalType.CATEGORY -> {
+                        GoalTypeUiState.CATEGORY -> {
                             viewModel.loadCategorySummary(categoryId)
                         }
-                        GoalType.NONE -> TODO()
+                        GoalTypeUiState.NONE -> TODO()
                     }
                 }
 

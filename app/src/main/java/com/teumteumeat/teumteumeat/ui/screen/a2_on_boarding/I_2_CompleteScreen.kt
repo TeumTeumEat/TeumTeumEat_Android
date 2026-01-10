@@ -3,9 +3,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,7 +63,7 @@ fun OnBoardingSuccessScreen(
             Text(
                 text = "$nickname 님 환영합니다!",
                 style = MaterialTheme.appTypography.btnSemiBold18_h24,
-                color = MaterialTheme.extendedColors.text_teritory
+                color = MaterialTheme.extendedColors.textTeritory
             )
 
             Spacer(Modifier.height(50.dp))

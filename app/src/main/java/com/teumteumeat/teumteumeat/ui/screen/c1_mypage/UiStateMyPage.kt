@@ -2,7 +2,6 @@ package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
 import androidx.compose.ui.graphics.Color
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
 
 
 data class UiStateMyPage(

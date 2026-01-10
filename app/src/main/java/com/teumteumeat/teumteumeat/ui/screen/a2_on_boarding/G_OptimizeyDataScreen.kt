@@ -40,12 +40,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors

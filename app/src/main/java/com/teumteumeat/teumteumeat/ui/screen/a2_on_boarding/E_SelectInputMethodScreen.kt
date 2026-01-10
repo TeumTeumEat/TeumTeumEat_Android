@@ -12,19 +12,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.BoxButtonRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -72,7 +70,7 @@ fun SelectInputMethodScreen(
                     Spacer(modifier = Modifier.height(25.dp))
 
                     BoxButtonRadioGroup(
-                        selectedType = uiState.goalType,
+                        selectedType = uiState.goalTypeUiState,
                         onSelected = { viewModel.selectLearningMethod(it) },
                     )
                 }
@@ -88,14 +86,14 @@ fun SelectInputMethodScreen(
                         textStyle = Typography.labelMedium.copy(
                             lineHeight = 24.sp
                         ),
-                        isEnabled = uiState.goalType != GoalType.NONE,
+                        isEnabled = uiState.goalTypeUiState != GoalTypeUiState.NONE,
                         onClick = {
                             viewModel.resetCategorySelection()
                             viewModel.onFileDeleted()
-                            when(uiState.goalType){
-                                GoalType.CATEGORY -> onNextCateGorySelct()
-                                GoalType.DOCUMENT -> onNextFileUpload()
-                                GoalType.NONE -> {}
+                            when(uiState.goalTypeUiState){
+                                GoalTypeUiState.CATEGORY -> onNextCateGorySelct()
+                                GoalTypeUiState.DOCUMENT -> onNextFileUpload()
+                                GoalTypeUiState.NONE -> {}
                             }
                         },
                         conerRadius = 16.dp

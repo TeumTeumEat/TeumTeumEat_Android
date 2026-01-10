@@ -10,6 +10,9 @@ import com.teumteumeat.teumteumeat.data.network.model_response.CreateGoalRespons
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
+import com.teumteumeat.teumteumeat.domain.mapper.goal.toDomain
+import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.utils.Utils.RepositoryUtils.requireNotNullOrError
 import javax.inject.Inject
 
 class GoalRepositoryImpl @Inject constructor(
@@ -17,6 +20,24 @@ class GoalRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), GoalRepository {
+
+    override suspend fun getUserGoal(): ApiResultV2<UserGoal> {
+
+        val url = "/api/v1/users/goal"
+
+        return safeApiVer2(
+            apiCall = {
+                goalApiService.getUserGoal()
+            },
+            mapper = { response ->
+                // ✅ data 는 null 이면 안되는 API
+                // → mapper 단계에서 바로 Domain 변환
+                response
+                    .requireNotNullOrError(url)
+                    .toDomain()
+            }
+        )
+    }
 
     override suspend fun getGoalList(): ApiResultV2<GoalsData> {
         return safeApiVer2(

@@ -32,14 +32,19 @@ data class ExtendedColors(
     val textPrimary: Color,
     val textGhost: Color,
     val textPointBlue: Color,
-    val text_teritory: Color,
+    val textTeritory: Color,
 
     val backSurface: Color,
     val btnGray100: Color,
-    val textSecondarty: Color,
+    val textSecondary: Color,
+    val errorSecondary: Color,
+    val btnGray800: Color,
+    val btnLineDisable: Color,
 )
 
 val LightExtendedColors = ExtendedColors(
+    btnGray800 = GrayBlue30,
+
     primary = Blue500,
     primaryContainer = Blue10,
     textOnPrimary = White100,
@@ -54,16 +59,18 @@ val LightExtendedColors = ExtendedColors(
     unableContainer = Gray20,
 
     error = Red80,
+    errorSecondary = Red60,
     errorContainer = Red10,
     textOnError = White100,
 
     buttonFillSecondary = Blue10,
     btnGray100 = BtnGray10,
+    btnLineDisable = BorderGray300,
     modalShadow = BlackTrp15,
 
     // text 관련 색상
-    text_teritory=GrayBlue30,
-    textSecondarty= GrayBlue80,
+    textTeritory=GrayBlue30,
+    textSecondary= GrayBlue80,
     // text 관련 색상
 
     // 배경 관련 색상

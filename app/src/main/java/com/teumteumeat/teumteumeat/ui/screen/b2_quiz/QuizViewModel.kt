@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +63,7 @@ class QuizViewModel @Inject constructor(
 
     fun loadQuizzes(
         documentId: Int,
-        goalType: GoalType,
+        goalTypeUiState: GoalTypeUiState,
     ) {
 
         viewModelScope.launch {
@@ -77,7 +77,7 @@ class QuizViewModel @Inject constructor(
 
             when (
                 val result =
-                    quizRepository.getUserQuizzes(documentId, goalType)
+                    quizRepository.getUserQuizzes(documentId, goalTypeUiState)
             ) {
                 is ApiResultV2.Success -> {
                     // 🔍 1. Domain 단계 quizId 확인

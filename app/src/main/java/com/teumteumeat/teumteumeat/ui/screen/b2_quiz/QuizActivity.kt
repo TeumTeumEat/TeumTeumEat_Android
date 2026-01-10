@@ -10,7 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -40,13 +40,13 @@ class QuizActivity : ComponentActivity() {
                     LocalScreenState provides screenState,
                 ) {
                     val context = LocalContext.current
-                    val goalType: GoalType = Utils.PrefsUtil.getGoalType(context)
+                    val goalTypeUiState: GoalTypeUiState = Utils.PrefsUtil.getGoalType(context)
                     val documentId = Utils.PrefsUtil.getDocumentId(context) ?: -1
                     val categoryId = Utils.PrefsUtil.getCategoryId(context) ?: -1
 
                     // 🔹 최초 진입 시 퀴즈 목록 조회
                     LaunchedEffect(Unit) {
-                        viewModel.loadQuizzes(documentId, goalType)
+                        viewModel.loadQuizzes(documentId, goalTypeUiState)
                     }
 
                     // 🔹 모든 문제를 다 풀었을 때
@@ -66,7 +66,7 @@ class QuizActivity : ComponentActivity() {
                             viewModel.submitAnswer(answer)
                         },
                         screenState = screenState,
-                        onRetryApi = { viewModel.loadQuizzes(documentId, goalType) },
+                        onRetryApi = { viewModel.loadQuizzes(documentId, goalTypeUiState) },
                         onGoBeforeScreen = {
                             Utils.UxUtils.moveActivity(
                                 context,

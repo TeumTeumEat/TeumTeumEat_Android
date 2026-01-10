@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,6 +33,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
@@ -43,8 +45,9 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalMainUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
+import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toYearMonth
 import com.teumteumeat.teumteumeat.utils.extendedColors
-
+import java.time.LocalDate
 
 @Composable
 fun MainCompositionProvider(
@@ -63,14 +66,27 @@ fun MainCompositionProvider(
         LocalMainUiState provides mainUiState,
         LocalViewModelContext provides viewModel,
     ) {
+
+        val navBackStackEntry by navHostController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
+
+        LaunchedEffect(currentRoute) {
+            viewModel.loadCalendarHistory(LocalDate.now().toYearMonth())
+            when (currentRoute) {
+                BottomNavItem.Home.route -> viewModel.onScreenChanged(MainScreenType.MAIN)
+                BottomNavItem.Library.route -> viewModel.onScreenChanged(MainScreenType.LIBRARY)
+            }
+        }
+
+        val extendedColors = MaterialTheme.extendedColors
+
+
         DefaultMonoBg(
             modifier = Modifier.fillMaxSize(),
-            color = theme.backSurface,
         ) {
             Scaffold(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = theme.backSurface),
+                    .fillMaxSize(),
                 content = { padding ->
                     Column(
                         modifier = Modifier
@@ -80,58 +96,18 @@ fun MainCompositionProvider(
                             .padding(),
                         verticalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        /**
-                         * 홈화면 타이틀 바
-                         */
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    vertical = 19.dp, horizontal = 24.dp,
-                                ),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-
-                            Image(
-                                painter = painterResource(R.drawable.logo_home),
-                                contentDescription = "home logo",
-                                contentScale = ContentScale.None
-                            )
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.icon_fire_fill),
-                                    contentDescription = "home logo",
-                                    contentScale = ContentScale.None
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    "0",
-                                    style = MaterialTheme.typography.titleMedium,
+                        MainTopBar(
+                            currentStreak = mainUiState.currentStreak,
+                            stampCount = mainUiState.stampCount,
+                            onClickSetting = {
+                                Utils.UxUtils.moveActivity(
+                                    context,
+                                    MyPageActivity::class.java,
+                                    exitFlag = false,
                                 )
                             }
-                            IconButton(
-                                onClick = {
-                                    Utils.UxUtils.moveActivity(
-                                        context,
-                                        MyPageActivity::class.java,
-                                        exitFlag = false,
-                                    )
-                                },
-                                modifier = Modifier.size(30.dp),
+                        )
 
-                                ) {
-                                Icon(
-                                    modifier = Modifier.padding(0.dp),
-                                    imageVector = Icons.Rounded.Settings,
-                                    contentDescription = "previous page"
-                                )
-                            }
-
-                        }
 
                         Box(
                             modifier = Modifier
@@ -139,20 +115,24 @@ fun MainCompositionProvider(
                                 .fillMaxWidth()
                         ) {
                             MainNavHost(
+                                modifier = Modifier,
                                 navController = navHostController,
                                 startDestination = BottomNavItem.Home.route,
-                                modifier = Modifier.padding(padding),
+                                paddingValue = padding,
                             )
                         }
                     }
                 },
                 bottomBar = {
-                    Box(
-                        modifier = Modifier
-                            .background(color = theme.backSurface),
-                    ) {
-                        BottomNavigationBar(navHostController)
-                    }
+                    BottomNavigationBar(
+                        navHostController,
+                        containerColor = when (mainUiState.currentScreenType) {
+                            MainScreenType.MAIN -> MaterialTheme.extendedColors.backSurface
+
+                            MainScreenType.LIBRARY ->
+                                MaterialTheme.extendedColors.backgroundW100
+                        }
+                    )
                 }
             )
 
@@ -178,7 +158,10 @@ fun HomeMainFramePreview() {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 bottomBar = {
-                    BottomNavigationBar(navHostController)
+                    BottomNavigationBar(
+                        navHostController,
+                        containerColor = MaterialTheme.extendedColors.backSurface
+                    )
                 },
                 content = { padding ->
                     Column(

@@ -1,12 +1,15 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -19,36 +22,44 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewMod
 
 
 @Composable
-fun MainNavHost(navController: NavHostController, startDestination: String, modifier: Modifier) {
+fun MainNavHost(
+    navController: NavHostController,
+    startDestination: String,
+    modifier: Modifier,
+    paddingValue: PaddingValues
+) {
 
     val context = LocalContext.current
 
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier.fillMaxSize(),
     ) {
         composable(BottomNavItem.Home.route) {
             val parentEntry = remember(it) {
                 navController.getBackStackEntry(BottomNavItem.Home.route)
             }
 
-            val viewModel: HomeViewModel = viewModel(parentEntry)
+            val viewModel: HomeViewModel = hiltViewModel(parentEntry)
             val uiStateHome by viewModel.uiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+
+            }
 
             HomeScreen(
                 name = "HomeScreen",
                 viewModel = viewModel,
                 uiState = uiStateHome,
                 onTabOther = {},
-                modifier = modifier,
+                modifier = Modifier.padding(paddingValue),
             )
         }
 
         composable(BottomNavItem.Library.route) {
             val parentEntry =
                 remember(it) { navController.getBackStackEntry(BottomNavItem.Library.route) }
-            val viewModel: LibraryViewModel = viewModel(parentEntry)
+            val viewModel: LibraryViewModel = hiltViewModel(parentEntry)
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             LibraryScreen(
@@ -56,6 +67,7 @@ fun MainNavHost(navController: NavHostController, startDestination: String, modi
                 viewModel = viewModel,
                 uiState = uiState,
                 onClickOtherTab = {},
+
             )
         }
 

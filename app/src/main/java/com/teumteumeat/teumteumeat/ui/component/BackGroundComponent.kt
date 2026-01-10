@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.component
 
+import android.provider.CalendarContract.Colors
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +28,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 @Composable
@@ -87,7 +90,7 @@ fun AllRoundedCornerColumn(
 fun DefaultMonoBg(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues = PaddingValues(0.dp),
-    color: Color,
+    color: Color = MaterialTheme.extendedColors.backSurface,
     content: @Composable BoxScope.() -> Unit = {} // ✅ Box 내부에 Composable 추가 가능
 ) {
 /*    val view = LocalView.current

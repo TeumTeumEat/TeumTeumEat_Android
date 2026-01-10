@@ -3,9 +3,8 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import android.net.Uri
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.AmPm
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
-import java.sql.Time
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 
 sealed class UiStateOnBoardingMainState {
 
@@ -85,7 +84,7 @@ data class UiStateOnBoardingMain(
     val isSuccess: Boolean = false,
 
     // 학습 방법 선택 여부
-    val goalType: GoalType = GoalType.NONE,
+    val goalTypeUiState: GoalTypeUiState = GoalTypeUiState.NONE,
 
     // pdf 학습시 필요한 자료
     val selectedFileUri: Uri? = null,

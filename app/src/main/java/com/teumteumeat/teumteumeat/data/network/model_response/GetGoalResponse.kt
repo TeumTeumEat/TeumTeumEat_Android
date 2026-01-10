@@ -1,7 +1,7 @@
 package com.teumteumeat.teumteumeat.data.network.model_response
 
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 
 data class GoalsData(
     val goalResponses: List<GetGoalResponse>
@@ -10,7 +10,7 @@ data class GoalsData(
 // 2️⃣ Goal
 data class GetGoalResponse(
     val goalId: Int?,
-    val type: GoalType,
+    val type: GoalTypeUiState,
     val startDate: String,
     val endDate: String,
     val studyPeriod: String,
