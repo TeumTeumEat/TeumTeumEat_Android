@@ -11,9 +11,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_teumteumeat"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/ic_launcher_teumteumeat_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TeumTeumEat"
         android:usesCleartextTraffic="true"
@@ -29,6 +29,12 @@
             android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
 
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
         </activity>
 
         <!-- a1 - 로그이 화면 -->
@@ -37,11 +43,7 @@
             android:name=".ui.screen.a1_login.LoginActivity"
             android:exported="true"
             android:launchMode="singleTop">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
 
 
             <!-- 카카오 웹뷰 딥링크 -->
@@ -92,6 +94,8 @@
             android:exported="true"
             android:label="@string/title_activity_quiz_finish"
             android:theme="@style/Theme.TeumTeumEat">
+
+
 
         </activity>
 

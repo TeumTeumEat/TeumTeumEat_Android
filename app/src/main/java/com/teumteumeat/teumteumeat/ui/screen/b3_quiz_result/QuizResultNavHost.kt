@@ -1,13 +1,18 @@
 package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainArgs
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainScreenType
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalQuizResultUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
+import com.teumteumeat.teumteumeat.utils.Utils
 
 
 sealed class QuizResultRoute(val route: String) {
@@ -72,10 +77,16 @@ fun QuizResultNavHost(
 
         composable(QuizResultRoute.QuizEnding.route) {
             QuizEndingScreen(
-                onCloseClick = { activity.finish() },
+                onCloseClick = { Utils.UxUtils.moveActivity(activity, MainActivity::class.java, exitFlag = true) },
                 goHistory = {
+                    val intent = Intent(activity, MainActivity::class.java).apply {
+                        putExtra(
+                            MainArgs.KEY_TARGET_SCREEN,
+                            MainScreenType.LIBRARY.name
+                        )
+                    }
+                    activity.startActivity(intent)
                     activity.finish()
-                    // todo. 추후에 홈화면으로 이동 후 히스토리 화면으로 이동
                 }
             )
         }

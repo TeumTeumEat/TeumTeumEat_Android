@@ -36,6 +36,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginUiEvent
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info.EditUserInfoActivity
+import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
@@ -47,6 +48,7 @@ fun MyPageScreen(
     uiState: UiStateMyPage,
     onBackClick: () -> Unit,
     onTopicClick: () -> Unit,
+    onLogoutClick: () -> Unit,
     onAlarmToggle: (Boolean) -> Unit,
     onTermsClick: () -> Unit,
     onCustomerCenterClick: () -> Unit,
@@ -54,6 +56,7 @@ fun MyPageScreen(
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
     val context = LocalContext.current
+    val activityContext = LocalActivityContext
     val viewModel = LocalViewModelContext.current as MyPageViewModel
 
     // 🔥 이벤트 수신
@@ -234,6 +237,15 @@ fun MyPageScreen(
                     style = typo.captionRegular12.copy(
                         color = theme.textGhost
                     ),
+
+                    modifier = Modifier.clickable {
+                        viewModel.logout(
+                            onSuccess = { onLogoutClick() },
+                            onError = { message ->
+                            }
+                        )
+                    },
+
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(

@@ -145,7 +145,7 @@ fun GoalCard(
                     theme.backSurface,
                 shape = RoundedCornerShape(12.dp)
             )
-            .clickable { onClick(uiModel.goalId) }
+            // .clickable { onClick(uiModel.goalId) }
             .padding(16.dp)
     ) {
 

@@ -128,6 +128,11 @@ data class UiStateOnBoardingMain(
 
     val canGoBack: Boolean
         get() = currentPage > 1
+
+    val isCategorySelectionComplete: Boolean
+        get() = targetCategoryPage == 2
+                && categorySelection.depth4 != null
+                && selectedCategoryId != null
 }
 
 enum class NotificationSettingGuideType {

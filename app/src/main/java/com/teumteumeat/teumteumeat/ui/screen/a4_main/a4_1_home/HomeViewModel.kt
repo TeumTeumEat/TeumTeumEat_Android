@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -35,18 +36,17 @@ class HomeViewModel @Inject constructor(
     private var cachedGoal: UserGoal? = null
 
     init {
-        loadHomeState()
     }
 
-    /**
-     * 홈 진입 시 유저 상태 조회
-     */
+
     /**
      * 홈 진입 시 서버 기준 상태 로딩
      */
-    private fun loadHomeState() {
+    fun loadHomeState() {
         viewModelScope.launch {
             _screenState.value = UiScreenState.Loading
+
+            Log.d("요약글 조회 디버깅", "홈화면 상태 가져옴 - 목표 조회 완료")
 
             // 1️⃣ 목표 조회
             when (val goalResult = goalRepository.getUserGoal()) {
@@ -66,7 +66,7 @@ class HomeViewModel @Inject constructor(
                                     fireState = resolveFireState(goal),
 
                                     // 🔥 서버 기준 값 저장
-                                    hasSolvedToday = quizStatus.hasSolvedToday,
+                                    hasSolvedToday = !quizStatus.hasSolvedToday,
                                     isFirstTime = quizStatus.isFirstTime,
 
                                     // 🔥 HomeViewModel에서만 SnackState 분기

@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizActivity
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -56,12 +57,17 @@ class MyPageActivity : ComponentActivity() {
                             Utils.UxUtils.moveActivity(
                                 context,
                                 GoalListActivity::class.java,
-                                exitFlag = false,
                             )
                         },
                         onAlarmToggle = {  },
                         onTermsClick = {  },
-                        onCustomerCenterClick = {  }
+                        onCustomerCenterClick = {  },
+                        onLogoutClick = {
+                            Utils.UxUtils.moveActivity(
+                                context,
+                                LoginActivity::class.java,
+                            )
+                        }
                     )
                 }
             }

@@ -12,6 +12,9 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface AuthApiService {
+    @POST("/api/v1/auth/logout")
+    suspend fun logout(): ApiResponse<Unit, Any?>
+
     @GET("/api/v1/users/name")
     suspend fun checkMyToken(): ApiResponse<UserName, Unit>
 

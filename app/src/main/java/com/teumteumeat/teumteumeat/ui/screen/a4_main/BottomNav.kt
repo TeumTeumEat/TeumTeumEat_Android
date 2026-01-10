@@ -27,11 +27,11 @@ sealed class BottomNavItem(
         "home"
     )
 
-    object AddingFile : BottomNavItem(
+/*    object AddingFile : BottomNavItem(
         "Adding_attached_file",
         R.drawable.icon_plus,
         "Adding_attached_file",
-    )
+    )*/
 
     object Library : BottomNavItem(
         "Library",
@@ -46,7 +46,7 @@ sealed class BottomNavItem(
 fun BottomNavigationBar(navController: NavController, containerColor: Color) {
 
     val items = listOf(
-        BottomNavItem.AddingFile,
+        // BottomNavItem.AddingFile,
         BottomNavItem.Home,
         BottomNavItem.Library
     )

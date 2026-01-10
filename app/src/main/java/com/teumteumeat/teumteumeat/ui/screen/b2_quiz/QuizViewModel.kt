@@ -41,7 +41,7 @@ class QuizViewModel @Inject constructor(
     }
 
     private fun moveToNextQuizIfPossible(isCorrect: Boolean) {
-        if (!isCorrect) return
+        // if (!isCorrect) return
 
         _uiState.update { state ->
             val isLastQuiz = state.currentIndex == state.quizzes.lastIndex

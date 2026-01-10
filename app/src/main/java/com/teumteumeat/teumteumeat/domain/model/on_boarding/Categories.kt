@@ -22,9 +22,14 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
             .split("/")
             .filter { it.isNotBlank() }
 
+        // ❌ 4뎁스 규칙 위반 (path 3 초과 → leaf 포함 시 5뎁스)
+        if (segments.size > 3) {
+            return@forEach
+        }
+
         var currentLevel = root
 
-        // 1️⃣ path 기반 depth 생성 (UI 전용)
+        // 1️⃣ path 기반 depth 생성 (최대 3뎁스)
         segments.forEach { segment ->
             currentLevel = currentLevel
                 .getOrPut(segment) {
@@ -36,7 +41,7 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
                 .children
         }
 
-        // 2️⃣ leaf 처리 (⭐ 핵심 수정)
+        // 2️⃣ leaf (항상 4뎁스)
         var leaf = currentLevel[dto.name]
         if (leaf != null) {
             // 이미 존재하면 serverCategoryId만 세팅

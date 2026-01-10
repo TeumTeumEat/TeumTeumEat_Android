@@ -27,10 +27,16 @@ class MainViewModel @Inject constructor(
     private val currentPage get() = uiState.value.currentPage
     private val totalPage get() = uiState.value.totalPage
 
-
-    fun onScreenChanged(screenType: MainScreenType) {
+    fun onScreenChanged(
+        screenType: MainScreenType,
+        from: String = "UNKNOWN"
+    ) {
+        Log.d("탭 변경 추적", "onScreenChanged($screenType) from=$from")
         _uiState.update {
-            it.copy(currentScreenType = screenType)
+            it.copy(
+                currentScreenType = screenType,
+                hasHandledExternalNavigation = true
+            )
         }
     }
 

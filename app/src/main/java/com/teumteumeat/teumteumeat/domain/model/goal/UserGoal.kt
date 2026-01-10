@@ -10,7 +10,7 @@ data class UserGoal(
     val isExpired: Boolean,
     val studyPeriod: String,
     val difficulty: Difficulty,
-    val prompt: String,
+    val prompt: String?,
     val category: GoalCategory?
 )
 
