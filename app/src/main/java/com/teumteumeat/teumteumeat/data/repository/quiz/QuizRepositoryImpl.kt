@@ -9,9 +9,12 @@ import com.teumteumeat.teumteumeat.data.network.model_response.QuizHistoryData
 import com.teumteumeat.teumteumeat.data.network.model_response.UserQuiz
 import com.teumteumeat.teumteumeat.data.network.model_response.toDomain
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.mapper.toDomain
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.quiz.UserQuizStatus
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizHistory
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.SubmitQuizResult
+import com.teumteumeat.teumteumeat.utils.Utils.RepositoryUtils.requireNotNullOrError
 import javax.inject.Inject
 
 class QuizRepositoryImpl @Inject constructor(
@@ -19,6 +22,19 @@ class QuizRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), QuizRepository {
+
+    override suspend fun getUserQuizStatus(): ApiResultV2<UserQuizStatus> {
+        return safeApiVer2(
+            apiCall = {
+                quizApiService.getUserQuizStatus()
+            },
+            mapper = { response ->
+                response
+                    .requireNotNullOrError("/api/v1/user-quizzes/status")
+                    .toDomain()
+            }
+        )
+    }
 
     override suspend fun getQuizHistory(
         type: String,
@@ -64,7 +80,7 @@ class QuizRepositoryImpl @Inject constructor(
 
     override suspend fun getUserQuizzes(
         documentId: Int,
-        documentType: GoalType
+        documentType: GoalTypeUiState
     ): ApiResultV2<List<UserQuiz>> {
         return safeApiVer2(
             apiCall = {

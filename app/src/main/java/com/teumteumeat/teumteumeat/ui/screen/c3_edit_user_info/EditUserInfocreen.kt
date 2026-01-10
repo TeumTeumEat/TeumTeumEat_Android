@@ -1,11 +1,9 @@
 package com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info
 
 import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
@@ -21,18 +19,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -42,15 +34,10 @@ import com.teumteumeat.teumteumeat.ui.component.MinuteRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
 import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.mypage.TagChip
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.TimeType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.toDisplayText
-import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalCardUiModel
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
-import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -330,7 +317,7 @@ fun TimeSettingRow(
         Text(
             text = title,
             style = MaterialTheme.appTypography.subtitleSemiBold16.copy(
-                color = MaterialTheme.extendedColors.textSecondarty
+                color = MaterialTheme.extendedColors.textSecondary
             ),
             color = Color.Gray
         )

@@ -1,16 +1,28 @@
 package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
+
 
 data class UiStateSummary(
+    /* ================= 진입 파라미터 ================= */
+    val goalId: Long? = null,
+    val goalType: DomainGoalType? = null,
+    val documentId: Long? = null,
+    val categoryId: Long? = null,
+
+    /* ================= 화면 상태 ================= */
     val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+
+
     val title: String = "휴리스틱 평가",
     val dateText: String = "1월 3일",
     val summary: String = "",
     val hasSolvedToday: Boolean = true,
-    val errorMessage: String? = null,
     val isFirstTime: Boolean = false,
+
+    /* category 전용 */
     val categoryDocumentId: Int? = null,
-    val categoryId: Int? = null,
 )
 
 data class DocumentSummaryResponse(

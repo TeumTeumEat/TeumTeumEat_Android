@@ -18,6 +18,10 @@ val Pretendard = FontFamily(
     Font(R.font.pretendard_regular, FontWeight.Normal),
 )
 
+val Rodies = FontFamily(
+    Font(R.font.rowdies_regular, FontWeight.Normal),
+)
+
 @Immutable
 data class AppTypography(
 
@@ -61,12 +65,18 @@ data class AppTypography(
 
     val titleSemiBold32: TextStyle,
     val btnMedium18_h24: TextStyle,
+    val rodies_body_40: TextStyle,
 )
 
 private val DefaultTextColor = Black100
 
 private val BaseTextStyle = TextStyle(
     fontFamily = Pretendard,
+    color = DefaultTextColor
+)
+
+private val RodiesTextStyle = TextStyle(
+    fontFamily = Rodies,
     color = DefaultTextColor
 )
 val DefaultAppTypography = AppTypography(
@@ -84,7 +94,6 @@ val DefaultAppTypography = AppTypography(
     titleBold22 = BaseTextStyle.copy(
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
-        lineHeight = 22.sp,
     ),
     titleBold20 = BaseTextStyle.copy(
         fontWeight = FontWeight.Bold,
@@ -131,7 +140,6 @@ val DefaultAppTypography = AppTypography(
     bodyMedium14 = BaseTextStyle.copy(
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
-        lineHeight = 14.sp,
     ),
     bodyMedium14_20 = BaseTextStyle.copy(
         fontWeight = FontWeight.Medium,
@@ -167,7 +175,6 @@ val DefaultAppTypography = AppTypography(
     captionRegular12 = BaseTextStyle.copy(
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
-        lineHeight = 12.sp,
     ),
 
     // button
@@ -217,12 +224,18 @@ val DefaultAppTypography = AppTypography(
         lineHeight = 24.sp,
     ),
 
+    rodies_body_40 = RodiesTextStyle.copy(
+        fontWeight = FontWeight.Normal,
+        fontSize = 40.sp,
+    ),
+
 )
 
 
 
 // Set of Material typography styles to start with
 val Typography = Typography(
+
 
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,

@@ -185,6 +185,4 @@ dependencies {
     implementation("io.noties.markwon:core:4.6.2")
 
     implementation("org.jetbrains:markdown:0.7.3")
-
-
 }

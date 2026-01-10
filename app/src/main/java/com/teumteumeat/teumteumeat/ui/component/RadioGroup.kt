@@ -16,8 +16,8 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.button.SelectableBoxButton
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.DifficultyOption
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.utils.appTypography
 
 @Composable
@@ -130,8 +130,8 @@ fun DifficultyRadioGroup(
 
 @Composable
 fun BoxButtonRadioGroup(
-    selectedType: GoalType,
-    onSelected: (GoalType) -> Unit,
+    selectedType: GoalTypeUiState,
+    onSelected: (GoalTypeUiState) -> Unit,
 ) {
     BoxWithConstraints {
         val itemWidth = maxWidth / 2
@@ -146,12 +146,12 @@ fun BoxButtonRadioGroup(
                 modifier = Modifier
                     .width(itemWidth)
                     .padding(vertical = 27.dp, horizontal = 14.dp),
-                isSelected = selectedType == GoalType.DOCUMENT,
+                isSelected = selectedType == GoalTypeUiState.DOCUMENT,
                 titleText = "파일 업로드",
                 labelText = "공부하고 싶은\n내용이 있어요.",
                 iconRes = R.drawable.icon_files,
                 onClick = {
-                    onSelected(GoalType.DOCUMENT)
+                    onSelected(GoalTypeUiState.DOCUMENT)
                 }
             )
 
@@ -162,12 +162,12 @@ fun BoxButtonRadioGroup(
                 modifier = Modifier
                     .width(itemWidth)
                     .padding(vertical = 27.dp, horizontal = 14.dp),
-                isSelected = selectedType == GoalType.CATEGORY,
+                isSelected = selectedType == GoalTypeUiState.CATEGORY,
                 titleText = "카테고리 선택",
                 labelText = "공부하고 싶은 걸\n골라볼게요.",
                 iconRes = R.drawable.icon_category,
                 onClick = {
-                    onSelected(GoalType.CATEGORY)
+                    onSelected(GoalTypeUiState.CATEGORY)
                 }
             )
         }

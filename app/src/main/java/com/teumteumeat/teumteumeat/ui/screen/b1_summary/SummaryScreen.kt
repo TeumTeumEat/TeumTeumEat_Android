@@ -146,7 +146,7 @@ fun SummaryScreen(
                                     .padding(horizontal = 20.dp)
                             ) {
 
-                                if (uiState.categoryId == 0) {
+                                if (uiState.categoryId == 0L) {
                                     Spacer(modifier = Modifier.height(32.dp))
 
                                     Text(

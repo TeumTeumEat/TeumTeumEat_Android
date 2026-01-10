@@ -7,6 +7,7 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
@@ -30,6 +31,95 @@ class SummaryViewModel @Inject constructor(
     private val _screenState =
         MutableStateFlow<UiScreenState>(UiScreenState.Idle)
     val screenState = _screenState.asStateFlow()
+
+    fun loadSummaryByGoalType() {
+        val state = _uiState.value
+
+        val goalType = state.goalType
+        val goalId = state.goalId
+        val documentId = state.documentId
+        val categoryId = state.categoryId
+
+        if (goalType == null || goalId == null) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = "요약글을 불러오기 위한 정보가 부족합니다."
+                )
+            }
+            _screenState.value =
+                UiScreenState.Error("요약글을 불러오기 위한 정보가 부족합니다.")
+            return
+        }
+
+        when (goalType) {
+
+            DomainGoalType.DOCUMENT -> {
+                if (documentId == null) {
+                    handleInvalidParam("documentId 가 없습니다.")
+                    return
+                }
+                loadDocumentSummary(
+                    goalId = goalId.toInt(),
+                    documentId = documentId.toInt()
+                )
+            }
+
+            DomainGoalType.CATEGORY -> {
+                if (categoryId == null) {
+                    handleInvalidParam("categoryId 가 없습니다.")
+                    return
+                }
+                loadCategorySummary(
+                    categoryId = categoryId.toInt()
+                )
+            }
+        }
+    }
+
+    private fun handleInvalidParam(message: String) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorMessage = message
+            )
+        }
+        _screenState.value = UiScreenState.Error(message)
+    }
+
+
+    suspend fun initSummary(
+        goalId: Long,
+        goalType: DomainGoalType,
+        documentId: Long?,
+        categoryId: Long?
+    ) {
+        // 이미 초기화되었으면 재실행 방지
+        if (_uiState.value.goalType != null) return
+
+        _uiState.update {
+            it.copy(
+                goalId = goalId,
+                goalType = goalType,
+                documentId = documentId,
+                categoryId = categoryId
+            )
+        }
+
+        // goalType 기준으로 API 분기
+        when (goalType) {
+            DomainGoalType.CATEGORY -> {
+                loadCategorySummary(categoryId?.toInt() ?: -1)
+            }
+
+            DomainGoalType.DOCUMENT -> {
+                loadDocumentSummary(
+                    goalId = goalId.toInt(),
+                    documentId = documentId?.toInt() ?: -1
+                )
+            }
+        }
+    }
 
     /**
      * 오늘의 남남지식 요약 조회
@@ -128,7 +218,7 @@ class SummaryViewModel @Inject constructor(
             _screenState.value = UiScreenState.Loading
             _uiState.update{
                 it.copy(
-                    categoryId = categoryId,
+                    categoryId = categoryId.toLong(),
                     isLoading = true,
                     errorMessage = null,
                 )

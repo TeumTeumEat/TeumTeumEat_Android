@@ -1,34 +1,34 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnBoardingMainState
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 
-sealed class UiStateHomeState {
-
-    /** 아무 일도 하지 않는 초기 상태 */
-    data object Idle : UiStateHomeState()
-
-    /** 로딩 화면 표시 */
-    data object Loading : UiStateHomeState()
-
-    /** 요청 성공 */
-    data object Success : UiStateHomeState()
-
-    /** 오류 발생 */
-    data class Error(
-        val message: String,
-    ) : UiStateHomeState()
-}
 
 data class UiStateHome(
+    // ================= 페이징 =================
     val currentPage: Int = 0,
     val totalPage: Int = 5,
 
+    // ================= 홈 상태 =================
     val fireState: FireState = FireState.UnBurning,
     val stampCount: Int = 0,
-
+    val snackState: SnackState = SnackState.Available,
 
     /** 🔥 핵심 */
-    val snackState: SnackState = SnackState.Available
+    val hasSolvedToday: Boolean = false,
+    val isFirstTime: Boolean = false,
+
+    // ================= 요약글 조회 핵심 =================
+    val summaryQuery: SummaryQuery? = null
+)
+
+/**
+ * 🔥 요약글 조회에 필요한 파라미터 묶음
+ */
+data class SummaryQuery(
+    val goalId: Long,
+    val goalType: DomainGoalType,      // ✅ 추가됨 (유저가 선택한 목표 타입)
+    val documentId: Long?,       // optional
+    val categoryId: Long?        // optional
 )
 
 sealed class SnackState {

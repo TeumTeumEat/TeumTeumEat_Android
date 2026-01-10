@@ -1,18 +1,12 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,7 +43,7 @@ sealed class BottomNavItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(navController: NavController, containerColor: Color) {
 
     val items = listOf(
         BottomNavItem.AddingFile,
@@ -64,7 +58,9 @@ fun BottomNavigationBar(navController: NavController) {
 
     NavigationBar(
         modifier = Modifier.padding(bottom = 25.dp),
-        containerColor = Color.Transparent,
+        containerColor = containerColor,
+        tonalElevation = 0.dp // ✅ 색 왜곡 제거 (핵심)
+
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

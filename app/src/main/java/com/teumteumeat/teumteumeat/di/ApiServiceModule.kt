@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.di
 
+import com.teumteumeat.teumteumeat.data.api.HistoryApiService
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.document.DocumentApiService
 import com.teumteumeat.teumteumeat.data.api.goal.GoalApiService
@@ -47,6 +48,10 @@ object ApiServiceModule {
         @SlowClient retrofit: Retrofit
     ): QuizApiService =
         retrofit.create(QuizApiService::class.java)
+
+    @Provides @Singleton
+    fun provideHistoryApiService(retrofit: Retrofit): HistoryApiService =
+        retrofit.create(HistoryApiService::class.java)
 
     // ---- api 서비스 추가 ----
 

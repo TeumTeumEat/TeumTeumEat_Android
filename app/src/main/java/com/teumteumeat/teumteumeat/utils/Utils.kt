@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -13,8 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.AmPm
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import java.io.FileInputStream
 import java.time.LocalDate
 import java.time.LocalTime
@@ -23,16 +23,109 @@ import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.Properties
 import androidx.core.net.toUri
+import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.SnackState
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_4_daily_quiz_result.DailyQuizResultActivity
 import java.time.LocalDateTime
+import java.time.YearMonth
 
 sealed interface NotificationPermissionEvent {
     data object RequestPermission : NotificationPermissionEvent
     data object AlreadyGranted : NotificationPermissionEvent
 }
 
+class ContractViolationException(
+    override val message: String
+) : RuntimeException(message)
+
 class Utils {
 
+    object RepositoryUtils{
+        /**
+         * Repository mapper 전용 null 처리 유틸
+         *
+         * - null 이면 error(...) 호출
+         * - error 는 IllegalStateException 을 던짐
+         * - safeApiVer2 에서 catch 되어 UnknownError 로 변환됨
+         *
+         * @param requestUrl 디버깅 및 프론트 노출용 메시지에 포함할 API 경로
+         */
+        inline fun <T : Any> T?.requireNotNullOrError(
+            requestUrl: String
+        ): T {
+            if (this == null) {
+                error("$requestUrl 이 null 을 반환했습니다.")
+            }
+            return this
+        }
+    }
+
     object TypeUtils{
+
+        private val DATE_YYYY_MM_DD =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+        private val DATE_MM_DD = DateTimeFormatter.ofPattern("MM.dd")
+
+        fun String.toMMdd(): String {
+            return LocalDateTime.parse(this)
+                .toLocalDate()
+                .format(DateTimeFormatter.ofPattern("MM.dd"))
+        }
+
+        /**
+         * LocalDate → yyyy-MM-dd
+         * (API query / 서버 요청용)
+         */
+        fun LocalDate.toYyyyMmDd(): String {
+            return this.format(DATE_YYYY_MM_DD)
+        }
+
+        /**
+         * LocalDate → MM.dd
+         * (UI 표시용)
+         */
+        fun LocalDate.toMmDd(): String {
+            return this.format(DATE_MM_DD)
+        }
+
+        /**
+         * LocalDate → YearMonth
+         * (서버 전송용 / 월 단위 요청)
+         */
+        fun LocalDate.toYearMonth(): YearMonth {
+            return YearMonth.from(this)
+        }
+
+        /**
+         * LocalDateTime을 yyyy-MM-dd 문자열로 변환
+         * (API 요청 / 날짜 비교용)
+         */
+        fun LocalDateTime.toYyyyMmDd(): String {
+            return this
+                .toLocalDate()
+                .format(DATE_YYYY_MM_DD)
+        }
+
+        /**
+         * 서버에서 내려온 날짜 문자열을 yyyy-MM-dd 형태로 변환
+         *
+         * 실패 시 빈 문자열 반환
+         */
+        fun String?.toYyyyMmDdOrEmpty(): String {
+            if (this.isNullOrBlank()) return ""
+
+            return try {
+                LocalDateTime.parse(this)
+                    .toLocalDate()
+                    .format(DATE_YYYY_MM_DD)
+            } catch (e: DateTimeParseException) {
+                ""
+            }
+        }
+
+
         fun Difficulty.toUiText(): String =
             when (this) {
                 Difficulty.EASY -> "난이도 하"
@@ -40,6 +133,10 @@ class Utils {
                 Difficulty.HARD -> "난이도 상"
                 Difficulty.NONE -> ""
             }
+
+        fun formatDate(date: LocalDate): String {
+            return "${date.monthValue}월 ${date.dayOfMonth}일"
+        }
 
     }
 
@@ -186,7 +283,39 @@ class Utils {
 
     }
 
+    object DailySummaryArgs {
+        const val KEY_ID = "key_id"
+        const val KEY_TYPE = "key_type"
+        const val KEY_DATE = "key_date"
+    }
+
+
     object UxUtils{
+
+        fun moveScreenWithDailyItem(
+            context: Context,
+            targetActivity: Class<out Activity>,   // ✅ 이동 대상 Activity
+            id: Long,
+            type: GoalType,
+            date: LocalDate,
+            exitCurrent: Boolean = false
+        ) {
+            val intent = Intent(
+                context,
+                targetActivity
+            ).apply {
+                putExtra(DailySummaryArgs.KEY_ID, id)
+                putExtra(DailySummaryArgs.KEY_TYPE, type.name)
+                putExtra(DailySummaryArgs.KEY_DATE, date.toString()) // yyyy-MM-dd
+            }
+
+
+            context.startActivity(intent)
+
+            if (exitCurrent && context is Activity) {
+                context.finish()
+            }
+        }
 
         /**
          * 모달이 열려 있을 때와 닫혀 있을 때의 백 버튼 동작을 처리하는 함수입니다.
@@ -396,28 +525,63 @@ class Utils {
         private const val KEY_DOCUMENT_ID = "document_id"
         private const val KEY_GOAL_TYPE = "goal_type"
 
+        // 유저가 한번이라도 요약글을 최초로 생성하였는지
+        private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
+
+        /**
+         * 오늘 이미 요약글을 사용했는지
+         */
+        fun isSnackConsumedToday(context: Context): Boolean {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            val savedDate = prefs.getString(KEY_SNACK_CONSUMED_DATE, null)
+            val today = LocalDate.now().toString()
+            return savedDate == today
+        }
+
+        /**
+         * 요약글 사용 처리 (Consumed)
+         */
+        fun markSnackConsumedToday(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString(
+                    KEY_SNACK_CONSUMED_DATE,
+                    LocalDate.now().toString()
+                )
+                .apply()
+        }
+
+        /**
+         * 자정 초기화
+         */
+        fun clearSnackState(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .remove(KEY_SNACK_CONSUMED_DATE)
+                .apply()
+        }
 
         // 🔔 알림 권한 한 번이라도 거부했는지
         private const val KEY_NOTIFICATION_DENIED_ONCE = "notification_denied_once"
 
         private val IS_USER_REGISTER_STATE = USER_REGISTER_STATE.LOGIN.name
 
-        fun saveGoalType(context: Context, goalType: GoalType) {
+        fun saveGoalType(context: Context, goalTypeUiState: GoalTypeUiState) {
             val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             prefs.edit()
-                .putString(KEY_GOAL_TYPE, goalType.name)
+                .putString(KEY_GOAL_TYPE, goalTypeUiState.name)
                 .apply()
         }
 
-        fun getGoalType(context: Context): GoalType {
+        fun getGoalType(context: Context): GoalTypeUiState {
             val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             val value = prefs.getString(KEY_GOAL_TYPE, null)
 
             return runCatching {
-                if (value != null) GoalType.valueOf(value)
-                else GoalType.NONE
+                if (value != null) GoalTypeUiState.valueOf(value)
+                else GoalTypeUiState.NONE
             }.getOrElse {
-                GoalType.NONE
+                GoalTypeUiState.NONE
             }
         }
 

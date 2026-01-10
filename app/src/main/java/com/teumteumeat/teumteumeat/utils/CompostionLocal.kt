@@ -11,6 +11,8 @@ import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnBoardingMai
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.UiStateMain
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.UiStateLibrary
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail.UiStateDailySummary
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_4_daily_quiz_result.UiStateDailyQuizResult
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.UiStateQuizResult
@@ -69,6 +71,10 @@ val LocalScreenState = compositionLocalOf<UiScreenState>{
     error("No UiScreenState provided")
 }
 
+val LocalDailySummaryUiState = compositionLocalOf<UiStateDailySummary> {
+    error("No UiStateDailySummary provided")
+}
+
 val LocalSummaryUiState = compositionLocalOf<UiStateSummary> {
     error("No UiStateSummary provided")
 }
@@ -79,6 +85,10 @@ val LocalQuizUiState = compositionLocalOf<UiStateQuiz> {
 
 val LocalQuizResultUiState = compositionLocalOf<UiStateQuizResult> {
     error("No UiStateQuizResult provided")
+}
+
+val LocalDailyQuizResultUiState = compositionLocalOf<UiStateDailyQuizResult> {
+    error("No UiStateDailyQuizResult provided")
 }
 
 

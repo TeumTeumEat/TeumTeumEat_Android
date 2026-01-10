@@ -1,27 +1,20 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
 import android.app.Application
-import android.util.Log
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
-import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
-import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginUiEvent
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
-import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.utils.Utils.InfoUtil.getAppVersion
-import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -205,17 +198,17 @@ class MyPageViewModel @Inject constructor(
         val (topic, description) =
             when (goal.type) {
 
-                GoalType.CATEGORY -> {
+                GoalTypeUiState.CATEGORY -> {
                     val category = goal.category
                     (category?.path ?: "미설정") to
                         (goal.prompt ?: "")
                 }
 
-                GoalType.DOCUMENT -> {
+                GoalTypeUiState.DOCUMENT -> {
                     (goal.fileName ?: "문서") to (goal.prompt ?: "입력한 프롬프트가 없습니다.")
                 }
 
-                GoalType.NONE -> {
+                GoalTypeUiState.NONE -> {
                     "잘못된 목표" to ""
                 }
             }

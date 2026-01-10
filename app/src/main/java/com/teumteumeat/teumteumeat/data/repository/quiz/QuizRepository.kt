@@ -2,11 +2,15 @@ package com.teumteumeat.teumteumeat.data.repository.quiz
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_response.UserQuiz
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.quiz.UserQuizStatus
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizHistory
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.SubmitQuizResult
 
 interface QuizRepository {
+
+    suspend fun getUserQuizStatus(): ApiResultV2<UserQuizStatus>
+
     suspend fun getQuizHistory(
         type: String,
         id: Int,          // ✅ 앱 내부 표준
@@ -20,6 +24,6 @@ interface QuizRepository {
 
     suspend fun getUserQuizzes(
         documentId: Int,
-        documentType: GoalType
+        documentType: GoalTypeUiState
     ): ApiResultV2<List<UserQuiz>>
 }

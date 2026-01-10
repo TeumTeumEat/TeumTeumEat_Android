@@ -31,7 +31,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -178,16 +178,16 @@ fun CheckSetMyInfoScreen(
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
-                                text = if(uiState.goalType == GoalType.CATEGORY) "관심분야"
+                                text = if(uiState.goalTypeUiState == GoalTypeUiState.CATEGORY) "관심분야"
                                     else "문서이름",
                                 style = Typography.bodyLarge.copy(fontSize = 18.sp)
                             )
                         }
 
 // GoalType에 따라 표시 내용 분기 처리
-                        val subjectText = when (uiState.goalType) {
-                            GoalType.DOCUMENT -> uiState.selectedFileName.ifEmpty { "선택된 파일 없음" }
-                            GoalType.CATEGORY -> {
+                        val subjectText = when (uiState.goalTypeUiState) {
+                            GoalTypeUiState.DOCUMENT -> uiState.selectedFileName.ifEmpty { "선택된 파일 없음" }
+                            GoalTypeUiState.CATEGORY -> {
                                 // 앱개발 > ios > swift 형식으로 결합
                                 listOfNotNull(
                                     uiState.categorySelection.depth1?.name,

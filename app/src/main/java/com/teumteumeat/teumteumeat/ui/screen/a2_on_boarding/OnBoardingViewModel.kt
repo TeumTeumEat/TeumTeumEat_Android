@@ -26,8 +26,8 @@ import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.enum_type.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.normalizeTo12Hour
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
@@ -118,10 +118,10 @@ class OnBoardingViewModel @Inject constructor(
 
 
             // 5. 문서 업로드 documentID 생성
-            Log.d("OnBoardingVM", "타입: ${state.goalType}의 퀴즈 생성")
-            PrefsUtil.saveGoalType(appContext, state.goalType)
-            when(state.goalType){
-                GoalType.DOCUMENT -> {
+            Log.d("OnBoardingVM", "타입: ${state.goalTypeUiState}의 퀴즈 생성")
+            PrefsUtil.saveGoalType(appContext, state.goalTypeUiState)
+            when(state.goalTypeUiState){
+                GoalTypeUiState.DOCUMENT -> {
                     // 3️⃣ 목표 생성
                     val goalResult = createGoalRequest()
                     if (goalResult !is ApiResultV2.Success) {
@@ -165,7 +165,7 @@ class OnBoardingViewModel @Inject constructor(
                         return@launch
                     }
                 }
-                GoalType.CATEGORY -> {
+                GoalTypeUiState.CATEGORY -> {
                     PrefsUtil.saveCategoryId(context = appContext, state.selectedCategoryId?: -1)
                     Log.d("OnBoardingVM", "selectedCategoryID: ${state.selectedCategoryId}")
                     // 3️⃣ 목표 생성
@@ -182,7 +182,7 @@ class OnBoardingViewModel @Inject constructor(
                         return@launch
                     }
                 }
-                GoalType.NONE -> {}
+                GoalTypeUiState.NONE -> {}
             }
 
             // 🔹 최소 로딩 1.8초 보장
@@ -269,7 +269,7 @@ class OnBoardingViewModel @Inject constructor(
             state.studyPeriod?.toString()?.plus("주") ?: "기간 설정 안함"
 
         val request = CreateGoalRequest(
-            type = state.goalType,
+            type = state.goalTypeUiState,
             studyPeriod = studyPeriodStr,
             difficulty = state.difficulty,
             prompt = state.promptInput.takeIf { it.isNotBlank() },
@@ -285,11 +285,11 @@ class OnBoardingViewModel @Inject constructor(
             state.studyPeriod?.toString()?.plus("주") ?: "기간 설정 안함"
 
         val request = CreateGoalRequest(
-            type = state.goalType,
+            type = state.goalTypeUiState,
             studyPeriod = studyPeriodStr,
             difficulty = state.difficulty,
             prompt = state.promptInput.takeIf { it.isNotBlank() },
-            categoryId = if (state.goalType == GoalType.CATEGORY) {
+            categoryId = if (state.goalTypeUiState == GoalTypeUiState.CATEGORY) {
                 state.selectedCategoryId
             } else {
                 null                 // DOCUMENT → categoryId 미포함
@@ -491,11 +491,11 @@ class OnBoardingViewModel @Inject constructor(
                 val studyPeriodStr: String =
                     if (studyPeriod != null) studyPeriod.toString() + "주" else "기간 설정 안함"
                 CreateGoalRequest(
-                    type = goalType,
+                    type = goalTypeUiState,
                     studyPeriod = studyPeriodStr,
                     difficulty = difficulty,
                     prompt = promptInput.takeIf { it.isNotBlank() },
-                    categoryId = if (goalType == GoalType.CATEGORY) {
+                    categoryId = if (goalTypeUiState == GoalTypeUiState.CATEGORY) {
                         selectedCategoryId
                     } else {
                         null                 // DOCUMENT → categoryId 미포함
@@ -1053,9 +1053,9 @@ class OnBoardingViewModel @Inject constructor(
     }
 
 
-    fun selectLearningMethod(type: GoalType) {
+    fun selectLearningMethod(type: GoalTypeUiState) {
         _uiState.update {
-            it.copy(goalType = type)
+            it.copy(goalTypeUiState = type)
         }
     }
 
