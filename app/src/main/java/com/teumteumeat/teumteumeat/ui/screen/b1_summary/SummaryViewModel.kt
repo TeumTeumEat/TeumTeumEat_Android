@@ -247,6 +247,7 @@ class SummaryViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
+                            title = data.title,
                             summary = data.content,
                             hasSolvedToday = data.hasSolvedToday,
                             isFirstTime = data.isFirstTime,

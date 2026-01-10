@@ -9,6 +9,7 @@ import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
+import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
@@ -32,6 +33,7 @@ class MyPageViewModel @Inject constructor(
     private val getGoalListUseCase: GetGoalListUseCase,
     private val socialLoginRepository: SocialLoginRepository,
     private val tokenLocalDataSource: TokenLocalDataSource,
+    private val socialLoginRepositoryImpl: SocialLoginRepositoryImpl
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateMyPage())
@@ -51,6 +53,29 @@ class MyPageViewModel @Inject constructor(
             it.copy(
                 appVersion = version
             )
+        }
+    }
+
+    fun logout(
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            when (val result = socialLoginRepositoryImpl.logout()) {
+
+                is ApiResultV2.Success -> {
+                    onSuccess()
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    // 이미 만료 → 그냥 로그아웃 처리
+                    onSuccess()
+                }
+
+                else -> {
+                    onError(result.uiMessage)
+                }
+            }
         }
     }
 

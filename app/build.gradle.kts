@@ -1,3 +1,6 @@
+import java.util.Properties
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -43,6 +46,35 @@ android {
 
     }
 
+    val localProps = Properties().apply {
+        val localPropsFile = rootProject.file("local.properties")
+        if (localPropsFile.exists()) {
+            load(localPropsFile.inputStream())
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+
+            val storeFilePath =
+                localProps.getProperty("TEUMTEUM_STORE_FILE")
+                    ?: error("TEUMTEUM_STORE_FILE not found in local.properties")
+
+            storeFile = file(storeFilePath)
+            storePassword =
+                localProps.getProperty("TEUMTEUM_STORE_PASSWORD")
+                    ?: error("TEUMTEUM_STORE_PASSWORD not found")
+
+            keyAlias =
+                localProps.getProperty("TEUMTEUM_KEY_ALIAS")
+                    ?: error("TEUMTEUM_KEY_ALIAS not found")
+
+            keyPassword =
+                localProps.getProperty("TEUMTEUM_KEY_PASSWORD")
+                    ?: error("TEUMTEUM_KEY_PASSWORD not found")
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -71,6 +103,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -95,6 +128,10 @@ android {
 
         }
     }
+
+
+
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

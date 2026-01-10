@@ -25,9 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +50,7 @@ import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toYearMonth
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
 @Composable
@@ -59,6 +63,14 @@ fun MainCompositionProvider(
     val mainUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navHostController = rememberNavController()
     val theme = MaterialTheme.extendedColors
+    var isNavReady by remember { mutableStateOf(false) }
+
+    LaunchedEffect(navHostController) {
+        // ✅ NavHost가 graph를 세팅할 때까지 대기
+        navHostController.currentBackStackEntryFlow.first()
+        isNavReady = true
+    }
+
 
     CompositionLocalProvider(
         LocalAppContext provides context,
@@ -70,11 +82,50 @@ fun MainCompositionProvider(
         val navBackStackEntry by navHostController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
-        LaunchedEffect(currentRoute) {
-            viewModel.loadCalendarHistory(LocalDate.now().toYearMonth())
-            when (currentRoute) {
-                BottomNavItem.Home.route -> viewModel.onScreenChanged(MainScreenType.MAIN)
-                BottomNavItem.Library.route -> viewModel.onScreenChanged(MainScreenType.LIBRARY)
+
+        /*LaunchedEffect(mainUiState.currentScreenType) {
+            when (mainUiState.currentScreenType) {
+                MainScreenType.MAIN -> {
+                    navHostController.navigate(BottomNavItem.Home.route) {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo(navHostController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                    }
+                }
+
+                MainScreenType.LIBRARY -> {
+                    navHostController.navigate(BottomNavItem.Library.route) {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo(navHostController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                    }
+                }
+            }
+        }*/
+
+        LaunchedEffect(mainUiState.currentScreenType, isNavReady) {
+            if (!isNavReady) return@LaunchedEffect
+
+            val targetRoute = when (mainUiState.currentScreenType) {
+                MainScreenType.MAIN -> BottomNavItem.Home.route
+                MainScreenType.LIBRARY -> BottomNavItem.Library.route
+            }
+
+            // ✅ 이미 해당 화면이면 이동 안 함 (중복 방지)
+            if (navHostController.currentDestination?.route == targetRoute) return@LaunchedEffect
+
+            navHostController.navigate(targetRoute) {
+                launchSingleTop = true
+                restoreState = true
+
+                // ⚠️ graph 직접 접근 ❌ → route 기반 popUpTo 사용
+                popUpTo(BottomNavItem.Home.route) {
+                    saveState = true
+                }
             }
         }
 
@@ -130,7 +181,7 @@ fun MainCompositionProvider(
                             MainScreenType.MAIN -> MaterialTheme.extendedColors.backSurface
 
                             MainScreenType.LIBRARY ->
-                                MaterialTheme.extendedColors.backgroundW100
+                                Color.Transparent
                         }
                     )
                 }

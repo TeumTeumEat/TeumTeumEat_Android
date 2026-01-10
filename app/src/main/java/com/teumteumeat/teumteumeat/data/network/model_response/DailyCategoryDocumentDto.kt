@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.data.network.model_response
 
 data class DailyCategoryDocumentDto(
     val documentId: Long,
+    val title: String,
     val content: String,
     val hasSolvedToday: Boolean,
     val isFirstTime: Boolean,
@@ -10,6 +11,7 @@ data class DailyCategoryDocumentDto(
 
 fun DailyCategoryDocumentDto.toDomain(): DailyCategoryDocument {
     return DailyCategoryDocument(
+        title = this.title,
         documentId = this.documentId,
         content = this.content,
         hasSolvedToday = this.hasSolvedToday,

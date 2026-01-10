@@ -146,17 +146,14 @@ fun SummaryScreen(
                                     .padding(horizontal = 20.dp)
                             ) {
 
-                                if (uiState.categoryId == 0L) {
-                                    Spacer(modifier = Modifier.height(32.dp))
+                                Spacer(modifier = Modifier.height(32.dp))
 
-                                    Text(
-                                        text = uiState.title,
-                                        style = MaterialTheme.appTypography.titleBold24
-                                    )
+                                Text(
+                                    text = uiState.title,
+                                    style = MaterialTheme.appTypography.titleBold24
+                                )
 
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                }
-
+                                Spacer(modifier = Modifier.height(12.dp))
 
                                 Text(
                                     text = uiState.dateText,

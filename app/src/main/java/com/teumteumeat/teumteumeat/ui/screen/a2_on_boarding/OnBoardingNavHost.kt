@@ -103,12 +103,10 @@ fun OnBoardingNavHost(navController: NavHostController) {
             SelectInputMethodScreen(
                 name = OnBoardingScreens.FifthSelectInputMethodScreen.route,
                 onNextFileUpload = {
-                    viewModel.nextPage()
                     navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
                 },
 
                 onNextCateGorySelct = {
-                    viewModel.nextPage()
                     navController.navigate(OnBoardingScreens.SixthCategorySelectScreen.route)
                 },
                 onPrev = {
@@ -281,7 +279,7 @@ object OnBoardingFlow {
 
     /** 전체 페이지 수 */
     val totalCount: Int
-        get() = screens.size
+        get() = 5
 
     /** 현재 페이지 (1부터 시작)
      * FirstScreen 은 카운트에 포함X

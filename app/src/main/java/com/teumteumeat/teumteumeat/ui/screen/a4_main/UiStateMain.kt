@@ -8,7 +8,8 @@ data class UiStateMain(
     val stampCount: Int = 0,
     val monthStampCount: Int = 0,
 
-    val currentScreenType: MainScreenType = MainScreenType.MAIN
+    val currentScreenType: MainScreenType = MainScreenType.MAIN,
+    val hasHandledExternalNavigation: Boolean = false // ✅ 추가
 )
 
 enum class MainScreenType {

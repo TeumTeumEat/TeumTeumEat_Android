@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -53,6 +54,7 @@ fun LibraryScreen(
     viewModel: LibraryViewModel,
     uiState: UiStateLibrary,
     onClickOtherTab: () -> Unit,
+    innerPadding: PaddingValues,
 ) {
 
     val context = LocalActivityContext.current as MainActivity
@@ -61,7 +63,8 @@ fun LibraryScreen(
     val theme = MaterialTheme.extendedColors
 
     DefaultMonoBg(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(),
         color = MaterialTheme.extendedColors.backgroundW100,
         content = {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -86,7 +89,7 @@ fun LibraryScreen(
                                 .fillMaxWidth()
                                 .background(theme.backgroundW100)
                                 .verticalScroll(rememberScrollState())
-                                .padding(18.dp),
+                                .padding(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Spacer(Modifier.height(32.dp))
@@ -246,7 +249,8 @@ fun LibraryRoute(
         name = name,
         viewModel = viewModel,
         uiState = uiState,
-        onClickOtherTab = onClickOtherTab
+        onClickOtherTab = onClickOtherTab,
+        innerPadding = PaddingValues(0.dp),
     )
 }
 

@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 
 
@@ -18,7 +19,12 @@ data class UiStateHome(
     val isFirstTime: Boolean = false,
 
     // ================= 요약글 조회 핵심 =================
-    val summaryQuery: SummaryQuery? = null
+    val summaryQuery: SummaryQuery = SummaryQuery(
+        goalId = 0,
+        goalType = DomainGoalType.DOCUMENT,
+        documentId = 0,
+        categoryId = 0
+    )
 )
 
 /**

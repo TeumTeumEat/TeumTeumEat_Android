@@ -21,6 +21,17 @@ class SocialLoginRepositoryImpl @Inject constructor(
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), SocialLoginRepository {
 
+    override suspend fun logout(): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = { authApiService.logout() },
+            mapper = {
+                // ✅ 로그아웃 성공 시 토큰 삭제
+                tokenLocalDataSource.clear()
+                Unit
+            }
+        )
+    }
+
 
     override suspend fun withdrawUser(): ApiResultV2<Unit> =
         safeApiVer2(

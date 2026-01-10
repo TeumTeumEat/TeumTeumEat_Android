@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -483,14 +484,16 @@ class Utils {
         }
 
         private val serverFormatter =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS")
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
 
         fun toMonthDay(createdAt: String): String {
             return try {
+                Log.d("파싱 오류 분석", "createdAt: ${createdAt}")
                 val dateTime = LocalDateTime.parse(createdAt, serverFormatter)
                 "${dateTime.monthValue}월 ${dateTime.dayOfMonth}일"
             } catch (e: Exception) {
                 // 파싱 실패 시 안전 장치
+                Log.d("파싱 오류 분석", "error: ${e.toString()}")
                 ""
             }
         }

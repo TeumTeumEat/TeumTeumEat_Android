@@ -389,7 +389,7 @@ fun CategorySelectScreen(
                         textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
                             color = MaterialTheme.extendedColors.backgroundW100
                         ),
-                        isEnabled = selection.depth3 != null,
+                        isEnabled = uiState.isCategorySelectionComplete,
                         onClick = {
                             onNext()
                         },

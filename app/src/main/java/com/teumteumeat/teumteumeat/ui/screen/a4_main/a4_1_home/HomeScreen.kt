@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -34,6 +36,7 @@ import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 
 @Composable
@@ -52,10 +55,14 @@ fun HomeScreen(
     val totalPages = uiState.totalPage
     val theme = MaterialTheme.extendedColors
 
+    LaunchedEffect(Unit) {
+        viewModel.loadHomeState()
+    }
+
     val snackState = uiState.snackState
     val canOpenSummary =
         snackState is SnackState.Available &&
-                uiState.summaryQuery != null
+                uiState.hasSolvedToday
 
     val query = uiState.summaryQuery
 
@@ -75,6 +82,22 @@ fun HomeScreen(
 
         else ->
             R.drawable.img_food_before
+    }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { canOpenSummary }
+            .distinctUntilChanged()
+            .collect { value ->
+                Log.d("요약글 조회 디버깅", "canOpenSummary changed = $value")
+            }
+    }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { uiState.summaryQuery }
+            .distinctUntilChanged()
+            .collect { value ->
+                Log.d("요약글 조회 디버깅", "summaryQuery changed = $value")
+            }
     }
 
     DefaultMonoBg(

@@ -20,6 +20,9 @@ import com.anhaki.picktime.utils.PickTimeFocusIndicator
 import com.anhaki.picktime.utils.PickTimeTextStyle
 import com.anhaki.picktime.utils.TimeFormat
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.Meridiem
+import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.TimePicker
+import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.TimePickerState
 
 @Composable
 fun TimeSliderWithPickTime(
@@ -28,80 +31,43 @@ fun TimeSliderWithPickTime(
     modifier: Modifier = Modifier,
 ) {
 
-    // 변경 (10분 단위)
-    val minuteRange = (0..59 step 10)
+    // ✅ TimePicker가 사용하는 상태로 변환
+    var pickerState by remember(state) {
+        mutableStateOf(state.toPickerState())
+    }
 
-    Row(
+
+    TimePicker(
         modifier = modifier
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // ✅ 가운데: 시/분 휠 (PickTime-Compose)
+        initialState = pickerState,
+        onTimeChanged = { newPickerState ->
 
-        PickHourMinute(
-            initialHour = state.hour,
-            onHourChange = { newHour ->
+            // 🔄 Picker 상태 갱신
+            pickerState = newPickerState
 
-                val newAmPm =
-                    if (newHour in 1..11) AmPm.AM else AmPm.PM
-
-                onChange(
-                    state.copy(
-                        hour = newHour.coerceIn(1, 12),
-                         // amPm = newAmPm
-                    )
-                )
-
-                // ✅ 11 ↔ 12 넘어갈 때 AM/PM 자동 변경
-/*                val isForward = state.hour == 11 && newHour == 12
-                val isBackward = state.hour == 12 && newHour == 11
-
-                // val newAmPm = state.amPm
-                val newAmPm = when {
-                    isForward -> if (state.amPm == AmPm.AM) AmPm.PM else AmPm.AM
-                    isBackward -> if (state.amPm == AmPm.PM) AmPm.AM else AmPm.PM
-                    else -> state.amPm
-                }
-
-                onChange(state.copy(hour = newHour, amPm = newAmPm))*/
-            },
-            initialMinute = state.minute,
-            onMinuteChange = { newMinute ->
-                onChange(state.copy(minute = newMinute))
-            },
-            timeFormat = TimeFormat.HOUR_12, // ✅ 1~12로 맞춤
-            isLooping = true,                // ✅ 무한 스크롤
-            extraRow = 2,                    // ✅ 위/아래 회색 행 2줄(사진 느낌)
-            verticalSpace = 10.dp,
-            horizontalSpace = 16.dp,
-            containerColor = Color.White,
-
-            // ✅ 중앙 선택 스타일(사진 느낌)
-            selectedTextStyle = PickTimeTextStyle(
-                color = Color(0xFF404040),
-                fontSize = 24.sp,
-                fontFamily = FontFamily.Default,
-                fontWeight = FontWeight.Bold,
-            ),
-            unselectedTextStyle = PickTimeTextStyle(
-                color = Color(0xFF9F9F9F),
-                fontSize = 18.sp,
-                fontFamily = FontFamily.Default,
-                fontWeight = FontWeight.Normal,
-            ),
-
-            // ✅ 중앙 포커스 영역(사진의 흰 라운드 박스 느낌)
-            focusIndicator = PickTimeFocusIndicator(
-                enabled = true,
-                widthFull = false,
-                background = Color(0xFFF6F6F6),
-                shape = RoundedCornerShape(22.dp),
-                border = BorderStroke(0.dp, Color.Transparent),
-            )
-        )
-    }
+            // 🔄 외부에서 쓰는 TimeState로 다시 변환
+            onChange(newPickerState.toTimeState())
+        }
+    )
 }
+
+private fun TimeState.toPickerState(): TimePickerState {
+    return TimePickerState(
+        meridiem = if (this.amPm == AmPm.AM) Meridiem.AM else Meridiem.PM,
+        hour = this.hour,
+        minute = this.minute
+    )
+}
+
+private fun TimePickerState.toTimeState(): TimeState {
+    return TimeState(
+        hour = this.hour,
+        minute = this.minute,
+        amPm = if (this.meridiem == Meridiem.AM) AmPm.AM else AmPm.PM
+    )
+}
+
 
 @Preview(showBackground = true)
 @Composable

@@ -256,6 +256,7 @@ class OnBoardingViewModel @Inject constructor(
         val usageTime = current.selectedMinute
             ?: return ApiResultV2.UnknownError("사용 시간을 선택해주세요.")
 
+        Log.d("퇴근시간 디버깅", "출근시간: ${current.workInTime}, 퇴근시간: ${current.workOutTime}")
         return updateCommuteTimeUseCase(
             startTime = current.workInTime.toServerTime(),
             endTime = current.workOutTime.toServerTime(),
@@ -796,7 +797,6 @@ class OnBoardingViewModel @Inject constructor(
                     depth4 = null // ⭐ 3뎁스 변경 시 4뎁스 초기화
                 ),
                 selectedCategoryId = null,
-
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
                     0 // 2뎁스 페이지
