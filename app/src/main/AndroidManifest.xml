@@ -28,7 +28,6 @@
         <activity
             android:name=".ui.screen.a0_splash.SplashActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -37,13 +36,12 @@
 
         </activity>
 
-        <!-- a1 - 로그이 화면 -->
+        <!-- a1 - 로그인 화면 -->
 
         <activity
             android:name=".ui.screen.a1_login.LoginActivity"
             android:exported="true"
             android:launchMode="singleTop">
-
 
 
             <!-- 카카오 웹뷰 딥링크 -->

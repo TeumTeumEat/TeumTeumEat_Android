@@ -55,7 +55,7 @@ import kotlin.jvm.java
 @Composable
 fun LoginScreen(
     onKakaoLoginClick: () -> Unit,
-    onGoogleClick: () -> Unit,
+    onGoogleLoginClick: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -212,7 +212,7 @@ fun LoginScreen(
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
                             Log.d("버튼 탭: ", "구글 로그인 버튼")
-                            onGoogleClick()
+                            onGoogleLoginClick()
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -299,7 +299,7 @@ fun LoginScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            LoginScreen(viewModel = fakeViewModel, onKakaoLoginClick = {}, onGoogleClick = {})
+            LoginScreen(viewModel = fakeViewModel, onKakaoLoginClick = {}, onGoogleLoginClick = {})
         }
     }
 }

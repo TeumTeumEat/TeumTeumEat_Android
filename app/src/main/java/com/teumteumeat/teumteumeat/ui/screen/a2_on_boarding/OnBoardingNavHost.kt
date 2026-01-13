@@ -129,7 +129,6 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
-                    viewModel.prevPage()
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -149,7 +148,6 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
-                    viewModel.prevPage()
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -270,16 +268,13 @@ object OnBoardingFlow {
         OnBoardingScreens.ThirdSetAppTimeScreen,
         OnBoardingScreens.FourthSetUsingAppTimeScreen,
         OnBoardingScreens.FifthSelectInputMethodScreen,
-        OnBoardingScreens.SixthCategorySelectScreen,
-        OnBoardingScreens.SixthFileUploadScreen,
-        OnBoardingScreens.SeventhOptimizerDataScreen,
         OnBoardingScreens.EighthSetStudyRangeScreen,
         OnBoardingScreens.CheckSetMyInfoScreen,
     )
 
     /** 전체 페이지 수 */
     val totalCount: Int
-        get() = 5
+        get() = 6
 
     /** 현재 페이지 (1부터 시작)
      * FirstScreen 은 카운트에 포함X

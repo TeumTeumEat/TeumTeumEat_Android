@@ -3,6 +3,8 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -30,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -41,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.ExpandableAddMenuOverlay
 import com.teumteumeat.teumteumeat.ui.screen.c1_mypage.MyPageActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -48,10 +53,9 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalMainUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
-import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toYearMonth
 import com.teumteumeat.teumteumeat.utils.extendedColors
 import kotlinx.coroutines.flow.first
-import java.time.LocalDate
+import kotlin.jvm.java
 
 @Composable
 fun MainCompositionProvider(
@@ -135,56 +139,103 @@ fun MainCompositionProvider(
         DefaultMonoBg(
             modifier = Modifier.fillMaxSize(),
         ) {
+
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize(),
                 content = { padding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(color = theme.backSurface)
-                            .systemBarsPadding()
-                            .padding(),
-                        verticalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        MainTopBar(
-                            currentStreak = mainUiState.currentStreak,
-                            stampCount = mainUiState.stampCount,
-                            onClickSetting = {
-                                Utils.UxUtils.moveActivity(
-                                    context,
-                                    MyPageActivity::class.java,
-                                    exitFlag = false,
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(color = theme.backSurface)
+                                .statusBarsPadding(),
+                            verticalArrangement = Arrangement.SpaceBetween,
+                        ) {
+
+                            MainTopBar(
+                                currentStreak = mainUiState.currentStreak,
+                                stampCount = mainUiState.stampCount,
+                                onClickSetting = {
+                                    Utils.UxUtils.moveActivity(
+                                        context,
+                                        MyPageActivity::class.java,
+                                        exitFlag = false,
+                                    )
+                                }
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding()
+                            ) {
+                                // 1️⃣ 실제 화면 콘텐츠
+                                MainNavHost(
+                                    modifier = Modifier,
+                                    navController = navHostController,
+                                    startDestination = BottomNavItem.Home.route,
+                                    paddingValue = padding,
                                 )
                             }
-                        )
 
 
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                        ) {
-                            MainNavHost(
-                                modifier = Modifier,
-                                navController = navHostController,
-                                startDestination = BottomNavItem.Home.route,
-                                paddingValue = padding,
-                            )
                         }
                     }
                 },
                 bottomBar = {
                     BottomNavigationBar(
                         navHostController,
-                        containerColor = when (mainUiState.currentScreenType) {
-                            MainScreenType.MAIN -> MaterialTheme.extendedColors.backSurface
-
-                            MainScreenType.LIBRARY ->
-                                Color.Transparent
-                        }
+                        containerColor = Color.Transparent,
+                        onClickPlus = {
+                            viewModel.toggleBottomNavPlus()
+                        },
+                        onClosePlus = {
+                            viewModel.closeBottomNavPlus()
+                        },
+                        isExpandedPlus = mainUiState.isExpandedBottomNavItemPlus,
+                        onAddDocument = {
+                            viewModel.closeBottomNavPlus()
+                            // 문서목표 등록화면 이동
+                        },
+                        onAddCategory = {
+                            viewModel.closeBottomNavPlus()
+                            // 카테고리 목표 등록화면 이동
+                        },
+                        onPlusPositioned = viewModel::updatePlusButtonOffset,
                     )
                 }
+            )
+
+            // 2️⃣ 반투명 배경
+            if (mainUiState.isExpandedBottomNavItemPlus) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
+                            viewModel.closeBottomNavPlus()
+                        }
+                )
+            }
+
+            // 🔹 플로팅 메뉴 (완전 오버레이)
+            ExpandableAddMenuOverlay(
+                onAddDocument = {
+                    viewModel.closeBottomNavPlus()
+                    // 문서목표 등록화면 이동
+                },
+                onAddCategory = {
+                    viewModel.closeBottomNavPlus()
+                    // 카테고리 목표 등록화면 이동
+                },
+                offset = mainUiState.plusBtnOffset,
+                isExpanded = mainUiState.isExpandedBottomNavItemPlus,
             )
 
         }
@@ -211,7 +262,13 @@ fun HomeMainFramePreview() {
                 bottomBar = {
                     BottomNavigationBar(
                         navHostController,
-                        containerColor = MaterialTheme.extendedColors.backSurface
+                        containerColor = MaterialTheme.extendedColors.backSurface,
+                        onClickPlus = {},
+                        onClosePlus = {},
+                        isExpandedPlus = false,
+                        onAddDocument = {  },
+                        onAddCategory = {  },
+                        onPlusPositioned = { },
                     )
                 },
                 content = { padding ->

@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 // 애니메이션
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 
 // 레이아웃
@@ -36,7 +37,9 @@ import androidx.compose.ui.graphics.Color
 // Material3
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.BottomNavItem
 
 
@@ -44,8 +47,21 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.BottomNavItem
 fun CustomBottomNavItem(
     item: BottomNavItem,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Any
 ) {
+
+    val isPlusItem = item == BottomNavItem.AddingFile
+
+    val rotation by animateFloatAsState(
+        targetValue = if (isSelected && isPlusItem) 45f else 0f,
+        animationSpec = tween(
+            durationMillis = 220,
+            easing = FastOutSlowInEasing
+        ),
+        label = "PlusRotation"
+    )
+
     val isHomeItem = item.route == BottomNavItem.Home.route
 
     // ⭐ 배경 원 크기 애니메이션
@@ -96,6 +112,10 @@ fun CustomBottomNavItem(
                 else
                     Color.White.copy(alpha = 0.6f),
                 modifier = Modifier.size(animatedIconSize)
+                    .graphicsLayer {
+                        rotationZ = rotation
+                    },
+
             )
         }
     }

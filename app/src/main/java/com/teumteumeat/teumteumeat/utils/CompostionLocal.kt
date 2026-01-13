@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginUiState
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnBoardingMain
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.UiStateMain
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
@@ -49,6 +50,11 @@ val MaterialTheme.extendedColors: ExtendedColors
 val LocalViewModelContext = compositionLocalOf<ViewModel>{
     error("No ViewModel provided")
 }
+
+val LocalLoginUiState = compositionLocalOf<LoginUiState> {
+    error("No LoginUiState provided")
+}
+
 
 val LocalEditUserInfoUiState = compositionLocalOf<UiStateEditUserInfo> {
     error("No UiStateEditUserInfo provided")

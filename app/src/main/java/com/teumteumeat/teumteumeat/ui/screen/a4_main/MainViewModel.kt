@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
 import android.util.Log
+import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -26,6 +27,36 @@ class MainViewModel @Inject constructor(
     // Flow 값으로 currentPage 읽기
     private val currentPage get() = uiState.value.currentPage
     private val totalPage get() = uiState.value.totalPage
+
+
+    fun updatePlusButtonOffset(offset: Offset) {
+        _uiState.update { state ->
+            if (state.plusBtnOffset == null) {
+                state.copy(plusBtnOffset = offset)
+            } else {
+                state
+            }
+        }
+    }
+
+    fun toggleBottomNavPlus() {
+        _uiState.update { state ->
+            if (state.plusBtnOffset == null) {
+                // 아직 위치 측정 안 됨 → 무시
+                state
+            } else {
+                state.copy(
+                    isExpandedBottomNavItemPlus = !state.isExpandedBottomNavItemPlus
+                )
+            }
+        }
+    }
+
+    fun closeBottomNavPlus() {
+        _uiState.update {
+            it.copy(isExpandedBottomNavItemPlus = false)
+        }
+    }
 
     fun onScreenChanged(
         screenType: MainScreenType,
