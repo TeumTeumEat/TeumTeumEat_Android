@@ -89,7 +89,7 @@ fun LibraryScreen(
                                 .fillMaxWidth()
                                 .background(theme.backgroundW100)
                                 .verticalScroll(rememberScrollState())
-                                .padding(),
+                                .padding(horizontal = 22.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Spacer(Modifier.height(32.dp))
@@ -180,7 +180,7 @@ fun LibraryScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
-                                .padding(vertical = 32.dp, horizontal = 18.dp),
+                                .padding(vertical = 32.dp, horizontal = 22.dp),
                             verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
                             uiState.categoryHistories.forEach { category ->

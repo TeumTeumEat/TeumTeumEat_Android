@@ -37,6 +37,20 @@ class LoginViewModel @Inject constructor(
     )
     val uiEvent = _uiEvent.asSharedFlow()
 
+
+    /**
+     * 💡 왜 일반 로딩과 분리 하였는가?
+     * 인증 팝업 대기 ≠ 서버 통신
+     * 나중에 UX 튜닝/로그 분석 시 훨씬 명확함
+     */
+    fun startAuthBlocking() {
+        _uiState.update { it.copy(isAuthBlocking = true) }
+    }
+
+    fun endAuthBlocking() {
+        _uiState.update { it.copy(isAuthBlocking = false) }
+    }
+
     fun openTermsBottomSheet() {
         _uiState.update {
             it.copy(

@@ -5,7 +5,8 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
 
 data class LoginUiState(
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = false,        // 서버 통신용
+    val isAuthBlocking: Boolean = false,   // ⭐ 구글/카카오 인증 대기용
     val errorMessage: String? = null,
 
     // ✅ 바텀시트 관련

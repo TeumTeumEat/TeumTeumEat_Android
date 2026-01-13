@@ -1,7 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -10,8 +9,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -23,9 +26,11 @@ import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.common.model.KakaoSdkError
 import com.kakao.sdk.user.UserApiClient
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.AuthBlockingOverlay
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
+import com.teumteumeat.teumteumeat.utils.LocalLoginUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.IOException
@@ -48,8 +53,11 @@ class LoginActivity : ComponentActivity()  {
 
         val launcher =
             registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
+                ActivityResultContracts.StartActivityForResult()
         ) { result ->
+
+            // ⭐ 어떤 경우든 일단 해제
+            viewModel.endAuthBlocking()
 
             Log.d("GoogleLogin", "resultCode=${result.resultCode}")
             Log.d("GoogleLogin", "data=${result.data}")
@@ -67,7 +75,7 @@ class LoginActivity : ComponentActivity()  {
 
                 val idToken = account.idToken
                 Log.d("GoogleLogin", "idToken=$idToken")
-                // todo: viewModel 에서 idToken 으로 레포지토리(api호출) 하는 로직 구현
+
                 viewModel.loginWithGoogle(idToken.toString())
 
             } catch (e: ApiException) {
@@ -78,44 +86,66 @@ class LoginActivity : ComponentActivity()  {
         setContent {
             TeumTeumEatTheme {
                 val viewModel: LoginViewModel = hiltViewModel()
+                val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
+
                 CompositionLocalProvider(
                     LocalAppContext provides this.applicationContext,
                     LocalActivityContext provides this,
                     LocalViewModelContext provides viewModel,
+                    LocalLoginUiState provides uiState,
                 ){
-                    LoginScreen(
-                        onGoogleClick = { launcher.launch(googleClient.signInIntent) },
-                        onKakaoLoginClick = {
-                            loginWithKakao(
-                                context = this@LoginActivity,
-                                onSuccess = { idToken, authCode ->
-                                    Log.d("kakao 로그인", "idToken: ${idToken}, authCode: ${authCode}")
-                                    viewModel.loginWithKakaoServer(idToken, authCode)
-                                },
-                                onError = { error ->
-                                    when (error) {
-                                        KakaoLoginError.UserCancelled -> {
-                                            // 아무 처리 안 함
-                                        }
-                                        KakaoLoginError.NetworkError -> {
-                                            showToast("네트워크 상태를 확인해주세요")
-                                        }
-                                        KakaoLoginError.KakaoAppNotAvailable -> {
-                                            showToast("카카오 계정 로그인을 시도해주세요")
-                                        }
-                                        KakaoLoginError.AuthFailed -> {
-                                            showToast("로그인에 실패했어요. 다시 시도해주세요")
-                                        }
-                                        is KakaoLoginError.Unknown -> {
-                                            Log.d("Kakao Login: ", "error: ${error.throwable}")
-                                            showToast("알 수 없는 오류가 발생했어요")
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        LoginScreen(
+                            onGoogleLoginClick = {
+                                viewModel.startAuthBlocking() // ⭐ UI 잠금
+                                launcher.launch(googleClient.signInIntent)
+                            },
+                            onKakaoLoginClick = {
+                                viewModel.startAuthBlocking()
+                                loginWithKakao(
+                                    context = this@LoginActivity,
+                                    onSuccess = { idToken, authCode ->
+                                        Log.d(
+                                            "kakao 로그인",
+                                            "idToken: ${idToken}, authCode: ${authCode}"
+                                        )
+                                        viewModel.loginWithKakaoServer(idToken, authCode)
+                                    },
+                                    onError = { error ->
+                                        viewModel.endAuthBlocking()
+                                        when (error) {
+                                            KakaoLoginError.UserCancelled -> {
+                                                // 아무 처리 안 함
+                                            }
+
+                                            KakaoLoginError.NetworkError -> {
+                                                showToast("네트워크 상태를 확인해주세요")
+                                            }
+
+                                            KakaoLoginError.KakaoAppNotAvailable -> {
+                                                showToast("카카오 계정 로그인을 시도해주세요")
+                                            }
+
+                                            KakaoLoginError.AuthFailed -> {
+                                                showToast("로그인에 실패했어요. 다시 시도해주세요")
+                                            }
+
+                                            is KakaoLoginError.Unknown -> {
+                                                Log.d("Kakao Login: ", "error: ${error.throwable}")
+                                                showToast("알 수 없는 오류가 발생했어요")
+                                            }
                                         }
                                     }
-                                }
-                            )
-                        },
-                        viewModel = viewModel
-                    )
+                                )
+                            },
+                            viewModel = viewModel
+                        )
+
+                        // 🚫 인증 대기 오버레이
+                        if (uiState.isAuthBlocking) {
+                            AuthBlockingOverlay()
+                        }
+                    }
                 }
             }
         }
@@ -134,6 +164,9 @@ class LoginActivity : ComponentActivity()  {
         val callback: (OAuthToken?, Throwable?) -> Unit =
             callback@{ token, error ->
                 Log.d("KakaoRedirect", "callback entered. token=$token, error=$error")
+
+                // ⭐⭐⭐ 핵심: 인증 종료 → UI 잠금 해제
+                viewModel.endAuthBlocking()
 
             // 1️⃣ 에러 우선 처리
             if (error != null) {
@@ -222,6 +255,7 @@ class LoginActivity : ComponentActivity()  {
             )
         } else {
             // ✅ 카카오톡 미설치 → 바로 계정 로그인
+            viewModel.endAuthBlocking() // ⭐ 여기서도 해제
             showToast("카카오톡 앱이 필요합니다")
             return
 //            UserApiClient.instance.loginWithKakaoAccount(
@@ -235,11 +269,11 @@ class LoginActivity : ComponentActivity()  {
 
     private fun logKakaoError(tag: String = "KakaoLogin", t: Throwable) {
         // ✅ 가장 기본: 타입/메시지/스택
-        android.util.Log.e(tag, "type=${t::class.qualifiedName}")
-        android.util.Log.e(tag, "message=${t.message}")
-        android.util.Log.e(tag, "localizedMessage=${t.localizedMessage}")
-        android.util.Log.e(tag, "cause=${t.cause?.javaClass?.name} / ${t.cause?.message}")
-        android.util.Log.e(tag, "stacktrace", t)
+        Log.e(tag, "type=${t::class.qualifiedName}")
+        Log.e(tag, "message=${t.message}")
+        Log.e(tag, "localizedMessage=${t.localizedMessage}")
+        Log.e(tag, "cause=${t.cause?.javaClass?.name} / ${t.cause?.message}")
+        Log.e(tag, "stacktrace", t)
 
         // ✅ KakaoSdkError면 추가로 toString()도 찍어보기 (내부 정보가 더 나오는 케이스가 있음)
         if (t is com.kakao.sdk.common.model.KakaoSdkError) {
