@@ -24,6 +24,6 @@ fun AuthBlockingOverlay() {
             ) {}, // ⭐ 클릭 흡수
         contentAlignment = Alignment.Center
     ) {
-        FullScreenLoading()
+         FullScreenLoading()
     }
 }
