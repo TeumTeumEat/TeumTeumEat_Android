@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -47,22 +48,29 @@ fun ExpandableAddMenuOverlay(
     val density = LocalDensity.current
     var menuHeightPx by remember { mutableStateOf(0) } // ⭐ 핵심
 
+    // ⭐ 최종 위치 미세 조정값
+    val finalAdjustPx = with(density) { 12.dp.toPx() }
+
+
 
     Box(modifier = Modifier
         .fillMaxSize()
         .zIndex(1f)
+        .graphicsLayer { clip = false } // ✅ 중요
     ) {
 
         Box(
-            modifier = Modifier.offset {
-                IntOffset(
-                    // ✅ X: 메뉴를 버튼 중앙에 정렬
-                    x = (offset.x - with(density) { 28.dp.toPx() }).roundToInt(),
+            modifier = Modifier
+                .graphicsLayer { clip = false } // ✅ 중요
+                .offset {
+                    IntOffset(
+                        // ✅ X: 메뉴를 버튼 중앙에 정렬
+                        x = (offset.x - with(density) { 28.dp.toPx() }).roundToInt(),
 
-                    // ⭐ Y: 메뉴 하단이 + 버튼 상단에 오도록
-                    y = (offset.y - menuHeightPx).roundToInt()
-                )
-            }
+                        // ⭐ Y: 메뉴 하단이 + 버튼 상단에 오도록
+                        y = (offset.y - menuHeightPx + finalAdjustPx).roundToInt()
+                    )
+                }
         ) {
             ExpandableAddMenu(
                 isExpanded = isExpanded,
@@ -70,7 +78,7 @@ fun ExpandableAddMenuOverlay(
                 onAddCategory = onAddCategory,
                 onMeasured = { heightPx ->
                     menuHeightPx = heightPx
-                }
+                },
             )
         }
     }
@@ -87,25 +95,27 @@ fun ExpandableAddMenu(
 
     AnimatedVisibility(
         visible = isExpanded,
+        modifier = Modifier.graphicsLayer { clip = false }, // ✅ 중요
         // ⭐ "아래에서 튀어나오는 느낌" 제거
+        // ⭐ 여기만 조절하면 됨
         enter = slideInVertically(
-            initialOffsetY = { fullHeight -> fullHeight / 2 }
+            initialOffsetY = { fullHeight ->
+                // ⬇️ 값 키울수록 "더 아래에서" 시작
+                fullHeight
+            }
         ) + fadeIn(),
 
         exit = slideOutVertically(
-            targetOffsetY = { fullHeight -> fullHeight / 2 }
+            targetOffsetY = { fullHeight ->
+                fullHeight
+            }
         ) + fadeOut()
     ) {
         Column(
             modifier = Modifier
+                .graphicsLayer { clip = false }
                 .onGloballyPositioned { coordinates ->
                     onMeasured(coordinates.size.height) // ⭐ 높이 전달
-                }
-                .offset {
-                    IntOffset(
-                        x = 0,
-                        y = with(density) { 12.dp.toPx() }.roundToInt()
-                    )
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)

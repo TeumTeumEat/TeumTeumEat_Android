@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -41,8 +42,25 @@ class LoginActivity : ComponentActivity()  {
 
     private val viewModel: LoginViewModel by viewModels()
 
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("KakaoLife", "onResume")
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Log.d("KakaoLife", "onNewIntent: $intent")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d("KakaoLife", "onPause")
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("KakaoLife", "onCreate")
         enableEdgeToEdge()
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -164,69 +182,68 @@ class LoginActivity : ComponentActivity()  {
         val callback: (OAuthToken?, Throwable?) -> Unit =
             callback@{ token, error ->
                 Log.d("KakaoRedirect", "callback entered. token=$token, error=$error")
-
                 // ⭐⭐⭐ 핵심: 인증 종료 → UI 잠금 해제
                 viewModel.endAuthBlocking()
 
-            // 1️⃣ 에러 우선 처리
-            if (error != null) {
-                logKakaoError(t = error)
-                val kakaoError = when (error) {
+                // 1️⃣ 에러 우선 처리
+                if (error != null) {
+                    logKakaoError(t = error)
+                    val kakaoError = when (error) {
 
-                    // ✅ 사용자 취소
-                    is ClientError -> {
-                        when (error.reason) {
-                            ClientErrorCause.Cancelled ->
-                                KakaoLoginError.UserCancelled
+                        // ✅ 사용자 취소
+                        is ClientError -> {
+                            when (error.reason) {
+                                ClientErrorCause.Cancelled ->
+                                    KakaoLoginError.UserCancelled
 
-                            ClientErrorCause.NotSupported ->
-                                KakaoLoginError.KakaoAppNotAvailable
+                                ClientErrorCause.NotSupported ->
+                                    KakaoLoginError.KakaoAppNotAvailable
 
-                            ClientErrorCause.IllegalState ->
-                                KakaoLoginError.AuthFailed
+                                ClientErrorCause.IllegalState ->
+                                    KakaoLoginError.AuthFailed
 
-                            else ->
-                                KakaoLoginError.Unknown(error)
+                                else ->
+                                    KakaoLoginError.Unknown(error)
+                            }
                         }
+
+                        // ✅ SDK 내부 오류
+                        is KakaoSdkError -> {
+                            KakaoLoginError.AuthFailed
+
+                        }
+
+                        // ✅ 네트워크 계열
+                        is IOException ->
+                            KakaoLoginError.NetworkError
+
+                        // ✅ 그 외
+                        else ->
+                            KakaoLoginError.Unknown(error)
                     }
 
-                    // ✅ SDK 내부 오류
-                    is KakaoSdkError -> {
-                        KakaoLoginError.AuthFailed
-
-                    }
-
-                    // ✅ 네트워크 계열
-                    is IOException ->
-                        KakaoLoginError.NetworkError
-
-                    // ✅ 그 외
-                    else ->
-                        KakaoLoginError.Unknown(error)
-                }
-
-                onError(kakaoError)
-                return@callback
-            }
-
-            // 2️⃣ 토큰 성공
-            if (token != null) {
-                val idToken = token.idToken
-                Log.d("kakaologin", "idToken: ${idToken}")
-
-                // ⚠️ OIDC 미설정 등으로 idToken 이 없는 경우
-                if (idToken.isNullOrEmpty()) {
-                    onError(KakaoLoginError.AuthFailed)
+                    onError(kakaoError)
                     return@callback
                 }
 
-                onSuccess(
-                    idToken,
-                    token.accessToken // 서버에서 authCode 대용
-                )
-            } else {
-                onError(KakaoLoginError.AuthFailed)
-            }
+                // 2️⃣ 토큰 성공
+                if (token != null) {
+                    val idToken = token.idToken
+                    Log.d("kakaologin", "idToken: ${idToken}")
+
+                    // ⚠️ OIDC 미설정 등으로 idToken 이 없는 경우
+                    if (idToken.isNullOrEmpty()) {
+                        onError(KakaoLoginError.AuthFailed)
+                        return@callback
+                    }
+
+                    onSuccess(
+                        idToken,
+                        token.accessToken // 서버에서 authCode 대용
+                    )
+                } else {
+                    onError(KakaoLoginError.AuthFailed)
+                }
         }
 
         // ✅ 1차: 카카오톡 로그인 시도
@@ -240,12 +257,13 @@ class LoginActivity : ComponentActivity()  {
                         error is AuthError &&
                         error.response.error == "NotSupportError"
                     ) {
+                        Log.d("KakaoFlow", "⚠️ NotSupportError → fallback to WEB")
+
                         // 👉 카카오톡은 있으나 계정 로그인 안 됨 → 계정 로그인으로 fallback
-                        showToast("카카오톡 앱이 필요합니다")
-//                        UserApiClient.instance.loginWithKakaoAccount(
-//                            context = context,
-//                            callback = callback
-//                        )
+                        UserApiClient.instance.loginWithKakaoAccount(
+                            context = context,
+                            callback = callback
+                        )
                         return@loginWithKakaoTalk
                     }
 
@@ -254,17 +272,14 @@ class LoginActivity : ComponentActivity()  {
                 }
             )
         } else {
-            // ✅ 카카오톡 미설치 → 바로 계정 로그인
-            viewModel.endAuthBlocking() // ⭐ 여기서도 해제
-            showToast("카카오톡 앱이 필요합니다")
-            return
-//            UserApiClient.instance.loginWithKakaoAccount(
-//                context = context,
-//                callback = callback
-//            )
+            // ✅ 카카오톡 미설치 → 바로 웹로그인
+            // showToast("카카오톡 앱이 필요합니다")
+            Log.d("KakaoLogin", "KakaoTalk app not installed → web login")
+            UserApiClient.instance.loginWithKakaoAccount(
+                context = context,
+                callback = callback
+            )
         }
-
-
     }
 
     private fun logKakaoError(tag: String = "KakaoLogin", t: Throwable) {

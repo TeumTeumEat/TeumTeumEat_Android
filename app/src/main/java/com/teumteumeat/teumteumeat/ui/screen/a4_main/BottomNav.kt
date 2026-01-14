@@ -128,6 +128,7 @@ fun BottomNavigationBar(
                 ) {
                     CustomBottomNavItem(
                         modifier = Modifier,
+
                         item = item,
                         isSelected = isSelected,
                         onClick = {
