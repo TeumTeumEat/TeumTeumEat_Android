@@ -73,13 +73,13 @@ class OnBoardingViewModel @Inject constructor(
     private val currentPage get() = uiState.value.currentPage
     private val totalPage get() = uiState.value.totalPage
 
-    private val _uiState = MutableStateFlow<UiStateOnBoardingMain>(UiStateOnBoardingMain())
+    private val _uiState = MutableStateFlow<UiStateOnboardingState>(UiStateOnboardingState())
     val uiState = _uiState.asStateFlow()
 
     // 2️⃣ 플로우 상태 (Idle / Loading / Success / Error)
     private val _mainState =
-        MutableStateFlow<UiStateOnBoardingMainState>(
-            UiStateOnBoardingMainState.Idle
+        MutableStateFlow<UiStateOnboardingScreenState>(
+            UiStateOnboardingScreenState.Idle
         )
     val mainState = _mainState.asStateFlow()
 
@@ -93,10 +93,10 @@ class OnBoardingViewModel @Inject constructor(
 
     fun submitOnBoarding() {
         // 중복 클릭 방지
-        if (_mainState.value == UiStateOnBoardingMainState.Loading) return
+        if (_mainState.value == UiStateOnboardingScreenState.Loading) return
 
         viewModelScope.launch {
-            _mainState.value = UiStateOnBoardingMainState.Loading
+            _mainState.value = UiStateOnboardingScreenState.Loading
 
             val state = _uiState.value
 
@@ -191,7 +191,7 @@ class OnBoardingViewModel @Inject constructor(
             if (remain > 0) delay(remain)
 
 
-            _mainState.value = UiStateOnBoardingMainState.Success
+            _mainState.value = UiStateOnboardingScreenState.Success
 
             // todo. 테스트 코드!
 //            _mainState.value = UiStateOnBoardingMainState.Error(
@@ -201,7 +201,7 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     private fun moveToError(result: ApiResultV2<*>) {
-        _mainState.value = UiStateOnBoardingMainState.Error(
+        _mainState.value = UiStateOnboardingScreenState.Error(
             message = result.uiMessage
         )
     }
@@ -439,16 +439,16 @@ class OnBoardingViewModel @Inject constructor(
     fun submitOnBoardingTestError() {
         // 중복 실행 방지
         Log.d("OnBoardingVM", "온보딩UiState 상태: ${_mainState.value}")
-        if (_mainState.value == UiStateOnBoardingMainState.Loading) return
+        if (_mainState.value == UiStateOnboardingScreenState.Loading) return
 
         viewModelScope.launch {
-            _mainState.value = UiStateOnBoardingMainState.Loading
+            _mainState.value = UiStateOnboardingScreenState.Loading
 
             // ✅ 최소 1초 로딩 보장
             delay(1800)
 
             // ✅ 테스트용 에러 상태 진입
-            _mainState.value = UiStateOnBoardingMainState.Error(
+            _mainState.value = UiStateOnboardingScreenState.Error(
                 message = "테스트 에러 페이지입니다.\n잠시 후 다시 시도해주세요."
             )
         }
@@ -468,17 +468,17 @@ class OnBoardingViewModel @Inject constructor(
 
     fun showTestError() {
         viewModelScope.launch {
-            _mainState.value = UiStateOnBoardingMainState.Loading
+            _mainState.value = UiStateOnboardingScreenState.Loading
             kotlinx.coroutines.delay(500)
 
-            _mainState.value = UiStateOnBoardingMainState.Error(
+            _mainState.value = UiStateOnboardingScreenState.Error(
                 message = "테스트용 에러입니다.\n네트워크 상태를 확인해주세요."
             )
         }
     }
 
     fun resetMainState() {
-        _mainState.value = UiStateOnBoardingMainState.Idle
+        _mainState.value = UiStateOnboardingScreenState.Idle
     }
 
     private fun sendEffect(effect: UiEffect) {

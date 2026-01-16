@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
+package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,6 +31,10 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -43,10 +47,10 @@ private fun calculatePage(sel: CategorySelectionState): Int =
     }
 
 @Composable
-fun CategorySelectScreen(
+fun AddGoalCategorySelectScreen(
     name: String = "",
-    viewModel: OnBoardingViewModel,
-    uiState: UiStateOnboardingState,
+    viewModel: AddGoalViewModel,
+    uiState: UiStateAddGoalState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
     navBackStackEntry: NavBackStackEntry,

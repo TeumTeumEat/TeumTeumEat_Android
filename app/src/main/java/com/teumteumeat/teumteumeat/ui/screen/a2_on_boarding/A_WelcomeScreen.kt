@@ -30,7 +30,7 @@ import com.teumteumeat.teumteumeat.ui.theme.Typography
 fun OnBoardingFirstScreen(
     name: String,
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNext : () -> Unit,
 ) {
 

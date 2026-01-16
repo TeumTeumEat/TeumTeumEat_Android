@@ -39,7 +39,7 @@ class UpdateCommuteTimeUseCase @Inject constructor(
             )
         }
 
-        if (startTime >= endTime) {
+/*        if (startTime >= endTime) {
             return ApiResultV2.ServerError(
                 code = "INVALID_TIME",
                 message = "시간 설정 오류",
@@ -47,7 +47,7 @@ class UpdateCommuteTimeUseCase @Inject constructor(
                     "출근 시간은 퇴근 시간보다 빨라야 합니다."
                 )
             )
-        }
+        }*/
 
 
 

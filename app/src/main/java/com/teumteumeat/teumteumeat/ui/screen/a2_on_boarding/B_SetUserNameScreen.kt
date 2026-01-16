@@ -41,7 +41,7 @@ import com.teumteumeat.teumteumeat.ui.theme.Typography
 fun OnBoardingSetCharNameScreen(
     name: String,
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {

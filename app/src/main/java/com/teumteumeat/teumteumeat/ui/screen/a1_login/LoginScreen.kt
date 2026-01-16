@@ -40,11 +40,13 @@ import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.loading.FullScreenLoading
 import com.teumteumeat.teumteumeat.ui.component.login.TermsAgreementBottomSheetContent
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
@@ -283,6 +285,26 @@ fun LoginScreen(
                         )
                     },
                     tittleBottomPadding = 24
+                )
+            }
+
+            // ✅ DEBUG + errorMessage 있을 때만 에러 모달
+            if (!uiState.errorMessage.isNullOrBlank()) {
+                FullScreenErrorModal(
+                    errorState = ErrorState(
+                        title = "로그인 에러 발생",
+                        description = uiState.errorMessage,
+                        retryLabel = "다시 시도",
+                        onRetry = {
+                            if(uiState.pendingSocialLogin.provider == SocialProvider.KAKAO){
+                                onKakaoLoginClick()
+                            }else{
+                                onGoogleLoginClick()
+                            }
+                        }
+                    ),
+                    isShowBackBtn = true,
+                    onBack = {}
                 )
             }
         }

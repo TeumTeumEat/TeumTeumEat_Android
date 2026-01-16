@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
+package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
@@ -46,15 +46,18 @@ import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.DifficultyOption
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Composable
-fun OptimizerDataScreen(
+fun AddGoalOptimizerDataScreen(
     name: String,
-    viewModel: OnBoardingViewModel,
-    uiState: UiStateOnboardingState,
+    viewModel: AddGoalViewModel,
+    uiState: UiStateAddGoalState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {
@@ -109,7 +112,6 @@ fun OptimizerDataScreen(
                             ),
                             isEnabled = isPromptValid,
                             onClick = {
-                                viewModel.setUserName()
                                 onNext()
                             },
                             conerRadius = 16.dp
@@ -205,10 +207,8 @@ fun OptimizerDataScreen(
                         }
                     }
 
-
-
                     // 🔹 바텀시트
-                    if (uiState.showBottomSheet) {
+                    /*if (uiState.showBottomSheet) {
                         BottomSheetContainer(
                             titleText = "난이도를 선택해주세요",
                             onDismiss = {
@@ -217,7 +217,7 @@ fun OptimizerDataScreen(
                         ) {
 
                         }
-                    }
+                    }*/
                 }
             )
 

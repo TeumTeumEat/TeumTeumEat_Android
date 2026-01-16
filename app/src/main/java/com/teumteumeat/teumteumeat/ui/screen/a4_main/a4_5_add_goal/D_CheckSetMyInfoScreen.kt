@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
+package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,15 +32,19 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.toDisplayText
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 @Composable
-fun CheckSetMyInfoScreen(
-    viewModel: OnBoardingViewModel,
-    uiState: UiStateOnboardingState,
+fun AddGoalCheckSetMyInfoScreen(
+    viewModel: AddGoalViewModel,
+    uiState: UiStateAddGoalState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {
@@ -87,88 +91,7 @@ fun CheckSetMyInfoScreen(
                             .padding(bottom = bottomFixedHeight), // ✅ 핵심,
                     ) {
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "집을 나오는 시간",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
 
-                        BaseOutlineButton(
-                            text = uiState.workInTime.toDisplayText(),
-                            isEnabled = false,
-                            contentAligment = Alignment.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            onClick = { }
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-// 퇴근시간 박스
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "집을 들어가는 시간",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        BaseOutlineButton(
-                            text = uiState.workOutTime.toDisplayText(),
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            onClick = {}
-                        )
-
-// ===== 사용시간 =====
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp, bottom = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "틈틈잇 사용 시간",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            )
-                        }
-                        BaseOutlineButton(
-                            text = uiState.selectedMinute.toString() + "분",
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            onClick = {}
-                        )
-// ===== 사용시간 =====
 
 // ===== 5. 정보입력 주제 지정 =====
                         Row(
@@ -190,9 +113,10 @@ fun CheckSetMyInfoScreen(
                             GoalTypeUiState.CATEGORY -> {
                                 // 앱개발 > ios > swift 형식으로 결합
                                 listOfNotNull(
-                                    uiState.categorySelection.depth1?.name,
+                                    uiState.categorySelection.depth1?.name ?: "IT",
                                     uiState.categorySelection.depth2?.name,
-                                    uiState.categorySelection.depth3?.name
+                                    uiState.categorySelection.depth3?.name,
+                                    uiState.categorySelection.depth4?.name,
                                 ).joinToString(" > ").ifEmpty { "선택된 카테고리 없음" }
                             }
 
@@ -229,7 +153,7 @@ fun CheckSetMyInfoScreen(
 
 // Difficulty Enum 값을 한글 표기 등으로 변환 필요 (여기서는 name 사용하거나 별도 매핑)
                         BaseOutlineButton(
-                            text = uiState.difficulty.name, // 필요하다면 별도 mapper 함수 사용 (ex: Difficulty.MIDDLE -> "중")
+                            text = mapDifficultyToKorean(uiState.difficulty),  // 필요하다면 별도 mapper 함수 사용 (ex: Difficulty.MIDDLE -> "중")
                             contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
@@ -349,13 +273,8 @@ fun CheckSetMyInfoScreen(
                         ),
                         isEnabled = true,
                         onClick = {
-                            // todo. 0.5±1(로딩시간 커스텀 가능하게)초 로딩페이지 표시 하는 뷰모델 함수 구현
-//                            viewModel.submitOnBoardingTestError()
-                            // todo. 각 usecase 진행하면서 에러가 발생하면 뷰에 에러화면 표시
+                            // 각 usecase 진행하면서 에러가 발생하면 뷰에 에러화면 표시
                             viewModel.submitOnBoarding()
-//                            viewModel.setUserName()
-//                            viewModel.saveCommuteInfo()
-//                            viewModel.onCreateGoalClick()
                         },
                         conerRadius = 16.dp
                     )

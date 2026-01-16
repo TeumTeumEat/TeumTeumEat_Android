@@ -27,6 +27,7 @@ import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.common.model.KakaoSdkError
 import com.kakao.sdk.user.UserApiClient
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.AuthBlockingOverlay
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -98,6 +99,7 @@ class LoginActivity : ComponentActivity()  {
 
             } catch (e: ApiException) {
                 Log.e("GoogleLogin", "ApiException code=${e.statusCode}", e)
+                viewModel.setAuthErrorPage("statusCode: ${e.statusCode}\n message: ${e.message}\n cause: ${e.stackTrace}")
             }
         }
 
@@ -115,10 +117,12 @@ class LoginActivity : ComponentActivity()  {
                     Box(modifier = Modifier.fillMaxSize()) {
                         LoginScreen(
                             onGoogleLoginClick = {
+                                viewModel.setCurrentPendingLogin(SocialProvider.GOOGLE)
                                 viewModel.startAuthBlocking() // ⭐ UI 잠금
                                 launcher.launch(googleClient.signInIntent)
                             },
                             onKakaoLoginClick = {
+                                viewModel.setCurrentPendingLogin(SocialProvider.KAKAO)
                                 viewModel.startAuthBlocking()
                                 loginWithKakao(
                                     context = this@LoginActivity,
@@ -146,6 +150,8 @@ class LoginActivity : ComponentActivity()  {
 
                                             KakaoLoginError.AuthFailed -> {
                                                 showToast("로그인에 실패했어요. 다시 시도해주세요")
+                                                // todo. 카카오 로그인 에러 디버깅 텍스트 세팅
+                                                viewModel.setAuthErrorPage(error.toString())
                                             }
 
                                             is KakaoLoginError.Unknown -> {

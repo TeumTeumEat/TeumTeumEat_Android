@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
+package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -19,83 +19,87 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.BoxButtonRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.ui.component.WeekRadioGroup
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.StudyWeekOption
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
 import com.teumteumeat.teumteumeat.ui.theme.Typography
-
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Composable
-fun SelectInputMethodScreen(
-    name: String = "",
-    viewModel: OnBoardingViewModel,
-    uiState: UiStateOnboardingState,
-    onNextFileUpload: () -> Unit,
+fun AddGoalSetStudyRangeScreen(
+    name: String,
+    viewModel: AddGoalViewModel,
+    uiState: UiStateAddGoalState,
+    onNext: () -> Unit,
     onPrev: () -> Unit,
-    onNextCateGorySelct: () -> Unit,
 ) {
 
     val currentPage = uiState.currentPage
     val totalPages = uiState.totalPage
 
+    val studyWeekOptions = listOf(
+        StudyWeekOption("1주", 1),
+        StudyWeekOption("2주", 2),
+        StudyWeekOption("3주", 3),
+        StudyWeekOption("4주", 4),
+    )
+
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .fillMaxSize()
                     .padding(horizontal = 20.dp),
             ) {
                 Column(
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .fillMaxSize()
                         .padding(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.Companion.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
+                    Spacer(modifier = Modifier.Companion.height(60.dp))
                     Text(
-                        "학습할 방법을 선택 하세요!",
+                        "공부하고자 하는 기간을 선택하세요!",
                         style = Typography.headlineMedium.copy(
                             fontSize = 18.sp,
                         )
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.Companion.height(20.dp))
                     Image(
                         painter = painterResource(R.drawable.character_front),
                         contentDescription = "앞을 보는 케릭터",
-                        modifier = Modifier.size(width = 200.dp, height = 162.dp),
-                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.Companion.size(width = 200.dp, height = 162.dp),
+                        contentScale = ContentScale.Companion.Fit,
                     )
-                    Spacer(modifier = Modifier.height(25.dp))
+                    Spacer(modifier = Modifier.Companion.height(25.dp))
 
-                    BoxButtonRadioGroup(
-                        selectedType = uiState.goalTypeUiState,
-                        onSelected = { viewModel.selectLearningMethod(it) },
+                    WeekRadioGroup(
+                        options = studyWeekOptions,
+                        selectedValue = uiState.studyPeriod,
+                        onSelect = { option ->
+                            viewModel.onStudyWeekSelected(option.value)
+                        }
                     )
                 }
 
                 Column(
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .fillMaxSize()
                         .padding(bottom = 32.dp),
                     verticalArrangement = Arrangement.Bottom,
                 ) {
                     BaseFillButton(
                         text = "다음으로",
-                        textStyle = Typography.labelMedium.copy(
-                            lineHeight = 24.sp
+                        textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
+                            color = MaterialTheme.extendedColors.backgroundW100
                         ),
-                        isEnabled = uiState.goalTypeUiState != GoalTypeUiState.NONE,
-                        onClick = {
-                            viewModel.resetCategorySelection()
-                            viewModel.onFileDeleted()
-                            when(uiState.goalTypeUiState){
-                                GoalTypeUiState.CATEGORY -> onNextCateGorySelct()
-                                GoalTypeUiState.DOCUMENT -> onNextFileUpload()
-                                GoalTypeUiState.NONE -> {}
-                            }
-                        },
+                        isEnabled = uiState.studyPeriod != null,
+                        onClick = { onNext() },
                         conerRadius = 16.dp
                     )
                 }

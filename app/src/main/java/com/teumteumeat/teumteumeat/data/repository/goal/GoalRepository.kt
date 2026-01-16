@@ -2,11 +2,18 @@ package com.teumteumeat.teumteumeat.data.repository.goal
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
+import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 
 interface GoalRepository {
+
+    /**
+     * 목표 수정 요청
+     */
+    suspend fun updateGoal(goalId: Long, request: UpdateGoalRequest): ApiResultV2<Unit>
+
     /**
      * 현재 유저 목표 조회
      */

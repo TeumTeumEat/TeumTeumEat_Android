@@ -27,3 +27,11 @@ enum class DomainGoalType {
 enum class Difficulty {
     EASY, MEDIUM, HARD, NONE
 }
+fun mapDifficultyToKorean(difficulty: Difficulty): String {
+    return when (difficulty) {
+        Difficulty.EASY -> "하"
+        Difficulty.MEDIUM -> "중"
+        Difficulty.HARD -> "상"
+        Difficulty.NONE -> "선택안함"
+    }
+}

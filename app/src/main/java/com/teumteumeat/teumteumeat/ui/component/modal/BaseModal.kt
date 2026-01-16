@@ -29,6 +29,7 @@ fun BaseModal(
     secondaryButtonText: String? = null,
     onPrimaryClick: () -> Unit,
     onSecondaryClick: (() -> Unit)? = null,
+    isPrimaryBtnFillSecondary: Boolean = false,
 ) {
 
     Surface(
@@ -95,12 +96,21 @@ fun BaseModal(
                 }
             } else {
                 // 버튼 1개 케이스
-                BaseFillButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = primaryButtonText,
-                    onClick = onPrimaryClick,
-                    conerRadius = 16.dp
-                )
+                if(isPrimaryBtnFillSecondary){
+                    FillSecondaryButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = primaryButtonText,
+                        onClick = onPrimaryClick,
+                        conerRadius = 16.dp
+                    )
+                }else{
+                    BaseFillButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = primaryButtonText,
+                        onClick = onPrimaryClick,
+                        conerRadius = 16.dp
+                    )
+                }
             }
         }
     }

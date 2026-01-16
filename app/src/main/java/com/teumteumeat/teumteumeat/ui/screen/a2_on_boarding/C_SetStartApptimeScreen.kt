@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
-import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -31,19 +30,16 @@ import com.onesignal.OneSignal
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
 import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
-import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material3.Button
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -52,7 +48,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
-import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.areAppNotificationsEnabled
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.isPostNotificationsGranted
 
@@ -61,7 +56,7 @@ import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.isPostNotificationsGrante
 fun OnBoardingSetApptimeScreen(
     name: String,
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {
@@ -288,7 +283,7 @@ fun OnBoardingSetApptimeScreen(
 
 @Composable
 fun NotificationSettingGuideOverlay(
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -374,7 +369,7 @@ fun OnBoardingSetApptimeScreenPreview() {
         OnBoardingSetApptimeScreen(
             name = "Android",
             viewModel = fakeViewModel,
-            uiState = UiStateOnBoardingMain(errorMessage = "한글 또는 영문만 입력할 수 있어요", isNameValid = false),
+            uiState = UiStateOnboardingState(errorMessage = "한글 또는 영문만 입력할 수 있어요", isNameValid = false),
             onNext = {},
             onPrev = {}
         )
