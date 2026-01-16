@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,17 +28,12 @@ import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageAccountSection
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageArrowRow
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageNavigateBox
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageRow
-import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageToggleRow
 import com.teumteumeat.teumteumeat.ui.component.mypage.SelectedTopicSection
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
-import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginUiEvent
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info.EditUserInfoActivity
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
-import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -209,12 +203,15 @@ fun MyPageScreen(
                     )
                 }
             )
-            /*MyPageArrowRow(
+            MyPageArrowRow(
                 title = "고객센터",
                 onClick = {
-                    // 고객센터 이동
+                    UxUtils.openExternalBrowser(
+                        context,
+                        "https://forms.gle/jmrRbST7XwLsfhoE7"
+                    )
                 }
-            )*/
+            )
             MyPageRow(
                 title = "버전 정보",
                 rightContent = {

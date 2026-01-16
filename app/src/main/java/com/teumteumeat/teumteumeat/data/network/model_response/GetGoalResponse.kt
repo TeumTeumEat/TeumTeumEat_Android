@@ -9,7 +9,7 @@ data class GoalsData(
 
 // 2️⃣ Goal
 data class GetGoalResponse(
-    val goalId: Int?,
+    val goalId: Int,
     val type: GoalTypeUiState,
     val startDate: String,
     val endDate: String,

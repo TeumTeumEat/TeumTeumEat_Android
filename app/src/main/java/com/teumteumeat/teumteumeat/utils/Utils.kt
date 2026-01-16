@@ -26,8 +26,6 @@ import java.util.Properties
 import androidx.core.net.toUri
 import com.teumteumeat.teumteumeat.domain.model.common.GoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.SnackState
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_4_daily_quiz_result.DailyQuizResultActivity
 import java.time.LocalDateTime
 import java.time.YearMonth
 

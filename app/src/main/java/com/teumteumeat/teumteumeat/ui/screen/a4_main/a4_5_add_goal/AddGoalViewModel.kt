@@ -508,11 +508,7 @@ class AddGoalViewModel @Inject constructor(
                         moveToError(updateGoalResult)
                         return@launch
                     }
-/*                    val getGoalIdResult = fetchLatestGoalId()
-                    if (getGoalIdResult !is ApiResultV2.Success) {
-                        moveToError(getGoalIdResult)
-                        return@launch
-                    }*/
+
 
                     // 2. 문서 확인
                     val uri = state.selectedFileUri
@@ -529,6 +525,7 @@ class AddGoalViewModel @Inject constructor(
 
                     // 3. 문서 업로드
                     val uploadDocumentResult = uploadDocumentInternal(
+                        goalId = goalId.toInt(),
                         uri = state.selectedFileUri,
                         fileName = state.selectedFileName,
                         mimeType = state.selectedFileMimeType
@@ -539,7 +536,7 @@ class AddGoalViewModel @Inject constructor(
                     }
 
                     // 4. 문서 등록
-                    val fetchDocumentResult = fetchCompletedDocument()
+                    val fetchDocumentResult = fetchCompletedDocument(goalId.toInt())
                     if (fetchDocumentResult !is ApiResultV2.Success) {
                         moveToError(uploadDocumentResult)
                         return@launch
@@ -716,12 +713,11 @@ class AddGoalViewModel @Inject constructor(
         }
     }
     private suspend fun uploadDocumentInternal(
+        goalId: Int,
         uri: Uri,
         fileName: String,
         mimeType: String
     ): ApiResultV2<Unit> {
-
-        val goalId = _uiState.value.goalId
 
         return when (
             val result = uploadDocumentUseCase(
@@ -748,9 +744,7 @@ class AddGoalViewModel @Inject constructor(
             is ApiResultV2.UnknownError -> result
         }
     }
-    private suspend fun fetchCompletedDocument(): ApiResultV2<Unit> {
-
-        val goalId = _uiState.value.goalId
+    private suspend fun fetchCompletedDocument(goalId: Int): ApiResultV2<Unit> {
 
         return when (val result = getDocumentsUseCase(goalId)) {
 

@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.domain.mapper.goal
 
 import com.teumteumeat.teumteumeat.data.network.model_response.goal.UserGoalResponse
+import com.teumteumeat.teumteumeat.domain.model.common.GoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.*
 import java.time.LocalDate
 
@@ -20,14 +21,16 @@ fun UserGoalResponse.toDomain(): UserGoal {
                 name = it.name,
                 path = it.path
             )
-        }
+        },
+        fileName = fileName,
+        documentId = documentId,
     )
 }
 
 
-fun com.teumteumeat.teumteumeat.domain.model.common.GoalType.toDomain(): DomainGoalType {
+fun GoalType.toDomain(): DomainGoalType {
     return when (this) {
-        com.teumteumeat.teumteumeat.domain.model.common.GoalType.CATEGORY -> DomainGoalType.CATEGORY
-        com.teumteumeat.teumteumeat.domain.model.common.GoalType.DOCUMENT -> DomainGoalType.DOCUMENT
+        GoalType.CATEGORY -> DomainGoalType.CATEGORY
+        GoalType.DOCUMENT -> DomainGoalType.DOCUMENT
     }
 }

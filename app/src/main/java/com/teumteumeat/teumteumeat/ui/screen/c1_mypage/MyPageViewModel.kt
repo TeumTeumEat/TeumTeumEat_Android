@@ -8,6 +8,7 @@ import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
+import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
@@ -15,6 +16,8 @@ import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
+import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
 import com.teumteumeat.teumteumeat.utils.Utils.InfoUtil.getAppVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,6 +33,7 @@ class MyPageViewModel @Inject constructor(
     application: Application,
     private val userRepository: UserRepository,
     private val documentRepository: DocumentRepository,
+    private val goalRepository: GoalRepository,
     private val getGoalListUseCase: GetGoalListUseCase,
     private val socialLoginRepository: SocialLoginRepository,
     private val tokenLocalDataSource: TokenLocalDataSource,
@@ -47,12 +51,15 @@ class MyPageViewModel @Inject constructor(
 
     init {
         val version = getAppVersion(application)
-        loadMyPage()
-        loadAccountInfo()
-        _uiState.update {
-            it.copy(
-                appVersion = version
-            )
+        viewModelScope.launch {
+            loadUserGoal()
+            // loadMyPage()
+            loadAccountInfo()
+            _uiState.update {
+                it.copy(
+                    appVersion = version
+                )
+            }
         }
     }
 
@@ -213,6 +220,48 @@ class MyPageViewModel @Inject constructor(
                             errorMessage = "알 수 없는 오류가 발생했습니다."
                         )
                     }
+                }
+            }
+        }
+    }
+
+    private suspend fun loadUserGoal() {
+        when (val result = goalRepository.getUserGoal()) {
+
+            is ApiResultV2.Success -> {
+                val userGoal = result.data
+
+                when(userGoal.type){
+                    DomainGoalType.CATEGORY -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                selectedTopic = userGoal.category?.path!!,
+                                topicDescription = userGoal.prompt ?: "",
+                                goalWeek = userGoal.studyPeriod,
+                                goalDifficulty = mapDifficultyToKorean(userGoal.difficulty)
+                            )
+                        }
+                    }
+                    DomainGoalType.DOCUMENT -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                selectedTopic = userGoal.fileName!!,
+                                topicDescription = userGoal.prompt ?: "",
+                                goalWeek = userGoal.studyPeriod,
+                                goalDifficulty = mapDifficultyToKorean(userGoal.difficulty)
+                            )
+                        }
+                    }
+                }
+
+            }
+
+            else -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
                 }
             }
         }

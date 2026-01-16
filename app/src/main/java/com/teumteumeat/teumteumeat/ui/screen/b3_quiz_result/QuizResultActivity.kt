@@ -36,6 +36,7 @@ class QuizResultActivity : ComponentActivity() {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val navController = rememberNavController()
 
+                // todo. 현재 유저 상태 조회해서 요약글 표시되게 구현
                 val goalId = Utils.PrefsUtil.getGoalId(applicationContext) ?: 0
                 val documentId = Utils.PrefsUtil.getDocumentId(applicationContext) ?: 0
                 val goalType = Utils.PrefsUtil.getGoalType(applicationContext)
@@ -47,6 +48,11 @@ class QuizResultActivity : ComponentActivity() {
 
                 // ⭐ 최초 진입 시 API 호출
                 LaunchedEffect(Unit) {
+                    val nowDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
+                    viewModel.initQuizResult(date = nowDate)
+                }
+
+/*                LaunchedEffect(Unit) {
                     viewModel.loadQuizResults(
                         type = goalType.name,
                         id = documentId,
@@ -61,7 +67,7 @@ class QuizResultActivity : ComponentActivity() {
                         }
                         GoalTypeUiState.NONE -> TODO()
                     }
-                }
+                }*/
 
                 CompositionLocalProvider(
                     LocalAppContext provides this.applicationContext,

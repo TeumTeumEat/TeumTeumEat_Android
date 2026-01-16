@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
+import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 
 data class UiStateQuizResult(
@@ -20,7 +21,10 @@ data class UiStateQuizResult(
     val summary: UiStateSummary = UiStateSummary(isLoading = true),
 
     /** 공통 에러 */
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+
+    /** ✅ 현재 유저 목표 */
+    val userGoal: UserGoal? = null,
 )
 
 data class QuizHistory(
