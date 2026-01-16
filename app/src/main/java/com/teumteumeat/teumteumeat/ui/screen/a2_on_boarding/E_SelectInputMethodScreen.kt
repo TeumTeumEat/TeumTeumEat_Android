@@ -30,7 +30,7 @@ import com.teumteumeat.teumteumeat.ui.theme.Typography
 fun SelectInputMethodScreen(
     name: String = "",
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNextFileUpload: () -> Unit,
     onPrev: () -> Unit,
     onNextCateGorySelct: () -> Unit,

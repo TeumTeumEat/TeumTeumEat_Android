@@ -40,7 +40,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 @Composable
 fun CheckSetMyInfoScreen(
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {

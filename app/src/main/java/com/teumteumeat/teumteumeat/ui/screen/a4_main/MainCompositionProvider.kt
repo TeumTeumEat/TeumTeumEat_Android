@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,8 +44,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.GoalRegisterArgs
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.ExpandableAddMenuOverlay
 import com.teumteumeat.teumteumeat.ui.screen.c1_mypage.MyPageActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -224,15 +229,31 @@ fun MainCompositionProvider(
                 )
             }
 
+
             // 🔹 플로팅 메뉴 (완전 오버레이)
             ExpandableAddMenuOverlay(
+                onAddCategory = {
+                    viewModel.closeBottomNavPlus()
+                    activity.startActivity(
+                        Intent(activity, AddGoalActivity::class.java).apply {
+                            putExtra(
+                                GoalRegisterArgs.KEY_GOAL_TYPE,
+                                DomainGoalType.CATEGORY.name // ✅ String 전달
+                            )
+                        }
+                    )
+                },
                 onAddDocument = {
                     viewModel.closeBottomNavPlus()
                     // 문서목표 등록화면 이동
-                },
-                onAddCategory = {
-                    viewModel.closeBottomNavPlus()
-                    // 카테고리 목표 등록화면 이동
+                    activity.startActivity(
+                        Intent(activity, AddGoalActivity::class.java).apply {
+                            putExtra(
+                                GoalRegisterArgs.KEY_GOAL_TYPE,
+                                DomainGoalType.DOCUMENT.name // ✅ String 전달
+                            )
+                        }
+                    )
                 },
                 offset = mainUiState.plusBtnOffset,
                 isExpanded = mainUiState.isExpandedBottomNavItemPlus,

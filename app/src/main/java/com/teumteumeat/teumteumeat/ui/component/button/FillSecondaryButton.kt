@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
@@ -53,10 +54,9 @@ fun FillSecondaryButton(
         ) {
             Text(
                 text = text,
-                style = TextStyle(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight(600),
+                style = MaterialTheme.appTypography.btnMedium18_h24.copy(
                     textAlign = TextAlign.Center,
+                    color = primaryColor
                 )
             )
         }

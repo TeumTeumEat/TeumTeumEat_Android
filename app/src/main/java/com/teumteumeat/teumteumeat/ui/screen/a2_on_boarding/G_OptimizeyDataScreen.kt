@@ -54,7 +54,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 fun OptimizerDataScreen(
     name: String,
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {

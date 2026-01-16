@@ -11,4 +11,5 @@
     <string name="title_activity_quiz">QuizActivity</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_quiz_finish">QuizFinishActivity</string>
+    <string name="title_activity_add_category_goal">AddCategoryGoalActivity</string>
 </resources>

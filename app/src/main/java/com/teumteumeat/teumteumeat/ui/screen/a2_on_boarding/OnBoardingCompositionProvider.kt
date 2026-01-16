@@ -79,7 +79,7 @@ fun OnBoardingCompositionProvider(
 
         when (mainState) {
 
-            UiStateOnBoardingMainState.Loading -> {
+            UiStateOnboardingScreenState.Loading -> {
 
                 LaunchedEffect(Unit) {
                     visibleStates.forEachIndexed { index, _ ->
@@ -95,7 +95,7 @@ fun OnBoardingCompositionProvider(
                 )
             }
 
-            UiStateOnBoardingMainState.Success -> {
+            UiStateOnboardingScreenState.Success -> {
                 OnBoardingSuccessScreen(
                     nickname = uiState.charName,
                     onStartClick = {
@@ -108,8 +108,8 @@ fun OnBoardingCompositionProvider(
                 )
             }
 
-            is UiStateOnBoardingMainState.Error -> {
-                val error = mainState as UiStateOnBoardingMainState.Error
+            is UiStateOnboardingScreenState.Error -> {
+                val error = mainState as UiStateOnboardingScreenState.Error
 
                 FullScreenErrorModal(
                     errorState = viewModel.getErrorState(
@@ -125,7 +125,7 @@ fun OnBoardingCompositionProvider(
                 )
             }
 
-            UiStateOnBoardingMainState.Idle -> {
+            UiStateOnboardingScreenState.Idle -> {
                 DefaultMonoBg(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface

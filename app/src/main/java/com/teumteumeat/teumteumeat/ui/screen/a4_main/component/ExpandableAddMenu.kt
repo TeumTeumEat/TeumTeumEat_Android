@@ -123,12 +123,12 @@ fun ExpandableAddMenu(
 
             FloatingActionItem(
                 iconRes = R.drawable.icon_search_category,
-                onClick = onAddDocument
+                onClick = onAddCategory
             )
 
             FloatingActionItem(
                 iconRes = R.drawable.icon_upload_file,
-                onClick = onAddCategory
+                onClick = onAddDocument
             )
         }
     }

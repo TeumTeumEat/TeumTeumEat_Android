@@ -30,7 +30,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 fun SetStudyRangeScreen(
     name: String,
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {

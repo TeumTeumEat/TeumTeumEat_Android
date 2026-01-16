@@ -30,7 +30,6 @@ import androidx.navigation.NavBackStackEntry
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryBreadcrumb
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -47,7 +46,7 @@ private fun calculatePage(sel: CategorySelectionState): Int =
 fun CategorySelectScreen(
     name: String = "",
     viewModel: OnBoardingViewModel,
-    uiState: UiStateOnBoardingMain,
+    uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
     navBackStackEntry: NavBackStackEntry,

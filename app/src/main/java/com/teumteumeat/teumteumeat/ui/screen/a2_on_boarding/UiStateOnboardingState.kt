@@ -6,24 +6,24 @@ import com.teumteumeat.teumteumeat.ui.component.AmPm
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 
-sealed class UiStateOnBoardingMainState {
+sealed class UiStateOnboardingScreenState {
 
     /** 아무 일도 하지 않는 초기 상태 */
-    data object Idle : UiStateOnBoardingMainState()
+    data object Idle : UiStateOnboardingScreenState()
 
     /** 로딩 화면 표시 */
-    data object Loading : UiStateOnBoardingMainState()
+    data object Loading : UiStateOnboardingScreenState()
 
     /** 등록 성공 */
-    data object Success : UiStateOnBoardingMainState()
+    data object Success : UiStateOnboardingScreenState()
 
     /** 오류 발생 */
     data class Error(
         val message: String
-    ) : UiStateOnBoardingMainState()
+    ) : UiStateOnboardingScreenState()
 }
 
-data class UiStateOnBoardingMain(
+data class UiStateOnboardingState(
 //    val currentPage: Int = 0,
 //    val totalPage: Int = 5,
 

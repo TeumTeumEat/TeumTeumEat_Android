@@ -8,12 +8,14 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginUiState
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnBoardingMain
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.UiStateMain
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.UiStateLibrary
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail.UiStateDailySummary
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_4_daily_quiz_result.UiStateDailyQuizResult
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.UiStateAddGoalScreenState
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.UiStateAddGoalState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.UiStateQuizResult
@@ -68,8 +70,12 @@ val LocalMyPageUiState = compositionLocalOf<UiStateMyPage> {
     error("No UiStateMyPage provided")
 }
 
-val LocalOnBoardingMainUiState = compositionLocalOf<UiStateOnBoardingMain> {
+val LocalOnBoardingMainUiState = compositionLocalOf<UiStateOnboardingState> {
     error("No UiStateWelcome provided")
+}
+
+val LocalAddGoalUiState = compositionLocalOf<UiStateAddGoalState> {
+    error("No UiStateAddGoalState provided")
 }
 
 

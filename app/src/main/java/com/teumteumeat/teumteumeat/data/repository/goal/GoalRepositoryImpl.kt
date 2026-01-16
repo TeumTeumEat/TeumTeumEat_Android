@@ -6,6 +6,7 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
+import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.CreateGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
@@ -20,6 +21,26 @@ class GoalRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), GoalRepository {
+
+    /**
+     * 목표 수정 요청
+     */
+    override suspend fun updateGoal(
+        goalId: Long,
+        request: UpdateGoalRequest
+    ): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = {
+                goalApiService.updateGoal(
+                    goalId = goalId,
+                    request = request
+                )
+            },
+            mapper = {
+                Unit
+            }
+        )
+    }
 
     override suspend fun getUserGoal(): ApiResultV2<UserGoal> {
 

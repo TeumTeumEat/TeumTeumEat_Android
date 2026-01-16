@@ -169,15 +169,18 @@ fun GoalCard(
                 maxLines = 2
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
-
             // 🔹 설명
-            Text(
-                text = uiModel.description,
-                style = MaterialTheme.appTypography.lableMedium12_h14,
-                color = Color.Gray,
-                maxLines = 2
-            )
+            if(uiModel.description.isNotBlank()){
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = uiModel.description,
+                    style = MaterialTheme.appTypography.lableMedium12_h14,
+                    color = Color.Gray,
+                    maxLines = 2
+                )
+            }
+
         }
     }
 }

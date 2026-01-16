@@ -13,6 +13,7 @@ import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -291,6 +292,24 @@ class LoginViewModel @Inject constructor(
                     _uiState.update { it.copy(errorMessage = result.uiMessage) }
                 }
             }
+        }
+    }
+
+    fun setAuthErrorPage(errMsg: String) {
+        _uiState.update {
+            it.copy(
+                errorMessage = errMsg,
+            )
+        }
+    }
+
+    fun setCurrentPendingLogin(provider: SocialProvider){
+        _uiState.update {
+            it.copy(
+                pendingSocialLogin = it.pendingSocialLogin.copy(
+                    provider = provider
+                )
+            )
         }
     }
 

@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.CustomBottomNavItem
 
@@ -64,16 +65,21 @@ fun BottomNavigationBar(
     onPlusPositioned: (Offset) -> Unit, // ⭐ 추가
 ) {
 
-    val items = listOf(
-        BottomNavItem.AddingFile,
-        BottomNavItem.Home,
-        BottomNavItem.Library
-    )
-
+    val items = if (BuildConfig.DEBUG) {
+        listOf(
+            BottomNavItem.AddingFile,
+            BottomNavItem.Home,
+            BottomNavItem.Library
+        )
+    } else {
+        listOf(
+            BottomNavItem.Home,
+            BottomNavItem.Library
+        )
+    }
     val currentRoute = navController
         .currentBackStackEntryAsState()
         .value?.destination?.route
-
 
 
     /* ===============================
@@ -98,6 +104,7 @@ fun BottomNavigationBar(
             items.forEachIndexed { index, item ->
 
                 val isPlusItem = item == BottomNavItem.AddingFile
+
                 val isSelected = when {
                     // 1️⃣ + 버튼이 열려 있으면 → +만 선택
                     isExpandedPlus && isPlusItem -> true
