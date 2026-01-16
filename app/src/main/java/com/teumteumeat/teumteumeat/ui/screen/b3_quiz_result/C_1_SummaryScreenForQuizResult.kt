@@ -126,7 +126,7 @@ fun SummaryScreenForQuizResult(
 
 
                             Text(
-                                text = uiState.summary!!.dateText,
+                                text = uiState.summary.dateText,
                                 style = MaterialTheme.appTypography.captionRegular12,
                                 color = Color.Gray
                             )

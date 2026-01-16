@@ -2,14 +2,21 @@ package com.teumteumeat.teumteumeat.ui.screen.c2_goal_list
 
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toUiText
+import java.time.LocalDate
 
 
 data class UiStateGoalList(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 
-    val goals: List<GoalCardUiModel> = emptyList()
+    val currentGoalId: Long? = null,
+    val goals: List<GoalCardUiModel> = emptyList(),
+
+    // ⭐ 주제 변경 확인 오버레이
+    val showChangeGoalOverlay: Boolean = false,
+    val pendingGoalId: Int? = null // 변경하려는 목표 ID
 )
 
 data class GoalCardUiModel(
@@ -17,19 +24,26 @@ data class GoalCardUiModel(
 
     // 배지
     val weekText: String,        // "4주"
+    val difficulty: Difficulty,   // ⭐ 추가
     val difficultyText: String,  // "난이도 상"
+
     val showDifficulty: Boolean,
 
     // 메인 텍스트
     val title: String,
     val description: String,
 
+    // 날짜
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val isExpired: Boolean,
+
     // 상태
     val isSelected: Boolean
 )
 
 fun GetGoalResponse.toUiModel(
-    isSelected: Boolean
+    currentGoalId: Long?
 ): GoalCardUiModel {
 
     val (title, description) =
@@ -50,14 +64,32 @@ fun GetGoalResponse.toUiModel(
         }
 
 
+
+    val start = startDate.toLocalDate()
+    val end = endDate.toLocalDate()
+    val today = LocalDate.now()
+    val isExpired = today.isAfter(end)
+
+    // ⭐ 만료된 목표는 선택 해제
+    val isSelected =
+        !isExpired && goalId.toLong() == currentGoalId
+
     return GoalCardUiModel(
-        goalId = goalId ?: -1,
+        goalId = goalId,
         weekText = studyPeriod,
         difficultyText = difficulty.toUiText(),
+        difficulty = difficulty,
         showDifficulty = true,
         title = title,
         description = description,
-        isSelected = isSelected
+        isSelected = isSelected,
+        startDate = start,
+        endDate = end,
+        isExpired = isExpired,
     )
 }
+
+
+private fun String.toLocalDate(): LocalDate =
+    LocalDate.parse(this) // yyyy-MM-dd 전제
 

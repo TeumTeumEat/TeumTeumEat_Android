@@ -142,7 +142,7 @@ class HomeViewModel @Inject constructor(
         SummaryQuery(
             goalId = goal.goalId,
             goalType = goal.type,
-            documentId = null,
+            documentId = goal.documentId,
             categoryId = goal.category?.categoryId
         )
 

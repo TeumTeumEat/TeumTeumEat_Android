@@ -10,6 +10,8 @@ data class UserGoalResponse(
     val isExpired: Boolean,
     val studyPeriod: String,
     val difficulty: String,
+    val fileName: String?,
+    val documentId: Long?,
     val prompt: String,
     val category: CategoryResponse?
 )

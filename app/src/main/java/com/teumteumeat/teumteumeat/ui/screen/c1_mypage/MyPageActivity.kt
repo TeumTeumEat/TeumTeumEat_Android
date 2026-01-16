@@ -40,9 +40,7 @@ class MyPageActivity : ComponentActivity() {
                     LocalMyPageUiState provides uiState,
                 ) {
                     val context = LocalContext.current
-                    val goalId = Utils.PrefsUtil.getGoalId(context) ?: -1
-                    val documentId = Utils.PrefsUtil.getDocumentId(context) ?: -1
-                    val categoryId = Utils.PrefsUtil.getCategoryId(context) ?: -1
+                    val activityContext = LocalActivityContext.current
 
                     // 최초 진입 시 1회 호출
                     LaunchedEffect(Unit) {
@@ -53,10 +51,10 @@ class MyPageActivity : ComponentActivity() {
                         uiState = uiState,
                         onBackClick = { finish() },
                         onTopicClick = {
-                            // todo. 주제 상세 설정 페이지로 이동
                             Utils.UxUtils.moveActivity(
-                                context,
+                                activityContext,
                                 GoalListActivity::class.java,
+                                exitFlag = false
                             )
                         },
                         onAlarmToggle = {  },
@@ -64,7 +62,7 @@ class MyPageActivity : ComponentActivity() {
                         onCustomerCenterClick = {  },
                         onLogoutClick = {
                             Utils.UxUtils.moveActivity(
-                                context,
+                                activityContext,
                                 LoginActivity::class.java,
                             )
                         }

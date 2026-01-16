@@ -10,6 +10,8 @@ data class UserGoal(
     val isExpired: Boolean,
     val studyPeriod: String,
     val difficulty: Difficulty,
+    val fileName: String?,
+    val documentId: Long?,
     val prompt: String?,
     val category: GoalCategory?
 )
@@ -27,6 +29,7 @@ enum class DomainGoalType {
 enum class Difficulty {
     EASY, MEDIUM, HARD, NONE
 }
+
 fun mapDifficultyToKorean(difficulty: Difficulty): String {
     return when (difficulty) {
         Difficulty.EASY -> "하"
