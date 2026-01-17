@@ -33,6 +33,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 
 @Composable
@@ -41,6 +42,7 @@ fun SplashScreen(
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
+    val activity = LocalActivityContext.current as SplashActivity
 
     val v2Color = MaterialTheme.colorScheme.primary
 
@@ -72,13 +74,13 @@ fun SplashScreen(
         viewModel.uiEvent.collect { event ->
             when (event) {
                 SplashUiEvent.NavigateToLogin ->
-                    Utils.UxUtils.moveActivity(context, LoginActivity::class.java)
+                    Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
 
                 SplashUiEvent.NavigateToMain ->
-                    Utils.UxUtils.moveActivity(context, MainActivity::class.java)
+                    Utils.UxUtils.moveActivity(activity, MainActivity::class.java)
 
                 SplashUiEvent.NavigateToOnboarding ->
-                    Utils.UxUtils.moveActivity(context, OnBoardingActivity::class.java)
+                    Utils.UxUtils.moveActivity(activity, OnBoardingActivity::class.java)
 
                 is SplashUiEvent.ShowErrorMessage -> {
                     // todo. 바텀시트 보여주기
@@ -121,10 +123,7 @@ fun SplashScreen(
             uiState.errorState?.let { error ->
                 FullScreenErrorModal(
                     errorState = error,
-                    onBack = {
-                        // 뒤로가기 정책
-                        // viewModel.dismissError()
-                    },
+                    onBack = { },
                     isShowBackBtn = false,
                 )
             }

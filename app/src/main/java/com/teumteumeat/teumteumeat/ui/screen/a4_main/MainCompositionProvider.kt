@@ -61,6 +61,10 @@ import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.extendedColors
 import kotlinx.coroutines.flow.first
 import kotlin.jvm.java
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.mutableLongStateOf
+
 
 @Composable
 fun MainCompositionProvider(
@@ -90,6 +94,7 @@ fun MainCompositionProvider(
 
         val navBackStackEntry by navHostController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
+
 
 
         /*LaunchedEffect(mainUiState.currentScreenType) {
@@ -140,6 +145,26 @@ fun MainCompositionProvider(
 
         val extendedColors = MaterialTheme.extendedColors
 
+        val lastBackPressedTime = remember { mutableLongStateOf(0L) }
+
+        // ✅ 물리 뒤로가기 처리
+        BackHandler {
+            val currentTime = System.currentTimeMillis()
+
+            if (currentTime - lastBackPressedTime.longValue <= 500L) {
+                // ⏱ 0.5초 이내 두 번째 클릭 → 종료
+                activity.finish()
+            } else {
+                lastBackPressedTime.longValue = currentTime
+                Toast
+                    .makeText(
+                        context,
+                        "한 번 더 누르면 앱이 종료됩니다",
+                        Toast.LENGTH_SHORT
+                    )
+                    .show()
+            }
+        }
 
         DefaultMonoBg(
             modifier = Modifier.fillMaxSize(),

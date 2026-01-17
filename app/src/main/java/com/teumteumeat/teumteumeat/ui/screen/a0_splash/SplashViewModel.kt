@@ -50,7 +50,7 @@ class SplashViewModel @Inject constructor(
     /**
      * 토큰 및 로그인 정보 삭제: 인증에러가 발생해서 로그인 화면으로 이동시, 기기에 저장된 토큰 삭제
      */
-    fun clearAllToken() {
+    suspend fun clearAllToken() {
         viewModelScope.launch {
             tokenLocalDataSource.clear()
         }
@@ -67,34 +67,13 @@ class SplashViewModel @Inject constructor(
             }
 
             when (val result = autoLoginUseCase()) {
-
                 is AutoLogin.Success -> {
                     checkOnboardingCompleted()
                 }
 
-                is AutoLogin.SessionExpired -> {
-                    Log.d("소셜 로그인", "세션 만료, 리프레쉬 토큰으로 재발급 필요")
-                    showNetworkError(
-                        message = result.message,
-                        retry = { viewModelScope.launch { tryAutoLogin() } }
-                    )
-                    setLoginRequiredState(result.message)
-                }
-
-                is AutoLogin.Fail -> {
-                    showNetworkError(
-                        message = result.message,
-                        retry = { viewModelScope.launch { tryAutoLogin() } }
-                    )
-                    setLoginRequiredState(result.message)
-                }
-
-                is AutoLogin.NetWorkError -> {
-                    showNetworkError(
-                        message = result.message,
-                        retry = { viewModelScope.launch { tryAutoLogin() } }
-                    )
-                    setNetworkRequiredState(result.message)
+                else -> {
+                    Log.d("${this@SplashViewModel}", "자동 로그인 실패 ${result}")
+                    setGoLoginState()
                 }
             }
 
@@ -114,10 +93,8 @@ class SplashViewModel @Inject constructor(
             }
 
             is OnboardingDecision.NeedLogin -> {
-                showNetworkError(
-                    message = result.message,
-                    retry =  { viewModelScope.launch { checkOnboardingCompleted() } }
-                )
+                // 🔑 핵심: 에러 UI ❌
+                _uiEvent.emit(SplashUiEvent.NavigateToLogin)
             }
         }
     }
@@ -134,6 +111,18 @@ class SplashViewModel @Inject constructor(
                     onRetry = retry
                 )
             )
+        }
+    }
+
+    private fun setGoLoginState() {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+            )
+        }
+        viewModelScope.launch {
+            clearAllToken()
+            _uiEvent.emit(SplashUiEvent.NavigateToLogin)
         }
     }
 
@@ -164,10 +153,17 @@ class SplashViewModel @Inject constructor(
                 errorState = ErrorState(
                     title = "다시한번 접속해주세요",
                     description = message,
-                    retryLabel = "다시 시도하기",
+                    retryLabel = "다시 시도",
                     onRetry = {
                         viewModelScope.launch {
                             tryAutoLogin()
+                        }
+                    },
+                    secondaryLabel = "재 로그인",
+                    onSecondaryAction = {
+                        viewModelScope.launch {
+                            clearAllToken()
+                            _uiEvent.emit(SplashUiEvent.NavigateToLogin)
                         }
                     }
                 )

@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
+import com.teumteumeat.teumteumeat.ui.component.button.FillSecondaryButton
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
@@ -237,16 +238,42 @@ fun FullScreenErrorModal(
         }
 
         // 이동 버튼
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
-        ) {
-            BaseFillButton(
-                onClick = errorState.onRetry,
-                text = errorState.retryLabel,
-                modifier = Modifier.fillMaxWidth()
-            )
+        // 🔹 Secondary Action이 있는 경우 → 버튼 2개
+        if (errorState.secondaryLabel != null && errorState.onSecondaryAction != null) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                // ➡️ Primary 액션
+                BaseFillButton(
+                    onClick = errorState.onRetry,
+                    text = errorState.retryLabel,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // ⬅️ Secondary 액션
+                FillSecondaryButton(
+                    onClick = errorState.onSecondaryAction,
+                    text = errorState.secondaryLabel,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+        }else{
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                BaseFillButton(
+                    onClick = errorState.onRetry,
+                    text = errorState.retryLabel,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
