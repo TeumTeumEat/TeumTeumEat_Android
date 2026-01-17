@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,9 +30,10 @@ fun AgreementItem(
 ) {
     Row(
         Modifier
-            .fillMaxWidth()
+            .wrapContentWidth()
             .padding(vertical = 12.dp)
-            .clickable { onCheckedChange(!checked) }, verticalAlignment = Alignment.CenterVertically
+            .clickable { onCheckedChange(!checked) },
+        verticalAlignment = Alignment.CenterVertically
     ) {
         CheckBoxCircle(
             checked = checked,

@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginUiState
@@ -33,6 +34,7 @@ fun TermsAgreementBottomSheetContent(
 ) {
     val agreement = uiState.termsAgreement
 
+    val textSecondary = MaterialTheme.extendedColors.textSecondary
     val textPointBlue = MaterialTheme.extendedColors.textPointBlue
     val textGoastColor = MaterialTheme.extendedColors.textGhost
 
@@ -86,7 +88,8 @@ fun TermsAgreementBottomSheetContent(
                             ),
                             text = "이용약관 ",
                             style = MaterialTheme.appTypography.bodyMedium16.copy(
-                                color = textPointBlue
+                                color = textSecondary,
+                                textDecoration = TextDecoration.Underline,
                             )
                         )
                         Text("(필수)",
@@ -114,7 +117,8 @@ fun TermsAgreementBottomSheetContent(
                             ),
                             text = "개인정보처리방침 ",
                             style = MaterialTheme.appTypography.bodyMedium16.copy(
-                                color = textPointBlue
+                                color = textSecondary,
+                                textDecoration = TextDecoration.Underline,
                             )
                         )
                         Text("(필수)",

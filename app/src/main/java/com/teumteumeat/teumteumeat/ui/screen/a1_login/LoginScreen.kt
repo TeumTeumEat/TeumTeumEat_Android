@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +49,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -61,10 +63,12 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val activity = LocalActivityContext.current as LoginActivity
     val shape = RoundedCornerShape(28.dp)
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
+    val loginButtonShape = RoundedCornerShape(12.dp)
 
     // 🔥 이벤트 수신
     LaunchedEffect(Unit) {
@@ -78,12 +82,12 @@ fun LoginScreen(
 
                 LoginUiEvent.NavigateToOnboarding -> {
                     Log.d("Login", "navigate onboarding")
-                    moveActivity(context, OnBoardingActivity::class.java, exitFlag = true)
+                    moveActivity(activity, OnBoardingActivity::class.java, exitFlag = true)
                 }
 
                 LoginUiEvent.NavigateToMain -> {
                     Log.d("Login", "navigate Main")
-                    moveActivity(context, MainActivity::class.java, exitFlag = true)
+                    moveActivity(activity, MainActivity::class.java, exitFlag = true)
                 }
 
                 LoginUiEvent.NavigateToLogin -> {
@@ -95,7 +99,7 @@ fun LoginScreen(
 
     // ❌ 에러 표시
     uiState.errorMessage?.let { message ->
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
     }
 
     TeumTeumEatTheme {
@@ -105,16 +109,19 @@ fun LoginScreen(
         }
 
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
 
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .systemBarsPadding(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "한줄 간단소개",
+                    "개인 맞춤형 퀴즈 기반 학습 서비스",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.tertiary
@@ -131,6 +138,7 @@ fun LoginScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .systemBarsPadding()
                     .padding(horizontal = 20.dp, vertical = 70.dp),
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -154,21 +162,18 @@ fun LoginScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(Color(0xFFFEE500))
+                        .height(40.dp)
+                        .background(
+                            color = Color(0xFFFEE500),
+                            shape = loginButtonShape
+                        )
+                        .clip(loginButtonShape)
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
                             Log.d("버튼 탭: ", "카카오 로그인 버튼")
                             onKakaoLoginClick()
-//                            val intent = Intent(context, KakaoLoginWebViewActivity::class.java)
-//                            intent.putExtra(
-//                                "url",
-//                                "${BuildConfig.BASE_DOMAIN}oauth2/authorization/kakao"
-//                            )
-//                            context.startActivity(intent)
                         },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -201,14 +206,17 @@ fun LoginScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(MaterialTheme.extendedColors.backgroundW100)
+                        .height(40.dp)
+                        .background(
+                            color = MaterialTheme.extendedColors.backgroundW100,
+                            shape = loginButtonShape
+                        )
                         .border(
                             width = 1.dp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            shape = shape
+                            shape = loginButtonShape
                         )
+                        .clip(loginButtonShape)
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
@@ -228,7 +236,7 @@ fun LoginScreen(
                         // 🔹 구글 로고
                         Image(
                             painter = painterResource(id = R.drawable.icon_google),
-                            contentDescription = "KakaoTalk Logo",
+                            contentDescription = "Google Logo",
                             contentScale = ContentScale.Fit
                         )
 
@@ -272,13 +280,13 @@ fun LoginScreen(
                             },
                             onGoServiceAgreeWebView = {
                                 UxUtils.openExternalBrowser(
-                                    context,
+                                    activity,
                                     "https://resolute-flier-02d.notion.site/2d8151abb62e80cbaefde6ddcef603cc?pvs=74"
                                 )
                             },
                             onGoPrivacyPolicyWebView = {
                                 UxUtils.openExternalBrowser(
-                                    context,
+                                    activity,
                                     "https://resolute-flier-02d.notion.site/2d8151abb62e8099bfd6d881256a6b4a?source=copy_link"
                                 )
                             }
