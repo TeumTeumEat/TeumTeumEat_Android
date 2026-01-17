@@ -1,7 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,18 +10,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.CustomBottomNavItem
 
@@ -65,18 +60,12 @@ fun BottomNavigationBar(
     onPlusPositioned: (Offset) -> Unit, // ⭐ 추가
 ) {
 
-    val items = if (BuildConfig.DEBUG) {
-        listOf(
-            BottomNavItem.AddingFile,
-            BottomNavItem.Home,
-            BottomNavItem.Library
-        )
-    } else {
-        listOf(
-            BottomNavItem.Home,
-            BottomNavItem.Library
-        )
-    }
+    val items = listOf(
+        BottomNavItem.AddingFile,
+        BottomNavItem.Home,
+        BottomNavItem.Library
+    )
+
     val currentRoute = navController
         .currentBackStackEntryAsState()
         .value?.destination?.route

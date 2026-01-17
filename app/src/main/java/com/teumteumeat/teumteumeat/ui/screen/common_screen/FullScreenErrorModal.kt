@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.FillSecondaryButton
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 
 @Composable
@@ -51,8 +53,10 @@ fun FullScreenErrorModal(
         )
 
         ErrorBottomAction(
-            buttonText = errorState.retryLabel,
-            onRetry = errorState.onRetry
+            primaryText = errorState.retryLabel,
+            onPrimary = errorState.onRetry,
+            secondaryText = errorState.secondaryLabel,
+            onSecondary = errorState.onSecondaryAction
         )
     }
 }
@@ -106,21 +110,52 @@ fun ErrorContent(
 
 @Composable
 fun ErrorBottomAction(
-    buttonText: String,
-    onRetry: () -> Unit,
+    primaryText: String,
+    onPrimary: () -> Unit,
+    secondaryText: String? = null,
+    onSecondary: (() -> Unit)? = null,
 ) {
     Box(
         modifier = Modifier
+            .fillMaxWidth()
             .padding(16.dp),
-        contentAlignment = (Alignment.BottomCenter)
+        contentAlignment = Alignment.BottomCenter
     ) {
-        BaseFillButton(
-            onClick = onRetry,
-            text = buttonText,
-            modifier = Modifier.fillMaxWidth()
-        )
+
+        // 🔹 Secondary Action 존재 → 버튼 2개
+        if (secondaryText != null && onSecondary != null) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                // ⬅️ Secondary
+                FillSecondaryButton(
+                    onClick = onSecondary,
+                    text = secondaryText,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // ➡️ Primary
+                BaseFillButton(
+                    onClick = onPrimary,
+                    text = primaryText,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+        } else {
+            // 🔹 단일 버튼
+            BaseFillButton(
+                onClick = onPrimary,
+                text = primaryText,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
+
 
 
 

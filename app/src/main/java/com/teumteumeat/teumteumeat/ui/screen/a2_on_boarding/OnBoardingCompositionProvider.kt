@@ -100,7 +100,7 @@ fun OnBoardingCompositionProvider(
                     nickname = uiState.charName,
                     onStartClick = {
                         Utils.UxUtils.moveActivity(
-                            context,
+                            activity,
                             MainActivity::class.java,
                             exitFlag = true
                         )
