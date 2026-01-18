@@ -162,7 +162,6 @@ fun OnBoardingNavHost(navController: NavHostController) {
             OptimizerDataScreen(
                 name = OnBoardingScreens.SeventhOptimizerDataScreen.route,
                 onNext = {
-                    viewModel.nextPage()
                     navController.navigate(
                         OnBoardingScreens.EighthSetStudyRangeScreen.route
                     )
@@ -183,13 +182,11 @@ fun OnBoardingNavHost(navController: NavHostController) {
             SetStudyRangeScreen(
                 name = OnBoardingScreens.EighthSetStudyRangeScreen.route,
                 onNext = {
-                    viewModel.nextPage()
                     navController.navigate(
                         OnBoardingScreens.CheckSetMyInfoScreen.route
                     )
                 },
                 onPrev = {
-                    viewModel.prevPage()
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -203,7 +200,6 @@ fun OnBoardingNavHost(navController: NavHostController) {
         ) {
             CheckSetMyInfoScreen(
                 onNext = {
-                    viewModel.nextPage()
                     navController.navigate(OnBoardingScreens.CompleteScreen.route) {
                         // 🔑 온보딩 스택 정리 (뒤로가기 방지)
                         popUpTo(OnBoardingScreens.FirstScreen.route) {
@@ -212,7 +208,6 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     }
                 },
                 onPrev = {
-                    viewModel.prevPage()
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -268,13 +263,14 @@ object OnBoardingFlow {
         OnBoardingScreens.ThirdSetAppTimeScreen,
         OnBoardingScreens.FourthSetUsingAppTimeScreen,
         OnBoardingScreens.FifthSelectInputMethodScreen,
+        OnBoardingScreens.SixthCategorySelectScreen,
         OnBoardingScreens.EighthSetStudyRangeScreen,
         OnBoardingScreens.CheckSetMyInfoScreen,
     )
 
     /** 전체 페이지 수 */
     val totalCount: Int
-        get() = 6
+        get() = 5
 
     /** 현재 페이지 (1부터 시작)
      * FirstScreen 은 카운트에 포함X

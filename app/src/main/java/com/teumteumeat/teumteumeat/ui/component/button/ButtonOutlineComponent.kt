@@ -1,6 +1,8 @@
 package com.teumteumeat.teumteumeat.ui.component.button
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -18,11 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 
@@ -35,7 +40,7 @@ fun BaseOutlineButton(
     color: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit,
     contentAligment: Alignment = Alignment.Center,
-    btnHeight: Int = 60,
+    btnHeight: Int = 50,
     maxLine: Int = 1,
     overFlowSetting: TextOverflow = TextOverflow.Clip,
 ) {
@@ -111,6 +116,10 @@ fun SelectableBaseOutlineButton(
                 .height(60.dp)
                 .fillMaxWidth(),
         ) {
+            // ✅ 아이콘 (없으면 아예 안 그림)
+            CategoryIcon(text)
+
+
             Text(
                 text = text,
                 style = textStyle.copy(
@@ -122,6 +131,32 @@ fun SelectableBaseOutlineButton(
         }
     }
 }
+
+@DrawableRes
+fun getCategoryIconRes(categoryName: String): Int? {
+    return when (categoryName) {
+        "PM" -> R.drawable.icon_note
+        "디자인" -> R.drawable.icon_design
+        "웹 개발자", "웹개발자" -> R.drawable.icon_web
+        "앱 개발자", "앱개발자" -> R.drawable.icon_app_dev
+        "서버개발자", "서버 개발자" -> R.drawable.icon_server_dev
+        else -> null
+    }
+}
+
+@Composable
+fun CategoryIcon(
+    categoryName: String
+) {
+    val iconRes = getCategoryIconRes(categoryName) ?: return
+
+    Image(
+        painter = painterResource(id = iconRes),
+        contentDescription = null
+    )
+    Spacer(modifier = Modifier.width(8.dp))
+}
+
 
 
 @Preview(showBackground = true)

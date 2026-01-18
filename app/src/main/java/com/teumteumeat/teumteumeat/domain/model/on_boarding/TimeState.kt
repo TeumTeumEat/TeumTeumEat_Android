@@ -6,17 +6,26 @@ import com.teumteumeat.teumteumeat.ui.component.AmPm
 data class TimeState(
     val hour: Int,      // 1 ~ 12
     val minute: Int,    // 0,10,20...
-    val amPm: AmPm
+    val amPm: AmPm,
+    val isSelected: Boolean = false // ⭐ 핵심
 ) {
     companion object {
+        fun initial(isSelected: Boolean) = TimeState(
+            amPm = AmPm.AM,
+            hour = 0,
+            minute = 0,
+            isSelected = false
+        )
+
         fun amTime() = TimeState(
             amPm = AmPm.AM,
-            hour = 8,
+            hour = 0,
             minute = 0,
         )
+
         fun pmTime() = TimeState(
             amPm = AmPm.PM,
-            hour = 7,
+            hour = 0,
             minute = 0,
         )
     }

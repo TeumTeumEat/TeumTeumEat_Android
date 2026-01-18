@@ -23,6 +23,7 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.BoxButtonRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -53,16 +54,12 @@ fun SelectInputMethodScreen(
                         .padding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
-                    Text(
-                        "학습할 방법을 선택 하세요!",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                        )
-                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    SpeechBubble(text = "제가 준비한 주제로 공부하시겠어요,\n" +
+                            "원하는 자료를 공부하실래요?")
                     Spacer(modifier = Modifier.height(20.dp))
                     Image(
-                        painter = painterResource(R.drawable.character_front),
+                        painter = painterResource(R.drawable.char_onboarding_four),
                         contentDescription = "앞을 보는 케릭터",
                         modifier = Modifier.size(width = 200.dp, height = 162.dp),
                         contentScale = ContentScale.Fit,

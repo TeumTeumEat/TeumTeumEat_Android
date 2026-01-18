@@ -35,6 +35,7 @@ fun MinuteRadioGroup(
             val isSelected = minute == selectedMinute
 
             BaseOutlineButton(
+                btnHeight = 50,
                 text = if (minute == options.last()) "${minute}분+" else "${minute}분",
                 textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                     color = if (isSelected) MaterialTheme.colorScheme.primary
@@ -148,8 +149,8 @@ fun BoxButtonRadioGroup(
                     .padding(vertical = 27.dp, horizontal = 14.dp),
                 isSelected = selectedType == GoalTypeUiState.DOCUMENT,
                 titleText = "파일 업로드",
-                labelText = "공부하고 싶은\n내용이 있어요.",
-                iconRes = R.drawable.icon_files,
+                labelText = "공부하고 싶은\n내용이 있어요",
+                iconRes = R.drawable.icon_files_big,
                 onClick = {
                     onSelected(GoalTypeUiState.DOCUMENT)
                 }
@@ -164,8 +165,8 @@ fun BoxButtonRadioGroup(
                     .padding(vertical = 27.dp, horizontal = 14.dp),
                 isSelected = selectedType == GoalTypeUiState.CATEGORY,
                 titleText = "카테고리 선택",
-                labelText = "공부하고 싶은 걸\n골라볼게요.",
-                iconRes = R.drawable.icon_category,
+                labelText = "공부하고 싶은 걸\n골라볼게요",
+                iconRes = R.drawable.icon_category_big,
                 onClick = {
                     onSelected(GoalTypeUiState.CATEGORY)
                 }

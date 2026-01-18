@@ -42,9 +42,9 @@ fun TimeSliderWithPickTime(
             .fillMaxWidth(),
         initialState = pickerState,
         onTimeChanged = { newPickerState ->
-
             // 🔄 Picker 상태 갱신
             pickerState = newPickerState
+
 
             // 🔄 외부에서 쓰는 TimeState로 다시 변환
             onChange(newPickerState.toTimeState())
