@@ -1242,16 +1242,38 @@ class OnBoardingViewModel @Inject constructor(
 
     fun openTimeSheet(type: TimeType) {
         _uiState.update { state ->
-            val currentTime = when (type) {
-                TimeType.IN -> state.workInTime
-                TimeType.OUT -> state.workOutTime
+            // ✅ 1. 어떤 시간을 보여줄지 결정
+            val initialTime = when (type) {
+                TimeType.IN -> {
+                    if (state.isSetWorkInTime) {
+                        state.workInTime       // 🔵 이미 선택한 값
+                    } else {
+                        TimeState.amTime()     // 🟡 초기 기본값
+                    }
+                }
+
+                TimeType.OUT -> {
+                    if (state.isSetWorkOutTime) {
+                        state.workOutTime
+                    } else {
+                        TimeState.pmTime()
+                    }
+                }
+
                 TimeType.NOTTING -> state.tempTime
             }
+
+            println("🟣 [openTimeSheet]")
+            println("🟣 initialTime(before normalize) = $initialTime")
+
+            val normalized = initialTime
+            println("🟣 initialTime(after normalize) = $normalized")
+
 
             state.copy(
                 showBottomSheet = true,
                 currentTimeType = type,
-                tempTime = currentTime.normalizeTo12Hour()
+                tempTime = initialTime
             )
         }
     }
@@ -1327,6 +1349,8 @@ class OnBoardingViewModel @Inject constructor(
      * ----------------------------- */
 
     fun onTimeChanged(newTime: TimeState) {
+        println("🔵 [onTimeChanged] newTime = $newTime")
+
         _uiState.update {
             it.copy(tempTime = newTime)
         }
@@ -1366,8 +1390,8 @@ class OnBoardingViewModel @Inject constructor(
 
     fun getSheetTitle(): String {
         return when (uiState.value.currentTimeType) {
-            TimeType.OUT -> "집을 들어가는 시간"
-            TimeType.IN -> "집을 나오는 시간"
+            TimeType.OUT -> "집에서 나오는 시간"
+            TimeType.IN -> "집에 돌아가는 시간"
             TimeType.NOTTING -> "시간"
         }
     }

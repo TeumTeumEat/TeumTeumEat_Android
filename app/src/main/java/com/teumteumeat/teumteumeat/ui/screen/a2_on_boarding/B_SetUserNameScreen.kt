@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +33,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -72,21 +72,18 @@ fun OnBoardingSetCharNameScreen(
                         .padding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
-                    Text(
-                        "널 뭐라고 불러줄까?",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                        )
+                    Spacer(modifier = Modifier.height(23.dp))
+
+                    SpeechBubble(
+                        text = "뭐라고 불러 드릴까요?"
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     Image(
-                        painter = painterResource(R.drawable.character_front),
+                        painter = painterResource(R.drawable.char_onboarding_one),
                         contentDescription = "앞을 보는 케릭터",
-                        modifier = Modifier.size(width = 200.dp, height = 162.dp),
                         contentScale = ContentScale.Fit,
                     )
-                    Spacer(modifier = Modifier.height(56.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     NoLableTextField(
                         value = uiState.charName,
                         labelText = "",

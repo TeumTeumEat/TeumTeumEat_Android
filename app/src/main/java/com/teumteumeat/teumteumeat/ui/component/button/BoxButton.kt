@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.Dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Composable
 fun BoxOutlineButton(
@@ -102,11 +104,12 @@ fun SelectableBoxButton(
 ) {
 
     val materialTheme = MaterialTheme.colorScheme
+    val theme = MaterialTheme.extendedColors
 
     val selectedColor = if (isSelected) {
         MaterialTheme.colorScheme.primary
     } else {
-        materialTheme.surfaceVariant
+        theme.btnLineDisable
     }
 
     TeumTeumEatTheme {
@@ -129,7 +132,7 @@ fun SelectableBoxButton(
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = selectedColor,
+                    tint = if(isSelected) MaterialTheme.extendedColors.primary else MaterialTheme.extendedColors.btnLineDisable,
                     modifier = Modifier.size(iconSize)
                 )
 
@@ -137,15 +140,17 @@ fun SelectableBoxButton(
 
                 Text(
                     text = titleText,
-                    style = Typography.titleLarge,
-                    color = materialTheme.surfaceVariant,
+                    style = MaterialTheme.appTypography.subtitleSemiBold20.copy(
+                        color = selectedColor
+                    ),
                 )
-
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = labelText,
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
-                    style = Typography.displayMedium.copy(
+                    style = MaterialTheme.appTypography.bodyMedium14.copy(
+                        color = selectedColor
                     )
                 )
             }
@@ -188,25 +193,28 @@ fun ContentSelectableBoxButton(
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = materialTheme.surfaceVariant,
+                    tint = MaterialTheme.extendedColors.btnLineDisable,
                     modifier = Modifier.size(iconSize)
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Text(
                     text = titleText,
-                    style = Typography.titleLarge,
-                    color = materialTheme.surfaceVariant,
+                    style = MaterialTheme.appTypography.subtitleSemiBold20.copy(
+                        color = if(isSelectableContent) MaterialTheme.extendedColors.unableContent
+                            else MaterialTheme.extendedColors.textGhost
+                    ),
                 )
-
-                Text(
-                    text = lableText,
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
-                    style = Typography.displayMedium.copy(
+                Spacer(modifier = Modifier.height(4.dp))
+                if(!isSelectableContent){
+                    Text(
+                        text = lableText,
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        style = MaterialTheme.appTypography.bodyMedium14.copy(
+                            color = MaterialTheme.extendedColors.textGhost
+                        )
                     )
-                )
+                }
 
             }
         } else {

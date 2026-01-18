@@ -11,18 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -53,16 +52,20 @@ fun OnBoardingFirstScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
+                    /*Text(
                         "매일 소모되는 이동 시간,\n" +
                                 "틈틈잇과 성장하는 시간으로 바꿔봐요!",
                         style = Typography.headlineMedium.copy(
                             fontSize = 18.sp,
                             textAlign = TextAlign.Center
                         )
+                    )*/
+                    SpeechBubble(
+                        text = "틈틈잇에 오신 걸 환영해요!\n" +
+                                "저는 틈틈이예요",
                     )
 
-                    Spacer(modifier = Modifier.height(100.dp))
+                    Spacer(modifier = Modifier.height(11.dp))
 
                     Row(
                         modifier = Modifier
@@ -71,7 +74,7 @@ fun OnBoardingFirstScreen(
 
                     ) {
                         Image(
-                            painter = painterResource(R.drawable.character_front),
+                            painter = painterResource(R.drawable.char_onboarding_zero),
                             contentDescription = "앞을 보는 케릭터",
                             contentScale = ContentScale.Fit,
                         )

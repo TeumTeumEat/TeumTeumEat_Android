@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -25,13 +24,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavBackStackEntry
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
-import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -278,26 +276,22 @@ fun CategorySelectScreen(
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
 
                     Column(
-                        modifier = Modifier.padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = if (isSelectedDepth2Category) "어떤 분야에 관심이 있나요?" else "공부하고자 하는 분야를 선택하세요!",
-                            style = Typography.headlineMedium.copy(
-                                fontSize = 18.sp,
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        SpeechBubble(text = "관심 있는 분야를\n" +
+                                "알려주세요")
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         Image(
-                            painter = painterResource(R.drawable.character_front),
+                            painter = painterResource(R.drawable.char_onboarding_five_one),
                             contentDescription = "앞을 보는 케릭터",
-                            modifier = Modifier.size(width = 200.dp, height = 162.dp),
                             contentScale = ContentScale.Fit,
                         )
-                        Spacer(modifier = Modifier.height(25.dp))
+
                     }
 
                     // 3뎁스 카테고리 컴포넌트 구현
@@ -313,7 +307,7 @@ fun CategorySelectScreen(
                             .fillMaxWidth() // ✅ 전체 너비 사용
                     )*/
 
-                    Spacer(modifier = Modifier.height(15.dp))
+                    Spacer(modifier = Modifier.height(25.dp))
 
                     // ✅ Pager + Grid
                     HorizontalPager(
@@ -337,6 +331,7 @@ fun CategorySelectScreen(
                                     selectedId = selection.depth2?.id,
                                     onItemClick = viewModel::toggleDepth2,
                                     currentPage = page,
+                                    verticalColumns = 2,
                                 )
 
                                 // ⭐ 3뎁스

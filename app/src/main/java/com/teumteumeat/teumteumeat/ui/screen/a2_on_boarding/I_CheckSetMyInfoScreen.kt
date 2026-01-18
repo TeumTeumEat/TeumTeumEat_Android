@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +31,8 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -64,21 +65,16 @@ fun CheckSetMyInfoScreen(
                         .padding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
-                    Text(
-                        "널 뭐라고 불러줄까?",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    SpeechBubble(text = "‘다음으로' 버튼을 눌러\n" +
+                            "틈틈잇을 시작해보세요!")
+                    Spacer(modifier = Modifier.height(12.dp))
                     Image(
-                        painter = painterResource(R.drawable.character_front),
+                        painter = painterResource(R.drawable.char_onboarding_five_five),
                         contentDescription = "앞을 보는 케릭터",
-                        modifier = Modifier.size(width = 200.dp, height = 162.dp),
                         contentScale = ContentScale.Fit,
                     )
-                    Spacer(modifier = Modifier.height(25.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Column(
                         modifier = Modifier
@@ -86,13 +82,12 @@ fun CheckSetMyInfoScreen(
                             .verticalScroll(rememberScrollState())
                             .padding(bottom = bottomFixedHeight), // ✅ 핵심,
                     ) {
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
-                                "집을 나오는 시간",
+                                "이름",
                                 style = Typography.bodyLarge.copy(
                                     fontSize = 18.sp,
                                 )
@@ -101,7 +96,35 @@ fun CheckSetMyInfoScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         BaseOutlineButton(
-                            text = uiState.workInTime.toDisplayText(),
+                            text = uiState.charName,
+                            isEnabled = false,
+                            contentAligment = Alignment.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
+                                fontSize = 18.sp,
+                                lineHeight = 24.sp,
+                                color = MaterialTheme.extendedColors.unableContent,
+                            ),
+                            btnHeight = 50,
+                            onClick = { }
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                        ) {
+                            Text(
+                                "집에서 나오는 시간",
+                                style = Typography.bodyLarge.copy(
+                                    fontSize = 18.sp,
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        BaseOutlineButton(
+                            text = uiState.workInTime.toDisplayText(isSelected = true),
                             isEnabled = false,
                             contentAligment = Alignment.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -122,7 +145,7 @@ fun CheckSetMyInfoScreen(
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
-                                "집을 들어가는 시간",
+                                "집에 돌아가는 시간",
                                 style = Typography.bodyLarge.copy(
                                     fontSize = 18.sp,
                                 )
@@ -130,7 +153,7 @@ fun CheckSetMyInfoScreen(
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         BaseOutlineButton(
-                            text = uiState.workOutTime.toDisplayText(),
+                            text = uiState.workOutTime.toDisplayText(isSelected = true),
                             contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
@@ -192,7 +215,8 @@ fun CheckSetMyInfoScreen(
                                 listOfNotNull(
                                     uiState.categorySelection.depth1?.name,
                                     uiState.categorySelection.depth2?.name,
-                                    uiState.categorySelection.depth3?.name
+                                    uiState.categorySelection.depth3?.name,
+                                    uiState.categorySelection.depth4?.name,
                                 ).joinToString(" > ").ifEmpty { "선택된 카테고리 없음" }
                             }
 
@@ -210,8 +234,9 @@ fun CheckSetMyInfoScreen(
                             btnHeight = 50,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             onClick = { /* 클릭 시직 정의 필요 시 추가 */ },
-                            maxLine = 1,
+                            maxLine = 2,
                             overFlowSetting = TextOverflow.Ellipsis
+                            // todo. 라인이 넘치면 > 기준으로 줄바꿈
                         )
 
 // ===== 6. 난이도 =====
@@ -229,7 +254,7 @@ fun CheckSetMyInfoScreen(
 
 // Difficulty Enum 값을 한글 표기 등으로 변환 필요 (여기서는 name 사용하거나 별도 매핑)
                         BaseOutlineButton(
-                            text = uiState.difficulty.name, // 필요하다면 별도 mapper 함수 사용 (ex: Difficulty.MIDDLE -> "중")
+                            text = mapDifficultyToKorean(uiState.difficulty), // 필요하다면 별도 mapper 함수 사용 (ex: Difficulty.MIDDLE -> "중")
                             contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(

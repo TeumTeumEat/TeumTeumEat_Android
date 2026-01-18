@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.component.timepicker_v2
 
 // Compose 기본
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,7 +35,9 @@ import androidx.compose.foundation.gestures.detectTapGestures
 
 // Animation / Fling
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
 
 // Draw / Graphics
 import androidx.compose.ui.draw.drawWithContent
@@ -44,6 +47,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color.Companion.White
+import androidx.compose.ui.graphics.Shape
 
 // Density / Unit
 import androidx.compose.ui.platform.LocalDensity
@@ -53,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import com.teumteumeat.teumteumeat.ui.theme.Blue10
 
 // Coroutine
@@ -72,22 +77,26 @@ fun WheelPicker(
     modifier: Modifier = Modifier,
     items: List<String>,
     initialItem: String,
+    pickerHeight: Dp = 150.dp,
+    selectedRowShape: Shape = RoundedCornerShape(0.dp),
     onItemSelected: (Int, String) -> Unit = { _, _ -> },
-    content: @Composable ((String, Boolean) -> Unit)
+    content: @Composable ((String, Boolean) -> Unit),
 ) {
     val density = LocalDensity.current
     val scrollState = rememberLazyListState(0)
     var lastSelectedIndex by remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
-    val itemHeight = 36.dp
+    val itemHeight = 50.dp
     val itemHeightPx = with(density) { itemHeight.toPx() }
 
     Column(modifier) {
+
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .drawWithContent {
+                .height(pickerHeight),
+                /*.drawWithContent {
                     drawContent()
                     val centerY = size.height / 2f
                     val rectTop = centerY - (itemHeightPx / 2f)
@@ -99,12 +108,12 @@ fun WheelPicker(
                         topLeft = Offset(0f, rectTop),
                         size = Size(size.width, rectHeight)
                     )
-                },
+                },*/
             contentAlignment = Alignment.Center
         ) {
             val availableHeight = this.constraints.maxHeight.toFloat()
             val currentPickerHeightPx = if (availableHeight == Constraints.Infinity.toFloat()) {
-                with(density) { 220.dp.toPx() }
+                with(density) { pickerHeight.toPx() }
             } else {
                 availableHeight
             }
@@ -120,6 +129,15 @@ fun WheelPicker(
             val pickerHeightDp = with(density) { currentPickerHeightPx.toDp() }
             val fadeHeightDp =
                 with(density) { ((currentPickerHeightPx - itemHeightPx) / 2f).toDp() }
+
+            // 🟦 2. 선택 영역 (Shape 적용!)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(itemHeight)
+                    .clip(selectedRowShape) // ✅ 외부에서 주입한 Shape
+                    .background(Blue10)
+            )
 
             LazyColumn(
                 modifier = Modifier
@@ -166,6 +184,9 @@ fun WheelPicker(
                 )
             }
 
+
+
+            // 🟦 3. Fade Top
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -180,6 +201,7 @@ fun WheelPicker(
                     }
             )
 
+            // 🟦 4. Fade Bottom
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

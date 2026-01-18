@@ -247,13 +247,11 @@ class Utils {
 
 
         fun TimeState.normalizeTo12Hour(): TimeState {
-            // 이미 정상 범위면 그대로
-            if (hour in 1..12) return this
 
-            val hour12 = when {
-                hour == 0 -> 12
-                hour in 1..12 -> hour
-                hour in 13..23 -> hour - 12
+            val hour12 = when (hour) {
+                0 -> 12
+                in 1..12 -> hour
+                in 13..23 -> hour - 12
                 else -> 12
             }
 

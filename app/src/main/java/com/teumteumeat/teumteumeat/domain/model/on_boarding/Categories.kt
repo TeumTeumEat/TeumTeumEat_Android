@@ -31,6 +31,7 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
 
         // 1️⃣ path 기반 depth 생성 (최대 3뎁스)
         segments.forEach { segment ->
+
             currentLevel = currentLevel
                 .getOrPut(segment) {
                     MutableCategory(

@@ -44,8 +44,12 @@ data class UiStateOnboardingState(
     val isSetWorkOutTime: Boolean = false,
 
     // 🔹 출/퇴근 시간 설정
-    val workInTime: TimeState = TimeState.amTime(),  // 집에서 나오는 시간
-    val workOutTime: TimeState = TimeState.pmTime(), // 집으로 가는 시간
+    val workInTime: TimeState = TimeState.initial(
+        isSelected = isSetWorkInTime
+    ),  // 집에서 나오는 시간
+    val workOutTime: TimeState = TimeState.initial(
+        isSelected = isSetWorkOutTime
+    ), // 집으로 가는 시간
 
     // ✅ 바텀시트에서 조작 중인 임시 시간
     val tempTime: TimeState = TimeState.amTime(),
@@ -213,7 +217,11 @@ enum class TimeType {
 }
 
 
-fun TimeState.toDisplayText(): String {
+fun TimeState.toDisplayText(isSelected: Boolean): String {
+    if (!isSelected) {
+        return "오전 00시 00분"
+    }
+
     val isAm = amPm == AmPm.AM
 
     val amPmText = if (isAm) "오전" else "오후"

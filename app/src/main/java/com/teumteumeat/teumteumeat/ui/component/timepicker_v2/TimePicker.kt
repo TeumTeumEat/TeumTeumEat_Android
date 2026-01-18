@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.height
 
 // Arrangement / Alignment
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 
 // Modifier
@@ -40,6 +42,8 @@ import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.minuteItems
 import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.TimePickerText
 import com.teumteumeat.teumteumeat.ui.theme.Blue500
 import com.teumteumeat.teumteumeat.ui.theme.Gray40
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 // 오전 / 오후
 private val meridiemItems = listOf("오전", "오후")
@@ -72,10 +76,11 @@ private fun TimePickerText(
     Text(
         text = text,
         style = if (isSelected)
-            MaterialTheme.typography.titleMedium
+            MaterialTheme.appTypography.subtitleSemiBold16
         else
             MaterialTheme.typography.bodyMedium,
-        color = if (isSelected) Blue500 else Gray40
+        color = if (isSelected) MaterialTheme.extendedColors.primary
+            else MaterialTheme.extendedColors.textGhost
     )
 }
 
@@ -86,12 +91,19 @@ fun TimePicker(
     onTimeChanged: (TimePickerState) -> Unit
 ) {
     // 현재 선택된 상태를 remember로 관리
-    var timeState by remember { mutableStateOf(initialState) }
+    // ✅ initialState가 바뀌면 내부 상태도 갱신
+    var timeState by remember(initialState) {
+        mutableStateOf(initialState)
+    }
+
+    LaunchedEffect(timeState) {
+        println("🟣 [TimePicker render] timeState = $timeState")
+    }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp), // 사진과 유사한 높이
+            .height(150.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -110,7 +122,8 @@ fun TimePicker(
                 // 상태 갱신
                 timeState = timeState.copy(meridiem = newMeridiem)
                 onTimeChanged(timeState)
-            }
+            },
+            selectedRowShape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp)
         ) { text, isSelected ->
             TimePickerText(text, isSelected)
         }
@@ -121,7 +134,7 @@ fun TimePicker(
         WheelPicker(
             modifier = Modifier.weight(1f),
             items = infiniteHourItems,
-            initialItem = "${timeState.hour}시",
+            initialItem = "%02d시".format(timeState.hour),
             onItemSelected = { _, value ->
                 val hour = value.replace("시", "").toInt()
 
@@ -144,7 +157,8 @@ fun TimePicker(
 
                 timeState = timeState.copy(minute = minute)
                 onTimeChanged(timeState)
-            }
+            },
+            selectedRowShape = RoundedCornerShape(topEnd = 32.dp, bottomEnd = 32.dp)
         ) { text, isSelected ->
             TimePickerText(text, isSelected)
         }

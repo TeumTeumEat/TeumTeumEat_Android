@@ -48,8 +48,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.areAppNotificationsEnabled
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.isPostNotificationsGranted
+import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 @Composable
@@ -137,49 +140,43 @@ fun OnBoardingSetApptimeScreen(
                         .padding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
-                    Text(
-                        "널 뭐라고 불러줄까?",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                        )
+                    SpeechBubble(
+                        text = "대중교통을 이용하시는 시간에\n" +
+                                "알림을 보내드릴게요",
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
                     Image(
-                        painter = painterResource(R.drawable.character_front),
+                        painter = painterResource(R.drawable.char_onboarding_two),
                         contentDescription = "앞을 보는 케릭터",
                         modifier = Modifier.size(width = 200.dp, height = 162.dp),
                         contentScale = ContentScale.Fit,
                     )
-                    Spacer(modifier = Modifier.height(25.dp))
-                    // 출근시간 박스
+                    Spacer(modifier = Modifier.height(21.dp))
 
+                    // 출근시간 박스
                     Row (
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Start,
                     ){
                         Text(
-                            "집을 나오는 시간",
-                            style = Typography.bodyLarge.copy(
-                                fontSize = 18.sp,
-                            )
+                            "집에서 나오는 시간",
+                            style = MaterialTheme.appTypography.subtitleSemiBold16
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
 
                     BaseOutlineButton(
-                        text = uiState.workInTime.toDisplayText(),
+                        text = uiState.workInTime.toDisplayText(isSelected = uiState.isSetWorkInTime),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textStyle = Typography.titleSmall.copy(
-                            fontSize = 18.sp,
-                            lineHeight = 24.sp,
+                        textStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
+                            color = if(uiState.isSetWorkInTime) MaterialTheme.extendedColors.textSecondary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         onClick = {
                             viewModel.openTimeSheet(TimeType.IN)
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(50.dp))
+                    Spacer(modifier = Modifier.height(40.dp))
 
                     // 퇴근시간 박스
                     Row (
@@ -187,18 +184,16 @@ fun OnBoardingSetApptimeScreen(
                         horizontalArrangement = Arrangement.Start,
                     ){
                         Text(
-                            "집을 들어가는 시간",
-                            style = Typography.bodyLarge.copy(
-                                fontSize = 18.sp,
-                            )
+                            "집에 돌아가는 시간",
+                            style = MaterialTheme.appTypography.subtitleSemiBold16
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     BaseOutlineButton(
-                        text = uiState.workOutTime.toDisplayText(),
-                        textStyle = Typography.titleSmall.copy(
-                            fontSize = 18.sp,
-                            lineHeight = 24.sp,
+                        text = uiState.workOutTime.toDisplayText(isSelected = uiState.isSetWorkOutTime),
+                        textStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
+                            color = if(uiState.isSetWorkOutTime) MaterialTheme.extendedColors.textSecondary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         onClick = {
@@ -225,8 +220,8 @@ fun OnBoardingSetApptimeScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             "해당 시간에 알림을 받으실건가요? (필수)",
-                            style = Typography.displayMedium.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.appTypography.captionRegular14.copy(
+                                color = MaterialTheme.extendedColors.textGhost
                             )
                         )
                     }

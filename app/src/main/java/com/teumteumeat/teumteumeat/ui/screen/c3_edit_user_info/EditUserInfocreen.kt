@@ -228,7 +228,7 @@ fun EditUserInfoScreen(
 // 집에서 나오는 시간
             TimeSettingRow(
                 title = "집에서 나오는 시간",
-                timeText = uiState.workInTime.toDisplayText(),
+                timeText = uiState.workInTime.toDisplayText(isSelected = true),
                 onClick = {
                     viewModel.openBottomSheet(BottomSheetType.WorkInTime)
                 }
@@ -239,7 +239,7 @@ fun EditUserInfoScreen(
 // 집에 돌아가는 시간
             TimeSettingRow(
                 title = "집에 돌아가는 시간",
-                timeText = uiState.workOutTime.toDisplayText(),
+                timeText = uiState.workOutTime.toDisplayText(isSelected = true),
                 onClick = {
                     viewModel.openBottomSheet(BottomSheetType.WorkOutTime)
                 }

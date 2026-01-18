@@ -6,6 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
@@ -55,6 +58,14 @@ private fun openNotificationSetting(activity: Activity) {
     activity.startActivity(intent)
 }
 
+private val disablePrevPageRoutes = setOf(
+    OnBoardingScreens.SixthCategorySelectScreen.route,
+    OnBoardingScreens.SixthFileUploadScreen.route,
+    OnBoardingScreens.EighthSetStudyRangeScreen.route,
+    OnBoardingScreens.CheckSetMyInfoScreen.route,
+    // 필요하면 추가
+)
+
 @Composable
 fun OnBoardingCompositionProvider(
     viewModel: OnBoardingViewModel,
@@ -66,6 +77,9 @@ fun OnBoardingCompositionProvider(
     val mainState by viewModel.mainState.collectAsStateWithLifecycle()
     val navHostController = rememberNavController()
 
+    val backStackEntry by navHostController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
     val visibleStates = remember(mainState) {
         mutableStateListOf(false, false, false)
     }
@@ -76,6 +90,14 @@ fun OnBoardingCompositionProvider(
         LocalOnBoardingMainUiState provides uiState,
         LocalViewModelContext provides viewModel,
     ) {
+
+        // ✅ Loading 상태일 때 물리 뒤로가기 차단
+        BackHandler(
+            enabled = mainState is UiStateOnboardingScreenState.Loading
+        ) {
+            // 아무것도 하지 않음 = 뒤로가기 무시
+        }
+
 
         when (mainState) {
 
@@ -177,7 +199,11 @@ fun OnBoardingCompositionProvider(
                                 ) {
                                     IconButton(
                                         onClick = {
-                                            viewModel.prevPage()
+                                            // ✅ 특정 화면에서는 prevPage 비활성화
+                                            if (currentRoute !in disablePrevPageRoutes) {
+                                                viewModel.prevPage()
+                                            }
+
                                             navHostController.popBackStack()
                                         },
 
