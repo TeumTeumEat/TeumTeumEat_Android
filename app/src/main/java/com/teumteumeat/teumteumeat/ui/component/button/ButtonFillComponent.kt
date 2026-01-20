@@ -31,7 +31,8 @@ fun BaseFillButton(
     onClick: () -> Unit,
     conerRadius: Dp = 16.dp,
     btnContainerColor: Color = MaterialTheme.colorScheme.primary,
-    btnContentColor: Color = MaterialTheme.colorScheme.onPrimary
+    btnContentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    btnHeight: Int = 60,
 ) {
     val primaryColor = btnContainerColor
     val onPrimaryColor = btnContentColor
@@ -50,7 +51,7 @@ fun BaseFillButton(
             ),
             shape = RoundedCornerShape(conerRadius), // border-radius: 8px
             modifier = Modifier
-                .height(60.dp)
+                .height(btnHeight.dp)
                 .fillMaxWidth()
         ) {
             Text(

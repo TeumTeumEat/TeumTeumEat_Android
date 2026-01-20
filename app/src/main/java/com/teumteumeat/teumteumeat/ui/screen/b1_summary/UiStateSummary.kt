@@ -15,14 +15,21 @@ data class UiStateSummary(
     val errorMessage: String? = null,
 
 
-    val title: String = "휴리스틱 평가",
-    val dateText: String = "1월 3일",
+    val title: String = "",
+    val dateText: String = "",
     val summary: String = "",
     val hasSolvedToday: Boolean = true,
-    val isFirstTime: Boolean = false,
+    val isFirstTime: Boolean = true,
 
     /* category 전용 */
     val categoryDocumentId: Int? = null,
+
+    /* 퀴즈 안내씬 서버에서 받은 분기 값 */
+    val isQuizGuideSeen: Boolean = false,
+
+    /* 퀴즈 안내씬 클라이언트에서 보낼 분기 값 */
+    val isSkipQuizGuideChecked: Boolean = false,
+
 )
 
 data class DocumentSummaryResponse(

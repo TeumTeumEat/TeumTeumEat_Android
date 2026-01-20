@@ -96,7 +96,7 @@ fun QuizEndingScreen(
                     .weight(1f),
                 onClick = goHistory,
                 text = "내 스탬프",
-                btnContainerColor = MaterialTheme.extendedColors.buttonFillSecondary,
+                btnContainerColor = MaterialTheme.extendedColors.btnFillSecondary,
                 btnContentColor = MaterialTheme.extendedColors.textPointBlue
             )
 

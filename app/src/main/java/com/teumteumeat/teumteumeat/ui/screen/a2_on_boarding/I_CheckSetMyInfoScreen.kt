@@ -374,9 +374,9 @@ fun CheckSetMyInfoScreen(
                         ),
                         isEnabled = true,
                         onClick = {
-                            // todo. 0.5±1(로딩시간 커스텀 가능하게)초 로딩페이지 표시 하는 뷰모델 함수 구현
+                            // 0.5±1(로딩시간 커스텀 가능하게)초 로딩페이지 표시 하는 뷰모델 함수 구현
 //                            viewModel.submitOnBoardingTestError()
-                            // todo. 각 usecase 진행하면서 에러가 발생하면 뷰에 에러화면 표시
+                            // 각 usecase 진행하면서 에러가 발생하면 뷰에 에러화면 표시
                             viewModel.submitOnBoarding()
 //                            viewModel.setUserName()
 //                            viewModel.saveCommuteInfo()

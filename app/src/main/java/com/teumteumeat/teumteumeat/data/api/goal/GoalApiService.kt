@@ -15,16 +15,15 @@ import retrofit2.http.Query
 interface GoalApiService {
 
     /**
-     * 목표 수정 API
+     * 현재 목표 수정 API
      *
      * @param goalId 수정할 목표의 고유 ID (Query Parameter)
      * @param request 목표 수정에 필요한 데이터 (생성과 동일한 Body)
      * @return 수정된 목표 정보
      */
-    @PATCH("/api/v1/goals")
+    @PATCH("/api/v1/users/goal")
     suspend fun updateGoal(
         @Query("goalId") goalId: Long,
-        @Body request: UpdateGoalRequest
     ): ApiResponse<Unit, Any?>
 
     /**

@@ -4,6 +4,7 @@ import android.app.Application
 import com.kakao.sdk.common.KakaoSdk
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
+import com.teumteumeat.teumteumeat.utils.firebase.FcmTokenInitializer
 import dagger.hilt.android.HiltAndroidApp
 
 
@@ -17,5 +18,6 @@ class MyApplication : Application(){
         OneSignal.initWithContext(this, BuildConfig.ONESIGNAL_APP_ID)
 
         KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
+        FcmTokenInitializer.init(this) // ✅ 앱 시작 시 FCM 토큰 미리 저장
     }
 }

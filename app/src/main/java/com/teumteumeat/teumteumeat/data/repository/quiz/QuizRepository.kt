@@ -8,6 +8,7 @@ import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizHistory
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.SubmitQuizResult
 
 interface QuizRepository {
+    suspend fun confirmQuizGuide(): ApiResultV2<Boolean>
 
     suspend fun getUserQuizStatus(): ApiResultV2<UserQuizStatus>
 

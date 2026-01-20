@@ -43,7 +43,7 @@ fun CalendarDailyLearningCard(
             modifier = Modifier
                 .fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.extendedColors.buttonFillSecondary,
+            color = MaterialTheme.extendedColors.btnFillSecondary,
             onClick = onClick          // ✅ 클릭 + 기본 리플
         ) {
             Column(

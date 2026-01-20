@@ -17,7 +17,7 @@ import com.teumteumeat.teumteumeat.utils.LocalExtendedColors
 data class ExtendedColors(
     val primary: Color,
     val error: Color,
-    val buttonFillSecondary: Color,
+    val btnFillSecondary: Color,
     val modalShadow: Color,
     val errorContainer: Color,
     val primaryContainer: Color,
@@ -40,6 +40,8 @@ data class ExtendedColors(
     val errorSecondary: Color,
     val btnGray800: Color,
     val btnLineDisable: Color,
+
+    val iconBlack: Color,
 )
 
 val LightExtendedColors = ExtendedColors(
@@ -63,10 +65,13 @@ val LightExtendedColors = ExtendedColors(
     errorContainer = Red10,
     textOnError = White100,
 
-    buttonFillSecondary = Blue10,
+    btnFillSecondary = Blue10,
     btnGray100 = BtnGray10,
     btnLineDisable = BorderGray300,
     modalShadow = BlackTrp15,
+
+    // icon 관련 색상
+    iconBlack = Black100,
 
     // text 관련 색상
     textTeritory=GrayBlue30,

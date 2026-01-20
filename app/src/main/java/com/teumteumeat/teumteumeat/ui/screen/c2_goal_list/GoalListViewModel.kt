@@ -145,16 +145,15 @@ class GoalListViewModel @Inject constructor(
             ?: return
 
         viewModelScope.launch {
+            // ✅ 로딩 시작
+            _uiState.update { it.copy(isLoading = true) }
 
             when(val result = goalRepository.updateGoal(
                 pendingGoalId.toLong(),
-                UpdateGoalRequest(
-                    studyPeriod = targetGoal.weekText,
-                    difficulty = targetGoal.difficulty,
-                    prompt = targetGoal.description.ifBlank { null }
-                ))
-            ){
+            )){
+
                 is ApiResultV2.Success -> {
+
                     // ✅ 1️⃣ 오버레이 즉시 닫기
                     _uiState.update {
                         it.copy(
@@ -162,6 +161,7 @@ class GoalListViewModel @Inject constructor(
                             pendingGoalId = null
                         )
                     }
+
 
                     // ✅ 2️⃣ 서버 기준 최신 상태 재조회 (순서 중요)
                     loadUserGoal()

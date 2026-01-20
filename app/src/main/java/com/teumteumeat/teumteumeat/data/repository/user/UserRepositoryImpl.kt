@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.data.repository.user
 
-import android.util.Log
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.category.CategoryApiService
 import com.teumteumeat.teumteumeat.data.api.user.CommuteTimeRequest
@@ -12,11 +11,8 @@ import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import com.teumteumeat.teumteumeat.data.api.user.UpdateNameRequest
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
-import com.teumteumeat.teumteumeat.data.network.model.DomainError
-import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfo
+import com.teumteumeat.teumteumeat.data.network.model_request.UpdateUserSettingRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfoResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.toDomain
 import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.CategoriesResponseDto
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.UserName
@@ -28,16 +24,35 @@ import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
     private val categoryApiService: CategoryApiService,
-    private val userApi: UserApiService,
+    private val userApiService: UserApiService,
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource
 ) : BaseRepository(authApiService, tokenLocalDataSource),
     UserRepository {
 
+    override suspend fun updateUserPushEnableSettings(
+        pushEnabled: Boolean
+    ): ApiResultV2<Unit> {
+
+        return safeApiVer2(
+            apiCall = {
+                userApiService.updateUserSettings(
+                    UpdateUserSettingRequest(
+                        pushEnabled = pushEnabled
+                    )
+                )
+            },
+            mapper = {
+                // ✅ data 의미 없음 → 그대로 Unit 반환
+                Unit
+            }
+        )
+    }
+
     override suspend fun getCommuteInfo(): ApiResultV2<CommuteInfoResponse> {
         return safeApiVer2(
             apiCall = {
-                userApi.getCommuteInfo()
+                userApiService.getCommuteInfo()
             },
             mapper = { data ->
                 CommuteInfoResponse(
@@ -51,7 +66,7 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getUserName(): ApiResultV2<UserName> {
         return safeApiVer2(
-            apiCall = { userApi.getUserName() },
+            apiCall = { userApiService.getUserName() },
             mapper = { dto ->
                 // dto는 nullable로 들어오니까 NPE 방지
                 UserName(name = dto?.name.orEmpty())
@@ -62,7 +77,7 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun getAccountInfo(): ApiResultV2<AccountInfoResponse> {
         return safeApiVer2(
             apiCall = {
-                userApi.getAccountInfo()
+                userApiService.getAccountInfo()
             },
             mapper = { response ->
                 response ?: AccountInfoResponse(
@@ -75,7 +90,7 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getOnboardingStatus(): ApiResult<OnboardingStatus, Unit> {
         return safeApiCall(
-            apiCall = { userApi.getOnboardingCompleted() },
+            apiCall = { userApiService.getOnboardingCompleted() },
             mapper = { it.toDomain() }
         )
     }
@@ -83,7 +98,7 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun getOnboardingCompletedV2(): ApiResultV2<OnboardingStatus> {
         return safeApiVer2(
             apiCall = {
-                userApi.getOnboardingCompletedV2()
+                userApiService.getOnboardingCompletedV2()
             },
             mapper = { it?.toDomain() ?: OnboardingStatus(false) }
         )
@@ -96,7 +111,7 @@ class UserRepositoryImpl @Inject constructor(
 
         return safeApiVer2<Any, String>(
             apiCall = {
-                userApi.updateUserNameV2(UpdateNameRequest(name))
+                userApiService.updateUserNameV2(UpdateNameRequest(name))
             },
             mapper = { _ -> "" }
         )
@@ -109,7 +124,7 @@ class UserRepositoryImpl @Inject constructor(
         return when (
             val result = safeApiCall(
                 apiCall = {
-                    userApi.updateUserName(UpdateNameRequest(name))
+                    userApiService.updateUserName(UpdateNameRequest(name))
                 },
                 mapper = { name }
             )
@@ -138,7 +153,7 @@ class UserRepositoryImpl @Inject constructor(
 
         return safeApiVer2(
             apiCall = {
-                userApi.updateCommuteInfo(request)
+                userApiService.updateCommuteInfo(request)
             },
             mapper = {
                 // Unit 응답이므로 그대로 반환
@@ -154,7 +169,7 @@ class UserRepositoryImpl @Inject constructor(
 
         return safeApiCall(
             apiCall = {
-                userApi.updateCommuteTime(request)
+                userApiService.updateCommuteTime(request)
             },
             mapper = {
                 // data는 {} 이므로 의미 없음

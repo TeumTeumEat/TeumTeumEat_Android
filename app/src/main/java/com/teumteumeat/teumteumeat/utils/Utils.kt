@@ -24,10 +24,14 @@ import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.Properties
 import androidx.core.net.toUri
+import com.google.firebase.messaging.FirebaseMessaging
 import com.teumteumeat.teumteumeat.domain.model.common.GoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import kotlinx.coroutines.tasks.await
 import java.time.LocalDateTime
 import java.time.YearMonth
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 
 sealed interface NotificationPermissionEvent {
     data object RequestPermission : NotificationPermissionEvent
@@ -479,8 +483,17 @@ class Utils {
             )
         }
 
-        private val serverFormatter =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
+        private val serverFormatter: DateTimeFormatter =
+            DateTimeFormatterBuilder()
+                .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+                // 🔑 소수점 이하를 1~9자리까지 허용
+                .appendFraction(
+                    ChronoField.NANO_OF_SECOND,
+                    1,   // 최소 1자리
+                    9,   // 최대 9자리 (나노초)
+                    true // 소수점(.) 포함
+                )
+                .toFormatter()
 
         fun toMonthDay(createdAt: String): String {
             return try {
@@ -496,6 +509,32 @@ class Utils {
 
 
     }
+
+    object FcmTokenStore {
+
+        private const val PREF_NAME = "fcm_token_pref"
+        private const val KEY_FCM_TOKEN = "key_fcm_token"
+
+        fun save(context: Context, token: String) {
+            context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_FCM_TOKEN, token)
+                .apply()
+        }
+
+        fun get(context: Context): String? {
+            return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .getString(KEY_FCM_TOKEN, null)
+        }
+
+        fun clear(context: Context) {
+            context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .remove(KEY_FCM_TOKEN)
+                .apply()
+        }
+    }
+
 
     object InfoUtil{
         fun getAppVersion(context: Context): String {

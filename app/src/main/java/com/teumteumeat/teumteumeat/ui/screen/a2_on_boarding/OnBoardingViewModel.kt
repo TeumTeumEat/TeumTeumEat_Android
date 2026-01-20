@@ -14,6 +14,8 @@ import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
+import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
+import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
@@ -28,8 +30,8 @@ import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
-import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.normalizeTo12Hour
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -58,6 +60,8 @@ class OnBoardingViewModel @Inject constructor(
     private val getGoalListUseCase: GetGoalListUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val notificationRepository: NotificationRepository,
+    private val userRepository: UserRepository,
     application: Application,
 ) : ViewModel() {
     private val appContext = application.applicationContext
@@ -85,7 +89,6 @@ class OnBoardingViewModel @Inject constructor(
 
     private val _effect = MutableSharedFlow<UiEffect>(extraBufferCapacity = 1)
     val effect: SharedFlow<UiEffect> = _effect
-
 
     init {
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
@@ -116,27 +119,40 @@ class OnBoardingViewModel @Inject constructor(
                 return@launch
             }
 
+            // 3️⃣ 디바이스 토큰 등록
+            val deviceTokenResult = registerDeviceTokenInternal()
+            if (deviceTokenResult !is ApiResultV2.Success) {
+                moveToError(deviceTokenResult)
+                return@launch
+            }
+
+            // 4️⃣ 유저 푸시 설정 업데이트 ✅
+            val pushSettingResult = updateUserPushSettingInternal()
+            if (pushSettingResult !is ApiResultV2.Success) {
+                moveToError(pushSettingResult)
+                return@launch
+            }
 
             // 5. 문서 업로드 documentID 생성
             Log.d("OnBoardingVM", "타입: ${state.goalTypeUiState}의 퀴즈 생성")
             PrefsUtil.saveGoalType(appContext, state.goalTypeUiState)
             when(state.goalTypeUiState){
                 GoalTypeUiState.DOCUMENT -> {
-                    // 3️⃣ 목표 생성
+                    // 5-1. 목표 생성
                     val goalResult = createGoalRequest()
                     if (goalResult !is ApiResultV2.Success) {
                         moveToError(goalResult)
                         return@launch
                     }
 
-                    // 3-1. 목표 생성 ID 저장
+                    // 5-2. 목표 생성 ID 저장
                     val getGoalIdResult = fetchLatestGoalId()
                     if (getGoalIdResult !is ApiResultV2.Success) {
                         moveToError(getGoalIdResult)
                         return@launch
                     }
 
-                    // 4️⃣ 문서 확인
+                    // 5-3. 문서 확인
                     val uri = state.selectedFileUri
                     if (uri == null) {
                         moveToError(
@@ -149,6 +165,7 @@ class OnBoardingViewModel @Inject constructor(
                         return@launch
                     }
 
+                    // 5-4. 문서 업로드
                     val uploadDocumentResult = uploadDocumentInternal(
                         uri = state.selectedFileUri,
                         fileName = state.selectedFileName,
@@ -159,6 +176,7 @@ class OnBoardingViewModel @Inject constructor(
                         return@launch
                     }
 
+                    // 5-5. 문서 업로드 결과 패치
                     val fetchDocumentResult = fetchCompletedDocument()
                     if (fetchDocumentResult !is ApiResultV2.Success) {
                         moveToError(uploadDocumentResult)
@@ -168,14 +186,14 @@ class OnBoardingViewModel @Inject constructor(
                 GoalTypeUiState.CATEGORY -> {
                     PrefsUtil.saveCategoryId(context = appContext, state.selectedCategoryId?: -1)
                     Log.d("OnBoardingVM", "selectedCategoryID: ${state.selectedCategoryId}")
-                    // 3️⃣ 목표 생성
+                    // 5-1. 목표 생성
                     val goalResult = createGoalRequestForCategory(state.selectedCategoryId)
                     if (goalResult !is ApiResultV2.Success) {
                         moveToError(goalResult)
                         return@launch
                     }
 
-                    // 3-1. 목표 생성 ID 저장
+                    // 5-2. 목표 생성 ID 저장
                     val getGoalIdResult = fetchLatestGoalId()
                     if (getGoalIdResult !is ApiResultV2.Success) {
                         moveToError(getGoalIdResult)
@@ -203,6 +221,31 @@ class OnBoardingViewModel @Inject constructor(
     private fun moveToError(result: ApiResultV2<*>) {
         _mainState.value = UiStateOnboardingScreenState.Error(
             message = result.uiMessage
+        )
+    }
+
+    private suspend fun updateUserPushSettingInternal(): ApiResultV2<Unit> {
+        val state = _uiState.value
+
+        // 예시: 온보딩에서 사용자가 선택한 푸시 여부
+        val pushEnabled = state.isNotificationChecked
+
+        return userRepository.updateUserPushEnableSettings(
+            pushEnabled = pushEnabled
+        )
+    }
+
+    private suspend fun registerDeviceTokenInternal(): ApiResultV2<Unit> {
+        val current = _uiState.value
+
+        val fcmToken = FcmTokenStore.get(appContext)
+            ?: return ApiResultV2.UnknownError("디바이스 토큰이 없습니다.")
+
+        val deviceType = "ANDROID" // iOS면 "IOS"
+
+        return notificationRepository.registerDeviceToken(
+            token = fcmToken,
+            deviceType = deviceType
         )
     }
 
@@ -250,6 +293,8 @@ class OnBoardingViewModel @Inject constructor(
             else -> result
         }
     }
+
+
     private suspend fun saveCommuteInfoInternal(): ApiResultV2<Unit> {
         val current = _uiState.value
 
@@ -263,6 +308,8 @@ class OnBoardingViewModel @Inject constructor(
             usageTime = usageTime
         )
     }
+
+
     private suspend fun createGoalRequestForCategory(selectedCategoryId: Int?): ApiResultV2<Int> {
         val state = _uiState.value
 
@@ -279,6 +326,8 @@ class OnBoardingViewModel @Inject constructor(
 
         return createGoalUseCase(request)
     }
+
+
     private suspend fun createGoalRequest(): ApiResultV2<Int> {
         val state = _uiState.value
 

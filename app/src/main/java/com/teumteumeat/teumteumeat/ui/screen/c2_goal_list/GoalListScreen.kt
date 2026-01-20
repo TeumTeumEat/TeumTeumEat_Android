@@ -172,13 +172,13 @@ fun GoalCard(
             .fillMaxWidth()
             // ⭐ 만료되지 않은 경우만 클릭 가능
             .clip(shape)
-/*            .clickable(
+            .clickable(
                 enabled = !uiModel.isExpired && !uiModel.isSelected,
                 interactionSource = remember { MutableInteractionSource() },
                 onClick = {
                     onClick(uiModel.goalId)
                 }
-            )*/
+            )
             .border(
                 width = if (uiModel.isSelected) 2.dp else 1.dp,
                 color = if (uiModel.isSelected) theme.primary else Color.LightGray,

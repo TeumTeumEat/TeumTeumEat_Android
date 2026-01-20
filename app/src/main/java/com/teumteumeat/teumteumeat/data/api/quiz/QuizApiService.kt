@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.data.api.quiz
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model_request.SubmitUserQuizRequest
+import com.teumteumeat.teumteumeat.data.network.model_response.QuizGuideResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.QuizHistoryData
 import com.teumteumeat.teumteumeat.data.network.model_response.SubmitUserQuizResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.UserQuizResponse
@@ -13,6 +14,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface QuizApiService {
+
+    @POST("/api/v1/user-quizzes/guide")
+    suspend fun confirmQuizGuide(): ApiResponse<QuizGuideResponse, Any?>
 
     /**
      * 유저의 오늘 퀴즈 풀이 여부 및 최초 풀이 여부,

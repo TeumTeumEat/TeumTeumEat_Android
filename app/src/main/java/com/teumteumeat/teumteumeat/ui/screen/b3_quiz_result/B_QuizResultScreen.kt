@@ -88,7 +88,7 @@ fun QuizResultScreen(
                     .weight(1f),
                 onClick = onShowSummary,
                 text = "글보기",
-                btnContainerColor = MaterialTheme.extendedColors.buttonFillSecondary,
+                btnContainerColor = MaterialTheme.extendedColors.btnFillSecondary,
                 btnContentColor = MaterialTheme.extendedColors.textPointBlue
             )
 
