@@ -6,30 +6,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.MarkdownText
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -48,7 +43,7 @@ fun SummaryScreen(
     val theme = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
     val viewModel = LocalViewModelContext.current as SummaryViewModel
-    val context = LocalContext.current
+    val context = LocalActivityContext.current as SummaryActivity
 
     BackHandler {
         onBackClick()
@@ -91,54 +86,14 @@ fun SummaryScreen(
                                 .fillMaxSize()
                         ) {
                             /**
-                             * 홈화면 타이틀 바
+                             * 타이틀 바
                              */
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 19.dp)
-                                    .drawBehind {
-                                        val strokeWidth = 1.dp.toPx()
-                                        drawLine(
-                                            color = theme.unableContainer, // 연한 회색
-                                            start = Offset(0f, size.height - strokeWidth),
-                                            end = Offset(size.width, size.height - strokeWidth),
-                                            strokeWidth = strokeWidth
-                                        )
-                                    },
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Start,
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(vertical = 16.dp, horizontal = 20.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    IconButton(
-                                        onClick = { onBackClick() },
-                                        modifier = Modifier.size(30.dp)
-                                    ) {
-                                        Icon(
-                                            modifier = Modifier.padding(0.dp),
-                                            imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                                            contentDescription = "previous page"
-                                        )
-                                    }
+                            TitleBar(
+                                title = "오늘의 냠냠지식",
+                                onBackClick = { onBackClick() }
+                            )
 
-                                    Row(
-                                        modifier = Modifier.weight(1f),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            "오늘의 냠냠지식",
-                                            style = MaterialTheme.appTypography.subtitleSemiBold20,
-                                        )
-                                    }
-                                }
-                            }
-
+                            // todo. navHost 만들기
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()

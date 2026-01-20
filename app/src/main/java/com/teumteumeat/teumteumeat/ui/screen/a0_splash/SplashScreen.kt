@@ -83,7 +83,6 @@ fun SplashScreen(
                     Utils.UxUtils.moveActivity(activity, OnBoardingActivity::class.java)
 
                 is SplashUiEvent.ShowErrorMessage -> {
-                    // todo. 바텀시트 보여주기
                 }
             }
         }

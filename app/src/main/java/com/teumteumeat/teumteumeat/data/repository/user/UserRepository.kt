@@ -11,6 +11,10 @@ import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoR
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.UserName
 
 interface UserRepository {
+    suspend fun updateUserPushEnableSettings(
+        pushEnabled: Boolean
+    ): ApiResultV2<Unit>
+
     suspend fun getCommuteInfo(): ApiResultV2<CommuteInfoResponse>
     suspend fun getUserName(): ApiResultV2<UserName>
     suspend fun getAccountInfo(): ApiResultV2<AccountInfoResponse>

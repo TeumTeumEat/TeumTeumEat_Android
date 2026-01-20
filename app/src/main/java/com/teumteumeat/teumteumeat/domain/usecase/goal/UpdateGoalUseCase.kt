@@ -24,11 +24,9 @@ class UpdateGoalUseCase @Inject constructor(
      */
     suspend operator fun invoke(
         goalId: Long,
-        request: UpdateGoalRequest
     ): ApiResultV2<Unit> {
         return goalRepository.updateGoal(
             goalId = goalId,
-            request = request
         )
     }
 }

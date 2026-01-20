@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -10,7 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -77,9 +78,10 @@ class SummaryActivity : ComponentActivity() {
         setContent {
             TeumTeumEatTheme {
 
-                val viewModel : SummaryViewModel = hiltViewModel()
+                val viewModel: SummaryViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+                val navController = rememberNavController()
 
                 CompositionLocalProvider(
                     LocalAppContext provides this.applicationContext,
@@ -100,24 +102,39 @@ class SummaryActivity : ComponentActivity() {
                                 categoryId = categoryId
                             )
 
-                            viewModel.loadSummaryByGoalType()
+                            viewModel.loadInitialData()
 
                         } else {
                             finish()
                         }
 
+                        viewModel.event.collect { event ->
+                            when (event) {
 
+                                is UiEvent.MoveToQuiz -> {
+                                    Utils.UxUtils.moveActivity(
+                                        this@SummaryActivity,
+                                        QuizActivity::class.java,
+                                        exitFlag = true
+                                    )
+                                }
+
+                                is UiEvent.ShowError -> {
+                                    // 토스트 / 스낵바 등
+                                    Toast
+                                        .makeText(
+                                            this@SummaryActivity,
+                                            event.message,
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
+                                }
+                            }
+                        }
                     }
 
-                    SummaryScreen(
-                        uiState = uiState,
-                        screenState = screenState,
-                        onBackClick = { finish() },
-                        onQuizClick = {
-                            Utils.UxUtils.moveActivity(context, QuizActivity::class.java, exitFlag = true)
-                        },
-                        onSetIdleScreen = viewModel::resetIdleState,
-                        onRetryApi = { viewModel.loadSummaryByGoalType() }
+                    SummaryNavHost(
+                        navController = navController
                     )
                 }
             }

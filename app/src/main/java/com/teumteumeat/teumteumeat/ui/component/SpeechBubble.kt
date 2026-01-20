@@ -29,7 +29,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 fun SpeechBubble(
     modifier: Modifier = Modifier,
     text: String,
-    backgroundColor: Color = MaterialTheme.extendedColors.buttonFillSecondary,
+    backgroundColor: Color = MaterialTheme.extendedColors.btnFillSecondary,
     cornerRadius: Dp = 16.dp,
     tailWidth: Dp = 19.dp,
     tailHeight: Dp = 14.dp,

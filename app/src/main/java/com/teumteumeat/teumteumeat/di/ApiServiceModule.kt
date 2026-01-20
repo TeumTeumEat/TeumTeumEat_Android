@@ -6,6 +6,7 @@ import com.teumteumeat.teumteumeat.data.api.document.DocumentApiService
 import com.teumteumeat.teumteumeat.data.api.goal.GoalApiService
 import com.teumteumeat.teumteumeat.data.api.quiz.QuizApiService
 import com.teumteumeat.teumteumeat.data.api.category.CategoryApiService
+import com.teumteumeat.teumteumeat.data.api.notification.NotificationApiService
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import com.teumteumeat.teumteumeat.di.NetworkModule.SlowClient
 import dagger.Module
@@ -52,6 +53,12 @@ object ApiServiceModule {
     @Provides @Singleton
     fun provideHistoryApiService(retrofit: Retrofit): HistoryApiService =
         retrofit.create(HistoryApiService::class.java)
+
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService =
+        retrofit.create(NotificationApiService::class.java)
 
     // ---- api 서비스 추가 ----
 

@@ -29,6 +29,7 @@ val Gray10 = Color(0xFFEEEEEE)
 val Gray5 = Color(0xFFF2F3F5)
 val BtnGray10 = Color(0xFFF7F7F7)
 
+val btnGray200 = Color(0xFFE3E4E5)
 val BorderGray300 = Color(0xFFCCCED0)
 
 val GrayBlue30 = Color(0xFF4C5056)

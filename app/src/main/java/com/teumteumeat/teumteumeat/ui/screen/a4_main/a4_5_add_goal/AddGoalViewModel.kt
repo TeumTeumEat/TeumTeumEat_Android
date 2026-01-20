@@ -666,7 +666,6 @@ class AddGoalViewModel @Inject constructor(
 
         return updateGoalUseCase(
             goalId = goalId,
-            request = request
         )
     }
 

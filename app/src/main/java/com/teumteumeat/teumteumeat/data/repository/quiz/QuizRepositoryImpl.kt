@@ -23,6 +23,27 @@ class QuizRepositoryImpl @Inject constructor(
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), QuizRepository {
 
+
+
+
+
+    override suspend fun confirmQuizGuide(): ApiResultV2<Boolean> {
+
+        val url = "/api/v1/user-quizzes/guide"
+
+        return safeApiVer2(
+            apiCall = {
+                quizApiService.confirmQuizGuide()
+            },
+            mapper = { response ->
+                // ✅ data 는 null 이면 안됨
+                response
+                    .requireNotNullOrError(url)
+                    .isQuizGuideSeen
+            }
+        )
+    }
+
     override suspend fun getUserQuizStatus(): ApiResultV2<UserQuizStatus> {
         return safeApiVer2(
             apiCall = {

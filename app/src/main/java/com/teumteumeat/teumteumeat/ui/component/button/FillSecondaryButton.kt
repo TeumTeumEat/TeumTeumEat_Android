@@ -12,12 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -33,7 +31,7 @@ fun FillSecondaryButton(
     conerRadius: Dp = 16.dp,
 ) {
     val primaryColor = MaterialTheme.extendedColors.primary
-    val buttonFillSecondary = MaterialTheme.extendedColors.buttonFillSecondary
+    val buttonFillSecondary = MaterialTheme.extendedColors.btnFillSecondary
 
     Row(
         modifier = modifier.fillMaxWidth()

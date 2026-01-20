@@ -133,7 +133,7 @@ fun CalendarDayCell(
 
                     // ✅ 퀴즈를 푼 날짜 (원색)
                     isSolved -> Modifier.background(
-                        color = MaterialTheme.extendedColors.buttonFillSecondary,
+                        color = MaterialTheme.extendedColors.btnFillSecondary,
                         shape = CircleShape
                     )
 

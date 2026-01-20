@@ -27,13 +27,11 @@ class GoalRepositoryImpl @Inject constructor(
      */
     override suspend fun updateGoal(
         goalId: Long,
-        request: UpdateGoalRequest
     ): ApiResultV2<Unit> {
         return safeApiVer2(
             apiCall = {
                 goalApiService.updateGoal(
                     goalId = goalId,
-                    request = request
                 )
             },
             mapper = {

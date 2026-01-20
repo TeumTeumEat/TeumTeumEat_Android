@@ -12,7 +12,7 @@ interface GoalRepository {
     /**
      * 목표 수정 요청
      */
-    suspend fun updateGoal(goalId: Long, request: UpdateGoalRequest): ApiResultV2<Unit>
+    suspend fun updateGoal(goalId: Long): ApiResultV2<Unit>
 
     /**
      * 현재 유저 목표 조회
