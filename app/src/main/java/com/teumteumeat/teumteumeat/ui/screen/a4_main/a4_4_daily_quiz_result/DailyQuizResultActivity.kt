@@ -1,37 +1,26 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_4_daily_quiz_result
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.domain.model.common.GoalType
-import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail.DailySummaryActivity
-import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultNavHost
-import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultViewModel
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalDailyQuizResultUiState
-import com.teumteumeat.teumteumeat.utils.LocalQuizResultUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
-import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.DailySummaryArgs
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveScreenWithDailyItem
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @AndroidEntryPoint
 class DailyQuizResultActivity : ComponentActivity() {

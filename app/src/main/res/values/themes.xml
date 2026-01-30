@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.TeumTeumEat" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 🔹 2. 앱 메인 테마 (세로 고정 테마 상속) -->
+    <style name="Theme.TeumTeumEat" parent="AppTheme.Portrait">
+        <!-- 여기부터는 기존 TeumTeumEat 테마 설정 유지 -->
+        <!-- 예시 -->
+        <!-- <item name="colorPrimary">@color/primary</item> -->
+    </style>
 
     <style name="TextAppearance.TeumTeumEat.CalendarHeader" parent="TextAppearance.AppCompat.Medium">
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- res/values/styles.xml -->
+    <style name="AppTheme.Portrait" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:screenOrientation">portrait</item>
     </style>
 
 </resources>

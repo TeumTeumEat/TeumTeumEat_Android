@@ -11,6 +11,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainArgs
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainScreenType
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalQuizResultUiState
+import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 
@@ -32,6 +33,7 @@ fun QuizResultNavHost(
     val activity = LocalActivityContext.current
     val viewModel = LocalViewModelContext.current as QuizResultViewModel
     val uiState = LocalQuizResultUiState.current
+    val screenState = LocalScreenState.current
 
     NavHost(
         navController = navController,
@@ -42,13 +44,13 @@ fun QuizResultNavHost(
             QuizFinishScreen(
                 correctCount = uiState.correctCount,
                 onCloseClick = {
-                    // todo. 홈화면으로 이동
-                    activity.finish()
+                    Utils.UxUtils.moveActivity(activity, MainActivity::class.java)
                 },
                 onNextClick = {
-                    // todo. 퀴즈 상세 결과 화면으로 이동
                     navController.navigate(QuizResultRoute.QuizResult.route)
-                }
+                },
+                screenState = screenState,
+                onRetryApi = viewModel::initQuizResult,
             )
         }
 
@@ -77,7 +79,7 @@ fun QuizResultNavHost(
 
         composable(QuizResultRoute.QuizEnding.route) {
             QuizEndingScreen(
-                onCloseClick = { Utils.UxUtils.moveActivity(activity, MainActivity::class.java, exitFlag = true) },
+                onCloseClick = { Utils.UxUtils.moveActivity(activity, MainActivity::class.java) },
                 goHistory = {
                     val intent = Intent(activity, MainActivity::class.java).apply {
                         putExtra(

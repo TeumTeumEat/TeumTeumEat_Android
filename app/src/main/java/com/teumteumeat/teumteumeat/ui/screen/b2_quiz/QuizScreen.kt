@@ -21,6 +21,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 
 @Composable
@@ -30,10 +31,11 @@ fun QuizScreen(
     onSelectAnswer: (String) -> Unit,
     screenState: UiScreenState,
     onRetryApi: () -> Unit,
-    onGoBeforeScreen: () -> Unit
+    onGoBeforeScreen: () -> Unit,
+    onCompleteQuiz: () -> Unit,
 ) {
 
-    val context = LocalContext.current
+    val context = LocalActivityContext.current as QuizActivity
 
     // 🔴 에러 화면 (핵심)
     if (screenState is UiScreenState.Error) {
@@ -72,9 +74,7 @@ fun QuizScreen(
                 UiScreenState.Success -> {
                     if (uiState.isCompleted){
                         QuizCompleteCard(
-                            onButtonClick = {
-                                Utils.UxUtils.moveActivity(context, QuizResultActivity::class.java, exitFlag = true)
-                            }
+                            onButtonClick = onCompleteQuiz
                         )
                     }else{
                         // 🔝 상단 헤더

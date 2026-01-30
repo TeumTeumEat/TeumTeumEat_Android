@@ -21,8 +21,8 @@ android {
         applicationId = "com.teumteumeat.teumteumeat"
         minSdk = 26
         targetSdk = 36 // 최신 버전(Android 16, API 36) 기준
-        versionCode = 8
-        versionName = "1.0.7"
+        versionCode = 10
+        versionName = "1.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -212,6 +212,10 @@ dependencies {
 
     // Firebase Analytics 추가
     implementation("com.google.firebase:firebase-analytics")
+
+    implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
+
+    implementation("com.google.firebase:firebase-config")
 
     implementation(libs.lottie.compose)
 

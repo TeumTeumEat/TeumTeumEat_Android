@@ -16,5 +16,7 @@ interface SocialLoginRepository {
 
     suspend fun withdrawUser(): ApiResultV2<Unit>
 
-    suspend fun logout(): ApiResultV2<Unit>
+    suspend fun logout(
+        refreshToken: String,
+    ): ApiResultV2<Unit>
 }

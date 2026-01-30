@@ -91,8 +91,7 @@ fun BaseModal(
                         modifier = Modifier.weight(1f),
                         conerRadius = 16.dp,
                         onClick = onPrimaryClick,
-
-                        )
+                    )
                 }
             } else {
                 // 버튼 1개 케이스

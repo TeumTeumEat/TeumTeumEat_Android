@@ -3,6 +3,8 @@ package com.teumteumeat.teumteumeat.ui.component.button
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -32,7 +34,6 @@ fun BaseFillButton(
     conerRadius: Dp = 16.dp,
     btnContainerColor: Color = MaterialTheme.colorScheme.primary,
     btnContentColor: Color = MaterialTheme.colorScheme.onPrimary,
-    btnHeight: Int = 60,
 ) {
     val primaryColor = btnContainerColor
     val onPrimaryColor = btnContentColor
@@ -51,13 +52,16 @@ fun BaseFillButton(
             ),
             shape = RoundedCornerShape(conerRadius), // border-radius: 8px
             modifier = Modifier
-                .height(btnHeight.dp)
                 .fillMaxWidth()
+                .wrapContentHeight(),
         ) {
             Text(
+                modifier = Modifier.padding(vertical = 10.dp),
                 text = text,
-                style = MaterialTheme.appTypography.btnBold20_h24
-                    .copy(color = btnContentColor)
+                style = MaterialTheme.appTypography.btnBold20_h24.copy(
+                        color = btnContentColor
+                    ),
+                textAlign = TextAlign.Center
             )
         }
     }

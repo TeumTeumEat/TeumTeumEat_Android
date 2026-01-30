@@ -87,8 +87,26 @@ val LightExtendedColors = ExtendedColors(
 
 private val DarkColorScheme = darkColorScheme(
     primary = Blue500,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primaryContainer = White10,
+    onPrimary = Color.White,
+
+    secondary = PurpleGrey40,
+    secondaryContainer = Gray20,
+
+    tertiary = Black100,
+
+    surfaceVariant = Gray50,
+    onSurfaceVariant = Gray30,
+
+    onTertiary = Black100,
+
+    error = Red50,
+
+    background = Color(0xFFFFFBFE),
+    surface = Color.White,
+    onSecondary = Color.White,
+    onBackground = Color(0xFF1C1B1F),
+    onSurface = Color(0xFFF2F3F5),
 )
 
 private val LightColorScheme = lightColorScheme(

@@ -2,7 +2,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.os.Build
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,8 +39,12 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
@@ -137,7 +140,8 @@ fun OnBoardingSetApptimeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(),
+                        .padding()
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     SpeechBubble(
@@ -200,16 +204,13 @@ fun OnBoardingSetApptimeScreen(
                             viewModel.openTimeSheet(TimeType.OUT)
                         }
                     )
-                }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 32.dp),
-                    verticalArrangement = Arrangement.Bottom,
-                ) {
+                    Spacer(modifier = Modifier.height(66.dp))
+
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
                     ){
                         CheckBoxCircle(
                             checked = uiState.isNotificationChecked,
@@ -225,8 +226,32 @@ fun OnBoardingSetApptimeScreen(
                             )
                         )
                     }
-                    Spacer(modifier = Modifier.height(18.dp))
 
+                    Spacer(Modifier.height(100.dp))
+                }
+
+                // 2️⃣ 하단 그라데이션 (페이드 효과)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.surface,
+                                )
+                            )
+                        )
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.Bottom,
+                ) {
                     /*Button(onClick = {
                         Utils.PrefsUtil.clearNotificationDeniedOnce(context)
                     }) {

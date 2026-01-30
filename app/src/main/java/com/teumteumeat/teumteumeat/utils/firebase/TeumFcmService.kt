@@ -6,10 +6,19 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.di.NotificationEntryPoint
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
+import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenSyncUtil
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class TeumFcmService : FirebaseMessagingService() {
 
@@ -20,12 +29,18 @@ class TeumFcmService : FirebaseMessagingService() {
 
         // ✅ 로컬 저장 (DataStore / SharedPreferences)
         FcmTokenStore.save(applicationContext, token)
+
+        // 2️⃣ 서버 동기화 (Util 재사용)
+        FcmTokenSyncUtil.syncWithServer(applicationContext, token)
     }
+
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
-        Log.d("FCM", "푸시 수신: ${message.data}")
+        Log.d("FCM", "🔥 메시지 수신됨")
+        Log.d("FCM", "notification=${message.notification}")
+        Log.d("FCM", "data=${message.data}")
 
         val title = message.notification?.title ?: "틈틈잇"
         val body = message.notification?.body ?: ""
@@ -58,4 +73,14 @@ class TeumFcmService : FirebaseMessagingService() {
 
         manager.notify(System.currentTimeMillis().toInt(), notification)
     }
+}
+
+fun logCurrentFcmToken() {
+    FirebaseMessaging.getInstance().token
+        .addOnSuccessListener { token ->
+            Log.e("FCM_TOKEN_TRACE", "🔥 Firebase 발급 토큰 = $token")
+        }
+        .addOnFailureListener { e ->
+            Log.e("FCM_TOKEN_TRACE", "❌ 토큰 발급 실패", e)
+        }
 }
