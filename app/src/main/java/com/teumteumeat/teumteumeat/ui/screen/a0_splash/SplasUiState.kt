@@ -40,6 +40,10 @@ sealed class SplashUiEvent {
     data object NavigateToMain : SplashUiEvent()
     data object NavigateToOnboarding : SplashUiEvent()
 
+    // 🔹 업데이트 관련
+    data class ShowForceUpdate(val message: String) : SplashUiEvent()
+    data class ShowOptionalUpdate(val message: String) : SplashUiEvent()
+
     // 기타 (필요 시 확장)
     data class ShowErrorMessage(val message: String) : SplashUiEvent()
 }

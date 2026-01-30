@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -9,10 +10,10 @@ import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
-import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,52 +25,44 @@ import javax.inject.Inject
 
 @HiltViewModel
 class QuizResultViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     private val documentRepository: DocumentRepository,
     private val quizRepository: QuizRepository,
     private val categoryRepository: CategoryRepository,
     private val goalRepository: GoalRepository,
 ) : ViewModel() {
+    companion object {
+        private const val KEY_DOCUMENT_ID = "document_id"
+        private const val KEY_DATE = "quiz_date"
+    }
+
+    fun initArgs(
+        documentId: Int,
+        date: String
+    ) {
+        savedStateHandle[KEY_DOCUMENT_ID] = documentId
+        savedStateHandle[KEY_DATE] = date
+    }
+
 
     private val _uiState = MutableStateFlow(UiStateQuizResult())
     val uiState = _uiState.asStateFlow()
 
-    fun loadUserGoal(
-        onSuccess: () -> Unit = {}
-    ) {
+    private val _screenState =
+        MutableStateFlow<UiScreenState>(UiScreenState.Idle)
+    val screenState = _screenState.asStateFlow()
+
+    fun getDocumentId(): Int =
+        savedStateHandle[KEY_DOCUMENT_ID] ?: error("documentId missing")
+
+    fun getDate(): String =
+        savedStateHandle[KEY_DATE] ?: error("date missing")
+
+    fun initQuizResult() {
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(isLoading = true, errorMessage = null)
-            }
-
-            when (val result = goalRepository.getUserGoal()) {
-
-                is ApiResultV2.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            userGoal = result.data
-                        )
-                    }
-                    onSuccess()
-                }
-
-                else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    fun initQuizResult(
-        date: String
-    ) {
-        viewModelScope.launch {
-
+            val documentId = getDocumentId()
+            val date = getDate()
+            _screenState.value = UiScreenState.Loading
             _uiState.update {
                 it.copy(isLoading = true, errorMessage = null)
             }
@@ -88,8 +81,7 @@ class QuizResultViewModel @Inject constructor(
                     val goalType = userGoal.type
                     when(goalType){
                         DomainGoalType.CATEGORY -> {
-                            val categoryId = userGoal.category?.categoryId
-                            loadQuizResults(goalType.name, categoryId!!.toInt(), date)
+                            loadQuizResults(goalType.name, documentId.toInt(), date)
                         }
 
                         DomainGoalType.DOCUMENT -> {
@@ -100,6 +92,7 @@ class QuizResultViewModel @Inject constructor(
 
                     // 3️⃣ 목표 타입 기반 요약 조회
                     loadSummaryByGoal(userGoal)
+                    _screenState.value = UiScreenState.Success
                 }
 
                 else -> {
@@ -109,8 +102,11 @@ class QuizResultViewModel @Inject constructor(
                             errorMessage = goalResult.uiMessage
                         )
                     }
+                    _screenState.value =
+                        UiScreenState.Error(goalResult.uiMessage)
                 }
             }
+
         }
     }
 
@@ -320,6 +316,7 @@ class QuizResultViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             summary = UiStateSummary(
+                                title = data.title,
                                 dateText = toMonthDay(data.createdAt),
                                 summary = data.content,
                                 isFirstTime = data.isFirstTime,

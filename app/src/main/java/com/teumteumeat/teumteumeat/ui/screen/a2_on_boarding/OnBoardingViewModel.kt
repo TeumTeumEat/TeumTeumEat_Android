@@ -138,21 +138,14 @@ class OnBoardingViewModel @Inject constructor(
             PrefsUtil.saveGoalType(appContext, state.goalTypeUiState)
             when(state.goalTypeUiState){
                 GoalTypeUiState.DOCUMENT -> {
-                    // 5-1. 목표 생성
-                    val goalResult = createGoalRequest()
+                    // 5-1. 목표 생성 및 반환되는 ID uiState에 저장
+                    val goalResult = createGoalAndSaveId()
                     if (goalResult !is ApiResultV2.Success) {
                         moveToError(goalResult)
                         return@launch
                     }
 
-                    // 5-2. 목표 생성 ID 저장
-                    val getGoalIdResult = fetchLatestGoalId()
-                    if (getGoalIdResult !is ApiResultV2.Success) {
-                        moveToError(getGoalIdResult)
-                        return@launch
-                    }
-
-                    // 5-3. 문서 확인
+                    // 5-2. 문서 확인
                     val uri = state.selectedFileUri
                     if (uri == null) {
                         moveToError(
@@ -165,7 +158,7 @@ class OnBoardingViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // 5-4. 문서 업로드
+                    // 5-3. 문서 업로드
                     val uploadDocumentResult = uploadDocumentInternal(
                         uri = state.selectedFileUri,
                         fileName = state.selectedFileName,
@@ -176,10 +169,10 @@ class OnBoardingViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // 5-5. 문서 업로드 결과 패치
+                    // 5-4. 문서 업로드 결과 패치
                     val fetchDocumentResult = fetchCompletedDocument()
                     if (fetchDocumentResult !is ApiResultV2.Success) {
-                        moveToError(uploadDocumentResult)
+                        moveToError(fetchDocumentResult)
                         return@launch
                     }
                 }
@@ -216,6 +209,14 @@ class OnBoardingViewModel @Inject constructor(
 //                message = "테스트 에러 페이지입니다.\n잠시 후 다시 시도해주세요."
 //            )
         }
+    }
+
+    private suspend fun createGoalAndSaveId(): ApiResultV2<Int> {
+        val result = createGoalRequest()
+        if (result !is ApiResultV2.Success) return result
+
+        _uiState.update { it.copy(goalId = result.data) }
+        return result
     }
 
     private fun moveToError(result: ApiResultV2<*>) {
@@ -1439,8 +1440,8 @@ class OnBoardingViewModel @Inject constructor(
 
     fun getSheetTitle(): String {
         return when (uiState.value.currentTimeType) {
-            TimeType.OUT -> "집에서 나오는 시간"
-            TimeType.IN -> "집에 돌아가는 시간"
+            TimeType.IN -> "집에서 나오는 시간"
+            TimeType.OUT -> "집에 돌아가는 시간"
             TimeType.NOTTING -> "시간"
         }
     }

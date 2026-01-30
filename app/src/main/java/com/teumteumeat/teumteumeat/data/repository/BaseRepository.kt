@@ -222,7 +222,6 @@ abstract class BaseRepository(
             "AUTH-003",
             "AUTH-004",
             "AUTH-005"
-            // ❌ AUTH-006 제거
         )
     }
 
@@ -245,8 +244,8 @@ abstract class BaseRepository(
 
             tokenLocalDataSource.save(
                 AuthToken(
-                    accessToken = tokenResponse.data,
-                    refreshToken = refreshToken,
+                    accessToken = tokenResponse.data.accessToken,
+                    refreshToken = tokenResponse.data.refreshToken ?: refreshToken,
                 )
             )
 
@@ -340,10 +339,16 @@ abstract class BaseRepository(
             val tokenResponse =
                 authApiService.reissueAccessToken(ResponseBody(refreshToken))
 
+            val tokenData = tokenResponse.data
+
+            // ✅ refreshToken 교체 여부 판단
+            val newRefreshToken =
+                tokenData.refreshToken ?: refreshToken
+
             tokenLocalDataSource.save(
                 AuthToken(
-                    accessToken = tokenResponse.data,
-                    refreshToken = refreshToken
+                    accessToken = tokenData.accessToken,
+                    refreshToken = newRefreshToken
                 )
             )
 

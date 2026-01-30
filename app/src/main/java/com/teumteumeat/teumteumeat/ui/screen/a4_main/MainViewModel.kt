@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,10 @@ class MainViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<UiStateMain>(UiStateMain())
     val uiState = _uiState.asStateFlow()
+
+    private val _screenState =
+        MutableStateFlow<UiScreenState>(UiScreenState.Idle)
+    val screenState = _screenState.asStateFlow()
 
     // Flow 값으로 currentPage 읽기
     private val currentPage get() = uiState.value.currentPage

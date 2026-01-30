@@ -15,6 +15,7 @@ object FcmTokenInitializer {
                     Log.d("FCM", "초기 FCM 토큰 저장: $token")
                     FcmTokenStore.save(context, token)
                 }
+
             }
             .addOnFailureListener { e ->
                 Log.e("FCM", "FCM 토큰 초기화 실패", e)

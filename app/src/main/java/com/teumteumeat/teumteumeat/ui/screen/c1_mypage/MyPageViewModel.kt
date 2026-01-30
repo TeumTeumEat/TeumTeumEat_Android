@@ -68,7 +68,10 @@ class MyPageViewModel @Inject constructor(
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            when (val result = socialLoginRepositoryImpl.logout()) {
+            if(tokenLocalDataSource.getRefreshToken() == null){
+                onSuccess()
+            }
+            when (val result = socialLoginRepositoryImpl.logout(tokenLocalDataSource.getRefreshToken()!!)) {
 
                 is ApiResultV2.Success -> {
                     onSuccess()

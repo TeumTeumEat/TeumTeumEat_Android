@@ -35,9 +35,6 @@ class HomeViewModel @Inject constructor(
     // 서버에서 받은 goal 캐싱 (SnackState 계산용)
     private var cachedGoal: UserGoal? = null
 
-    init {
-    }
-
 
     /**
      * 홈 진입 시 서버 기준 상태 로딩

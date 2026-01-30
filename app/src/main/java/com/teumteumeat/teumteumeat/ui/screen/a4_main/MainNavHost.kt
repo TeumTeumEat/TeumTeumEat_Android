@@ -40,17 +40,17 @@ fun MainNavHost(
 
             val viewModel: HomeViewModel = hiltViewModel(parentEntry)
             val uiStateHome by viewModel.uiState.collectAsStateWithLifecycle()
+            val screenState by viewModel.screenState.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-
+                viewModel.loadHomeState()
             }
 
             HomeScreen(
-                name = "HomeScreen",
-                viewModel = viewModel,
-                uiState = uiStateHome,
-                onTabOther = {},
                 modifier = Modifier.padding(paddingValue),
+                uiState = uiStateHome,
+                screenState = screenState,
+                onRetryApi = { viewModel.loadHomeState() },
             )
         }
 

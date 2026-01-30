@@ -21,9 +21,11 @@ class SocialLoginRepositoryImpl @Inject constructor(
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), SocialLoginRepository {
 
-    override suspend fun logout(): ApiResultV2<Unit> {
+    override suspend fun logout(
+        refreshToken: String
+    ): ApiResultV2<Unit> {
         return safeApiVer2(
-            apiCall = { authApiService.logout() },
+            apiCall = { authApiService.logout(refreshToken) },
             mapper = {
                 // ✅ 로그아웃 성공 시 토큰 삭제
                 tokenLocalDataSource.clear()
@@ -53,21 +55,29 @@ class SocialLoginRepositoryImpl @Inject constructor(
                 ResponseBody(refreshToken)
             )
 
-            if (reissueResponse.code != "OK" || reissueResponse.data.isBlank()) {
+            val tokenData = reissueResponse.data
+
+            // ❌ 서버 응답이 비정상
+            if (reissueResponse.code != "OK" || tokenData.accessToken.isBlank()) {
                 tokenLocalDataSource.clear()
-                SessionResult.Expired(
+                return SessionResult.Expired(
                     code = reissueResponse.code,
                     message = reissueResponse.message ?: "토큰 갱신 실패"
                 )
-            } else {
-                tokenLocalDataSource.save(
-                    AuthToken(
-                        accessToken = reissueResponse.data,
-                        refreshToken = refreshToken
-                    )
-                )
-                SessionResult.Success
             }
+
+            // ✅ refreshToken 교체 여부 판단
+            val newRefreshToken =
+                tokenData.refreshToken ?: refreshToken
+
+            tokenLocalDataSource.save(
+                AuthToken(
+                    accessToken = tokenData.accessToken,
+                    refreshToken = newRefreshToken
+                )
+            )
+
+            SessionResult.Success
 
         } catch (e: UnknownHostException) {
             SessionResult.NetworkError("인터넷 연결이 필요합니다.")

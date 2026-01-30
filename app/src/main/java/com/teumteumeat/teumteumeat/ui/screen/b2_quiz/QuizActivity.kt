@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.b2_quiz
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
+import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
@@ -39,23 +41,14 @@ class QuizActivity : ComponentActivity() {
                     LocalQuizUiState provides uiState,
                     LocalScreenState provides screenState,
                 ) {
-                    val context = LocalContext.current
+                    val context = LocalActivityContext.current as QuizActivity
                     val goalTypeUiState: GoalTypeUiState = Utils.PrefsUtil.getGoalType(context)
                     val documentId = Utils.PrefsUtil.getDocumentId(context) ?: -1
-                    val categoryId = Utils.PrefsUtil.getCategoryId(context) ?: -1
 
                     // 🔹 최초 진입 시 퀴즈 목록 조회
                     LaunchedEffect(Unit) {
                         viewModel.loadQuizzes(documentId, goalTypeUiState)
                     }
-
-                    // 🔹 모든 문제를 다 풀었을 때
-//                    if (uiState.currentIndex >= uiState.quizzes.size &&
-//                        uiState.quizzes.isNotEmpty()
-//                    ) {
-///*                        onFinishQuiz()
-//                        return*/
-//                    }
 
                     QuizScreen(
                         uiState = uiState,
@@ -72,6 +65,12 @@ class QuizActivity : ComponentActivity() {
                                 context,
                                 SummaryActivity::class.java
                             )
+                        },
+                        onCompleteQuiz = {
+                            context.startActivity(
+                                QuizResultActivity.newIntent(context, documentId)
+                            )
+                            finish()
                         }
                     )
 

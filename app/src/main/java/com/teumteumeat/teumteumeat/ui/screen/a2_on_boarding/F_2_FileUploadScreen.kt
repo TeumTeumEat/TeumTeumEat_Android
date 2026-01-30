@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,12 +19,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -106,13 +111,16 @@ fun FileUploadScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(),
+                        .padding()
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    SpeechBubble(text = "공부하고 싶은 PDF 자료를\n" +
-                            "선택해 주세요!")
+                    SpeechBubble(
+                        text = "공부하고 싶은 PDF 자료를\n" +
+                                "선택해 주세요!"
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Image(
@@ -126,7 +134,6 @@ fun FileUploadScreen(
                     ContentSelectableBoxButton(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
                             .padding(vertical = 27.dp, horizontal = 21.dp),
                         iconRes = R.drawable.icon_files_big,
                         titleText = "파일 업로드",
@@ -156,7 +163,26 @@ fun FileUploadScreen(
                         contentFileName = uiState.selectedFileName,
                         onDelContentClick = { viewModel.onFileDeleted() },
                     )
+
+                    Spacer(Modifier.height(150.dp))
+
                 }
+
+                // 2️⃣ 하단 그라데이션 (페이드 효과)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.surface,
+                                )
+                            )
+                        )
+                )
 
                 Column(
                     modifier = Modifier

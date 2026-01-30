@@ -201,7 +201,6 @@ fun QuizGuideCard(
                     .fillMaxWidth(),
                 onClick = onQuizClick,
                 text = "퀴즈 풀러가기",
-                btnHeight = 50
             )
         }
     }

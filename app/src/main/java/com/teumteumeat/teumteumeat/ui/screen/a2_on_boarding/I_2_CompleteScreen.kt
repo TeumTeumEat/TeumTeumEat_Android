@@ -3,6 +3,8 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -35,18 +38,16 @@ fun OnBoardingSuccessScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             Spacer(modifier = Modifier.height(80.dp))
 
             // 🗨️ 말풍선 이미지
-            Image(
-                painter = painterResource(id = R.drawable.chat_complete),
-                contentDescription = "성공 안내 말풍선",
-                modifier = Modifier.fillMaxWidth()
-            )
+            SpeechBubble(text = "모든 준비 끝!\n" +
+                    "매일 배달될 틈틈잇을 확인해 보세요.")
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -66,15 +67,8 @@ fun OnBoardingSuccessScreen(
                 color = MaterialTheme.extendedColors.textTeritory
             )
 
-            Spacer(Modifier.height(50.dp))
-            BaseFillButton(
-                text = "시작하기",
-                textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
-                    Color.White
-                ),
-                isEnabled = true,
-                onClick = onStartClick,
-            )
+            Spacer(Modifier.height(100.dp))
+
         }
 
         // 🔵 하단 위치
@@ -83,7 +77,14 @@ fun OnBoardingSuccessScreen(
                 .align(Alignment.BottomCenter)
                 .padding(20.dp)
         ) {
-
+            BaseFillButton(
+                text = "시작하기",
+                textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
+                    Color.White
+                ),
+                isEnabled = true,
+                onClick = onStartClick,
+            )
         }
 
     }

@@ -54,7 +54,6 @@ object ApiServiceModule {
     fun provideHistoryApiService(retrofit: Retrofit): HistoryApiService =
         retrofit.create(HistoryApiService::class.java)
 
-
     @Provides
     @Singleton
     fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService =

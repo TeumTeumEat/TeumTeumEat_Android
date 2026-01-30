@@ -64,6 +64,7 @@ import kotlin.jvm.java
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.mutableLongStateOf
+import com.teumteumeat.teumteumeat.utils.LocalScreenState
 
 
 @Composable
@@ -75,6 +76,8 @@ fun MainCompositionProvider(
 
     val mainUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navHostController = rememberNavController()
+    val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+
     val theme = MaterialTheme.extendedColors
     var isNavReady by remember { mutableStateOf(false) }
 
@@ -90,36 +93,11 @@ fun MainCompositionProvider(
         LocalActivityContext provides activity,
         LocalMainUiState provides mainUiState,
         LocalViewModelContext provides viewModel,
+        LocalScreenState provides screenState,
     ) {
 
         val navBackStackEntry by navHostController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
-
-
-
-        /*LaunchedEffect(mainUiState.currentScreenType) {
-            when (mainUiState.currentScreenType) {
-                MainScreenType.MAIN -> {
-                    navHostController.navigate(BottomNavItem.Home.route) {
-                        launchSingleTop = true
-                        restoreState = true
-                        popUpTo(navHostController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                    }
-                }
-
-                MainScreenType.LIBRARY -> {
-                    navHostController.navigate(BottomNavItem.Library.route) {
-                        launchSingleTop = true
-                        restoreState = true
-                        popUpTo(navHostController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                    }
-                }
-            }
-        }*/
 
         LaunchedEffect(mainUiState.currentScreenType, isNavReady) {
             if (!isNavReady) return@LaunchedEffect

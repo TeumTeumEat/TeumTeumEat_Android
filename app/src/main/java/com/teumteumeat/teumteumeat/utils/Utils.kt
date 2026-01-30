@@ -25,8 +25,15 @@ import java.util.Locale
 import java.util.Properties
 import androidx.core.net.toUri
 import com.google.firebase.messaging.FirebaseMessaging
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.di.NotificationEntryPoint
 import com.teumteumeat.teumteumeat.domain.model.common.GoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -516,15 +523,23 @@ class Utils {
         private const val KEY_FCM_TOKEN = "key_fcm_token"
 
         fun save(context: Context, token: String) {
+            Log.e("FCM_TOKEN_TRACE", "💾 토큰 저장 = $token")
+
             context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-                .edit()
-                .putString(KEY_FCM_TOKEN, token)
-                .apply()
+                .edit {
+                    putString(KEY_FCM_TOKEN, token)
+                    commit()
+                }
         }
 
         fun get(context: Context): String? {
-            return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-                .getString(KEY_FCM_TOKEN, null)
+            val token = context
+                .getSharedPreferences("fcm_token_pref", Context.MODE_PRIVATE)
+                .getString("key_fcm_token", null)
+
+            Log.e("FCM_TOKEN_TRACE", "📤 저장된 토큰 조회 = $token")
+
+            return token
         }
 
         fun clear(context: Context) {
@@ -532,6 +547,74 @@ class Utils {
                 .edit()
                 .remove(KEY_FCM_TOKEN)
                 .apply()
+        }
+    }
+
+    object FcmTokenSyncUtil {
+
+        /**
+         * ✅ 이미 확보된 token 을 서버로 전송
+         * - onNewToken
+         * - 로그인 성공
+         * - 푸시 ON
+         */
+        fun syncWithServer(context: Context, token: String) {
+            val entryPoint = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                NotificationEntryPoint::class.java
+            )
+
+            val repository = entryPoint.notificationRepository()
+
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = repository.registerDeviceToken(
+                    token = token,
+                    deviceType = "ANDROID"
+                )
+
+                when (result) {
+                    is ApiResultV2.Success -> {
+                        Log.d("FCM_SYNC", "✅ 서버 토큰 등록 성공")
+                    }
+                    else -> {
+                        Log.e(
+                            "FCM_SYNC",
+                            "❌ 서버 토큰 등록 실패: ${result.uiMessage}"
+                        )
+                    }
+                }
+            }
+        }
+
+        /**
+         * ✅ App 시작 시:
+         * - Firebase 에서 최신 token 조회
+         * - 로컬 저장값과 비교
+         * - 다르면 서버 재전송
+         */
+        fun checkAndSyncOnAppStart(context: Context) {
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { latestToken ->
+
+                    val savedToken = FcmTokenStore.get(context)
+
+                    Log.d("FCM_SYNC", "🚀 AppStart token(latest)=$latestToken")
+                    Log.d("FCM_SYNC", "🚀 AppStart token(saved)=$savedToken")
+
+                    if (latestToken.isNullOrBlank()) return@addOnSuccessListener
+
+                    // 1️⃣ 로컬에 없으면 저장
+                    if (savedToken != latestToken) {
+                        FcmTokenStore.save(context, latestToken)
+
+                        // 2️⃣ 서버와 불일치 → 재전송
+                        syncWithServer(context, latestToken)
+                    }
+
+                }
+                .addOnFailureListener { e ->
+                    Log.e("FCM_SYNC", "❌ AppStart 토큰 조회 실패", e)
+                }
         }
     }
 
@@ -789,5 +872,24 @@ class Utils {
     }
 
 
+    object UpdateUtils{
+        fun moveToPlayStore(activity: Activity) {
+            val packageName = activity.packageName
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                "market://details?id=$packageName".toUri()
+            )
+            // market:// 실패(디바이스에 PlayStore 없음 등) 대비
+            val fallback = Intent(
+                Intent.ACTION_VIEW,
+                "https://play.google.com/store/apps/details?id=$packageName".toUri()
+            )
 
+            try {
+                activity.startActivity(intent)
+            } catch (e: Exception) {
+                activity.startActivity(fallback)
+            }
+        }
+    }
 }
