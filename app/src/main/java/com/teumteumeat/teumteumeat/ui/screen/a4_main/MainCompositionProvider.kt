@@ -121,8 +121,6 @@ fun MainCompositionProvider(
             }
         }
 
-        val extendedColors = MaterialTheme.extendedColors
-
         val lastBackPressedTime = remember { mutableLongStateOf(0L) }
 
         // ✅ 물리 뒤로가기 처리

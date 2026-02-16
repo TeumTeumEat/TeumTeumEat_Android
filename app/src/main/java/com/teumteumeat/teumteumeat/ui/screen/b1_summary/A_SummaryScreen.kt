@@ -10,12 +10,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.MarkdownText
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
@@ -29,6 +31,9 @@ import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 
 @Composable
 fun SummaryScreen(
@@ -44,6 +49,7 @@ fun SummaryScreen(
     val typography = MaterialTheme.appTypography
     val viewModel = LocalViewModelContext.current as SummaryViewModel
     val context = LocalActivityContext.current as SummaryActivity
+    val processingState by viewModel.processingState.collectAsStateWithLifecycle()
 
     BackHandler {
         onBackClick()
@@ -137,9 +143,10 @@ fun SummaryScreen(
 
                         // 🔵 로딩 화면
                         if (screenState is UiScreenState.Loading) {
-                            LoadingScreen(
+                            GoalLoadingScreen(
                                 title = "요약글을 생성하는 중",
                                 message = "잠시만 기다려주세요...",
+                                progress = processingState?.progress
                             )
                         }
 
@@ -167,7 +174,6 @@ fun SummaryScreen(
                                 .padding(20.dp)
                                 .fillMaxWidth(),
                             onClick = onQuizClick,
-//                        isEnabled = true,
                             isEnabled = screenState !is UiScreenState.Loading &&
                                     !uiState.hasSolvedToday,
                             text = if((screenState is UiScreenState.Loading)) {

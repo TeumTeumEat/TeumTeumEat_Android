@@ -1,19 +1,33 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
+import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
+import com.teumteumeat.teumteumeat.utils.Utils
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.jvm.java
 
 
 @Composable
 fun OnBoardingNavHost(navController: NavHostController) {
-    val context = LocalContext.current
+    val activity = LocalActivityContext.current as OnBoardingActivity
     val viewModel = LocalViewModelContext.current as OnBoardingViewModel
     val uiState = LocalOnBoardingMainUiState.current
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     NavHost(
         navController = navController,

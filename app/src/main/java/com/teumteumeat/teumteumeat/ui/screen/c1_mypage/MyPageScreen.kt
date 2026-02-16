@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageAccountSection
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageArrowRow
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageNavigateBox
@@ -71,29 +72,10 @@ fun MyPageScreen(
         modifier = Modifier
             .systemBarsPadding(),
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                        contentDescription = "back"
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = "내 정보",
-                    style = MaterialTheme.appTypography.subtitleSemiBold20
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-            }
+            TitleBar(
+                "내 정보",
+                onBackClick = onBackClick,
+            )
         }
     ) { padding ->
 

@@ -30,6 +30,7 @@ class UpdateCommuteTimeUseCase @Inject constructor(
             )
         }
 
+
         // 2️⃣ 퇴근 시간 검증
         if (!isValidTime(endTime)) {
             return ApiResultV2.ServerError(
@@ -38,17 +39,6 @@ class UpdateCommuteTimeUseCase @Inject constructor(
                 errorType = DomainError.Message("퇴근 시간 형식이 올바르지 않습니다.")
             )
         }
-
-/*        if (startTime >= endTime) {
-            return ApiResultV2.ServerError(
-                code = "INVALID_TIME",
-                message = "시간 설정 오류",
-                errorType = DomainError.Message(
-                    "출근 시간은 퇴근 시간보다 빨라야 합니다."
-                )
-            )
-        }*/
-
 
 
         return repository.updateCommuteInfo(

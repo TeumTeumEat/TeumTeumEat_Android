@@ -37,6 +37,7 @@ import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -67,22 +68,21 @@ fun HomeScreen(
         LottieCompositionSpec.RawRes(
             when (snackState) {
                 is SnackState.Available ->
-                    R.raw.home_dummy
-
+                     R.raw.home_eat_before
                 else ->
-                    R.raw.home_v2_dummy
+                    R.raw.home_eat_after
             }
         )
     )
 
     val progress by animateLottieCompositionAsState(
         composition = backComposition,
-        iterations = LottieConstants.IterateForever
+        iterations = LottieConstants.IterateForever,
     )
 
     val foodRes = when (snackState) {
         is SnackState.Available ->
-            R.drawable.img_main_food
+             R.drawable.img_main_food
 
         else ->
             R.drawable.img_food_before

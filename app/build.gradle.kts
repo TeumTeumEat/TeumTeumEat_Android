@@ -21,8 +21,8 @@ android {
         applicationId = "com.teumteumeat.teumteumeat"
         minSdk = 26
         targetSdk = 36 // 최신 버전(Android 16, API 36) 기준
-        versionCode = 10
-        versionName = "1.0.9"
+        versionCode = 11
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -178,8 +178,8 @@ dependencies {
     implementation("com.github.anhaki:PickTime-Compose:1.1.5")
 
     // Hilt core
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    ksp("com.google.dagger:hilt-compiler:2.51.1")
+    implementation("com.google.dagger:hilt-android:2.57.1")
+    ksp("com.google.dagger:hilt-compiler:2.57.1")
 
     // Hilt + ViewModel support
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")

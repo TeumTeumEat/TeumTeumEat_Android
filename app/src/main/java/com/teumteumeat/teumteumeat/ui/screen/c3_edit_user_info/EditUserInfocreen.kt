@@ -34,6 +34,7 @@ import com.teumteumeat.teumteumeat.ui.component.MinuteRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
 import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.toDisplayText
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -77,30 +78,10 @@ fun EditUserInfoScreen(
     Scaffold(
         modifier = Modifier.systemBarsPadding(),
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                        contentDescription = "back"
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = "틈틈잇 사용 설정",
-                    style = MaterialTheme.appTypography.subtitleSemiBold20
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-            }
+            TitleBar(
+                title = "틈틈잇 사용 설정",
+                onBackClick = onBackClick,
+            )
         },
         bottomBar = {
             // 하단 퀴즈 버튼
@@ -176,10 +157,10 @@ fun EditUserInfoScreen(
                 horizontalArrangement = Arrangement.Start,
             ) {
                 Text(
-                    "닉네임 설정",
-                    style = Typography.bodyLarge.copy(
-                        fontSize = 18.sp,
-                    )
+                    text = "닉네임 설정",
+                    style = MaterialTheme.appTypography.subtitleSemiBold16.copy(
+                        color = MaterialTheme.extendedColors.textSecondary
+                    ),
                 )
             }
 
@@ -319,7 +300,6 @@ fun TimeSettingRow(
             style = MaterialTheme.appTypography.subtitleSemiBold16.copy(
                 color = MaterialTheme.extendedColors.textSecondary
             ),
-            color = Color.Gray
         )
 
         Spacer(modifier = Modifier.height(6.dp))

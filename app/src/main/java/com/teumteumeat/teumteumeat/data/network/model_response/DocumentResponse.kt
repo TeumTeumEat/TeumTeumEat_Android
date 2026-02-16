@@ -8,7 +8,8 @@ data class DocumentResponse(
     val documentId: Int,
     val fileName: String,
     val fileKey: String,
-    val status: DocumentStatus
+    val status: DocumentStatus,
+    val estimateTime: Long?,
 )
 
 enum class DocumentStatus {

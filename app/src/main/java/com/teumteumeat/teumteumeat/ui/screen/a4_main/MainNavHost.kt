@@ -69,22 +69,6 @@ fun MainNavHost(
             )
         }
 
-        /*composable(BottomNavItem.AddingFile.route) {
-            // todo. 추후 프로세스에 맞춰 화면 작업하기
-            //  1. 액티비티 일시 버튼클릭 이벤트 -> 액티비티로 이동
-            //  2. 프레그먼트일시 새로운 화면 추가
-           *//* val parentEntry =
-                remember(it) { navController.getBackStackEntry(BottomNavItem.Library.route) }
-            val viewModel: LibraryViewModel = viewModel(parentEntry)
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-            LibraryScreen(
-                name = "LibraryScreen",
-                viewModel = viewModel,
-                uiState = uiState,
-                onClickOtherTab = {},
-            )*//*
-        }*/
     }
 }
 

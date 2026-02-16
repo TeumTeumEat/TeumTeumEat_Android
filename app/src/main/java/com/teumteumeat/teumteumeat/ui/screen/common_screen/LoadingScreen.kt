@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +21,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
+import com.teumteumeat.teumteumeat.ui.component.GoalProgress
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -28,6 +31,7 @@ fun LoadingScreen(
     modifier: Modifier = Modifier,
     title: String = "",
     message: String = "",
+    progress: Float? = null, // ⭐ 추가
     visibleStates: SnapshotStateList<Boolean> = remember {
         mutableStateListOf(false, false, false)
     },
@@ -85,44 +89,98 @@ fun LoadingScreen(
                 color = extendedColors.textGhost
             )
 
+            // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
+            if (progress != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                CustomProgressBar(
+                    modifier = Modifier.fillMaxWidth(0.6f),
+                    progress = progress
+                )
+            }
+
         }
 
-        /*// ✅ 체크 리스트
+    }
+
+}
+
+
+@Composable
+fun GoalLoadingScreen(
+    modifier: Modifier = Modifier,
+    title: String = "",
+    message: String = "",
+    progress: Float? = null, // ⭐ 추가
+    visibleStates: SnapshotStateList<Boolean> = remember {
+        mutableStateListOf(false, false, false)
+    },
+) {
+    val extendedColors = MaterialTheme.extendedColors
+    val typography = MaterialTheme.appTypography
+
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(extendedColors.backgroundW100)
+            .windowInsetsPadding(WindowInsets.systemBars) // ✅ SafeArea
+    ) {
+
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.BottomCenter),
-            verticalArrangement = Arrangement.Bottom
+                .align(Alignment.Center)
+                .padding(bottom = 100.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
+            /*// 🔵 원형 컨테이너 (체크박스 UI 감성)
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 80.dp),     // ⬆️ 하단에서 100dp
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .size(56.dp)
+                    .background(
+                        color = extendedColors.primaryContainer,
+                        shape = RoundedCornerShape(28.dp)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                AnimatedVisibility(
-                    visible = visibleStates[0],
-                    enter = fadeIn() + slideInVertically { it / 2 }
-                ) {
-                    LoadingCheckItem("대중교통 이용 시간 취합 중")
-                }
+                CircularProgressIndicator(
+                    strokeWidth = 3.dp,
+                    color = extendedColors.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }*/
 
-                AnimatedVisibility(
-                    visible = visibleStates[1],
-                    enter = fadeIn() + slideInVertically { it / 2 }
-                ) {
-                    LoadingCheckItem("난이도와 프롬프트 적용 중")
-                }
 
-                AnimatedVisibility(
-                    visible = visibleStates[2],
-                    enter = fadeIn() + slideInVertically { it / 2 }
-                ) {
-                    LoadingCheckItem("해당 카테고리 퀴즈 생성 중")
-                }
+
+            // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
+            if (progress != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                GoalProgress(
+                    progress = progress
+                )
             }
-        }*/
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 🔤 타이틀
+            Text(
+                text = title,
+                style = typography.titleBold20,
+                color = extendedColors.textPrimary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 🔤 서브 타이틀
+            Text(
+                text = message,
+                style = typography.bodyMedium14Reg,
+                color = extendedColors.textGhost
+            )
+
+        }
 
     }
 

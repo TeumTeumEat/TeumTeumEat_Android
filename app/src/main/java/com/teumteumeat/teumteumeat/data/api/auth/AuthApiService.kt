@@ -22,9 +22,14 @@ interface AuthApiService {
     suspend fun checkMyToken(): ApiResponse<UserName, Unit>
 
     @POST("/api/v1/users/reissue")
-    suspend fun reissueAccessToken(
+    suspend fun reissueAccessTokenV2(
         @Body refreshToken: ResponseBody
     ): ApiResponse<ReissueTokenResponse, Unit>
+
+    @POST("/api/v1/users/reissue")
+    suspend fun reissueAccessToken(
+        @Body refreshToken: ResponseBody
+    ): ApiResponse<String, Unit>
 
     @POST("/api/v1/auth/oauth/register")
     suspend fun socialLogin(

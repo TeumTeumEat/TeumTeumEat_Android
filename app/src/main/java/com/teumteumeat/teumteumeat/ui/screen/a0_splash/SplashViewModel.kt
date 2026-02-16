@@ -3,14 +3,13 @@ package com.teumteumeat.teumteumeat.ui.screen.a0_splash
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.remoteConfig
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingDecision
-import com.teumteumeat.teumteumeat.domain.usecase.AutoLoginUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.auth.AutoLoginUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompletedUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +26,8 @@ class SplashViewModel @Inject constructor(
     private val autoLoginUseCase: AutoLoginUseCase,
     private val getOnboardingCompletedUseCase: GetOnboardingCompletedUseCase,
     private val tokenLocalDataSource: TokenLocalDataSource,
-    private val remoteConfig: FirebaseRemoteConfig
+    private val remoteConfig: FirebaseRemoteConfig,
+    val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SplashUiState>(SplashUiState())
@@ -40,14 +40,7 @@ class SplashViewModel @Inject constructor(
     val uiEvent = _uiEvent.asSharedFlow()
 
     init {
-        // todo: testCode. 구글로그인 테스트 위해 리프레쉬 토큰 초기화용 함수
-        // clearAllToken()
-        // socialLogin()
-        remoteConfig
-            .fetchAndActivate()
-            .addOnCompleteListener {
-                checkAppVersion()
-            }
+
     }
 
     private fun checkAppVersion() {
@@ -96,6 +89,11 @@ class SplashViewModel @Inject constructor(
      * 🔥 로티 애니메이션 종료 시 호출
      */
     fun onAnimationFinished() {
+        remoteConfig
+            .fetchAndActivate()
+            .addOnCompleteListener {
+                checkAppVersion()
+            }
         tryAutoLogin()
     }
 
@@ -109,7 +107,7 @@ class SplashViewModel @Inject constructor(
     }
 
     fun tryAutoLogin() {
-        Log.d("소셜 로그인", "뷰모델 함수 호출")
+        Log.d("${this@SplashViewModel}", "try Auto Login")
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -122,7 +120,9 @@ class SplashViewModel @Inject constructor(
                 is AutoLogin.Success -> {
                     checkOnboardingCompleted()
                 }
-
+                is AutoLogin.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
                 else -> {
                     Log.d("${this@SplashViewModel}", "자동 로그인 실패 ${result}")
                     setGoLoginState()

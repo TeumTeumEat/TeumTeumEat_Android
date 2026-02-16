@@ -11,9 +11,9 @@ import com.teumteumeat.teumteumeat.data.network.model_request.AuthResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.SocialLoginRequest
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +28,7 @@ class LoginViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val socialLoginRepository: SocialLoginRepository,
     private val tokenLocalDataSource: TokenLocalDataSource,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
@@ -221,7 +222,7 @@ class LoginViewModel @Inject constructor(
             }
 
             is ApiResultV2.SessionExpired -> {
-                _uiEvent.emit(LoginUiEvent.NavigateToLogin)
+                // _uiEvent.emit(LoginUiEvent.NavigateToLogin)
                 _uiState.update {
                     it.copy(errorMessage = result.uiMessage)
                 }
@@ -245,9 +246,19 @@ class LoginViewModel @Inject constructor(
                     _uiEvent.emit(LoginUiEvent.NavigateToOnboarding)
                 }
             }
+            is ApiResultV2.SessionExpired -> {
+                _uiState.update {
+                    it.copy(errorMessage = "세션이 만료되었습니다. 다시 로그인해주세요.")
+                }
+                sessionManager.expireSession()
+            }
 
+            is ApiResultV2.NetworkError -> {
+                _uiState.update {
+                    it.copy(errorMessage = "네트워크 상태를 확인하고, 다시 로그인 하세요.")
+                }
+            }
             is ApiResultV2.ServerError,
-            is ApiResultV2.NetworkError,
             is ApiResultV2.UnknownError -> {
                 // 🔴 실패 시 보수적으로 화면 이동 X
                 _uiState.update {
@@ -255,11 +266,7 @@ class LoginViewModel @Inject constructor(
                 }
             }
 
-            is ApiResultV2.SessionExpired -> {
-                _uiState.update {
-                    it.copy(errorMessage = "세션이 만료되었습니다. 다시 로그인해주세요.")
-                }
-            }
+
         }
     }
 
