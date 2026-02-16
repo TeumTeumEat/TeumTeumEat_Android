@@ -10,8 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -34,6 +36,7 @@ import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalLoginUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
+import com.teumteumeat.teumteumeat.utils.extendedColors
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.IOException
 
@@ -115,7 +118,10 @@ class LoginActivity : ComponentActivity()  {
                     LocalViewModelContext provides viewModel,
                     LocalLoginUiState provides uiState,
                 ){
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.extendedColors.backgroundW100)) {
                         LoginScreen(
                             onGoogleLoginClick = {
                                 viewModel.setCurrentPendingLogin(SocialProvider.GOOGLE)

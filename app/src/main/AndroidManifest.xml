@@ -91,7 +91,10 @@
         <activity
             android:name=".ui.screen.a4_main.MainActivity"
             android:exported="true"
-            android:label="@string/title_activity_home"></activity> <!-- b-1 퀴즈플로우 - 요약 화면 -->
+            android:label="@string/title_activity_home"
+            android:launchMode="singleTop">
+
+        </activity> <!-- b-1 퀴즈플로우 - 요약 화면 -->
         <activity
             android:name=".ui.screen.b1_summary.SummaryActivity"
             android:exported="true"

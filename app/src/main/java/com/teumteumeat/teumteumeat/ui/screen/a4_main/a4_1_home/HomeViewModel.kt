@@ -9,6 +9,7 @@ import com.teumteumeat.teumteumeat.localdata.preference.HomePreference
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.AppResumeNotifier
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ class HomeViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val quizRepository: QuizRepository,
     private val homePreference: HomePreference,
+    private val appResumeNotifier: AppResumeNotifier,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateHome())
@@ -35,6 +37,13 @@ class HomeViewModel @Inject constructor(
     // 서버에서 받은 goal 캐싱 (SnackState 계산용)
     private var cachedGoal: UserGoal? = null
 
+    init {
+        viewModelScope.launch {
+            appResumeNotifier.resumeEvent.collect {
+                loadHomeState()
+            }
+        }
+    }
 
     /**
      * 홈 진입 시 서버 기준 상태 로딩

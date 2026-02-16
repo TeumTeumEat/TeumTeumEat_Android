@@ -28,6 +28,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
@@ -39,11 +40,14 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.UpdateUtils.moveToPlayStore
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SplashScreen(
-    viewModel: SplashViewModel = hiltViewModel()
+    viewModel: SplashViewModel = hiltViewModel(),
 ) {
+    val sessionManager = viewModel.sessionManager // 🔥 ViewModel 통해 접근
+
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
     val activity = LocalActivityContext.current as SplashActivity
@@ -72,6 +76,14 @@ fun SplashScreen(
 //            viewModel.onAnimationFinished()
 //        }
 //    }
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.onAnimationFinished()
     }

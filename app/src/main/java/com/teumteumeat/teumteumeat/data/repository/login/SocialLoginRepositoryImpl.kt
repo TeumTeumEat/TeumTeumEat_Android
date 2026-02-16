@@ -1,5 +1,7 @@
 package com.teumteumeat.teumteumeat.data.repository.login
 
+import android.os.Build
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -10,7 +12,6 @@ import com.teumteumeat.teumteumeat.data.network.model_response.SocialLoginReques
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
 import com.teumteumeat.teumteumeat.domain.model.auth.SessionResult
-import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import java.io.IOException
 import java.net.UnknownHostException
 import javax.inject.Inject
@@ -54,11 +55,10 @@ class SocialLoginRepositoryImpl @Inject constructor(
             val reissueResponse = authApiService.reissueAccessToken(
                 ResponseBody(refreshToken)
             )
-
-            val tokenData = reissueResponse.data
+            val accessToken = reissueResponse.data
 
             // ❌ 서버 응답이 비정상
-            if (reissueResponse.code != "OK" || tokenData.accessToken.isBlank()) {
+            if (reissueResponse.code != "OK" || accessToken.isBlank()) {
                 tokenLocalDataSource.clear()
                 return SessionResult.Expired(
                     code = reissueResponse.code,
@@ -67,17 +67,57 @@ class SocialLoginRepositoryImpl @Inject constructor(
             }
 
             // ✅ refreshToken 교체 여부 판단
-            val newRefreshToken =
-                tokenData.refreshToken ?: refreshToken
+            val newRefreshToken = refreshToken
 
             tokenLocalDataSource.save(
                 AuthToken(
-                    accessToken = tokenData.accessToken,
+                    accessToken = accessToken,
                     refreshToken = newRefreshToken
                 )
             )
 
             SessionResult.Success
+            /*else{
+                val reissueResponse = authApiService.reissueAccessTokenV2(
+                    ResponseBody(refreshToken)
+                )
+
+                val tokenData = reissueResponse.data
+
+                // ❌ 서버 응답이 비정상
+                if (reissueResponse.code != "OK" || tokenData.accessToken.isBlank()) {
+                    tokenLocalDataSource.clear()
+                    return SessionResult.Expired(
+                        code = reissueResponse.code,
+                        message = reissueResponse.message ?: "토큰 갱신 실패"
+                    )
+                }
+
+                // ✅ refreshToken 교체 여부 판단
+                val newRefreshToken =
+                    tokenData.refreshToken ?: refreshToken
+
+                tokenLocalDataSource.save(
+                    AuthToken(
+                        accessToken = tokenData.accessToken,
+                        refreshToken = newRefreshToken
+                    )
+                )
+
+                SessionResult.Success
+            }*/
+
+        }catch (e: retrofit2.HttpException) {
+
+            if (e.code() == 401) {
+                tokenLocalDataSource.clear()
+                return SessionResult.Expired(
+                    code = "AUTH-003",
+                    message = "토큰이 만료되었습니다."
+                )
+            }
+
+            SessionResult.Failed(message = "서버 오류가 발생했습니다.")
 
         } catch (e: UnknownHostException) {
             SessionResult.NetworkError("인터넷 연결이 필요합니다.")

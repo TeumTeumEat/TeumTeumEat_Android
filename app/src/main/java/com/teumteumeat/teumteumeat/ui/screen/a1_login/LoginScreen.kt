@@ -50,10 +50,12 @@ import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import kotlinx.coroutines.flow.collectLatest
 import kotlin.jvm.java
 
 @Composable
@@ -62,13 +64,19 @@ fun LoginScreen(
     onGoogleLoginClick: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val activity = LocalActivityContext.current as LoginActivity
-    val shape = RoundedCornerShape(28.dp)
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
     val loginButtonShape = RoundedCornerShape(12.dp)
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     // 🔥 이벤트 수신
     LaunchedEffect(Unit) {

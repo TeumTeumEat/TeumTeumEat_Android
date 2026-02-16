@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.b2_quiz
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -78,14 +79,20 @@ fun QuizScreen(
                         )
                     }else{
                         // 🔝 상단 헤더
-                        ProgressHeader(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .fillMaxWidth(),
-                            currentStep = uiState.currentStep,
-                            totalSteps = uiState.totalSteps,
-                            onBackClick = onBackClick
-                        )
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                        ) {
+
+                            ProgressHeader(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                currentStep = uiState.currentStep,
+                                totalSteps = uiState.totalSteps,
+                                onBackClick = onBackClick
+                            )
+                        }
+
                         QuizCardSection(
                             modifier = Modifier.align(Alignment.Center),
                             quiz = uiState.currentQuiz!!,

@@ -52,14 +52,7 @@ fun OnBoardingFirstScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    /*Text(
-                        "매일 소모되는 이동 시간,\n" +
-                                "틈틈잇과 성장하는 시간으로 바꿔봐요!",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                            textAlign = TextAlign.Center
-                        )
-                    )*/
+
                     SpeechBubble(
                         text = "틈틈잇에 오신 걸 환영해요!\n" +
                                 "저는 틈틈이예요",

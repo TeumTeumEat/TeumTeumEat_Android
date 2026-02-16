@@ -30,6 +30,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
@@ -56,13 +57,12 @@ class OnBoardingViewModel @Inject constructor(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val issuePresignedUrlUseCase: IssuePresignedUrlUseCase,
     private val createGoalUseCase: CreateGoalUseCase,
-    private val createGoalUseCaseV1: CreateGoalUseCaseV1,
-    private val getGoalListUseCase: GetGoalListUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
     application: Application,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -135,8 +135,7 @@ class OnBoardingViewModel @Inject constructor(
 
             // 5. 문서 업로드 documentID 생성
             Log.d("OnBoardingVM", "타입: ${state.goalTypeUiState}의 퀴즈 생성")
-            PrefsUtil.saveGoalType(appContext, state.goalTypeUiState)
-            when(state.goalTypeUiState){
+            when (state.goalTypeUiState) {
                 GoalTypeUiState.DOCUMENT -> {
                     // 5-1. 목표 생성 및 반환되는 ID uiState에 저장
                     val goalResult = createGoalAndSaveId()
@@ -176,23 +175,17 @@ class OnBoardingViewModel @Inject constructor(
                         return@launch
                     }
                 }
+
                 GoalTypeUiState.CATEGORY -> {
-                    PrefsUtil.saveCategoryId(context = appContext, state.selectedCategoryId?: -1)
                     Log.d("OnBoardingVM", "selectedCategoryID: ${state.selectedCategoryId}")
-                    // 5-1. 목표 생성
-                    val goalResult = createGoalRequestForCategory(state.selectedCategoryId)
+                    // 5-1. 목표 생성 및 반환되는 ID uiState에 저장
+                    val goalResult = createGoalAndSaveId()
                     if (goalResult !is ApiResultV2.Success) {
                         moveToError(goalResult)
                         return@launch
                     }
-
-                    // 5-2. 목표 생성 ID 저장
-                    val getGoalIdResult = fetchLatestGoalId()
-                    if (getGoalIdResult !is ApiResultV2.Success) {
-                        moveToError(getGoalIdResult)
-                        return@launch
-                    }
                 }
+
                 GoalTypeUiState.NONE -> {}
             }
 
@@ -203,11 +196,6 @@ class OnBoardingViewModel @Inject constructor(
 
 
             _mainState.value = UiStateOnboardingScreenState.Success
-
-            // todo. 테스트 코드!
-//            _mainState.value = UiStateOnBoardingMainState.Error(
-//                message = "테스트 에러 페이지입니다.\n잠시 후 다시 시도해주세요."
-//            )
         }
     }
 
@@ -219,10 +207,20 @@ class OnBoardingViewModel @Inject constructor(
         return result
     }
 
-    private fun moveToError(result: ApiResultV2<*>) {
-        _mainState.value = UiStateOnboardingScreenState.Error(
-            message = result.uiMessage
-        )
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+        // todo. session 에러 발생 시 로그인 화면으로 fall back 기능 구현
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            else -> {
+                _mainState.value = UiStateOnboardingScreenState.Error(
+                    message = result.uiMessage
+                )
+            }
+        }
+
     }
 
     private suspend fun updateUserPushSettingInternal(): ApiResultV2<Unit> {
@@ -242,7 +240,7 @@ class OnBoardingViewModel @Inject constructor(
         val fcmToken = FcmTokenStore.get(appContext)
             ?: return ApiResultV2.UnknownError("디바이스 토큰이 없습니다.")
 
-        val deviceType = "ANDROID" // iOS면 "IOS"
+        val deviceType = "ANDROID"
 
         return notificationRepository.registerDeviceToken(
             token = fcmToken,
@@ -278,6 +276,7 @@ class OnBoardingViewModel @Inject constructor(
                         error.errors.find { it.field == "name" }?.message
                             ?: result.uiMessage
                     }
+
                     else -> result.uiMessage
                 }
 
@@ -349,48 +348,7 @@ class OnBoardingViewModel @Inject constructor(
 
         return createGoalUseCase(request)
     }
-    private suspend fun fetchLatestGoalId(): ApiResultV2<Unit> {
-        return when (val result = getGoalListUseCase()) {
 
-            is ApiResultV2.Success -> {
-                val data : GoalsData = result.data
-                val list: List<GetGoalResponse> = data.goalResponses
-
-                Log.d("OnBoardingVM", "goal list size = ${list.size}")
-
-                val latestGoalId = list[0].goalId
-                    ?: return ApiResultV2.ServerError(
-                        code = "EMPTY_GOAL_LIST",
-                        message = "목표가 존재하지 않습니다.",
-                        errorType = DomainError.Message("goal list is empty")
-                    )
-
-                Log.d("DEBUG", "state.goalId(before save) = ${latestGoalId}")
-
-                PrefsUtil.saveGoalId(appContext, latestGoalId)
-
-                Log.d("DEBUG", "saved goalId = ${PrefsUtil.getGoalId(appContext)}")
-
-
-                // ⭐ 성공 시 내부에서 상태 반영
-                _uiState.update {
-                    it.copy(goalId = latestGoalId)
-                }
-
-                Log.d("OnBoardingVM", "최신 목표 ID: ${_uiState.value.goalId}")
-
-                ApiResultV2.Success(
-                    message = result.message,
-                    data = Unit
-                )
-            }
-
-            is ApiResultV2.ServerError -> result
-            is ApiResultV2.NetworkError -> result
-            is ApiResultV2.SessionExpired -> result
-            is ApiResultV2.UnknownError -> result
-        }
-    }
     private suspend fun uploadDocumentInternal(
         uri: Uri,
         fileName: String,
@@ -408,22 +366,14 @@ class OnBoardingViewModel @Inject constructor(
             )
         ) {
 
-            is ApiResultV2.Success -> {
-                // ✅ 성공 시 필요한 상태 변경이 있다면 여기서
-                _uiState.update {
-                    it.copy(
-                        // todo. documentID 넘어올시 저장
-                    )
-                }
-                result
-            }
-
+            is ApiResultV2.Success -> result
             is ApiResultV2.ServerError -> result
             is ApiResultV2.NetworkError -> result
             is ApiResultV2.SessionExpired -> result
             is ApiResultV2.UnknownError -> result
         }
     }
+
     private suspend fun fetchCompletedDocument(): ApiResultV2<Unit> {
 
         val goalId = _uiState.value.goalId
@@ -444,7 +394,6 @@ class OnBoardingViewModel @Inject constructor(
 
                 Log.d("OnBoardingVM", "문서 ID: $documentId")
                 // 위 documentId를 SharedPreference에 저장
-                PrefsUtil.saveDocumentId(context = appContext, documentId)
                 // ✅ 성공 시 UiState에 documentId 저장
                 _uiState.update {
                     it.copy(documentId = documentId)
@@ -463,28 +412,6 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-
-    /*
-    private suspend fun createGoalId(): ApiResultV2<Int> {
-        val state = _uiState.value
-
-        val studyPeriodStr =
-            state.studyPeriod?.toString()?.plus("주") ?: "기간 설정 안함"
-
-        val request = CreateGoalRequest(
-            type = state.goalType,
-            studyPeriod = studyPeriodStr,
-            difficulty = state.difficulty,
-            prompt = state.promptInput.takeIf { it.isNotBlank() },
-            categoryId = if (state.goalType == GoalType.CATEGORY) {
-                state.selectedCategoryId
-            } else {
-                null                 // DOCUMENT → categoryId 미포함
-            }
-        )
-
-        return createGoalUseCase(request)
-    }*/
 
     fun submitOnBoardingTestError() {
         // 중복 실행 방지

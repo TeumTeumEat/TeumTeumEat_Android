@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.data.repository
 
 import com.google.gson.Gson
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.network.exception.UnauthorizedException
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
@@ -11,7 +12,7 @@ import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
-import okhttp3.Response
+import com.teumteumeat.teumteumeat.domain.model.auth.SessionResult
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -118,7 +119,6 @@ abstract class BaseRepository(
             }
         } catch (e: UnauthorizedException) {
             handleUnauthorizedVer2(apiCall, mapper)
-
         } catch (e: IOException) {
             ApiResultV2.NetworkError(
                 message = "네트워크 연결을 확인해주세요."
@@ -136,6 +136,8 @@ abstract class BaseRepository(
 
         }
     }
+
+
     private fun parseErrorResponse(
         e: retrofit2.HttpException
     ): ApiResponse<Nothing, Any?>? {
@@ -239,22 +241,41 @@ abstract class BaseRepository(
             )
 
         return try {
-            val tokenResponse =
-                authApiService.reissueAccessToken(ResponseBody(refreshToken))
+            val reissueResponse = authApiService.reissueAccessToken(
+                ResponseBody(refreshToken)
+            )
+            val accessToken = reissueResponse.data
 
             tokenLocalDataSource.save(
                 AuthToken(
-                    accessToken = tokenResponse.data.accessToken,
-                    refreshToken = tokenResponse.data.refreshToken ?: refreshToken,
+                    accessToken = accessToken,
+                    refreshToken = refreshToken,
                 )
             )
-
             val retryResponse = apiCall()
 
             ApiResultV2.Success(
                 message = retryResponse.message,
                 data = mapper(retryResponse.data)
             )
+/*        else{
+                val tokenResponse =
+                    authApiService.reissueAccessTokenV2(ResponseBody(refreshToken))
+
+                tokenLocalDataSource.save(
+                    AuthToken(
+                        accessToken = tokenResponse.data.accessToken,
+                        refreshToken = tokenResponse.data.refreshToken ?: refreshToken,
+                    )
+                )
+
+                val retryResponse = apiCall()
+
+                ApiResultV2.Success(
+                    message = retryResponse.message,
+                    data = mapper(retryResponse.data)
+                )
+            }*/
 
         } catch (e: Exception) {
             tokenLocalDataSource.clear()
@@ -337,7 +358,7 @@ abstract class BaseRepository(
 
         return try {
             val tokenResponse =
-                authApiService.reissueAccessToken(ResponseBody(refreshToken))
+                authApiService.reissueAccessTokenV2(ResponseBody(refreshToken))
 
             val tokenData = tokenResponse.data
 

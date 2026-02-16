@@ -44,7 +44,6 @@ class MyPageActivity : ComponentActivity() {
 
                     // 최초 진입 시 1회 호출
                     LaunchedEffect(Unit) {
-                        // viewModel.loadDocumentSummary(goalId, documentId)
                     }
 
                     MyPageScreen(

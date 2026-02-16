@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.MarkdownText
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
@@ -93,7 +94,11 @@ fun DailySummaryScreen(
                             /**
                              * 홈화면 타이틀 바
                              */
-                            Row(
+                            TitleBar(
+                                title = "오늘의 냠냠지식",
+                                onBackClick = onBackClick,
+                            )
+                            /*Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 19.dp)
@@ -137,7 +142,7 @@ fun DailySummaryScreen(
                                         )
                                     }
                                 }
-                            }
+                            }*/
 
                             Column(
                                 modifier = Modifier

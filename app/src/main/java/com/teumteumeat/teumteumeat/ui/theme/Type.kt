@@ -89,7 +89,6 @@ val DefaultAppTypography = AppTypography(
     titleBold24 = BaseTextStyle.copy(
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
-        lineHeight = 24.sp,
     ),
     titleBold22 = BaseTextStyle.copy(
         fontWeight = FontWeight.Bold,
@@ -230,7 +229,6 @@ val DefaultAppTypography = AppTypography(
     ),
 
 )
-
 
 
 // Set of Material typography styles to start with
