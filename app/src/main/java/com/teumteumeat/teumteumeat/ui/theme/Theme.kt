@@ -8,53 +8,167 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.teumteumeat.teumteumeat.utils.LocalExtendedColors
+
+
+data class ExtendedColors(
+    val primary: Color,
+    val error: Color,
+    val btnFillSecondary: Color,
+    val modalShadow: Color,
+    val errorContainer: Color,
+    val primaryContainer: Color,
+    val background: Color,
+    val unableContainer: Color,
+    val unableContent: Color,
+    val textOnError: Color,
+    val textOnPrimary: Color,
+    val unselectedContainer: Color,
+    val textOnUnselected: Color,
+    val backgroundW100: Color,
+    val textPrimary: Color,
+    val textGhost: Color,
+    val textPointBlue: Color,
+    val textTeritory: Color,
+
+    val backSurface: Color,
+    val btnGray100: Color,
+    val textSecondary: Color,
+    val errorSecondary: Color,
+    val btnGray800: Color,
+    val btnLineDisable: Color,
+
+    val iconBlack: Color,
+)
+
+val LightExtendedColors = ExtendedColors(
+    btnGray800 = GrayBlue30,
+
+    primary = Blue500,
+    primaryContainer = Blue10,
+    textOnPrimary = White100,
+    textPrimary = Black100,
+    textGhost = Gray60,
+    textPointBlue = Blue500,
+
+    unselectedContainer = Gray15,
+    textOnUnselected = Gray80,
+
+    unableContent = Gray50,
+    unableContainer = Gray20,
+
+    error = Red80,
+    errorSecondary = Red60,
+    errorContainer = Red10,
+    textOnError = White100,
+
+    btnFillSecondary = Blue10,
+    btnGray100 = BtnGray10,
+    btnLineDisable = BorderGray300,
+    modalShadow = BlackTrp15,
+
+    // icon 관련 색상
+    iconBlack = Black100,
+
+    // text 관련 색상
+    textTeritory=GrayBlue30,
+    textSecondary= GrayBlue80,
+    // text 관련 색상
+
+    // 배경 관련 색상
+    backSurface = Gray5,
+    background = White10,
+    backgroundW100 = White100,
+)
+
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = Blue500,
+    primaryContainer = White10,
+    onPrimary = Color.White,
+
+    secondary = PurpleGrey40,
+    secondaryContainer = Gray20,
+
+    tertiary = Black100,
+
+    surfaceVariant = Gray50,
+    onSurfaceVariant = Gray30,
+
+    onTertiary = Black100,
+
+    error = Red50,
+
+    background = Color(0xFFFFFBFE),
+    surface = Color.White,
+    onSecondary = Color.White,
+    onBackground = Color(0xFF1C1B1F),
+    onSurface = Color(0xFFF2F3F5),
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = Blue500,
+    primaryContainer = White10,
     onPrimary = Color.White,
+
+    secondary = PurpleGrey40,
+    secondaryContainer = Gray20,
+
+    tertiary = Black100,
+
+    surfaceVariant = Gray50,
+    onSurfaceVariant = Gray30,
+
+    onTertiary = Black100,
+
+    error = Red50,
+
+    background = Color(0xFFFFFBFE),
+    surface = Color.White,
     onSecondary = Color.White,
-    onTertiary = Color.White,
     onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    onSurface = Color(0xFFF2F3F5),
 )
 
 @Composable
 fun TeumTeumEatTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // ⭐ 기본값 false 추천
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            // todo. question-아래 두 줄의 코드의 차이점과 각 코드는 어느 상황에 최적화된 코드인지 판단하기
-//             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            if (darkTheme) DarkColorScheme else LightColorScheme
+    val context = LocalContext.current
 
+    val colorScheme = when {
+        // ✅ Android 12+ & 동적 컬러 허용
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
         }
 
+        // ✅ 우리가 정의한 컬러
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+
+    val extendedColors = when {
+        darkTheme -> LightExtendedColors
+        else -> LightExtendedColors
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
-    )
+    ) {
+        CompositionLocalProvider(
+            LocalExtendedColors provides extendedColors
+        ) {
+            content()
+        }
+    }
 }
