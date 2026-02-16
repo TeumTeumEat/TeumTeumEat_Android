@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">TeumTeumEat</string>
+    <string name="title_activity_on_boarding">OnBoardingActivity</string>
+    <string name="title_activity_home">HomeActivity</string>
+    <string name="kakao_native_app_key">2d5b8758966c24367eebd1926dd090bf</string>
+    <string name="kakao_native_app_key_scheme">kakao2d5b8758966c24367eebd1926dd090bf</string>
+    <string name="google_web_client_id">
+        158098790378-0bd8k8uhqogamanb2v58hlt3ie3tf6jh.apps.googleusercontent.com
+    </string>
+    <string name="title_activity_summary">SummaryActivity</string>
+    <string name="title_activity_quiz">QuizActivity</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_quiz_finish">QuizFinishActivity</string>
+    <string name="title_activity_add_category_goal">AddCategoryGoalActivity</string>
 </resources>

@@ -1,0 +1,45 @@
+package com.teumteumeat.teumteumeat.ui.screen.b1_summary
+
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
+
+
+data class UiStateSummary(
+    /* ================= 진입 파라미터 ================= */
+    val goalId: Long? = null,
+    val goalType: DomainGoalType? = null,
+    val documentId: Long? = null,
+    val categoryId: Long? = null,
+
+    /* ================= 화면 상태 ================= */
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+
+
+    val title: String = "",
+    val dateText: String = "",
+    val summary: String = "",
+    val hasSolvedToday: Boolean = true,
+    val isFirstTime: Boolean = true,
+
+    /* category 전용 */
+    val categoryDocumentId: Int? = null,
+
+    /* 퀴즈 안내씬 서버에서 받은 분기 값 */
+    val isQuizGuideSeen: Boolean = false,
+
+    /* 퀴즈 안내씬 클라이언트에서 보낼 분기 값 */
+    val isSkipQuizGuideChecked: Boolean = false,
+
+)
+
+data class DocumentSummaryResponse(
+    val documentId: Int,
+    val fileName: String,
+    val fileKey: String,
+    val updatedAt: String,
+    val summary: String,
+    val status: String,
+    val hasSolvedToday: Boolean,
+    val isFirstTime: Boolean
+)
+
