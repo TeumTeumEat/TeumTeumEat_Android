@@ -7,7 +7,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -21,13 +20,11 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewMod
 
 @Composable
 fun MainNavHost(
+    modifier: Modifier,
     navController: NavHostController,
     startDestination: String = "",
-    modifier: Modifier = Modifier,
-    paddingValue: PaddingValues = PaddingValues()
+    paddingValue: PaddingValues = PaddingValues(),
 ) {
-
-    val context = LocalContext.current
 
     NavHost(
         navController = navController,
@@ -47,7 +44,8 @@ fun MainNavHost(
             }
 
             HomeScreen(
-                modifier = Modifier.padding(paddingValue),
+                modifier = modifier.padding(paddingValue),
+                viewModel = viewModel,
                 uiState = uiStateHome,
                 screenState = screenState,
                 onRetryApi = { viewModel.loadHomeState() },

@@ -89,9 +89,12 @@ fun SplashScreen(
     }
 
 
+
     // ✅ 네비게이션 처리 (단발성)
     LaunchedEffect(Unit) {
+        Log.d("SplashActivity", "Collect Started")
         viewModel.uiEvent.collect { event ->
+            Log.d("SplashActivity", "Collected event = $event")
             when (event) {
                 SplashUiEvent.NavigateToLogin ->
                     Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)

@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.b2_quiz
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,10 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -22,6 +21,8 @@ import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.jvm.java
 
 @AndroidEntryPoint
 class QuizActivity : ComponentActivity() {
@@ -41,14 +42,24 @@ class QuizActivity : ComponentActivity() {
                     LocalQuizUiState provides uiState,
                     LocalScreenState provides screenState,
                 ) {
-                    val context = LocalActivityContext.current as QuizActivity
-                    val goalTypeUiState: GoalTypeUiState = Utils.PrefsUtil.getGoalType(context)
-                    val documentId = Utils.PrefsUtil.getDocumentId(context) ?: -1
+                    val activity = LocalActivityContext.current as QuizActivity
+                    val goalTypeUiState: GoalTypeUiState = Utils.PrefsUtil.getGoalType(activity)
+                    val documentId = Utils.PrefsUtil.getDocumentId(activity) ?: -1
+
+                    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+                    // 🔥 전역 세션 이벤트 감지
+                    LaunchedEffect(Unit) {
+                        sessionManager.sessionEvent.collectLatest {
+                            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+                        }
+                    }
 
                     // 🔹 최초 진입 시 퀴즈 목록 조회
                     LaunchedEffect(Unit) {
                         viewModel.loadQuizzes(documentId, goalTypeUiState)
                     }
+
 
                     QuizScreen(
                         uiState = uiState,
@@ -62,13 +73,13 @@ class QuizActivity : ComponentActivity() {
                         onRetryApi = { viewModel.loadQuizzes(documentId, goalTypeUiState) },
                         onGoBeforeScreen = {
                             Utils.UxUtils.moveActivity(
-                                context,
+                                activity,
                                 SummaryActivity::class.java
                             )
                         },
                         onCompleteQuiz = {
-                            context.startActivity(
-                                QuizResultActivity.newIntent(context, documentId)
+                            activity.startActivity(
+                                QuizResultActivity.newIntent(activity, documentId)
                             )
                             finish()
                         }

@@ -9,7 +9,6 @@ import javax.inject.Inject
 
 class AutoLoginUseCase @Inject constructor(
     private val socialLoginRepository: SocialLoginRepository,
-    private val tokenLocalDataSource: TokenLocalDataSource,
 ) {
     suspend operator fun invoke(): AutoLogin {
 

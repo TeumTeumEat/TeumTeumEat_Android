@@ -31,6 +31,7 @@ import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.SizeAnimationInvisible
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.PopupOverlay
@@ -40,6 +41,8 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.jvm.java
 
 
 @Composable
@@ -52,6 +55,15 @@ fun AddCategoryGoalCompositionProvider(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mainState by viewModel.mainState.collectAsStateWithLifecycle()
     val navHostController = rememberNavController()
+
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     val visibleStates = remember(mainState) {
         mutableStateListOf(false, false, false)

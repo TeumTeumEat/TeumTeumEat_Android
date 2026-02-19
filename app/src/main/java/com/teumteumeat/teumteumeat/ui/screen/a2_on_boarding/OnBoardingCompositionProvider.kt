@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -93,6 +94,8 @@ fun OnBoardingCompositionProvider(
             // 아무것도 하지 않음 = 뒤로가기 무시
         }
 
+        val progress by viewModel.progress.collectAsStateWithLifecycle()
+
 
         when (mainState) {
 
@@ -108,7 +111,8 @@ fun OnBoardingCompositionProvider(
                 OnBoardingLoadingScreen(
                     title = "틈틈잇을 생성하는 중\n" +
                             "잠시만 기다려주세요",
-                    visibleStates = visibleStates
+                    visibleStates = visibleStates,
+                    progress = progress,
                 )
             }
 

@@ -36,7 +36,8 @@ fun QuizScreen(
     onCompleteQuiz: () -> Unit,
 ) {
 
-    val context = LocalActivityContext.current as QuizActivity
+    val activity = LocalActivityContext.current as QuizActivity
+
 
     // 🔴 에러 화면 (핵심)
     if (screenState is UiScreenState.Error) {

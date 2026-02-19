@@ -31,7 +31,7 @@ fun LoadingScreen(
     modifier: Modifier = Modifier,
     title: String = "",
     message: String = "",
-    progress: Float? = null, // ⭐ 추가
+    contentAlignment: Alignment = Alignment.Center,
     visibleStates: SnapshotStateList<Boolean> = remember {
         mutableStateListOf(false, false, false)
     },
@@ -49,7 +49,7 @@ fun LoadingScreen(
 
         Column(
             modifier = Modifier
-                .align(Alignment.Center)
+                .align(contentAlignment)
                 .padding(bottom = 100.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -89,16 +89,6 @@ fun LoadingScreen(
                 color = extendedColors.textGhost
             )
 
-            // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
-            if (progress != null) {
-                Spacer(modifier = Modifier.height(20.dp))
-
-                CustomProgressBar(
-                    modifier = Modifier.fillMaxWidth(0.6f),
-                    progress = progress
-                )
-            }
-
         }
 
     }
@@ -134,24 +124,6 @@ fun GoalLoadingScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            /*// 🔵 원형 컨테이너 (체크박스 UI 감성)
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(
-                        color = extendedColors.primaryContainer,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    strokeWidth = 3.dp,
-                    color = extendedColors.primary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }*/
-
-
 
             // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
             if (progress != null) {

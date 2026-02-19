@@ -34,8 +34,8 @@ class SplashViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<SplashUiEvent>(
-        replay = 1,
-        extraBufferCapacity = 1
+        replay = 0,
+        extraBufferCapacity = 0
     )
     val uiEvent = _uiEvent.asSharedFlow()
 
@@ -76,10 +76,9 @@ class SplashViewModel @Inject constructor(
                     )
                 }
 
-                else -> {
-                    // 👉 여기서는 예시로 Main 이동
-                    _uiEvent.emit(SplashUiEvent.NavigateToMain)
-                }
+                // 👉 여기서는 기본 동작으로 이동
+                else -> {}
+
             }
         }
     }
@@ -124,8 +123,7 @@ class SplashViewModel @Inject constructor(
                     sessionManager.expireSession()
                 }
                 else -> {
-                    Log.d("${this@SplashViewModel}", "자동 로그인 실패 ${result}")
-                    setGoLoginState()
+                    sessionManager.expireSession()
                 }
             }
 
@@ -137,15 +135,19 @@ class SplashViewModel @Inject constructor(
         when (val result = getOnboardingCompletedUseCase()) {
 
             is OnboardingDecision.GoMain -> {
+                Log.d("SplashVM", "Emit NavigateToMain")
                 _uiEvent.emit(SplashUiEvent.NavigateToMain)
             }
 
             is OnboardingDecision.GoOnboarding -> {
+                Log.d("SplashVM", "Emit NavigateToOnboarding")
+
                 _uiEvent.emit(SplashUiEvent.NavigateToOnboarding)
             }
 
             is OnboardingDecision.NeedLogin -> {
                 // 🔑 핵심: 에러 UI ❌
+                Log.d("SplashVM", "Emit NavigateToLogin")
                 _uiEvent.emit(SplashUiEvent.NavigateToLogin)
             }
         }

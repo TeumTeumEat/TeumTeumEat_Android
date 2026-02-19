@@ -18,6 +18,8 @@ import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
 import com.teumteumeat.teumteumeat.utils.Utils.InfoUtil.getAppVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,12 +34,12 @@ import javax.inject.Inject
 class MyPageViewModel @Inject constructor(
     application: Application,
     private val userRepository: UserRepository,
-    private val documentRepository: DocumentRepository,
     private val goalRepository: GoalRepository,
     private val getGoalListUseCase: GetGoalListUseCase,
     private val socialLoginRepository: SocialLoginRepository,
     private val tokenLocalDataSource: TokenLocalDataSource,
-    private val socialLoginRepositoryImpl: SocialLoginRepositoryImpl
+    private val socialLoginRepositoryImpl: SocialLoginRepositoryImpl,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateMyPage())
@@ -100,12 +102,8 @@ class MyPageViewModel @Inject constructor(
                     _uiEvent.emit(UiEvent.NavigateToLogin)
                 }
 
-                is ApiResultV2.ServerError -> {
-                    _uiState.update { it.copy(errorMessage = result.uiMessage) }
-                }
-
                 else -> {
-                    _uiState.update { it.copy(errorMessage = result.uiMessage) }
+                    moveToError(result)
                 }
             }
         }
@@ -134,43 +132,48 @@ class MyPageViewModel @Inject constructor(
                     }
                 }
 
-                is ApiResultV2.NetworkError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "네트워크 연결을 확인해주세요."
-                        )
-                    }
-                }
-
-                is ApiResultV2.ServerError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResultV2.SessionExpired -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "로그인이 만료되었습니다."
-                        )
-                    }
-                }
-
                 else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "알 수 없는 오류가 발생했습니다."
-                        )
-                    }
+                    moveToError(result)
                 }
             }
         }
+    }
+
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            is ApiResultV2.NetworkError -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+
+            is ApiResultV2.ServerError -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+            else -> {
+
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "알 수 없는 오류가 발생했습니다."
+                    )
+                }
+            }
+        }
+
     }
 
     private fun loadMyPage() {
@@ -198,31 +201,8 @@ class MyPageViewModel @Inject constructor(
                     applyFirstGoal(firstGoal)
                 }
 
-                is ApiResultV2.ServerError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResultV2.NetworkError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "네트워크 연결을 확인해주세요."
-                        )
-                    }
-                }
-
                 else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "알 수 없는 오류가 발생했습니다."
-                        )
-                    }
+                    moveToError(result)
                 }
             }
         }
@@ -260,12 +240,7 @@ class MyPageViewModel @Inject constructor(
             }
 
             else -> {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.uiMessage
-                    )
-                }
+                moveToError(result)
             }
         }
     }

@@ -11,7 +11,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
-import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizActivity
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -20,6 +19,7 @@ import com.teumteumeat.teumteumeat.utils.LocalMyPageUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
 class MyPageActivity : ComponentActivity() {
@@ -40,10 +40,15 @@ class MyPageActivity : ComponentActivity() {
                     LocalMyPageUiState provides uiState,
                 ) {
                     val context = LocalContext.current
-                    val activityContext = LocalActivityContext.current
+                    val activity = LocalActivityContext.current
 
-                    // 최초 진입 시 1회 호출
+                    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+                    // 🔥 전역 세션 이벤트 감지
                     LaunchedEffect(Unit) {
+                        sessionManager.sessionEvent.collectLatest {
+                            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+                        }
                     }
 
                     MyPageScreen(
@@ -51,7 +56,7 @@ class MyPageActivity : ComponentActivity() {
                         onBackClick = { finish() },
                         onTopicClick = {
                             Utils.UxUtils.moveActivity(
-                                activityContext,
+                                activity,
                                 GoalListActivity::class.java,
                                 exitFlag = false
                             )
@@ -61,7 +66,7 @@ class MyPageActivity : ComponentActivity() {
                         onCustomerCenterClick = {  },
                         onLogoutClick = {
                             Utils.UxUtils.moveActivity(
-                                activityContext,
+                                activity,
                                 LoginActivity::class.java,
                             )
                         }

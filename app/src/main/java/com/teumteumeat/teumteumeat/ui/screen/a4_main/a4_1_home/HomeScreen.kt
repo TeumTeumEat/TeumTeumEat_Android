@@ -33,16 +33,19 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.jvm.java
 
 
 @Composable
@@ -51,6 +54,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     screenState: UiScreenState,
     onRetryApi: () -> Unit,
+    viewModel: HomeViewModel,
 ) {
 
     val activity = LocalActivityContext.current
@@ -86,6 +90,15 @@ fun HomeScreen(
 
         else ->
             R.drawable.img_food_before
+    }
+
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+            sessionManager.sessionEvent.collectLatest {
+                Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+            }
     }
 
     LaunchedEffect(Unit) {

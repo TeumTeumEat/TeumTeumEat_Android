@@ -10,6 +10,8 @@ import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,10 +21,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GoalListViewModel @Inject constructor(
-    application: Application,
-    private val documentRepository: DocumentRepository,
     private val getGoalListUseCase: GetGoalListUseCase,
     private val goalRepository: GoalRepository,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateGoalList())
@@ -62,34 +63,29 @@ class GoalListViewModel @Inject constructor(
                     }
                 }
 
-                is ApiResultV2.NetworkError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "네트워크 연결을 확인해주세요."
-                        )
-                    }
-                }
-
-                is ApiResultV2.ServerError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
                 else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "알 수 없는 오류가 발생했습니다."
-                        )
-                    }
+                    moveToError(result)
                 }
             }
         }
+    }
+
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            else -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+        }
+
     }
 
     private suspend fun loadUserGoal() {
@@ -168,12 +164,7 @@ class GoalListViewModel @Inject constructor(
                     loadGoals()
                 }
                 else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
+                    moveToError(result)
                 }
             }
 

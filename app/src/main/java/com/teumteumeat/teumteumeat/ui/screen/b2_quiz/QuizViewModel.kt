@@ -7,6 +7,7 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class QuizViewModel @Inject constructor(
-    private val quizRepository: QuizRepository
+    private val quizRepository: QuizRepository,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateQuiz())
@@ -79,6 +81,7 @@ class QuizViewModel @Inject constructor(
                 val result =
                     quizRepository.getUserQuizzes(documentId, goalTypeUiState)
             ) {
+
                 is ApiResultV2.Success -> {
                     // 🔍 1. Domain 단계 quizId 확인
                     result.data.forEachIndexed { index, quiz ->
@@ -110,6 +113,10 @@ class QuizViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
                 }
 
                 else -> {

@@ -9,8 +9,10 @@ import com.teumteumeat.teumteumeat.localdata.preference.HomePreference
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.AppResumeNotifier
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,8 +25,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val quizRepository: QuizRepository,
-    private val homePreference: HomePreference,
     private val appResumeNotifier: AppResumeNotifier,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateHome())
@@ -88,19 +90,25 @@ class HomeViewModel @Inject constructor(
                             _screenState.value = UiScreenState.Success
                         }
 
+                        is ApiResultV2.SessionExpired -> {
+                            sessionManager.expireSession()
+                        }
+
                         is ApiResultV2.ServerError,
                         is ApiResultV2.NetworkError,
-                        is ApiResultV2.SessionExpired,
                         is ApiResultV2.UnknownError -> {
                             _screenState.value =
-                                UiScreenState.Error(quizResult.uiMessage)
+                                Error(quizResult.uiMessage)
                         }
+
                     }
                 }
 
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
-                is ApiResultV2.SessionExpired,
                 is ApiResultV2.UnknownError -> {
                     _screenState.value =
                         UiScreenState.Error(goalResult.uiMessage)

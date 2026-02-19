@@ -1,9 +1,11 @@
 package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import android.app.Application
+import android.se.omapi.Session
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
@@ -13,6 +15,7 @@ import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.quiz.UserQuizStatus
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
@@ -41,6 +44,7 @@ class SummaryViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val quizRepository: QuizRepository,
     val application: Application,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -116,6 +120,10 @@ class SummaryViewModel @Inject constructor(
                 }
             }
 
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
             else -> {
                 // 공통 에러 메시지 처리
                 _event.emit(
@@ -138,6 +146,10 @@ class SummaryViewModel @Inject constructor(
 
                     is ApiResultV2.Success -> {
                         _event.emit(UiEvent.MoveToQuiz)
+                    }
+
+                    is ApiResultV2.SessionExpired -> {
+                        sessionManager.expireSession()
                     }
 
                     else -> {
@@ -345,6 +357,10 @@ class SummaryViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
                 }
 
                 else -> {
@@ -598,9 +614,12 @@ class SummaryViewModel @Inject constructor(
                     _screenState.value = UiScreenState.Success
                 }
 
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
+
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
-                is ApiResultV2.SessionExpired,
                 is ApiResultV2.UnknownError -> {
                     val message = result.uiMessage
 
