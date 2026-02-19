@@ -2,10 +2,12 @@ package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainArgs
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainScreenType
@@ -14,6 +16,9 @@ import com.teumteumeat.teumteumeat.utils.LocalQuizResultUiState
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.jvm.java
+
 
 
 sealed class QuizResultRoute(val route: String) {
@@ -34,6 +39,15 @@ fun QuizResultNavHost(
     val viewModel = LocalViewModelContext.current as QuizResultViewModel
     val uiState = LocalQuizResultUiState.current
     val screenState = LocalScreenState.current
+
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     NavHost(
         navController = navController,

@@ -58,8 +58,7 @@
         </activity> <!-- a1 - 로그인 화면 -->
         <activity
             android:name=".ui.screen.a1_login.LoginActivity"
-            android:exported="true"
-            android:launchMode="singleTop"></activity>
+            android:exported="true" />
         <activity
             android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
             android:exported="true">
@@ -86,13 +85,12 @@
             android:label="@string/title_activity_on_boarding"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".ui.screen.a3_welcome.WelcomeActivity"
+            android:name=".ui.screen.unused_welcome.WelcomeActivity"
             android:exported="true" />
         <activity
             android:name=".ui.screen.a4_main.MainActivity"
             android:exported="true"
-            android:label="@string/title_activity_home"
-            android:launchMode="singleTop">
+            android:label="@string/title_activity_home">
 
         </activity> <!-- b-1 퀴즈플로우 - 요약 화면 -->
         <activity

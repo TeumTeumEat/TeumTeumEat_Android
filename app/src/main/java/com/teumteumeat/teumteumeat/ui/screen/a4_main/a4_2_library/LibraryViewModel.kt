@@ -3,9 +3,11 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.common.api.Api
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,7 +26,8 @@ sealed interface LibraryUiEvent {
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
-    private val historyRepository: HistoryRepository
+    private val historyRepository: HistoryRepository,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiStateLibrary>(UiStateLibrary())
@@ -76,10 +79,13 @@ class LibraryViewModel @Inject constructor(
                     }
                 }
 
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
+
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
-                is ApiResultV2.UnknownError,
-                is ApiResultV2.SessionExpired -> {
+                is ApiResultV2.UnknownError -> {
                     // 👉 에러 메시지는 ViewModel 확장함수에서 처리된다고 가정
                     Log.e("LibraryViewModel", "❌ 캘린더 히스토리 로드 실패: ${result.uiMessage}")
                 }
@@ -133,9 +139,7 @@ class LibraryViewModel @Inject constructor(
     /** 📥 선택 날짜의 학습 내역 조회 */
     private fun loadDailyLearningHistory(date: LocalDate) {
         viewModelScope.launch {
-            when (
-                val result =
-                    historyRepository.getCalendarDailyHistory(date.toString())
+            when (val result = historyRepository.getCalendarDailyHistory(date.toString())
             ) {
                 is ApiResultV2.Success -> {
                     _uiState.update { state ->
@@ -148,7 +152,9 @@ class LibraryViewModel @Inject constructor(
                         )
                     }
                 }
-
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
                 else -> {
                     _uiState.update { state ->
                         state.copy(
@@ -184,9 +190,12 @@ class LibraryViewModel @Inject constructor(
                     }
                 }
 
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
+
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
-                is ApiResultV2.SessionExpired,
                 is ApiResultV2.UnknownError -> {
                     // 👉 공통 에러 메시지 처리
                     _uiState.update {

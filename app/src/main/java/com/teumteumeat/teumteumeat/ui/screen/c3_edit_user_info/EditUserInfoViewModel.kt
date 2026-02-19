@@ -12,6 +12,7 @@ import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.NameViolation
@@ -26,12 +27,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EditUserInfoViewModel @Inject constructor(
-    application: Application,
-    private val documentRepository: DocumentRepository,
-    private val getGoalListUseCase: GetGoalListUseCase,
     private val userRepository: UserRepository,
     private val registerUserNameUseCase: RegisterUserNameUseCase,
     private val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
     companion object {
         private const val MIN_LENGTH = 1
@@ -79,6 +78,7 @@ class EditUserInfoViewModel @Inject constructor(
             // 2️⃣ 출퇴근 정보 저장
             val commuteResult = saveCommuteInfoInternal()
             if (commuteResult !is ApiResultV2.Success) {
+                moveToError(commuteResult)
                 return@launch
             }
         }
@@ -137,12 +137,7 @@ class EditUserInfoViewModel @Inject constructor(
             }
 
             else -> {
-                _uiState.update {
-                    it.copy(
-                        isNameValid = false,
-                        errorMessage = result.uiMessage
-                    )
-                }
+                moveToError(result)
                 result
             }
         }
@@ -205,16 +200,47 @@ class EditUserInfoViewModel @Inject constructor(
                 }
 
                 else -> {
-                    // 3️⃣ 에러 처리 (공통 uiMessage 사용)
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
+                    moveToError(result)
                 }
             }
         }
+    }
+
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            is ApiResultV2.NetworkError -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+
+            is ApiResultV2.ServerError -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+
+            else -> {
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "알 수 없는 오류가 발생했습니다."
+                    )
+                }
+            }
+        }
+
     }
 
     fun openBottomSheet(type: BottomSheetType) {
@@ -334,13 +360,7 @@ class EditUserInfoViewModel @Inject constructor(
             }
 
             else -> {
-                // 🔴 Success 외 모든 케이스 공통 처리
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.uiMessage
-                    )
-                }
+                moveToError(result)
             }
         }
     }

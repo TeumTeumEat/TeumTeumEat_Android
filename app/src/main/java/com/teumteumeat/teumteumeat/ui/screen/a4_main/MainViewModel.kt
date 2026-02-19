@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,7 +22,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val historyRepository: HistoryRepository
+    private val historyRepository: HistoryRepository,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiStateMain>(UiStateMain())
@@ -99,10 +101,12 @@ class MainViewModel @Inject constructor(
                     }
                 }
 
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
-                is ApiResultV2.UnknownError,
-                is ApiResultV2.SessionExpired -> {
+                is ApiResultV2.UnknownError -> {
                     // 👉 에러 메시지는 ViewModel 확장함수에서 처리된다고 가정
                     Log.e("LibraryViewModel", "❌ 캘린더 히스토리 로드 실패: ${result.uiMessage}")
                 }

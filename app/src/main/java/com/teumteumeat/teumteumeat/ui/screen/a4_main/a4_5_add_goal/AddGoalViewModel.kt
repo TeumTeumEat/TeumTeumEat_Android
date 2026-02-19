@@ -18,6 +18,7 @@ import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCaseV1
@@ -48,14 +49,13 @@ import kotlin.collections.forEach
 
 @HiltViewModel
 class AddGoalViewModel @Inject constructor(
-    val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val createGoalUseCase: CreateGoalUseCase,
     private val updateGoalUseCase: UpdateGoalUseCase,
-    private val getGoalListUseCase: GetGoalListUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
     application: Application,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -421,13 +421,7 @@ class AddGoalViewModel @Inject constructor(
                 }
 
                 is ApiResult.SessionExpired -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSessionExpired = true,
-                            pageErrorMessage = result.message
-                        )
-                    }
+                    sessionManager.expireSession()
                 }
 
                 is ApiResult.ServerError -> {
@@ -581,7 +575,11 @@ class AddGoalViewModel @Inject constructor(
         }
     }
 
-    private fun moveToError(result: ApiResultV2<*>) {
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+        if (result is ApiResultV2.SessionExpired){
+            sessionManager.expireSession()
+        }
+
         _mainState.value = UiStateAddGoalScreenState.Error(
             message = result.uiMessage
         )
@@ -593,20 +591,6 @@ class AddGoalViewModel @Inject constructor(
         )
     }
 
-
-    private suspend fun saveCommuteInfoInternal(): ApiResultV2<Unit> {
-        val current = _uiState.value
-
-        val usageTime = current.selectedMinute
-            ?: return ApiResultV2.UnknownError("사용 시간을 선택해주세요.")
-
-        Log.d("퇴근시간 디버깅", "출근시간: ${current.workInTime}, 퇴근시간: ${current.workOutTime}")
-        return updateCommuteTimeUseCase(
-            startTime = current.workInTime.toServerTime(),
-            endTime = current.workOutTime.toServerTime(),
-            usageTime = usageTime
-        )
-    }
     private suspend fun createGoalRequestForCategory(selectedCategoryId: Int?): ApiResultV2<Int> {
         val state = _uiState.value
 
@@ -669,48 +653,7 @@ class AddGoalViewModel @Inject constructor(
         )
     }
 
-    private suspend fun fetchLatestGoalId(): ApiResultV2<Unit> {
-        return when (val result = getGoalListUseCase()) {
 
-            is ApiResultV2.Success -> {
-                val data : GoalsData = result.data
-                val list: List<GetGoalResponse> = data.goalResponses
-
-                Log.d("OnBoardingVM", "goal list size = ${list.size}")
-
-                val latestGoalId = list[0].goalId
-                    ?: return ApiResultV2.ServerError(
-                        code = "EMPTY_GOAL_LIST",
-                        message = "목표가 존재하지 않습니다.",
-                        errorType = DomainError.Message("goal list is empty")
-                    )
-
-                Log.d("DEBUG", "state.goalId(before save) = ${latestGoalId}")
-
-                PrefsUtil.saveGoalId(appContext, latestGoalId)
-
-                Log.d("DEBUG", "saved goalId = ${PrefsUtil.getGoalId(appContext)}")
-
-
-                // ⭐ 성공 시 내부에서 상태 반영
-                _uiState.update {
-                    it.copy(goalId = latestGoalId)
-                }
-
-                Log.d("OnBoardingVM", "최신 목표 ID: ${_uiState.value.goalId}")
-
-                ApiResultV2.Success(
-                    message = result.message,
-                    data = Unit
-                )
-            }
-
-            is ApiResultV2.ServerError -> result
-            is ApiResultV2.NetworkError -> result
-            is ApiResultV2.SessionExpired -> result
-            is ApiResultV2.UnknownError -> result
-        }
-    }
     private suspend fun uploadDocumentInternal(
         goalId: Int,
         uri: Uri,
@@ -737,9 +680,13 @@ class AddGoalViewModel @Inject constructor(
                 result
             }
 
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+                result
+            }
+
             is ApiResultV2.ServerError -> result
             is ApiResultV2.NetworkError -> result
-            is ApiResultV2.SessionExpired -> result
             is ApiResultV2.UnknownError -> result
         }
     }
@@ -773,9 +720,13 @@ class AddGoalViewModel @Inject constructor(
                 )
             }
 
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+                result
+            }
+
             is ApiResultV2.ServerError -> result
             is ApiResultV2.NetworkError -> result
-            is ApiResultV2.SessionExpired -> result
             is ApiResultV2.UnknownError -> result
         }
     }

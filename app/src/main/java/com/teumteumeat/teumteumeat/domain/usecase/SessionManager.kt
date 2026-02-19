@@ -23,7 +23,7 @@ class SessionManager @Inject constructor(
     val sessionEvent = _sessionEvent.asSharedFlow()
 
     suspend fun expireSession() {
-        // todo. 로그아웃 시 현재 디바이스 기기 알림 기능 해제 구현
+        // 로그아웃 시 현재 디바이스 기기 알림 기능 해제 구현
         //  1. 알림 기능 off APi 구현
         //  2. 로그아웃 시 호출 되도록 적용
         val fcmToken = FcmTokenStore.get(appContext) ?: ""

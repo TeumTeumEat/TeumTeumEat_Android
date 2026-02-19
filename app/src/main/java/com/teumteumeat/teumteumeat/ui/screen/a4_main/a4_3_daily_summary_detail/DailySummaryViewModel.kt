@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail
 
 import android.app.Application
+import android.se.omapi.Session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -9,6 +10,7 @@ import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
@@ -23,10 +25,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DailySummaryViewModel @Inject constructor(
-    private val documentRepository: DocumentRepository,
-    private val categoryRepository: CategoryRepository,
     private val historyRepository: HistoryRepository,
     val application: Application,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -92,6 +93,11 @@ class DailySummaryViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+
                 }
 
                 else -> {

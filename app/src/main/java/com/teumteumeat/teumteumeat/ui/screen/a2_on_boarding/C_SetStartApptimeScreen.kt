@@ -316,7 +316,7 @@ fun NotificationSettingGuideOverlay(
             Quad(
                 "알림을 켜려면 설정이 필요해요",
                 "알림 권한이 꺼져 있어요.\n기기 설정에서 알림을 허용해주세요.",
-                "설정으로 이동",
+                "설정 화면",
                 "취소"
             )
         }
@@ -325,7 +325,7 @@ fun NotificationSettingGuideOverlay(
             Quad(
                 "알림을 끄려면 설정이 필요해요",
                 "알림은 앱에서 직접 끌 수 없어요.\n기기 설정에서 변경할 수 있어요.",
-                "설정으로 이동",
+                "설정 화면",
                 "취소"
             )
         }

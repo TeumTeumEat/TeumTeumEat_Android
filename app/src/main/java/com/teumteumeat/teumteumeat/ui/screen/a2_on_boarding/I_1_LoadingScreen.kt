@@ -18,6 +18,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.GoalProgress
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -26,13 +27,11 @@ fun OnBoardingLoadingScreen(
     modifier: Modifier = Modifier,
     title: String = "",
     message: String = "",
+    progress: Float? = null, // ⭐ 추가
     visibleStates: SnapshotStateList<Boolean>,
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
-
-
-
 
     Box(
         modifier = modifier
@@ -48,7 +47,16 @@ fun OnBoardingLoadingScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // 🔵 원형 컨테이너 (체크박스 UI 감성)
+
+            // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
+            if (progress != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                GoalProgress(
+                    progress = progress
+                )
+            }
+            /*// 🔵 원형 컨테이너 (체크박스 UI 감성)
             Box(
                 modifier = Modifier
                     .size(56.dp)
@@ -63,7 +71,7 @@ fun OnBoardingLoadingScreen(
                     color = extendedColors.primary,
                     modifier = Modifier.size(28.dp)
                 )
-            }
+            }*/
 
             Spacer(modifier = Modifier.height(20.dp))
 

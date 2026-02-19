@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.card.CalendarDailyLearningCard
 import com.teumteumeat.teumteumeat.ui.component.card.TopicCategoryCard
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail.DailySummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
@@ -42,11 +44,14 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.mapStreakToMotiva
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.BottomFadeOverlay
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.DailySummaryArgs
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import kotlinx.coroutines.flow.collectLatest
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlin.jvm.java
 
 @Composable
 fun LibraryScreen(
@@ -57,10 +62,17 @@ fun LibraryScreen(
     innerPadding: PaddingValues,
 ) {
 
-    val context = LocalActivityContext.current as MainActivity
-    val currentPage = uiState.currentPage
-    val totalPages = uiState.totalPage
+    val activity = LocalActivityContext.current as MainActivity
     val theme = MaterialTheme.extendedColors
+
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     DefaultMonoBg(
         modifier = Modifier
@@ -149,7 +161,7 @@ fun LibraryScreen(
                                     goalType = item.type,   // ✅ Domain → UI 그대로 전달
                                     onClick = {
                                         val intent = Intent(
-                                            context,
+                                            activity,
                                             DailySummaryActivity::class.java
                                         ).apply {
                                             putExtra(
@@ -166,7 +178,7 @@ fun LibraryScreen(
                                             )
                                         }
 
-                                        context.startActivity(intent)
+                                        activity.startActivity(intent)
                                     }
                                 )
                             }

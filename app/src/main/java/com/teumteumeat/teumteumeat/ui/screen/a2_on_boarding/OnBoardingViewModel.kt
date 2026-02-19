@@ -39,6 +39,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -90,6 +91,9 @@ class OnBoardingViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<UiEffect>(extraBufferCapacity = 1)
     val effect: SharedFlow<UiEffect> = _effect
 
+    private val _progress = MutableStateFlow(0f)
+    val progress: StateFlow<Float> = _progress
+
     init {
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
     }
@@ -100,6 +104,25 @@ class OnBoardingViewModel @Inject constructor(
 
         viewModelScope.launch {
             _mainState.value = UiStateOnboardingScreenState.Loading
+
+            // ⭐ progress 애니메이션 시작 (1.8초)
+            launch {
+                val duration = 1800L
+                val startTime = System.currentTimeMillis()
+
+                while (true) {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    val progress = (elapsed / duration.toFloat()).coerceIn(0f, 1f)
+
+                    _progress.value = progress
+
+                    if (progress >= 1f) break
+
+                    delay(16L) // 약 60fps
+                }
+
+                _progress.value = 1f
+            }
 
             val state = _uiState.value
 
@@ -194,7 +217,6 @@ class OnBoardingViewModel @Inject constructor(
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
-
             _mainState.value = UiStateOnboardingScreenState.Success
         }
     }
@@ -208,7 +230,6 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     private suspend fun moveToError(result: ApiResultV2<*>) {
-        // todo. session 에러 발생 시 로그인 화면으로 fall back 기능 구현
         when (result) {
             is ApiResultV2.SessionExpired -> {
                 sessionManager.expireSession()
@@ -1376,32 +1397,32 @@ class OnBoardingViewModel @Inject constructor(
 
     fun onNameTextChanged(input: String) {
         viewModelScope.launch {
-            // ✅ 입력은 최대 10자까지만 "받는다"(저장)
-            val trimmedToMax = if (input.length > MAX_LENGTH) input.take(MAX_LENGTH) else input
+            val isOverMaxLength = input.length > MAX_LENGTH
 
-            // ✅ 유효성은 별도로 판단 (입력은 되지만 invalid 가능)
             val violation = when {
-                trimmedToMax.isEmpty() -> NameViolation.Empty
-                trimmedToMax.length < MIN_LENGTH -> NameViolation.Empty // 사실상 동일
-                trimmedToMax.contains(" ") -> NameViolation.HasSpace
-                !trimmedToMax.matches(ALLOWED_REGEX) -> NameViolation.HasSpecialChar
+                input.isEmpty() -> NameViolation.Empty
+                input.length < MIN_LENGTH -> NameViolation.Empty // 사실상 동일
+                isOverMaxLength -> NameViolation.TooLong
+                input.contains(" ") -> NameViolation.HasSpace
+                !input.matches(ALLOWED_REGEX) -> NameViolation.HasSpecialChar
                 else -> NameViolation.None
             }
 
             val isValid =
-                violation == NameViolation.None && trimmedToMax.length in MIN_LENGTH..MAX_LENGTH
+                violation == NameViolation.None && input.length in MIN_LENGTH..MAX_LENGTH
 
             val message = when (violation) {
-                NameViolation.None -> ""
+                NameViolation.TooLong -> "10자 이하로 입력해주세요" // 현재 take(MAX)라 실제로는 잘 안 옴
                 NameViolation.Empty -> "1자 이상 입력해주세요"
                 NameViolation.HasSpace -> "공백은 사용할 수 없어요"
                 NameViolation.HasSpecialChar -> "특수문자는 사용할 수 없어요 (한글/영문/숫자만)"
-                NameViolation.TooLong -> "10자 이하로 입력해주세요" // 현재 take(MAX)라 실제로는 잘 안 옴
+                NameViolation.None -> ""
             }
+
 
             _uiState.update {
                 it.copy(
-                    charName = trimmedToMax,
+                    charName = input,
                     isNameValid = isValid,
                     errorMessage = message,
                     violation = violation

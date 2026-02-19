@@ -92,6 +92,7 @@ fun OnBoardingSetCharNameScreen(
                         labelText = "",
                         placeholderText = "입력해주세요.",
                         onValueChange = { input ->
+                            // Log.d("ComposeInput", "compose input = $input length=${input.length}")
                             viewModel.onNameTextChanged(input)// viewModel set 함수 위치
                         },
                         modifier = Modifier.fillMaxWidth(),
