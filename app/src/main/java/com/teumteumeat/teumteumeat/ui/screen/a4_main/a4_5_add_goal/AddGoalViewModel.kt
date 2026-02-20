@@ -39,6 +39,7 @@ import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -65,6 +66,9 @@ class AddGoalViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<UiStateAddGoalState>(UiStateAddGoalState())
     val uiState = _uiState.asStateFlow()
+
+    private val _progress = MutableStateFlow(0f)
+    val progress: StateFlow<Float> = _progress
 
     // 2️⃣ 플로우 상태 (Idle / Loading / Success / Error)
     private val _mainState =
@@ -476,6 +480,25 @@ class AddGoalViewModel @Inject constructor(
         viewModelScope.launch {
             _mainState.value = UiStateAddGoalScreenState.Loading
 
+            // ⭐ progress 애니메이션 시작 (1.8초)
+            launch {
+                val duration = 1800L
+                val startTime = System.currentTimeMillis()
+
+                while (true) {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    val progress = (elapsed / duration.toFloat()).coerceIn(0f, 1f)
+
+                    _progress.value = progress
+
+                    if (progress >= 1f) break
+
+                    delay(16L) // 약 60fps
+                }
+
+                _progress.value = 1f
+            }
+
             val state = _uiState.value
 
             val startTime = System.currentTimeMillis()
@@ -568,10 +591,6 @@ class AddGoalViewModel @Inject constructor(
 
             _mainState.value = UiStateAddGoalScreenState.Success
 
-            // todo. 테스트 코드!
-//            _mainState.value = UiStateOnBoardingMainState.Error(
-//                message = "테스트 에러 페이지입니다.\n잠시 후 다시 시도해주세요."
-//            )
         }
     }
 

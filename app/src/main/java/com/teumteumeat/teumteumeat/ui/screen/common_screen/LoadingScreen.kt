@@ -1,8 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.common_screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +17,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.GoalProgress
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -130,7 +125,8 @@ fun GoalLoadingScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 GoalProgress(
-                    progress = progress
+                    progress = progress,
+                    isCompletedLoading = true
                 )
             }
 

@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.component
 
-import android.util.Size
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -11,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -138,7 +138,8 @@ fun CustomProgressBar(
 
 @Composable
 fun GoalProgress(
-    progress: Float
+    progress: Float,
+    isCompletedLoading: Boolean = false
 ) {
 
     val composition by rememberLottieComposition(
@@ -157,6 +158,16 @@ fun GoalProgress(
     ) {
 
         CircularProgressCanvas(progress)
+
+        // 🔵 Vector Asset 표시
+        if (isCompletedLoading) {
+
+            Image(
+                painter = painterResource(id = R.drawable.back_effect_celerbrate),
+                contentDescription = null,
+                modifier = Modifier.size(190.dp)
+            )
+        }
 
         // 🔵 로티 (무한 반복)
         LottieAnimation(
@@ -270,6 +281,13 @@ fun OnBoardingPreview() {
                 CustomProgressBar(
                     currentStep = currentPage,
                     totalSteps = totalPage,
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                GoalProgress(
+                    progress = 1f,
+                    isCompletedLoading = true
                 )
             }
         }

@@ -3,10 +3,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -107,12 +102,13 @@ fun OnBoardingCompositionProvider(
                         visibleStates[index] = true
                     }
                 }
-                // todo. 로딩 스크린 구현
+
                 OnBoardingLoadingScreen(
                     title = "틈틈잇을 생성하는 중\n" +
                             "잠시만 기다려주세요",
-                    visibleStates = visibleStates,
                     progress = progress,
+                    visibleStates = visibleStates,
+                    isCompletedLoading = true,
                 )
             }
 
