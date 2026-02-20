@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +28,7 @@ fun OnBoardingLoadingScreen(
     message: String = "",
     progress: Float? = null, // ⭐ 추가
     visibleStates: SnapshotStateList<Boolean>,
+    isCompletedLoading: Boolean,
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
@@ -53,7 +53,8 @@ fun OnBoardingLoadingScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 GoalProgress(
-                    progress = progress
+                    progress = progress,
+                    isCompletedLoading = isCompletedLoading
                 )
             }
             /*// 🔵 원형 컨테이너 (체크박스 UI 감성)

@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -45,6 +46,7 @@ import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
+import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.DifficultyOption
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
@@ -85,6 +87,7 @@ fun AddGoalOptimizerDataScreen(
         DifficultyOption("중", Difficulty.MEDIUM),
         DifficultyOption("하", Difficulty.EASY),
     )
+
 
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
@@ -128,31 +131,16 @@ fun AddGoalOptimizerDataScreen(
                             .padding(bottom = 120.dp), // ✅ 하단 버튼 공간
                         horizontalAlignment = Alignment.Companion.CenterHorizontally
                     ) {
-                        Spacer(modifier = Modifier.Companion.height(60.dp))
-                        Text(
-                            "어떤 공부를 하고싶어?",
-                            style = Typography.headlineMedium.copy(
-                                fontSize = 18.sp,
-                            )
-                        )
+                        Spacer(modifier = Modifier.Companion.height(4.dp))
+                        SpeechBubble(text = "원하는 공부 난이도와 요청사항을\n" +
+                                "자세하게 알려주시겠어요?")
                         Spacer(modifier = Modifier.Companion.height(20.dp))
                         Image(
-                            painter = painterResource(R.drawable.character_front),
+                            painter = painterResource(R.drawable.char_onboarding_five_three),
                             contentDescription = "앞을 보는 케릭터",
-                            modifier = Modifier.Companion.size(width = 200.dp, height = 162.dp),
                             contentScale = ContentScale.Companion.Fit,
                         )
-                        Spacer(modifier = Modifier.Companion.height(56.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "난이도를 선택해주세요",
-                                style = MaterialTheme.appTypography.bodySemiBold18
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.Companion.height(10.dp))
                         DifficultyRadioGroup(
                             options = difficultyOptions,
                             selected = uiState.difficulty,

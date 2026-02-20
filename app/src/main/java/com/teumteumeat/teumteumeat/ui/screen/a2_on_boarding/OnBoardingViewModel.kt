@@ -672,13 +672,7 @@ class OnBoardingViewModel @Inject constructor(
                 }
 
                 is ApiResult.SessionExpired -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSessionExpired = true,
-                            pageErrorMessage = result.message
-                        )
-                    }
+                    sessionManager.expireSession()
                 }
 
                 is ApiResult.ServerError -> {
