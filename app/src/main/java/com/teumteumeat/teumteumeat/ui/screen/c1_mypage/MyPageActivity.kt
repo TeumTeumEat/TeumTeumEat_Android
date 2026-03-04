@@ -1,28 +1,37 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.teumteumeat.teumteumeat.ui.aa0_base.BaseActivity
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalMyPageUiState
+import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
-class MyPageActivity : ComponentActivity() {
+class MyPageActivity : BaseActivity() {
+
+    override fun onRetryClick() {
+
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,14 +39,26 @@ class MyPageActivity : ComponentActivity() {
         setContent {
             TeumTeumEatTheme {
 
-                val viewModel : MyPageViewModel = hiltViewModel()
+                val viewModel: MyPageViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+
+                // 🔹 Activity 결과를 받기 위한 런처 정의
+                val goalListLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.StartActivityForResult()
+                ) { result ->
+                    if (result.resultCode == RESULT_OK) {
+                        // 성공적으로 변경하고 돌아왔다면 데이터 재로딩!
+                        viewModel.loadMyPageData()
+                    }
+                }
 
                 CompositionLocalProvider(
                     LocalAppContext provides this.applicationContext,
                     LocalActivityContext provides this@MyPageActivity,
                     LocalViewModelContext provides viewModel,
                     LocalMyPageUiState provides uiState,
+                    LocalScreenState provides screenState,
                 ) {
                     val context = LocalContext.current
                     val activity = LocalActivityContext.current
@@ -55,21 +76,29 @@ class MyPageActivity : ComponentActivity() {
                         uiState = uiState,
                         onBackClick = { finish() },
                         onTopicClick = {
-                            Utils.UxUtils.moveActivity(
-                                activity,
-                                GoalListActivity::class.java,
-                                exitFlag = false
-                            )
+                            // 🔹 기존 Utils 사용 대신 런처를 통해 Activity 실행
+                            val intent = Intent(activity, GoalListActivity::class.java)
+                            goalListLauncher.launch(intent)
                         },
-                        onAlarmToggle = {  },
-                        onTermsClick = {  },
-                        onCustomerCenterClick = {  },
                         onLogoutClick = {
-                            Utils.UxUtils.moveActivity(
-                                activity,
-                                LoginActivity::class.java,
+                            viewModel.logout(
+                                onSuccess = {
+                                    Utils.UxUtils.moveActivity(
+                                        activity,
+                                        LoginActivity::class.java,
+                                    )
+                                },
+                                onError = { message ->
+                                }
                             )
-                        }
+
+                        },
+                        onAlarmToggle = {
+                            viewModel.toogleAlarm(!uiState.isAlarmEnabled)
+                        },
+                        onTermsClick = { },
+                        onCustomerCenterClick = { },
+                        onWithdroawClick = { viewModel.withdrawUser() }
                     )
                 }
             }

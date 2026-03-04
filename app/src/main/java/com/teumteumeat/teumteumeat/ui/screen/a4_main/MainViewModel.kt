@@ -1,15 +1,23 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.util.Log
 import androidx.compose.ui.geometry.Offset
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -24,6 +32,8 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
     val sessionManager: SessionManager,
+    private val dateChangeReceiver: DateChangeReceiver, // Singleton 리시버 주입
+    @ApplicationContext private val context: Context // 등록/해제를 위한 컨텍스트
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiStateMain>(UiStateMain())
@@ -33,6 +43,49 @@ class MainViewModel @Inject constructor(
         MutableStateFlow<UiScreenState>(UiScreenState.Idle)
     val screenState = _screenState.asStateFlow()
 
+    val retryEvent = MutableSharedFlow<Unit>()
+    fun triggerRetry() { viewModelScope.launch { retryEvent.emit(Unit) } }
+
+    init {
+        // todo. 날짜 변경 시에 viewModel.loadCalendarHistory(YearMonth.now()) 호출
+        setupDateChangeReceiver()
+        loadCalendarHistory(YearMonth.now())
+    }
+
+    internal fun setupDateChangeReceiver() {
+
+        dateChangeReceiver.setOnDateChangedListener {
+            loadCalendarHistory(YearMonth.now()) // 날짜 변경 시 실행할 비즈니스 로직
+        }
+
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_DATE_CHANGED)
+
+            // 디버그 모드일 때만 테스트용 커스텀 액션 추가
+            if (BuildConfig.DEBUG) {
+                addAction("com.teumteumeat.test.ACTION_DATE_CHANGED")
+            }
+        }
+
+        // 모드에 따른 보안 플래그 설정
+        val flags = if (BuildConfig.DEBUG) {
+            ContextCompat.RECEIVER_EXPORTED // 디버그: ADB 등 외부 신호 허용
+        } else {
+            ContextCompat.RECEIVER_NOT_EXPORTED // 릴리즈: 외부 앱/ADB 차단 (보안 강화)
+        }
+
+        // ContextCompat을 사용하여 등록
+        ContextCompat.registerReceiver(
+            context,
+            dateChangeReceiver,
+            filter,
+            flags
+        )
+
+        if (BuildConfig.DEBUG) {
+            Log.d("HomeViewModel", "리시버 등록 완료 (디버그 모드 - 외부 노출 허용)")
+        }
+    }
 
     fun updatePlusButtonOffset(offset: Offset) {
         _uiState.update { state ->
@@ -111,6 +164,17 @@ class MainViewModel @Inject constructor(
                     Log.e("LibraryViewModel", "❌ 캘린더 히스토리 로드 실패: ${result.uiMessage}")
                 }
             }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // 4. 중요: ViewModel이 소멸될 때 리시버 등록을 해제하여 메모리 누수 방지
+        try {
+            context.unregisterReceiver(dateChangeReceiver)
+        } catch (e: IllegalArgumentException) {
+            // 이미 해제되었거나 등록되지 않은 경우 예외 처리
+            Log.e("MainViewModel", "Receiver 해제 실패", e)
         }
     }
 

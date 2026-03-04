@@ -100,6 +100,7 @@ fun GoalLoadingScreen(
     visibleStates: SnapshotStateList<Boolean> = remember {
         mutableStateListOf(false, false, false)
     },
+    isCompletedLoading: Boolean = false
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
@@ -126,7 +127,7 @@ fun GoalLoadingScreen(
 
                 GoalProgress(
                     progress = progress,
-                    isCompletedLoading = true
+                    isCompletedLoading = isCompletedLoading
                 )
             }
 

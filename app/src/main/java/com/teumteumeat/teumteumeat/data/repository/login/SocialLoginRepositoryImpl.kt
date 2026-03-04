@@ -52,32 +52,7 @@ class SocialLoginRepositoryImpl @Inject constructor(
             ?: return SessionResult.Failed(message = "로그인이 필요합니다.")
 
         return try {
-            val reissueResponse = authApiService.reissueAccessToken(
-                ResponseBody(refreshToken)
-            )
-            val accessToken = reissueResponse.data
-
-            // ❌ 서버 응답이 비정상
-            if (reissueResponse.code != "OK" || accessToken.isBlank()) {
-                tokenLocalDataSource.clear()
-                return SessionResult.Expired(
-                    code = reissueResponse.code,
-                    message = reissueResponse.message ?: "토큰 갱신 실패"
-                )
-            }
-
-            // ✅ refreshToken 교체 여부 판단
-            val newRefreshToken = refreshToken
-
-            tokenLocalDataSource.save(
-                AuthToken(
-                    accessToken = accessToken,
-                    refreshToken = newRefreshToken
-                )
-            )
-
-            SessionResult.Success
-            /*else{
+            if (BuildConfig.VERSION_CODE >= 11) {
                 val reissueResponse = authApiService.reissueAccessTokenV2(
                     ResponseBody(refreshToken)
                 )
@@ -105,7 +80,34 @@ class SocialLoginRepositoryImpl @Inject constructor(
                 )
 
                 SessionResult.Success
-            }*/
+
+            }else{
+                val reissueResponse = authApiService.reissueAccessToken(
+                    ResponseBody(refreshToken)
+                )
+                val accessToken = reissueResponse.data
+
+                // ❌ 서버 응답이 비정상
+                if (reissueResponse.code != "OK" || accessToken.isBlank()) {
+                    tokenLocalDataSource.clear()
+                    return SessionResult.Expired(
+                        code = reissueResponse.code,
+                        message = reissueResponse.message ?: "토큰 갱신 실패"
+                    )
+                }
+
+                // ✅ refreshToken 교체 여부 판단
+                val newRefreshToken = refreshToken
+
+                tokenLocalDataSource.save(
+                    AuthToken(
+                        accessToken = accessToken,
+                        refreshToken = newRefreshToken
+                    )
+                )
+
+                SessionResult.Success
+            }
 
         }catch (e: retrofit2.HttpException) {
 

@@ -47,6 +47,7 @@ fun SelectInputMethodScreen(
     val totalPages = uiState.totalPage
 
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(

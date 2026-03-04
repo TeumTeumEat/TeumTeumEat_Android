@@ -48,13 +48,13 @@ class QuizResultViewModel @Inject constructor(
         savedStateHandle[KEY_DATE] = date
     }
 
-
     private val _uiState = MutableStateFlow(UiStateQuizResult())
     val uiState = _uiState.asStateFlow()
 
     private val _screenState =
-        MutableStateFlow<UiScreenState>(UiScreenState.Idle)
+        MutableStateFlow<UiScreenState>(UiScreenState.Loading)
     val screenState = _screenState.asStateFlow()
+
 
     fun getDocumentId(): Int =
         savedStateHandle[KEY_DOCUMENT_ID] ?: error("documentId missing")
@@ -101,7 +101,6 @@ class QuizResultViewModel @Inject constructor(
 
                 else -> {
                     moveToError(goalResult)
-
                 }
             }
 

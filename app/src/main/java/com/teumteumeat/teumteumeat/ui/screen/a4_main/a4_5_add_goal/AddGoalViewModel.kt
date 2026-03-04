@@ -13,6 +13,7 @@ import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
+import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
@@ -57,6 +58,7 @@ class AddGoalViewModel @Inject constructor(
     val getDocumentsUseCase: GetDocumentsUseCase,
     application: Application,
     val sessionManager: SessionManager,
+    val goalRepository: GoalRepository,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -506,7 +508,6 @@ class AddGoalViewModel @Inject constructor(
 
             // 5. 문서 업로드 documentID 생성
             Log.d("OnBoardingVM", "타입: ${state.goalTypeUiState}의 퀴즈 생성")
-            PrefsUtil.saveGoalType(appContext, state.goalTypeUiState)
             when(state.goalTypeUiState){
                 GoalTypeUiState.DOCUMENT -> {
                     // 1. 목표 생성
@@ -588,7 +589,7 @@ class AddGoalViewModel @Inject constructor(
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
-
+            goalRepository.emitRefreshSignal()
             _mainState.value = UiStateAddGoalScreenState.Success
 
         }

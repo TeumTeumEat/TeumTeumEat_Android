@@ -1,19 +1,24 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.localdata.preference.HomePreference
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.AppResumeNotifier
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.*
+import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -25,8 +30,9 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val quizRepository: QuizRepository,
-    private val appResumeNotifier: AppResumeNotifier,
     val sessionManager: SessionManager,
+    private val dateChangeReceiver: DateChangeReceiver,
+    @ApplicationContext private val context: Context, // Context 주입 필요
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateHome())
@@ -40,10 +46,96 @@ class HomeViewModel @Inject constructor(
     private var cachedGoal: UserGoal? = null
 
     init {
+        // 실제 앱 구동 시에만 리시버 등록
+        // 만료된 목표일 때 만
+        setupDateChangeReceiver()
+
+        loadHomeState()
+        // 2. 목표 변경 리프래시 시그널 감지
         viewModelScope.launch {
-            appResumeNotifier.resumeEvent.collect {
+            goalRepository.refreshSignal.collect {
+                // 다른 액티비티에서 목표를 변경하고 돌아왔을 때 호출됨
                 loadHomeState()
             }
+        }
+    }
+
+    internal fun setupDateChangeReceiver() {
+
+        dateChangeReceiver.setOnDateChangedListener {
+            loadHomeState() // 날짜 변경 시 실행할 비즈니스 로직
+        }
+
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_DATE_CHANGED)
+
+            // 디버그 모드일 때만 테스트용 커스텀 액션 추가
+            if (BuildConfig.DEBUG) {
+                addAction("com.teumteumeat.test.ACTION_DATE_CHANGED")
+            }
+        }
+
+        // 모드에 따른 보안 플래그 설정
+        val flags = if (BuildConfig.DEBUG) {
+            ContextCompat.RECEIVER_EXPORTED // 디버그: ADB 등 외부 신호 허용
+        } else {
+            ContextCompat.RECEIVER_NOT_EXPORTED // 릴리즈: 외부 앱/ADB 차단 (보안 강화)
+        }
+
+        // ContextCompat을 사용하여 등록
+        ContextCompat.registerReceiver(
+            context,
+            dateChangeReceiver,
+            filter,
+            flags
+        )
+
+        if (BuildConfig.DEBUG) {
+            Log.d("HomeViewModel", "리시버 등록 완료 (디버그 모드 - 외부 노출 허용)")
+        }
+    }
+
+    // 테스트에서 재호출(Re-register) 가능하도록 분리
+    /*internal fun registerDateChangeReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_DATE_CHANGED)
+
+            // 디버그 모드일 때만 테스트용 커스텀 액션 추가
+            if (BuildConfig.DEBUG) {
+                addAction("com.teumteumeat.test.ACTION_DATE_CHANGED")
+            }
+        }
+
+        // 모드에 따른 보안 플래그 설정
+        val flags = if (BuildConfig.DEBUG) {
+            ContextCompat.RECEIVER_EXPORTED // 디버그: ADB 등 외부 신호 허용
+        } else {
+            ContextCompat.RECEIVER_NOT_EXPORTED // 릴리즈: 외부 앱/ADB 차단 (보안 강화)
+        }
+
+        // ContextCompat을 사용하여 등록
+        ContextCompat.registerReceiver(
+            context,
+            dateChangeReceiver,
+            filter,
+            flags
+        )
+
+        if (BuildConfig.DEBUG) {
+            Log.d("HomeViewModel", "리시버 등록 완료 (디버그 모드 - 외부 노출 허용)")
+        }
+    }*/
+
+    // 테스트에서 감시(Spy)하기 위해 open 또는 internal로 선언
+    internal fun onDateChangedTriggered() {
+        loadHomeState()
+    }
+
+    fun setRandomFood() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                selectedFoodRes = currentState.foodList.random()
+            )
         }
     }
 
@@ -56,12 +148,15 @@ class HomeViewModel @Inject constructor(
 
             Log.d("요약글 조회 디버깅", "홈화면 상태 가져옴 - 목표 조회 완료")
 
+            setRandomFood()
+
             // 1️⃣ 목표 조회
             when (val goalResult = goalRepository.getUserGoal()) {
 
                 is ApiResultV2.Success -> {
                     val goal = goalResult.data
                     cachedGoal = goal
+                    Log.d("user's current goal", "${goal}")
 
                     // 2️⃣ 오늘 퀴즈 상태 조회
                     when (val quizResult = quizRepository.getUserQuizStatus()) {
@@ -86,7 +181,8 @@ class HomeViewModel @Inject constructor(
                                     summaryQuery = buildSummaryQuery(goal)
                                 )
                             }
-
+                            // update 호출 직후 확인
+                            Log.d("디버깅_업데이트", "4. 업데이트 완료 후 실제 State 값: ${_uiState.value.summaryQuery}")
                             _screenState.value = UiScreenState.Success
                         }
 
@@ -97,8 +193,7 @@ class HomeViewModel @Inject constructor(
                         is ApiResultV2.ServerError,
                         is ApiResultV2.NetworkError,
                         is ApiResultV2.UnknownError -> {
-                            _screenState.value =
-                                Error(quizResult.uiMessage)
+                            _screenState.value = Error(quizResult.uiMessage)
                         }
 
                     }
@@ -110,14 +205,35 @@ class HomeViewModel @Inject constructor(
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
                 is ApiResultV2.UnknownError -> {
-                    _screenState.value =
-                        UiScreenState.Error(goalResult.uiMessage)
+                    _screenState.value = Error(goalResult.uiMessage)
+                }
+            }
+
+            if(checkExpiredGoal()){
+                _uiState.update {
+                    it.copy(
+                        isShowGoalExpiredDialog = true
+                    )
                 }
             }
         }
     }
 
     // ================= 홈 비즈니스 로직 =================
+
+    fun checkExpiredGoal() : Boolean{
+        val goal = cachedGoal ?: return false
+        return goal.isExpired
+    }
+
+    /**
+     * 만료된 목표 확인 다이얼로그를 닫는 함수
+     */
+    fun dismissGoalExpiredDialog() {
+        _uiState.update {
+            it.copy(isShowGoalExpiredDialog = false)
+        }
+    }
 
     /* ================= 상태 계산 ================= */
 
@@ -139,7 +255,8 @@ class HomeViewModel @Inject constructor(
         }
 
         // 2️⃣ 오늘 이미 소비
-        if (hasSolvedToday) {
+        // 빌드 타입이 DEBUG가 아니고(Release), 오늘 이미 해결했다면 Consumed 상태 반환
+        if (!BuildConfig.DEBUG && hasSolvedToday) {
             return SnackState.Consumed(
                 nextArrivalTime = "00:00"
             )
@@ -152,7 +269,7 @@ class HomeViewModel @Inject constructor(
     private fun calculateStampCount(goal: UserGoal): Int =
         if (goal.isExpired) 0 else 1
 
-    private fun buildSummaryQuery(goal: UserGoal): SummaryQuery =
+    private suspend fun buildSummaryQuery(goal: UserGoal): SummaryQuery =
         SummaryQuery(
             goalId = goal.goalId,
             goalType = goal.type,
@@ -161,5 +278,17 @@ class HomeViewModel @Inject constructor(
         )
 
     /* ================= 이벤트 ================= */
+
+    /**
+     * ViewModel이 파괴될 때 리시버 등록 해제 (메모리 누수 방지)
+     */
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            context.unregisterReceiver(dateChangeReceiver)
+        } catch (e: Exception) {
+            Log.e("HomeViewModel", "Receiver unregister error", e)
+        }
+    }
 
 }

@@ -51,6 +51,7 @@ fun CheckSetMyInfoScreen(
 
     val bottomFixedHeight = 170.dp // ✅ 그라데이션 + 버튼 영역
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(
@@ -375,12 +376,8 @@ fun CheckSetMyInfoScreen(
                         isEnabled = true,
                         onClick = {
                             // 0.5±1(로딩시간 커스텀 가능하게)초 로딩페이지 표시 하는 뷰모델 함수 구현
-//                            viewModel.submitOnBoardingTestError()
                             // 각 usecase 진행하면서 에러가 발생하면 뷰에 에러화면 표시
                             viewModel.submitOnBoarding()
-//                            viewModel.setUserName()
-//                            viewModel.saveCommuteInfo()
-//                            viewModel.onCreateGoalClick()
                         },
                         conerRadius = 16.dp
                     )

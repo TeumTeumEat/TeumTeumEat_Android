@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 import android.app.Application
 import android.se.omapi.Session
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
@@ -46,6 +47,9 @@ class SummaryViewModel @Inject constructor(
     val application: Application,
     val sessionManager: SessionManager,
 ) : ViewModel() {
+
+
+
     private val appContext = application.applicationContext
 
     private val _uiState = MutableStateFlow(UiStateSummary())
@@ -63,7 +67,6 @@ class SummaryViewModel @Inject constructor(
     private val _event = MutableSharedFlow<UiEvent>()
     val event: SharedFlow<UiEvent> = _event
 
-
     fun loadInitialData() {
         viewModelScope.launch {
 
@@ -78,7 +81,7 @@ class SummaryViewModel @Inject constructor(
 
             // 🔹 2) 내부에서 상태를 처리하는 작업 → launch
             launch {
-                loadSummaryByGoalType()
+                // loadSummaryByGoalType()
             }
 
             _screenState.value = UiScreenState.Success
@@ -173,6 +176,10 @@ class SummaryViewModel @Inject constructor(
         val documentId = state.documentId
         val categoryId = state.categoryId
 
+        // todo. state 에 들어있는 goalType/id, documentId, categoryId 로그 찍기
+        Log.d("SummaryViewModel", "goalType: $goalType, goalId: $goalId, documentId: $documentId, categoryId: $categoryId")
+
+
         if (goalType == null || goalId == null) {
             _uiState.update {
                 it.copy(
@@ -227,8 +234,8 @@ class SummaryViewModel @Inject constructor(
         documentId: Long?,
         categoryId: Long?
     ) {
-        // 이미 초기화되었으면 재실행 방지
-        if (_uiState.value.goalType != null) return
+        // initSummary 의 파라미터의 값을 로그로 찍어서 확인하기
+        Log.d("SummaryViewModel", "goalId: $goalId, goalType: $goalType, documentId: $documentId, categoryId: $categoryId")
 
         _uiState.update {
             it.copy(

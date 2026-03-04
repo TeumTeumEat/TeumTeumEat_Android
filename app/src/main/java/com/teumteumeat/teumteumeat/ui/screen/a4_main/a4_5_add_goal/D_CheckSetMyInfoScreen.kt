@@ -55,6 +55,7 @@ fun AddGoalCheckSetMyInfoScreen(
 
     val bottomFixedHeight = 170.dp // ✅ 그라데이션 + 버튼 영역
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(

@@ -6,6 +6,7 @@
         <!-- 여기부터는 기존 TeumTeumEat 테마 설정 유지 -->
         <!-- 예시 -->
         <!-- <item name="colorPrimary">@color/primary</item> -->
+
     </style>
 
     <style name="TextAppearance.TeumTeumEat.CalendarHeader" parent="TextAppearance.AppCompat.Medium">
@@ -16,6 +17,11 @@
     <!-- res/values/styles.xml -->
     <style name="AppTheme.Portrait" parent="Theme.Material3.Light.NoActionBar">
         <item name="android:screenOrientation">portrait</item>
+
+        <item name="android:windowTranslucentStatus">false</item>
+
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
     </style>
 
 </resources>

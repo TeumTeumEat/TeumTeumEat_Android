@@ -11,5 +11,11 @@ package com.teumteumeat.teumteumeat.domain.model.common
 enum class GoalTypeUiState {
     DOCUMENT,
     CATEGORY,
-    NONE,
+    NONE;
+
+    companion object {
+        fun fromString(value: String?): GoalTypeUiState {
+            return entries.find { it.name.equals(value, ignoreCase = true) } ?: NONE
+        }
+    }
 }

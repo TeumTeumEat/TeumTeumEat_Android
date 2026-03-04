@@ -42,7 +42,7 @@ val Red10 = Color(0xFFFFEDED)
 
 
 val Black100 = Color(0xFF000000)
-
+val BlackTrp50 = Color(0x80000000)
 val BlackTrp15 = Color(0x26000000)
 
 

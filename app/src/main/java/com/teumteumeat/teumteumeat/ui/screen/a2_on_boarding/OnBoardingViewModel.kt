@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -11,17 +12,13 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
-import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCaseV1
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
@@ -35,6 +32,7 @@ import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,10 +60,10 @@ class OnBoardingViewModel @Inject constructor(
     val getDocumentsUseCase: GetDocumentsUseCase,
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
+    @ApplicationContext private val context: Context,
     application: Application,
     val sessionManager: SessionManager,
 ) : ViewModel() {
-    private val appContext = application.applicationContext
 
     // 이름 입력 제약조건 부분
     companion object {
@@ -258,7 +256,7 @@ class OnBoardingViewModel @Inject constructor(
     private suspend fun registerDeviceTokenInternal(): ApiResultV2<Unit> {
         val current = _uiState.value
 
-        val fcmToken = FcmTokenStore.get(appContext)
+        val fcmToken = FcmTokenStore.get(context)
             ?: return ApiResultV2.UnknownError("디바이스 토큰이 없습니다.")
 
         val deviceType = "ANDROID"
@@ -1097,7 +1095,7 @@ class OnBoardingViewModel @Inject constructor(
         )
 
         if (!isGranted) {
-            PrefsUtil.saveNotificationDeniedOnce(appContext)
+            PrefsUtil.saveNotificationDeniedOnce(context)
         }
 
         _uiState.update {
@@ -1111,9 +1109,9 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     fun hasDeniedBefore(): Boolean {
-        val denied = PrefsUtil.hasNotificationDeniedOnce(appContext)
+        val denied = PrefsUtil.hasNotificationDeniedOnce(context)
         Log.d("NotificationDebug", "hasDeniedBefore = $denied")
-        return PrefsUtil.hasNotificationDeniedOnce(appContext)
+        return PrefsUtil.hasNotificationDeniedOnce(context)
     }
 
     /**
@@ -1172,7 +1170,7 @@ class OnBoardingViewModel @Inject constructor(
 
         if (!granted) {
             // 🔴 한 번이라도 거부했으면 저장
-            PrefsUtil.saveNotificationDeniedOnce(appContext)
+            PrefsUtil.saveNotificationDeniedOnce(context)
             Log.d("NotificationDebug", "saveNotificationDeniedOnce called")
         }
 
@@ -1537,6 +1535,12 @@ class OnBoardingViewModel @Inject constructor(
             } else {
                 currentState
             }
+        }
+    }
+
+    fun updateOfflineFlag() {
+        viewModelScope.launch {
+            PrefsUtil.setOnboardingCompleted(context, true)
         }
     }
 

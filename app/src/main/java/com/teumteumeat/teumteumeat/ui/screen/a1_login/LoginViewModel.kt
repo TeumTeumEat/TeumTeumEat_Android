@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,7 +15,10 @@ import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
+import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -28,6 +32,7 @@ class LoginViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val socialLoginRepository: SocialLoginRepository,
     private val tokenLocalDataSource: TokenLocalDataSource,
+    @ApplicationContext private val context: Context,
     val sessionManager: SessionManager,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -241,6 +246,7 @@ class LoginViewModel @Inject constructor(
 
             is ApiResultV2.Success -> {
                 if (result.data.completed) {
+                    PrefsUtil.setOnboardingCompleted(getApplication(context), true)
                     _uiEvent.emit(LoginUiEvent.NavigateToMain)
                 } else {
                     _uiEvent.emit(LoginUiEvent.NavigateToOnboarding)

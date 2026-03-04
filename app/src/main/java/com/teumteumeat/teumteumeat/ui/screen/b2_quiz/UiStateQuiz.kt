@@ -21,7 +21,9 @@ data class UiStateQuiz(
         description = "",
         retryLabel = "",
         onRetry = { }
-    )
+    ),
+
+    val showExitDialog: Boolean = false, // 팝업 노출 여부
 
 ) {
     val currentQuiz: QuizCardUiState?

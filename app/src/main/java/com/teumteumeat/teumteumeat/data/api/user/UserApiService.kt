@@ -3,7 +3,8 @@ package com.teumteumeat.teumteumeat.data.api.user
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model.EmptyResponse
 import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
-import com.teumteumeat.teumteumeat.data.network.model_request.UpdateUserSettingRequest
+import com.teumteumeat.teumteumeat.data.network.model_request.user.GetUserSettingRequest
+import com.teumteumeat.teumteumeat.data.network.model_request.user.UpdateUserSettingRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfoResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
@@ -15,10 +16,15 @@ import retrofit2.http.POST
 import com.teumteumeat.teumteumeat.data.network.model_response.user.UserNameResponseDto
 
 interface UserApiService {
+
     @PATCH("/api/v1/users/settings")
     suspend fun updateUserSettings(
         @Body request: UpdateUserSettingRequest
     ): ApiResponse<Unit, Any?>
+
+    @GET("/api/v1/users/settings")
+    suspend fun getUserSettings():
+            ApiResponse<GetUserSettingRequest, Any?>
 
     @GET("/api/v1/users/commute-info")
     suspend fun getCommuteInfo():

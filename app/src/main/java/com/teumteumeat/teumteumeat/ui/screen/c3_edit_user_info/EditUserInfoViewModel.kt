@@ -1,17 +1,14 @@
 package com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info
 
-import android.app.Application
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
-import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
@@ -67,15 +64,45 @@ class EditUserInfoViewModel @Inject constructor(
         }
     }
 
-    fun saveUserInfo(){
+    fun checkUnsavedChanges(){
         viewModelScope.launch{ // 1️⃣ 이름 등록
+            val currentUiState = _uiState.value
+            // 현재 변경된 정보가 업다면 저장 확인 팝업창 안 띄움
+            currentUiState.apply {
+                if(originalCharName == charName &&
+                    originalWorkInTime == workInTime &&
+                    originalWorkOutTime == workOutTime &&
+                    originalUseMinutes == useMinutes
+                ){
+                    return@launch
+                }else{
+                    // 저장 확인 팝업창 띄우기
+                    _uiState.update {
+                        it.copy(
+                            isShowSaveDialog = true
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun dismissConfirmationDialog(){
+        _uiState.update {
+            it.copy(
+                isShowSaveDialog = false
+            )
+        }
+    }
+
+    fun saveUserInfo(){
+        viewModelScope.launch {
             val nameResult = setUserNameInternal()
             if (nameResult !is ApiResultV2.Success) {
                 return@launch
             }
 
-
-            // 2️⃣ 출퇴근 정보 저장
+            // 2️⃣ 출퇴근 정보 및 이용 시간 저장
             val commuteResult = saveCommuteInfoInternal()
             if (commuteResult !is ApiResultV2.Success) {
                 moveToError(commuteResult)
@@ -83,6 +110,7 @@ class EditUserInfoViewModel @Inject constructor(
             }
         }
     }
+
 
     private suspend fun saveCommuteInfoInternal(): ApiResultV2<Unit> {
         val current = _uiState.value
@@ -175,7 +203,10 @@ class EditUserInfoViewModel @Inject constructor(
                             isLoading = false,
                             workInTime = workIn,
                             workOutTime = workOut,
+                            originalWorkInTime = workIn,
+                            originalWorkOutTime = workOut,
                             useMinutes = data.usageTime,
+                            originalUseMinutes = data.usageTime,
                             tempUseMinutes = data.usageTime,
                             isSetWorkInTime = true,
                             isSetWorkOutTime = true,
@@ -351,6 +382,7 @@ class EditUserInfoViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        originalCharName = name,
                         charName = name,
                         isNameValid = name.length in MIN_LENGTH..MAX_LENGTH,
                         nameErrorMessage = "",

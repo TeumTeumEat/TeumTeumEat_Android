@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -116,12 +115,11 @@ fun LoginScreen(
             FullScreenLoading()
         }
 
-        Box(
+        DefaultMonoBg(
             modifier = Modifier
                 .fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -305,7 +303,7 @@ fun LoginScreen(
             }
 
             // ✅ DEBUG + errorMessage 있을 때만 에러 모달
-            if (BuildConfig.DEBUG && !uiState.errorMessage.isNullOrBlank()) {
+            /*if (BuildConfig.DEBUG && !uiState.errorMessage.isNullOrBlank()) {
                 FullScreenErrorModal(
                     errorState = ErrorState(
                         title = "로그인 에러 발생",
@@ -319,10 +317,9 @@ fun LoginScreen(
                             }
                         }
                     ),
-                    isShowBackBtn = true,
-                    onBack = {}
+                    onBack = {},
                 )
-            }
+            }*/
         }
     }
 }

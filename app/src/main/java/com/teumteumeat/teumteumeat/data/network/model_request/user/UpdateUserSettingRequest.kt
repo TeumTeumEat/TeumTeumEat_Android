@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.data.network.model_request
+package com.teumteumeat.teumteumeat.data.network.model_request.user
 
 import com.google.gson.annotations.SerializedName
 

@@ -14,6 +14,7 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalGoalListUiState
+import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,7 +31,8 @@ class GoalListActivity : ComponentActivity() {
 
                 val viewModel : GoalListViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                val activity = LocalActivityContext.current as GoalListActivity
+                val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+                val activity = this@GoalListActivity
 
                 val sessionManager = viewModel.sessionManager // 세션메니저 정의
 
@@ -43,17 +45,25 @@ class GoalListActivity : ComponentActivity() {
 
                 CompositionLocalProvider(
                     LocalAppContext provides this.applicationContext,
-                    LocalActivityContext provides this@GoalListActivity,
+                    LocalActivityContext provides activity,
                     LocalViewModelContext provides viewModel,
                     LocalGoalListUiState provides uiState,
+                    LocalScreenState provides screenState,
                 ) {
 
                     GoalListScreen(
                         uiState = uiState,
-                        onBackClick = { finish() },
+                        onBackClick = {
+                            // 주제 변경이 성공했다면 RESULT_OK를 설정
+                            if (uiState.isChanged) {
+                                setResult(RESULT_OK)
+                            }
+                            finish()
+                        },
                         onGoalClick = viewModel::onGoalClick,
                         onCancelChangeGoal = viewModel::onCancelChangeGoal,
                         onConfirmChangeGoal = viewModel::onConfirmChangeGoal,
+                        onRetryApi = viewModel::loadMyPageData
                     )
                 }
             }

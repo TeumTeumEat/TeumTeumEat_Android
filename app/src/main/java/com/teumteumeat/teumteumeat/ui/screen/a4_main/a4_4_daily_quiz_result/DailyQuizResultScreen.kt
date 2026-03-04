@@ -75,8 +75,7 @@ fun DailyQuizResultScreen(
                 retryLabel = "다시 시도하기",
                 onRetry = { viewModel.loadQuizResults() }
             ),
-            isShowBackBtn = true,
-            onBack = onViewSummaryClick
+            onBack = onViewSummaryClick,
         )
     }else{
         Box(

@@ -8,6 +8,8 @@ import java.time.LocalDate
 
 
 data class UiStateGoalList(
+    val isChanged: Boolean = false,
+
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 
@@ -71,8 +73,7 @@ fun GetGoalResponse.toUiModel(
     val isExpired = today.isAfter(end)
 
     // ⭐ 만료된 목표는 선택 해제
-    val isSelected =
-        !isExpired && goalId.toLong() == currentGoalId
+    val isSelected = goalId.toLong() == currentGoalId
 
     return GoalCardUiModel(
         goalId = goalId,
