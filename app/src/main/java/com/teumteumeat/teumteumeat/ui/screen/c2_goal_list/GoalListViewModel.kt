@@ -12,6 +12,7 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,7 +30,14 @@ class GoalListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UiStateGoalList())
     val uiState = _uiState.asStateFlow()
 
+    private val _screenState = MutableStateFlow<UiScreenState>(UiScreenState.Loading)
+    val screenState = _screenState.asStateFlow()
+
     init {
+        loadMyPageData()
+    }
+
+    fun loadMyPageData() {
         viewModelScope.launch {
             loadUserGoal()
             loadGoals()
@@ -41,6 +49,7 @@ class GoalListViewModel @Inject constructor(
 
             // 1️⃣ 로딩 시작
             _uiState.update {
+                _screenState.value = UiScreenState.Loading
                 it.copy(isLoading = true, errorMessage = null)
             }
 
@@ -61,6 +70,7 @@ class GoalListViewModel @Inject constructor(
                             goals = uiModels
                         )
                     }
+                    _screenState.value = UiScreenState.Success
                 }
 
                 else -> {
@@ -78,6 +88,7 @@ class GoalListViewModel @Inject constructor(
 
             else -> {
                 _uiState.update {
+                    _screenState.value = UiScreenState.Error(message = result.uiMessage)
                     it.copy(
                         isLoading = false,
                         errorMessage = result.uiMessage
@@ -102,12 +113,7 @@ class GoalListViewModel @Inject constructor(
             }
 
             else -> {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.uiMessage
-                    )
-                }
+                moveToError(result)
             }
         }
     }
@@ -158,10 +164,19 @@ class GoalListViewModel @Inject constructor(
                         )
                     }
 
-
                     // ✅ 2️⃣ 서버 기준 최신 상태 재조회 (순서 중요)
                     loadUserGoal()
                     loadGoals()
+
+                    _uiState.update {
+                        it.copy(
+                            isChanged = true
+                        )
+                    }
+                    // ✅ 2️⃣ 전역 시그널 방출
+                    // Repository 내부의 MutableSharedFlow에 신호를 보냅니다.
+                    // 이 신호는 MainActivity 등에서 감지하여 데이터를 새로고침하게 됩니다.
+                    goalRepository.emitRefreshSignal()
                 }
                 else -> {
                     moveToError(result)

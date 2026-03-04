@@ -1,8 +1,10 @@
 package com.teumteumeat.teumteumeat.ui.component.button
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +39,7 @@ fun FillSecondaryButton(
         modifier = modifier.fillMaxWidth()
     ) {
         Button(
+            contentPadding = PaddingValues(0.dp),
             onClick = onClick,
             enabled = isEnabled,
             colors = ButtonDefaults.buttonColors(
@@ -55,7 +58,8 @@ fun FillSecondaryButton(
                 style = MaterialTheme.appTypography.btnMedium18_h24.copy(
                     textAlign = TextAlign.Center,
                     color = primaryColor
-                )
+                ),
+                modifier = Modifier.padding(vertical = 18.dp),
             )
         }
     }

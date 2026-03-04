@@ -52,7 +52,7 @@ class EditUserInfoActivity : ComponentActivity() {
                     EditUserInfoScreen(
                         uiState = uiState,
                         onBackClick = { finish() },
-                        onInfoSaveClick = {},
+                        onInfoSaveClick = { viewModel.saveUserInfo() },
                     )
                 }
             }

@@ -26,7 +26,8 @@ sealed class SummaryRoute(val route: String) {
 
 @Composable
 fun SummaryNavHost(
-    navController: NavHostController
+    navController: NavHostController,
+    onGoQuizScreen: () -> Unit,
 ) {
     val activity = LocalActivityContext.current as SummaryActivity
     val viewModel = LocalViewModelContext.current as SummaryViewModel
@@ -51,24 +52,9 @@ fun SummaryNavHost(
         composable(SummaryRoute.Summary.route) {
             SummaryScreen(
                 onBackClick = {
-                    Utils.UxUtils.moveActivity(
-                        activity,
-                        MainActivity::class.java,
-                    )
+                    activity.finish()
                 },
-                onQuizClick = {
-                    //  false -  가이드 화면으로 이동
-                    //  true - 퀴즈 풀러 이동
-                    if (!uiState.isQuizGuideSeen) {
-                        navController.navigate(SummaryRoute.Guide.route)
-                    } else {
-                        Utils.UxUtils.moveActivity(
-                            activity,
-                            QuizActivity::class.java,
-                            exitFlag = true
-                        )
-                    }
-                },
+                onQuizClick = onGoQuizScreen,
                 uiState = uiState,
                 screenState = screenState,
                 onSetIdleScreen = viewModel::resetIdleState,

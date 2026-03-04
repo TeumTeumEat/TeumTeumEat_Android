@@ -6,6 +6,7 @@ import com.teumteumeat.teumteumeat.data.network.model_request.notification.Delet
 import com.teumteumeat.teumteumeat.data.network.model_request.notification.RegisterDeviceTokenRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 
 interface NotificationApiService {
@@ -15,7 +16,7 @@ interface NotificationApiService {
         @Body request: RegisterDeviceTokenRequest
     ): ApiResponse<EmptyResponse, Any?>
 
-    @DELETE("/api/v1/notifications/device-tokens")
+    @HTTP(method = "DELETE", path = "/api/v1/notifications/device-tokens", hasBody = true)
     suspend fun deleteDeviceToken(
         @Body request: DeleteDeviceTokenRequest
     ): ApiResponse<EmptyResponse, Any?>

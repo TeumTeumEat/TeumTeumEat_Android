@@ -49,7 +49,7 @@ fun ExpandableAddMenuOverlay(
     var menuHeightPx by remember { mutableStateOf(0) } // ⭐ 핵심
 
     // ⭐ 최종 위치 미세 조정값
-    val finalAdjustPx = with(density) { 12.dp.toPx() }
+    val finalAdjustPx = with(density) { -20.dp.toPx() }
 
 
 

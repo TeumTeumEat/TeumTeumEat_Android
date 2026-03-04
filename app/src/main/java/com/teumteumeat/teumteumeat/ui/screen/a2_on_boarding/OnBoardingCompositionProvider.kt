@@ -113,6 +113,9 @@ fun OnBoardingCompositionProvider(
             }
 
             UiStateOnboardingScreenState.Success -> {
+                // 온보딩 완료하면 오프라인 플래그값도 변경
+                viewModel.updateOfflineFlag()
+
                 OnBoardingSuccessScreen(
                     nickname = uiState.charName,
                     onStartClick = {
@@ -138,7 +141,7 @@ fun OnBoardingCompositionProvider(
                     ),
                     onBack = {
                         viewModel.resetMainState()
-                    }
+                    },
                 )
             }
 

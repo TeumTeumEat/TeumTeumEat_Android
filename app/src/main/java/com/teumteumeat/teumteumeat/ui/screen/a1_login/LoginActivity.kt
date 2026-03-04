@@ -30,6 +30,7 @@ import com.kakao.sdk.common.model.KakaoSdkError
 import com.kakao.sdk.user.UserApiClient
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
+import com.teumteumeat.teumteumeat.ui.aa0_base.BaseActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.AuthBlockingOverlay
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -41,7 +42,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import java.io.IOException
 
 @AndroidEntryPoint
-class LoginActivity : ComponentActivity()  {
+class LoginActivity : BaseActivity()  {
     private lateinit var googleClient: GoogleSignInClient
 
     private val viewModel: LoginViewModel by viewModels()
@@ -61,6 +62,8 @@ class LoginActivity : ComponentActivity()  {
         super.onPause()
         Log.d("KakaoLife", "onPause")
     }
+
+    override fun onRetryClick() { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

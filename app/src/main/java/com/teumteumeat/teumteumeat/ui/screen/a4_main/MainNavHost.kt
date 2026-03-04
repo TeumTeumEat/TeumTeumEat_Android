@@ -1,7 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,6 +15,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel
+import java.time.YearMonth
 
 
 @Composable
@@ -23,7 +23,8 @@ fun MainNavHost(
     modifier: Modifier,
     navController: NavHostController,
     startDestination: String = "",
-    paddingValue: PaddingValues = PaddingValues(),
+    paddingValue: PaddingValues,
+    mainViewModel: MainViewModel,
 ) {
 
     NavHost(
@@ -40,16 +41,20 @@ fun MainNavHost(
             val screenState by viewModel.screenState.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.loadHomeState()
+                mainViewModel.retryEvent.collect {
+                    viewModel.loadHomeState() // 본인의 데이터 로드
+                }
             }
 
             HomeScreen(
-                modifier = modifier.padding(paddingValue),
+                modifier = modifier,
+                paddingValue = paddingValue,
                 viewModel = viewModel,
                 uiState = uiStateHome,
                 screenState = screenState,
                 onRetryApi = { viewModel.loadHomeState() },
-            )
+
+                )
         }
 
         composable(BottomNavItem.Library.route) {
@@ -57,6 +62,12 @@ fun MainNavHost(
                 remember(it) { navController.getBackStackEntry(BottomNavItem.Library.route) }
             val viewModel: LibraryViewModel = hiltViewModel(parentEntry)
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                mainViewModel.retryEvent.collect {
+                    viewModel.loadCalendarHistory(YearMonth.now()) // 본인의 데이터 로드
+                }
+            }
 
             LibraryScreen(
                 name = "LibraryScreen",

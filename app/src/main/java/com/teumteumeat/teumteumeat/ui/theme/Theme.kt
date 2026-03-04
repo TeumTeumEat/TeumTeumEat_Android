@@ -42,6 +42,8 @@ data class ExtendedColors(
     val btnLineDisable: Color,
 
     val iconBlack: Color,
+    val disableContainer: Color,
+    val backgroundDefault: Color,
 )
 
 val LightExtendedColors = ExtendedColors(
@@ -59,6 +61,8 @@ val LightExtendedColors = ExtendedColors(
 
     unableContent = Gray50,
     unableContainer = Gray20,
+
+    disableContainer = BlackTrp50,
 
     error = Red80,
     errorSecondary = Red60,
@@ -80,6 +84,7 @@ val LightExtendedColors = ExtendedColors(
 
     // 배경 관련 색상
     backSurface = Gray5,
+    backgroundDefault = BtnGray10,
     background = White10,
     backgroundW100 = White100,
 )

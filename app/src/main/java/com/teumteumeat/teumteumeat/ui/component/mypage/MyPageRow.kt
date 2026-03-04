@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -25,13 +27,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.component.CheckToggleButton
-import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -249,68 +251,107 @@ fun SelectedTopicSection(
     description: String,
     goalWeek: String,
     difficulty: String,
+    isSelGoalExpired: Boolean, // 이 상태값에 따라 오버레이 노출
 ) {
     val theme = MaterialTheme.extendedColors
+    val shape = RoundedCornerShape(12.dp)
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .padding(horizontal = 20.dp)
-            .border(
-                width = 2.dp,
-                color = theme.primary,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .background(
-                color = theme.primaryContainer,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .padding(16.dp)
+            .fillMaxWidth() // 너비 가득 채우기 추가
     ) {
-        Column(
-            modifier = modifier
+        // 1. 기본 컨텐츠 카드
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
+                .border(
+                    width = 2.dp,
+                    color = theme.primary, // 선택된 주제이므로 항상 파란색 테두리
+                    shape = shape
+                )
                 .background(
                     color = theme.primaryContainer,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = shape
                 )
+                .padding(16.dp)
         ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.appTypography.subtitleSemiBold16,
+                        color = theme.primary
+                    )
 
+                    if (!isSelGoalExpired){
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            TagChip(text = goalWeek)
+                            TagChip(text = difficulty)
+                        }
+                    }
+                }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
-                    text = title,
-                    style = MaterialTheme.appTypography.subtitleSemiBold16,
-                    color = theme.primary
+                    text = topic,
+                    style = MaterialTheme.appTypography.bodyMedium16.copy(
+                        lineHeight = 22.sp
+                    )
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    TagChip(text = goalWeek)
-                    TagChip(text = difficulty)
+                if (description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = description,
+                        style = MaterialTheme.appTypography.lableMedium12_h14,
+                        color = Color.Gray
+                    )
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = topic,
-                style = MaterialTheme.appTypography.bodyMedium16.copy(
-                    lineHeight = 22.sp
-                )
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = description,
-                style = MaterialTheme.appTypography.lableMedium12_h14,
-                color = Color.Gray
-            )
+        // 2. 만료 시 반투명 검정 오버레이 (GoalCard와 동일한 로직)
+        if (isSelGoalExpired) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize() // 부모 Box 크기에 맞춤
+                    .clip(shape)
+                    .background(color = Color.Black.copy(alpha = 0.4f)) // 40% 투명도
+                    .border(
+                        width = 2.dp,
+                        color = theme.primary, // 오버레이 위에도 파란색 테두리 유지
+                        shape = shape
+                    )
+            ) {
+                // 상단 우측 '만료된 주제' 표시
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Cancel,
+                        contentDescription = null,
+                        tint = theme.textOnError,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "만료된 주제",
+                        style = MaterialTheme.appTypography.captionRegular14.copy(
+                            color = theme.textOnError
+                        )
+                    )
+                }
+            }
         }
     }
 }

@@ -54,6 +54,7 @@ fun OnBoardingFirstScreen(
 
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
+        extensionHeight = 0.dp,
         content = {
             Box(
                 modifier = Modifier

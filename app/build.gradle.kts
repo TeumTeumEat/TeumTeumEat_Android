@@ -17,6 +17,12 @@ android {
     namespace = "com.teumteumeat.teumteumeat"
     compileSdk = 36 // targetSdk에 맞게
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     defaultConfig {
         applicationId = "com.teumteumeat.teumteumeat"
         minSdk = 26
@@ -130,8 +136,6 @@ android {
     }
 
 
-
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -147,6 +151,7 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
+
 
 }
 
@@ -226,4 +231,32 @@ dependencies {
     implementation("io.noties.markwon:core:4.6.2")
 
     implementation("org.jetbrains:markdown:0.7.3")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.13")
+
+    // Source: https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testImplementation("org.mockito:mockito-core:2.1.0")
+    // mockito-core 대신 이걸로 교체해 보세요.
+    testImplementation("org.mockito:mockito-inline:5.2.0")
+
+    // 만약 mockito-kotlin을 쓰신다면 이것도 함께 확인
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    // 코루틴 테스트
+    // testImplementation("kotlinx.coroutines:kotlinx-coroutines-test:1.7.3")
+
+    // --- Unit Testing ---
+    // MockK: 안드로이드/코틀린을 위한 모킹 라이브러리
+    testImplementation ("io.mockk:mockk:1.13.8")
+
+    // Kotlin Coroutines Test: runTest, TestDispatcher 등을 사용하기 위함
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // (선택 사항) JUnit4: 기본적인 테스트 프레임워크
+    // AndroidX Test Core (ApplicationProvider 사용을 위해 필수)
+    testImplementation("androidx.test:core-ktx:1.6.1")
+
+    // 웹뷰의 다크 모드 제어를 위해 추가한 의존성 라이브러리
+    implementation("androidx.webkit:webkit:1.15.0")
+
 }

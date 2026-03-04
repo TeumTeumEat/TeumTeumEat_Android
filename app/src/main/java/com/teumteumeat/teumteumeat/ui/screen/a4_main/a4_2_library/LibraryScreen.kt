@@ -1,6 +1,13 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,12 +24,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -74,127 +83,147 @@ fun LibraryScreen(
         }
     }
 
-    DefaultMonoBg(
-        modifier = Modifier
-            .fillMaxSize(),
-        color = MaterialTheme.extendedColors.backgroundW100,
-        content = {
-            Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(color = MaterialTheme.extendedColors.backgroundW100)
+    ) {
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
 
-                    /** 🔹 날짜별 / 주제별 탭 */
-                    LibraryTopTab(
-                        selectedTab = uiState.selectedLibraryTab,
-                        onTabSelected = { viewModel.selectLibraryTab(it) }
-                    )
+            /** 🔹 날짜별 / 주제별 탭 */
+            LibraryTopTab(
+                selectedTab = uiState.selectedLibraryTab,
+                onTabSelected = { viewModel.selectLibraryTab(it) }
+            )
 
-                    if(uiState.selectedLibraryTab == LibraryTabType.DATE){
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .background(theme.backgroundW100)
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 22.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
+            when(uiState.selectedLibraryTab){
+                LibraryTabType.DATE -> {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(theme.backgroundW100)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 22.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Spacer(Modifier.height(32.dp))
+
+                        MotivationCard(
+                            uiState = mapStreakToMotivationUiState(
+                                isStreakBroken = uiState.isStreakBroken,
+                                streak = uiState.currentStreak
+                            ),
+                            modifier = Modifier,
+                        )
+                        Spacer(Modifier.height(20.dp))
+
+                        // ✅ 스탬프 카운트 뱃지 (상단)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            Spacer(Modifier.height(32.dp))
-
-                            MotivationCard(
-                                uiState = mapStreakToMotivationUiState(
-                                    isStreakBroken = uiState.isStreakBroken,
-                                    streak = uiState.currentStreak
-                                ),
-                                modifier = Modifier,
+                            StampCountBadgeStateful(
+                                modifier = Modifier.weight(1f),
+                                title = "총 스탬프",
+                                count = uiState.stampCount,
                             )
-                            Spacer(Modifier.height(20.dp))
 
-                            // ✅ 스탬프 카운트 뱃지 (상단)
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                StampCountBadgeStateful(
-                                    modifier = Modifier.weight(1f),
-                                    title = "총 스탬프",
-                                    count = uiState.stampCount,
-                                )
+                            Spacer(Modifier.width(12.dp))
 
-                                Spacer(Modifier.width(12.dp))
+                            StampCountBadgeStateful(
+                                modifier = Modifier.weight(1f),
+                                title = "이번달 도장",
+                                count = uiState.monthStampCount,
+                            )
+                        }
 
-                                StampCountBadgeStateful(
-                                    modifier = Modifier.weight(1f),
-                                    title = "이번달 도장",
-                                    count = uiState.monthStampCount,
-                                )
+                        Spacer(Modifier.height(20.dp))
+
+                        // 📅 캘린더
+                        CalendarPager(
+                            modifier = Modifier.fillMaxWidth(),
+                            uiState = uiState.calendarUiState,
+                            // ✅ 월 변경 시
+                            onMonthChange = { yearMonth ->
+                                viewModel.onCalendarMonthChanged(yearMonth)
+                            },
+
+                            // ✅ 날짜 클릭 시
+                            onDateClick = { date ->
+                                viewModel.onCalendarDateSelected(date)
                             }
+                        )
 
-                            Spacer(Modifier.height(20.dp))
+                        uiState.calendarUiState.dailyLearningList.forEach { item ->
+                            CalendarDailyLearningCard(
+                                title = item.title,
+                                description = item.summarySnippet,
+                                dateText = item.lastStudiedAt.toLocalDate()
+                                    .format(DateTimeFormatter.ofPattern("MM.dd")),
+                                goalType = item.type,   // ✅ Domain → UI 그대로 전달
+                                onClick = {
+                                    val intent = Intent(
+                                        activity,
+                                        DailySummaryActivity::class.java
+                                    ).apply {
+                                        putExtra(
+                                            DailySummaryArgs.KEY_ID,
+                                            item.id
+                                        )
+                                        putExtra(
+                                            DailySummaryArgs.KEY_TYPE,
+                                            item.type.name   // ✅ enum → String
+                                        )
+                                        putExtra(
+                                            DailySummaryArgs.KEY_DATE,
+                                            item.lastStudiedAt.toLocalDate().toString()
+                                        )
+                                    }
 
-                            // 📅 캘린더
-                            CalendarPager(
-                                modifier = Modifier.fillMaxWidth(),
-                                uiState = uiState.calendarUiState,
-                                // ✅ 월 변경 시
-                                onMonthChange = { yearMonth ->
-                                    viewModel.onCalendarMonthChanged(yearMonth)
-                                },
-
-                                // ✅ 날짜 클릭 시
-                                onDateClick = { date ->
-                                    viewModel.onCalendarDateSelected(date)
+                                    activity.startActivity(intent)
                                 }
                             )
-
-                            uiState.calendarUiState.dailyLearningList.forEach { item ->
-                                CalendarDailyLearningCard(
-                                    title = item.title,
-                                    description = item.summarySnippet,
-                                    dateText = item.lastStudiedAt.toLocalDate()
-                                        .format(DateTimeFormatter.ofPattern("MM.dd")),
-                                    goalType = item.type,   // ✅ Domain → UI 그대로 전달
-                                    onClick = {
-                                        val intent = Intent(
-                                            activity,
-                                            DailySummaryActivity::class.java
-                                        ).apply {
-                                            putExtra(
-                                                DailySummaryArgs.KEY_ID,
-                                                item.id
-                                            )
-                                            putExtra(
-                                                DailySummaryArgs.KEY_TYPE,
-                                                item.type.name   // ✅ enum → String
-                                            )
-                                            putExtra(
-                                                DailySummaryArgs.KEY_DATE,
-                                                item.lastStudiedAt.toLocalDate().toString()
-                                            )
-                                        }
-
-                                        activity.startActivity(intent)
-                                    }
-                                )
-                            }
-
-                            Spacer(Modifier.height(200.dp))
-                            // 👆 하단 버튼 + 페이드에 가려지지 않도록 여유
+                            Spacer(Modifier.height(12.dp))
                         }
-                    }else{
-                        // 🔹 주제별 탭
-                        LazyColumn(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .padding(vertical = 32.dp, horizontal = 22.dp),
-                            verticalArrangement = Arrangement.spacedBy(20.dp)
-                        ) {
+
+                        Spacer(Modifier.height(200.dp))
+                        // 👆 하단 버튼 + 페이드에 가려지지 않도록 여유
+                    }
+                }
+                LibraryTabType.TOPIC -> {
+                    // 🔹 주제별 탭
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp, horizontal = 22.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
+                    ) {
+                        // 1. 등록된 주제가 없는 경우 처리
+                        if (uiState.categoryHistories.isEmpty()) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillParentMaxHeight() // LazyColumn 전체 높이를 채우기 위해 사용
+                                        .fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "등록된 주제가 없습니다.\n새로운 학습을 시작해보세요!",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            textAlign = TextAlign.Center
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        } else {
                             uiState.categoryHistories.forEach { category ->
 
                                 // ✅ 카테고리 단위 Section
@@ -212,39 +241,57 @@ fun LibraryScreen(
                                             }
                                         )
 
-                                        // ✅ 선택된 카테고리일 때만 학습 카드 표시
-                                        if (uiState.selectedCategoryName == category.categoryName) {
+                                        // ✅ AnimatedVisibility를 사용하여 애니메이션 적용
+                                        AnimatedVisibility(
+                                            visible = uiState.selectedCategoryName == category.categoryName,
+                                            // 나타날 때: 페이드 인 + 아래로 펼쳐짐
+                                            enter = fadeIn(
+                                                animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                                            ) + expandVertically(
+                                                expandFrom = Alignment.Top
+                                            ),
+                                            // 사라질 때: 페이드 아웃 + 위로 접힘
+                                            exit = fadeOut(
+                                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                                            ) + shrinkVertically(
+                                                shrinkTowards = Alignment.Top
+                                            )
+                                        ) {
+                                            // ✅ 선택된 카테고리일 때만 학습 카드 표시
 
-                                            Spacer(modifier = Modifier.height(12.dp))
+                                                Column {
+                                                    Spacer(modifier = Modifier.height(12.dp))
 
-                                            category.histories.forEach { history ->
-                                                CalendarDailyLearningCard(
-                                                    title = history.title,
-                                                    description = history.description,
-                                                    dateText = history.dateText,
-                                                    goalType = history.goalType,
-                                                    onClick = {
+                                                    category.histories.forEach { history ->
+                                                        CalendarDailyLearningCard(
+                                                            title = history.title,
+                                                            description = history.description,
+                                                            dateText = history.dateText,
+                                                            goalType = history.goalType,
+                                                            onClick = {
+                                                            }
+                                                        )
+
+                                                        Spacer(modifier = Modifier.height(12.dp))
                                                     }
-                                                )
-
-                                                Spacer(modifier = Modifier.height(12.dp))
-                                            }
+                                                }
                                         }
+
                                     }
                                 }
                             }
                         }
                     }
                 }
-
-                BottomFadeOverlay(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                )
             }
-        },
+        }
 
-    )
+        BottomFadeOverlay(
+            Modifier
+                .align(Alignment.BottomCenter)
+        )
+    }
+
 }
 
 

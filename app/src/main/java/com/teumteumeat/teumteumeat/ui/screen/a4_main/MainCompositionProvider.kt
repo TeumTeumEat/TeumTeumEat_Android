@@ -152,7 +152,8 @@ fun MainCompositionProvider(
         }
 
         DefaultMonoBg(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
         ) {
 
             Scaffold(
@@ -185,14 +186,14 @@ fun MainCompositionProvider(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth()
-                                    .padding()
                             ) {
                                 // 1️⃣ 실제 화면 콘텐츠
                                 MainNavHost(
-                                    modifier = Modifier,
+                                    modifier = Modifier.fillMaxSize(),
                                     navController = navHostController,
                                     startDestination = BottomNavItem.Home.route,
                                     paddingValue = padding,
+                                    mainViewModel = viewModel,
                                 )
                             }
 

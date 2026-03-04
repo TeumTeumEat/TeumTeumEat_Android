@@ -52,6 +52,7 @@ fun AddGoalSetStudyRangeScreen(
     )
 
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(

@@ -7,10 +7,9 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
-import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepositoryImpl
+import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
@@ -19,7 +18,8 @@ import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.InfoUtil.getAppVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -38,12 +38,16 @@ class MyPageViewModel @Inject constructor(
     private val getGoalListUseCase: GetGoalListUseCase,
     private val socialLoginRepository: SocialLoginRepository,
     private val tokenLocalDataSource: TokenLocalDataSource,
-    private val socialLoginRepositoryImpl: SocialLoginRepositoryImpl,
+    private val notificationRepository: NotificationRepository,
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateMyPage())
     val uiState = _uiState.asStateFlow()
+
+    private val _screenState =
+        MutableStateFlow<UiScreenState>(UiScreenState.Loading)
+    val screenState = _screenState.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<UiEvent>(
         replay = 0,              // 재전달 ❌
@@ -51,16 +55,117 @@ class MyPageViewModel @Inject constructor(
     )
     val uiEvent = _uiEvent.asSharedFlow()
 
+    val version = getAppVersion(application)
+
+    private val appContext = application.applicationContext
+
     init {
-        val version = getAppVersion(application)
+        loadMyPageData()
+    }
+
+    fun loadMyPageData() {
         viewModelScope.launch {
             loadUserGoal()
-            // loadMyPage()
             loadAccountInfo()
+            fetchPushNotifiState()
             _uiState.update {
                 it.copy(
                     appVersion = version
                 )
+            }
+            _screenState.value = UiScreenState.Success
+        }
+    }
+
+    suspend fun fetchPushNotifiState(){
+        viewModelScope.launch {
+            // 로딩 시작 로직 (필요시 추가)
+
+            when (val result = userRepository.getUserPushEnableSettings()) {
+                is ApiResultV2.Success -> {
+                    // 성공 시 데이터 업데이트
+                    _uiState.update {
+                        it.copy(
+                            isAlarmEnabled = result.data.pushEnabled
+                        )
+                    }
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    // 세션 만료 처리 (예: 로그인 화면 이동 이벤트 발생)
+                    sessionManager.expireSession()
+                }
+
+                else -> {
+                    // ServerError, NetworkError, UnknownError 통합 처리
+                    // 확장 프로퍼티인 uiMessage를 활용해 가독성 높게 처리 가능합니다.
+                    moveToError(result)
+                }
+            }
+        }
+    }
+
+
+    private suspend fun registerDeviceTokenInternal(): ApiResultV2<Unit> {
+
+        val fcmToken = FcmTokenStore.get(appContext)
+            ?: return ApiResultV2.UnknownError("디바이스 토큰이 없습니다.")
+
+        val deviceType = "ANDROID"
+
+        return notificationRepository.registerDeviceToken(
+            token = fcmToken,
+            deviceType = deviceType
+        )
+    }
+
+    private suspend fun deleteDeviceTokenInternal(): ApiResultV2<Unit> {
+
+        val fcmToken = FcmTokenStore.get(appContext)
+            ?: return ApiResultV2.UnknownError("디바이스 토큰이 없습니다.")
+
+        val deviceType = "ANDROID"
+
+        return notificationRepository.deleteDeviceToken(
+            token = fcmToken,
+            deviceType = deviceType
+        )
+    }
+
+    fun toogleAlarm(isAlarmEnabled: Boolean) {
+        viewModelScope.launch {
+            if (isAlarmEnabled){
+                when(val result = registerDeviceTokenInternal()) {
+                    is ApiResultV2.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                isAlarmEnabled = true
+                            )
+                        }
+                    }
+                    is ApiResultV2.SessionExpired -> {
+                        sessionManager.expireSession()
+                    }
+                    else -> {
+                        moveToError(result)
+                    }
+                }
+            }else{
+                when(val result = deleteDeviceTokenInternal()) {
+                    is ApiResultV2.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                isAlarmEnabled = false
+                            )
+                        }
+                    }
+                    is ApiResultV2.SessionExpired -> {
+                        sessionManager.expireSession()
+                    }
+                    else -> {
+                        moveToError(result)
+                    }
+                }
             }
         }
     }
@@ -73,7 +178,7 @@ class MyPageViewModel @Inject constructor(
             if(tokenLocalDataSource.getRefreshToken() == null){
                 onSuccess()
             }
-            when (val result = socialLoginRepositoryImpl.logout(tokenLocalDataSource.getRefreshToken()!!)) {
+            when (val result = socialLoginRepository.logout(tokenLocalDataSource.getRefreshToken()!!)) {
 
                 is ApiResultV2.Success -> {
                     onSuccess()
@@ -99,7 +204,7 @@ class MyPageViewModel @Inject constructor(
                     tokenLocalDataSource.clear()
 
                     // ✅ 2. 로그인 화면으로 이동
-                    _uiEvent.emit(UiEvent.NavigateToLogin)
+                    sessionManager.expireSession()
                 }
 
                 else -> {
@@ -109,7 +214,7 @@ class MyPageViewModel @Inject constructor(
         }
     }
 
-    private fun loadAccountInfo() {
+    private suspend fun loadAccountInfo() {
         viewModelScope.launch {
 
             // 1️⃣ 로딩 시작
@@ -235,6 +340,12 @@ class MyPageViewModel @Inject constructor(
                             )
                         }
                     }
+
+                }
+                _uiState.update { state ->
+                    state.copy(
+                        isSelGoalExpired = userGoal.isExpired
+                    )
                 }
 
             }

@@ -34,7 +34,6 @@ import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.SizeAnimationInvisible
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingLoadingScreen
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.PopupOverlay
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -119,11 +118,7 @@ fun AddCategoryGoalCompositionProvider(
 
                 AddGoalSuccessScreen(
                     onStartClick = {
-                        Utils.UxUtils.moveActivity(
-                            context,
-                            MainActivity::class.java,
-                            exitFlag = true
-                        )
+                        activity.finish()
                     }
                 )
             }
@@ -141,7 +136,7 @@ fun AddCategoryGoalCompositionProvider(
                     ),
                     onBack = {
                         viewModel.resetMainState()
-                    }
+                    },
                 )
             }
 

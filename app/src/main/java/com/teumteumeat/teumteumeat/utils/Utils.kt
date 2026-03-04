@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
@@ -360,10 +361,12 @@ class Utils {
         fun moveActivity(
             context: Context,
             destinationActivity: Class<out Activity>,
-            exitFlag: Boolean = true
+            exitFlag: Boolean = true,
+            extras: Bundle? = null // 데이터를 담을 Bundle 추가
         ){
             val intent = Intent(context, destinationActivity).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                extras?.let {putExtras(it)}
             }
             context.startActivity(intent)
 
@@ -634,6 +637,7 @@ class Utils {
     }
 
     enum class USER_REGISTER_STATE { LOGIN, ADD_INFO, LEVEL_EXAM, MAIN }
+
     // 유저의 언어 정보값을 SharedPref 에 저장하는 Utile 함수 만들기
     object PrefsUtil {
         private const val PREF_NAME = "user_prefs"
@@ -648,6 +652,24 @@ class Utils {
 
         // 유저가 한번이라도 요약글을 최초로 생성하였는지
         private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
+        private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+
+
+        /**
+         * 온보딩 완료 상태 저장
+         */
+        fun setOnboardingCompleted(context: Context, isCompleted: Boolean) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, isCompleted).apply()
+        }
+
+        /**
+         * 온보딩 완료 여부 확인
+         */
+        fun isOnboardingCompleted(context: Context): Boolean {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            return prefs.getBoolean(KEY_ONBOARDING_COMPLETED, false)
+        }
 
         /**
          * 오늘 이미 요약글을 사용했는지
