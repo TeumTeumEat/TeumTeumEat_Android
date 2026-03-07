@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
+import com.teumteumeat.teumteumeat.utils.LocalScreenState
 
 @Composable
 fun SummaryScreen(
@@ -49,6 +50,7 @@ fun SummaryScreen(
     val viewModel = LocalViewModelContext.current as SummaryViewModel
     val context = LocalActivityContext.current as SummaryActivity
     val processingState by viewModel.processingState.collectAsStateWithLifecycle()
+    val screenState = LocalScreenState.current
 
     BackHandler {
         onBackClick()
@@ -98,7 +100,6 @@ fun SummaryScreen(
                                     onBackClick = { onBackClick() }
                                 )
 
-                                // todo. navHost 만들기
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()
