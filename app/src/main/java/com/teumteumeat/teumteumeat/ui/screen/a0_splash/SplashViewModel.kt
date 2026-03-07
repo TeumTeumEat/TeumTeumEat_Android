@@ -45,7 +45,7 @@ class SplashViewModel @Inject constructor(
     val uiEvent = _uiEvent.asSharedFlow()
 
 
-    private fun checkAppVersion() {
+    private fun checkAppVersion(onNext: () -> Unit) { // 콜백 추가
 
         val minVersion =
             remoteConfig.getLong("android_min_version_code")
@@ -79,7 +79,9 @@ class SplashViewModel @Inject constructor(
                 }
 
                 // 👉 여기서는 기본 동작으로 이후 동작 진행
-                else -> {}
+                else -> {
+                    onNext()
+                }
 
             }
         }
@@ -94,7 +96,7 @@ class SplashViewModel @Inject constructor(
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     // 서버값을 확실히 가져온 후 버전 체크
-                    checkAppVersion()
+                    checkAppVersion{ tryAutoLogin() }
                 } else {
                     // 실패 시 기본 동작 진행
                     tryAutoLogin()

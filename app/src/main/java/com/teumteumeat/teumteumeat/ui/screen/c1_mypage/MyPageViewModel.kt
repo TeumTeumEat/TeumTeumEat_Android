@@ -144,6 +144,7 @@ class MyPageViewModel @Inject constructor(
                         }
                     }
                     is ApiResultV2.SessionExpired -> {
+                        userRepository.updateUserPushEnableSettings(isAlarmEnabled)
                         sessionManager.expireSession()
                     }
                     else -> {
@@ -160,6 +161,7 @@ class MyPageViewModel @Inject constructor(
                         }
                     }
                     is ApiResultV2.SessionExpired -> {
+                        userRepository.updateUserPushEnableSettings(isAlarmEnabled)
                         sessionManager.expireSession()
                     }
                     else -> {

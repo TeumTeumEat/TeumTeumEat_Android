@@ -96,7 +96,7 @@ class SummaryActivity : ComponentActivity() {
                                 when(goalType){
                                     DomainGoalType.CATEGORY -> {
                                         if(uiState.categoryDocumentId != null){
-                                            val categoryDocumentId = uiState.categoryDocumentId!!
+                                            val categoryDocumentId = uiState.categoryDocumentId
                                             val intent = QuizActivity.newIntent(
                                                 this@SummaryActivity,
                                                 categoryDocumentId.toLong(),
@@ -156,8 +156,12 @@ class SummaryActivity : ComponentActivity() {
                                 documentId = documentId,
                                 categoryId = categoryId
                             )
-                            viewModel.loadInitialData()
+                            // viewModel.loadInitialData()
                         } else {
+                            Toast.makeText(
+                                context,
+                                "요약글 생성에 실패했어요. 다시 목표를 생성 해 주세요.",
+                                Toast.LENGTH_SHORT).show()
                             finish()
                         }
                     }
@@ -171,13 +175,6 @@ class SummaryActivity : ComponentActivity() {
                                 navController.navigate(SummaryRoute.Guide.route)
                             } else {
                                 viewModel.onQuizClick(uiState.isSkipQuizGuideChecked)
-                                /*val intent = QuizActivity.newIntent(
-                                    this@SummaryActivity,
-                                    documentId,
-                                    goalType?.name ?: ""
-                                )
-                                startActivity(intent)
-                                finish() // 다음 화면으로 이동 후 현재 화면 종료*/
                             }
                         }
                     )
