@@ -78,7 +78,7 @@ class SplashViewModel @Inject constructor(
                     )
                 }
 
-                // 👉 여기서는 기본 동작으로 이동
+                // 👉 여기서는 기본 동작으로 이후 동작 진행
                 else -> {}
 
             }
@@ -90,12 +90,16 @@ class SplashViewModel @Inject constructor(
      * 🔥 로티 애니메이션 종료 시 호출
      */
     fun onAnimationFinished() {
-        remoteConfig
-            .fetchAndActivate()
-            .addOnCompleteListener {
-                checkAppVersion()
+        remoteConfig.fetchAndActivate()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // 서버값을 확실히 가져온 후 버전 체크
+                    checkAppVersion()
+                } else {
+                    // 실패 시 기본 동작 진행
+                    tryAutoLogin()
+                }
             }
-        tryAutoLogin()
     }
 
     /**
