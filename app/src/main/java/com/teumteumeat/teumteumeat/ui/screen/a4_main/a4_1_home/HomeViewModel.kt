@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
@@ -23,6 +24,7 @@ import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
 import com.teumteumeat.teumteumeat.utils.manager.ad.InterstitialAdManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -80,25 +82,115 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun showInterstitialAd(activity: Activity, onAdDismissed: () -> Unit) {
-        val ad = adManager.interstitialAd.value
-        if (ad != null) {
-            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                override fun onAdDismissedFullScreenContent() {
-                    adManager.clearAd() // null로 만들어 자동 재로드 유도
-                    onAdDismissed()
+    fun submitAdWatching() {
+        viewModelScope.launch {
+            when (val adRewardResponse = quizRepository.getAdReward()) {
+                is ApiResultV2.Success -> {
+                    updateUserQuizStatus()
                 }
+                else -> { moveToError(adRewardResponse) }
+            }
+        }
+    }
 
-                override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                    adManager.clearAd()
-                    onAdDismissed()
+    private fun updateUserQuizStatus() {
+        viewModelScope.launch {
+            when (val response = quizRepository.getUserQuizStatus()) {
+                is ApiResultV2.Success -> {
+                    // 유저 퀴즈 상태 재조회 후 바뀐 값으로 리랜더링
+                    val quizStatus = response.data
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            isShowAdModalDialog = true,
+                            cupponCount = quizStatus.availableQuizCount // 서버에서 받아온 새 개수
+                        )
+                    }
+                }
+                else -> { moveToError(response) }
+            }
+        }
+    }
+
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            is ApiResultV2.NetworkError -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = result.uiMessage
+                    )
                 }
             }
-            ad.show(activity)
-        } else {
-            // 광고가 아직 로드되지 않은 경우 바로 다음 단계로
-            onAdDismissed()
+
+            is ApiResultV2.ServerError -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+
+            else -> {
+
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "알 수 없는 오류가 발생했습니다."
+                    )
+                }
+            }
         }
+
+    }
+
+    fun showInterstitialAdWithLoading(activity: Activity, onAdDismissed: () -> Unit) {
+        val currentAd = adManager.interstitialAd.value
+
+        if (currentAd != null) {
+            // 1. 이미 광고가 있는 경우 즉시 노출
+            showAd(currentAd, activity, onAdDismissed)
+        } else {
+            // 2. 광고가 없는 경우 로딩 시작 및 로드 대기
+            _uiState.update { it.copy(isAdLoading = true) }
+            adManager.loadAd() // 광고 로드 요청
+
+            viewModelScope.launch {
+                // 광고가 로드될 때까지(null이 아닐 때까지) 기다림
+                adManager.interstitialAd.collect { ad ->
+                    if (ad != null) {
+                        _uiState.update { it.copy(isAdLoading = false) }
+                        showAd(ad, activity, onAdDismissed)
+                        this.cancel()
+                    }
+                }
+
+            }
+        }
+    }
+
+    private fun showAd(ad: InterstitialAd, activity: Activity, onAdDismissed: () -> Unit) {
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+            override fun onAdDismissedFullScreenContent() {
+                // 사용자가 광고를 끝까지 보거나 중간에 닫았을 때 호출됨
+                adManager.clearAd()
+                onAdDismissed() // 여기서 다음 화면 이동 로직 실행
+                // 로직 처리 후 쿠폰 수 리렌더링
+            }
+
+            override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                adManager.clearAd()
+                // todo. 광고 노출 실패 알림
+                // onAdDismissed()
+            }
+
+            override fun onAdShowedFullScreenContent() {
+                // 광고가 화면에 나타났으므로 로딩 해제
+                _uiState.update { it.copy(isAdLoading = false) }
+            }
+        }
+        ad.show(activity)
     }
 
     internal fun setupDateChangeReceiver() {
@@ -192,6 +284,7 @@ class HomeViewModel @Inject constructor(
                                     hasSolvedToday = quizStatus.hasSolvedToday,
                                     hasCreatedToday = quizStatus.hasCreatedToday,
                                     isFirstTime = quizStatus.isFirstTime,
+                                    cupponCount = quizStatus.availableQuizCount,
 
                                     // 🔥 HomeViewModel에서만 SnackState 분기
                                     snackState = resolveSnackState(
@@ -203,7 +296,10 @@ class HomeViewModel @Inject constructor(
                                 )
                             }
                             // update 호출 직후 확인
-                            Log.d("디버깅_업데이트", "4. 업데이트 완료 후 실제 State 값: ${_uiState.value.summaryQuery}")
+                            Log.d(
+                                "디버깅_업데이트",
+                                "4. 업데이트 완료 후 실제 State 값: ${_uiState.value.summaryQuery}"
+                            )
                             _screenState.value = UiScreenState.Success
                         }
 
@@ -223,6 +319,7 @@ class HomeViewModel @Inject constructor(
                 is ApiResultV2.SessionExpired -> {
                     sessionManager.expireSession()
                 }
+
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
                 is ApiResultV2.UnknownError -> {
@@ -230,7 +327,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
 
-            if(checkExpiredGoal()){
+            if (checkExpiredGoal()) {
                 _uiState.update {
                     it.copy(
                         isShowGoalExpiredDialog = true
@@ -242,7 +339,7 @@ class HomeViewModel @Inject constructor(
 
     // ================= 홈 비즈니스 로직 =================
 
-    fun checkExpiredGoal() : Boolean{
+    fun checkExpiredGoal(): Boolean {
         val goal = cachedGoal ?: return false
         return goal.isExpired
     }

@@ -16,6 +16,7 @@ data class UiStateHome(
 
     // ================= 쿠폰 팝업 메시지 관련 상태 =================
     val isShowAdModalDialog: Boolean = false,
+    val isAdLoading: Boolean = false,
     val remainingLearningCount: Int = 10,
     val cupponCount: Int = 0,
 
@@ -45,6 +46,8 @@ data class UiStateHome(
     val selectedFoodRes: Int = R.drawable.food_rice,
 
     val isShowGoalExpiredDialog: Boolean = false,
+
+    val errorMessage: String? = null,
 ){
     /**
      * 현재 상태에 따른 최종 이미지 리소스를 반환하는 헬퍼 함수

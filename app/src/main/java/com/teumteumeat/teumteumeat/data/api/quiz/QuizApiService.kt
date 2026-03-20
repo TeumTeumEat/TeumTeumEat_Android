@@ -43,4 +43,8 @@ interface QuizApiService {
         @Path("id") id: Long,
         @Query("date") date: String
     ): ApiResponse<QuizHistoryData, Any?>
+
+    @POST("/api/v1/user-quizzes/ad-reward")
+    suspend fun submitAdWatching(): ApiResponse<Unit, Any?>
+
 }

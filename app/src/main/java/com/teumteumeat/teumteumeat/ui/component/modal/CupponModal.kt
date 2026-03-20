@@ -230,7 +230,6 @@ fun AdCouponModal(
 
                 // 🔹 3. 불렛 포인트 리스트
                 val bulletText = """
-                    • 다른 퀴즈를 더 풀 수 있는 쿠폰입니다.
                     • 하루 최대 10번 사용 가능해요.
                     • 광고로 받은 쿠폰은 당일까지 사용 가능
                 """.trimIndent()
@@ -265,6 +264,7 @@ fun AdCouponModal(
                     )
 
                     BaseFillButton(
+                        // todo. 로딩중인 경우 adLoading 표시
                         text = when (maxCouponCount) {
                             0 -> "쿠폰 충전"
                             in 1..couponCount -> "미리 충전하기"
