@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -7,6 +8,8 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.FullScreenContentCallback
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
@@ -17,6 +20,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.*
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
+import com.teumteumeat.teumteumeat.utils.manager.ad.InterstitialAdManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +37,7 @@ class HomeViewModel @Inject constructor(
     val sessionManager: SessionManager,
     private val dateChangeReceiver: DateChangeReceiver,
     @ApplicationContext private val context: Context, // Context 주입 필요
+    private val adManager: InterstitialAdManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateHome())
@@ -48,15 +53,51 @@ class HomeViewModel @Inject constructor(
     init {
         // 실제 앱 구동 시에만 리시버 등록
         // 만료된 목표일 때 만
-        setupDateChangeReceiver()
+        // setupDateChangeReceiver()
+
+        // 앱 시작 후 메인 액티비티 진입 시 광고 로드
+        observeAdStatus()
 
         loadHomeState()
         // 2. 목표 변경 리프래시 시그널 감지
         viewModelScope.launch {
+            // todo. 목표를 완료하고 돌아왔을 때도 loadHomeState() 호출
             goalRepository.refreshSignal.collect {
                 // 다른 액티비티에서 목표를 변경하고 돌아왔을 때 호출됨
                 loadHomeState()
             }
+        }
+    }
+
+    private fun observeAdStatus() {
+        viewModelScope.launch {
+            // 광고 상태를 관찰하여 null이 되면 자동으로 로드
+            adManager.interstitialAd.collect { ad ->
+                if (ad == null) {
+                    adManager.loadAd()
+                }
+            }
+        }
+    }
+
+    fun showInterstitialAd(activity: Activity, onAdDismissed: () -> Unit) {
+        val ad = adManager.interstitialAd.value
+        if (ad != null) {
+            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    adManager.clearAd() // null로 만들어 자동 재로드 유도
+                    onAdDismissed()
+                }
+
+                override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                    adManager.clearAd()
+                    onAdDismissed()
+                }
+            }
+            ad.show(activity)
+        } else {
+            // 광고가 아직 로드되지 않은 경우 바로 다음 단계로
+            onAdDismissed()
         }
     }
 
@@ -95,36 +136,15 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // 테스트에서 재호출(Re-register) 가능하도록 분리
-    /*internal fun registerDateChangeReceiver() {
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_DATE_CHANGED)
+    // 모달 열기
+    fun openAdModal() {
+        _uiState.update { it.copy(isShowAdModalDialog = true) }
+    }
 
-            // 디버그 모드일 때만 테스트용 커스텀 액션 추가
-            if (BuildConfig.DEBUG) {
-                addAction("com.teumteumeat.test.ACTION_DATE_CHANGED")
-            }
-        }
-
-        // 모드에 따른 보안 플래그 설정
-        val flags = if (BuildConfig.DEBUG) {
-            ContextCompat.RECEIVER_EXPORTED // 디버그: ADB 등 외부 신호 허용
-        } else {
-            ContextCompat.RECEIVER_NOT_EXPORTED // 릴리즈: 외부 앱/ADB 차단 (보안 강화)
-        }
-
-        // ContextCompat을 사용하여 등록
-        ContextCompat.registerReceiver(
-            context,
-            dateChangeReceiver,
-            filter,
-            flags
-        )
-
-        if (BuildConfig.DEBUG) {
-            Log.d("HomeViewModel", "리시버 등록 완료 (디버그 모드 - 외부 노출 허용)")
-        }
-    }*/
+    // 모달 닫기
+    fun closeAdModal() {
+        _uiState.update { it.copy(isShowAdModalDialog = false) }
+    }
 
     // 테스트에서 감시(Spy)하기 위해 open 또는 internal로 선언
     internal fun onDateChangedTriggered() {
@@ -169,13 +189,14 @@ class HomeViewModel @Inject constructor(
                                     fireState = resolveFireState(goal),
 
                                     // 🔥 서버 기준 값 저장
-                                    hasSolvedToday = !quizStatus.hasSolvedToday,
+                                    hasSolvedToday = quizStatus.hasSolvedToday,
+                                    hasCreatedToday = quizStatus.hasCreatedToday,
                                     isFirstTime = quizStatus.isFirstTime,
 
                                     // 🔥 HomeViewModel에서만 SnackState 분기
                                     snackState = resolveSnackState(
                                         goal = goal,
-                                        hasSolvedToday = quizStatus.hasSolvedToday
+                                        hasSolvedToday = quizStatus.hasSolvedToday,
                                     ),
 
                                     summaryQuery = buildSummaryQuery(goal)
@@ -256,7 +277,7 @@ class HomeViewModel @Inject constructor(
 
         // 2️⃣ 오늘 이미 소비
         // 빌드 타입이 DEBUG가 아니고(Release), 오늘 이미 해결했다면 Consumed 상태 반환
-        if (!BuildConfig.DEBUG && hasSolvedToday) {
+        if (hasSolvedToday) {
             return SnackState.Consumed(
                 nextArrivalTime = "00:00"
             )
@@ -284,11 +305,11 @@ class HomeViewModel @Inject constructor(
      */
     override fun onCleared() {
         super.onCleared()
-        try {
+        /*try {
             context.unregisterReceiver(dateChangeReceiver)
         } catch (e: Exception) {
             Log.e("HomeViewModel", "Receiver unregister error", e)
-        }
+        }*/
     }
 
 }

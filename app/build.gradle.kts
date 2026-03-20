@@ -212,6 +212,9 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-auth:21.4.0")
 
+    // Source: https://mvnrepository.com/artifact/com.google.android.gms/play-services-ads
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
+
     // Firebase BoM (버전 자동 관리)
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
 

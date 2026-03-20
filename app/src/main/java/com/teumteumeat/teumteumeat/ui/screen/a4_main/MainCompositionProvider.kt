@@ -298,8 +298,8 @@ fun HomeMainFramePreview() {
                         onClickPlus = {},
                         onClosePlus = {},
                         isExpandedPlus = false,
-                        onAddDocument = {  },
-                        onAddCategory = {  },
+                        onAddDocument = { },
+                        onAddCategory = { },
                         onPlusPositioned = { },
                     )
                 },
@@ -356,6 +356,7 @@ fun HomeMainFramePreview() {
                                     contentDescription = "previous page"
                                 )
                             }
+
 
                         }
 

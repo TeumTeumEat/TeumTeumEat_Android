@@ -27,13 +27,18 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 fun FillSecondaryButton(
     modifier: Modifier = Modifier, // 추가: Modifier 적용 가능
     text: String = "",
-    textStyle: TextStyle = TextStyle(),
+    textStyle: TextStyle = MaterialTheme.appTypography.btnBold20_h24,
     isEnabled: Boolean = true,
     onClick: () -> Unit,
     conerRadius: Dp = 16.dp,
 ) {
     val primaryColor = MaterialTheme.extendedColors.primary
     val buttonFillSecondary = MaterialTheme.extendedColors.btnFillSecondary
+
+    val disableContainerColor = MaterialTheme.colorScheme.surfaceVariant
+    val disableContentColor = Color.White
+
+    val contentColor = if(isEnabled) primaryColor else disableContentColor
 
     Row(
         modifier = modifier.fillMaxWidth()
@@ -45,8 +50,8 @@ fun FillSecondaryButton(
             colors = ButtonDefaults.buttonColors(
                 containerColor = buttonFillSecondary,
                 contentColor = primaryColor,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContentColor = Color.White
+                disabledContainerColor = disableContainerColor,
+                disabledContentColor = disableContentColor
             ),
             shape = RoundedCornerShape(conerRadius), // border-radius: 8px
             modifier = Modifier
@@ -55,9 +60,9 @@ fun FillSecondaryButton(
         ) {
             Text(
                 text = text,
-                style = MaterialTheme.appTypography.btnMedium18_h24.copy(
+                style = textStyle.copy(
                     textAlign = TextAlign.Center,
-                    color = primaryColor
+                    color = contentColor
                 ),
                 modifier = Modifier.padding(vertical = 18.dp),
             )

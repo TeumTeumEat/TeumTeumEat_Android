@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.teumteumeat.teumteumeat.domain.model.common.GoalType
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.card.CalendarDailyLearningCard
 import com.teumteumeat.teumteumeat.ui.component.card.TopicCategoryCard
@@ -269,6 +270,25 @@ fun LibraryScreen(
                                                             dateText = history.dateText,
                                                             goalType = history.goalType,
                                                             onClick = {
+                                                                val intent = Intent(
+                                                                    activity,
+                                                                    DailySummaryActivity::class.java
+                                                                ).apply {
+                                                                    putExtra(
+                                                                        DailySummaryArgs.KEY_ID,
+                                                                        history.id
+                                                                    )
+                                                                    putExtra(
+                                                                        DailySummaryArgs.KEY_TYPE,
+                                                                        GoalType.CATEGORY.name
+                                                                    )
+                                                                    putExtra(
+                                                                        DailySummaryArgs.KEY_DATE,
+                                                                        history.date.toLocalDate().toString()
+                                                                    )
+                                                                }
+
+                                                                activity.startActivity(intent)
                                                             }
                                                         )
 

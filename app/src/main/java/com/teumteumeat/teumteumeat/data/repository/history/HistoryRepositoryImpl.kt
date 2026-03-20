@@ -15,6 +15,7 @@ import com.teumteumeat.teumteumeat.domain.model.history.DailySummary
 import com.teumteumeat.teumteumeat.domain.model.history.LearningHistoryUiModel
 import com.teumteumeat.teumteumeat.utils.Utils.RepositoryUtils.requireNotNullOrError
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toMMdd
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 class HistoryRepositoryImpl @Inject constructor(
@@ -36,6 +37,7 @@ class HistoryRepositoryImpl @Inject constructor(
                                     id = history.id,
                                     title = history.title,
                                     description = history.summarySnippet,
+                                    date = LocalDateTime.parse(history.lastStudiedAt),
                                     dateText = history.lastStudiedAt.toMMdd(),
                                     goalType = GoalType.valueOf(history.type.toString())
                                 )

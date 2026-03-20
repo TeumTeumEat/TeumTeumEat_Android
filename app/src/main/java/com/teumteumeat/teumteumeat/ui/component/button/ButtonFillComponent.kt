@@ -29,7 +29,7 @@ import com.teumteumeat.teumteumeat.utils.appTypography
 fun BaseFillButton(
     modifier: Modifier = Modifier, // 추가: Modifier 적용 가능
     text: String = "",
-    textStyle: TextStyle = TextStyle(),
+    textStyle: TextStyle = MaterialTheme.appTypography.btnBold20_h24,
     isEnabled: Boolean = true,
     onClick: () -> Unit,
     conerRadius: Dp = 16.dp,
@@ -60,7 +60,7 @@ fun BaseFillButton(
             Text(
                 modifier = Modifier.padding(vertical = 18.dp),
                 text = text,
-                style = MaterialTheme.appTypography.btnBold20_h24.copy(
+                style = textStyle.copy(
                         color = btnContentColor
                     ),
                 textAlign = TextAlign.Center

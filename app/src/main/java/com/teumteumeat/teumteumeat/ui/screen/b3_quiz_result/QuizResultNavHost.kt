@@ -58,6 +58,8 @@ fun QuizResultNavHost(
             QuizFinishScreen(
                 correctCount = uiState.correctCount,
                 onCloseClick = {
+                    // todo. 클릭시 전면광고 뜨게하기
+                    //  로딩시에는 화면 클릭 못하게 막기
                     Utils.UxUtils.moveActivity(activity, MainActivity::class.java)
                 },
                 onNextClick = {

@@ -28,6 +28,3 @@ data class UiStateLibrary(
     val errorMessage: String = ""
 
 )
-
-
-

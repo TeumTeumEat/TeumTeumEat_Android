@@ -1,10 +1,19 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
+import GlowingSpeechBubble
+import android.R.attr.alpha
+import android.R.attr.scaleX
+import android.R.attr.scaleY
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,17 +29,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -40,9 +56,13 @@ import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
+import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
+import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponModal
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_6_guide_expired_goal.GuideExpiredGoalActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
@@ -53,6 +73,7 @@ import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.jvm.java
@@ -72,10 +93,7 @@ fun HomeScreen(
     val theme = MaterialTheme.extendedColors
 
     val snackState = uiState.snackState
-    val canOpenSummary = BuildConfig.DEBUG || (
-            snackState is SnackState.Available &&
-                    uiState.hasSolvedToday
-            )
+    val isConsumedTodayGoal = snackState is SnackState.Consumed
 
     val currentUiState by rememberUpdatedState(uiState)
 
@@ -115,12 +133,32 @@ fun HomeScreen(
     }
 
     LaunchedEffect(uiState.hasSolvedToday) {
-        snapshotFlow { canOpenSummary }
+        snapshotFlow { isConsumedTodayGoal }
             .distinctUntilChanged()
             .collect { value ->
-                Log.d("요약글 조회 디버깅", "canOpenSummary changed = $value")
+                Log.d("요약글 조회 디버깅", "isConsumedTodayGoal changed = $value")
             }
     }
+
+    // 화면 로드 후 말풍선 애니메이션을 트리거할 상태 변수
+    var showBubbleAnimation by remember { mutableStateOf(false) }
+
+    // 화면 진입 및 canOpenSummary 상태에 따라 애니메이션 시작
+    LaunchedEffect(isConsumedTodayGoal && uiState.remainingLearningCount > 0) {
+        if (isConsumedTodayGoal && uiState.remainingLearningCount > 0) {
+            delay(300) // 화면이 안정적으로 로드된 후 0.3초 뒤에 말풍선 팝업
+            showBubbleAnimation = true
+        } else {
+            showBubbleAnimation = false
+        }
+    }
+
+    // 0f(안 보임) -> 1.0f(원래 크기)로 커지는 애니메이션 수치
+    val bubbleScale by animateFloatAsState(
+        targetValue = if (showBubbleAnimation) 1.0f else 0f,
+        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
+        label = "bubble_grow"
+    )
 
     LaunchedEffect(uiState.summaryQuery) {
         snapshotFlow { uiState.summaryQuery }
@@ -192,61 +230,88 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
+                        // 🌟 레이아웃 밀림 방지: Box를 사용하여 메인 이미지와 말풍선을 겹치게 만듭니다.
+                        Box(
+                            contentAlignment = Alignment.Center // 내부 요소를 기본적으로 중앙 정렬
+                        ) {
 
-                        BouncingImage(foodRes) {
-                            val latestQuery = currentUiState.summaryQuery
-                            Log.d("Debug_Summary", "Current uiState Query: $latestQuery")
-                            if (canOpenSummary) {
-                                val intent = Intent(
-                                    activity,
-                                    SummaryActivity::class.java
-                                ).apply {
-                                    putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
-                                    putExtra(
-                                        SummaryArgs.KEY_GOAL_TYPE,
-                                        latestQuery.goalType.name
-                                    )
-                                    putExtra(
-                                        SummaryArgs.KEY_DOCUMENT_ID,
-                                        latestQuery.documentId
-                                    )
-                                    putExtra(
-                                        SummaryArgs.KEY_CATEGORY_ID,
-                                        latestQuery.categoryId
+                            // 1. 하단 레이어 (공간을 차지하는 메인 콘텐츠)
+                            BouncingImage(foodRes) {
+                                val latestQuery = currentUiState.summaryQuery
+                                Log.d("Debug_Summary", "Current uiState Query: $latestQuery")
+                                when(uiState.snackState){
+                                    SnackState.Available -> {
+                                        val intent = Intent(
+                                            activity,
+                                            SummaryActivity::class.java
+                                        ).apply {
+                                            putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
+                                            putExtra(SummaryArgs.KEY_GOAL_TYPE, latestQuery.goalType.name)
+                                            putExtra(SummaryArgs.KEY_DOCUMENT_ID, latestQuery.documentId)
+                                            putExtra(SummaryArgs.KEY_CATEGORY_ID, latestQuery.categoryId)
+                                        }
+                                        activity.startActivity(intent)
+                                    }
+                                    is SnackState.Consumed -> {
+                                        viewModel.openAdModal()
+                                        // todo. 팝업에서 광고 시청 후 쿠폰 개수만 증가하도록 뷰모델 함수 구현
+                                    }
+                                    SnackState.Expired -> {
+                                        Toast.makeText(activity, "기간이 만료된 목표입니다.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+
+                            // 2. 최상단 오버레이 레이어 (레이아웃에 영향을 주지 않고 떠 있는 말풍선)
+                            if (isConsumedTodayGoal && bubbleScale > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        // BouncingImage의 상단을 기준으로 배치
+                                        .align(Alignment.TopCenter)
+
+                                        // 💡 핵심: 공간을 밀어내지 않고 위치만 이동시킵니다!
+                                        // y를 마이너스로 주면 위로 올라갑니다.
+                                        // (말풍선 본체 높이 + 상단 20dp 여백을 고려하여 수치를 적절히 조절하세요. 예: -80.dp)
+                                        // 우측으로 약간 치우치게 하려면 x축 값을 양수로 주면 됩니다. (예: 50.dp)
+                                        .offset(x = 0.dp, y = (-70).dp)
+
+                                        // 무조건 최상단에 그려지도록 보장
+                                        .zIndex(1f)
+
+                                        .graphicsLayer {
+                                            scaleX = bubbleScale
+                                            scaleY = bubbleScale
+                                            // 기준점: 꼬리가 우상단을 향하므로 TransformOrigin(0.8f, 0f) 유지
+                                            transformOrigin = TransformOrigin(0.8f, 0f)
+                                            alpha = if (bubbleScale > 0.3f) 1f else 0f
+                                        }
+                                ) {
+                                    GlowingSpeechBubble(
+                                        text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
+                                        onClick = {
+                                            viewModel.openAdModal()
+                                        }
                                     )
                                 }
-                                activity.startActivity(intent)
                             }
                         }
 
                         Spacer(modifier = Modifier.height(50.dp))
 
+                        // 안내 문구 (기존 로직 동일)
                         when (snackState) {
-
                             is SnackState.Available -> {
-                                // 필요 시 안내 문구
                                 Text(
-                                    "오늘의 냠냠지식이 \n" +
-                                            "도착했어요!",
+                                    "오늘의 냠냠지식이 \n도착했어요!",
                                     style = MaterialTheme.appTypography.titleBold22,
                                     textAlign = TextAlign.Center
                                 )
                             }
-
                             is SnackState.Consumed -> {
                                 Text(
-                                    "오늘의 지식을\n" +
-                                            "다 먹었어요!",
+                                    "오늘의 지식을\n다 먹었어요!",
                                     style = MaterialTheme.appTypography.titleBold22,
                                     textAlign = TextAlign.Center
-                                )
-                            }
-
-                            is SnackState.Waiting -> {
-                                Text(
-                                    "아직 학습 시간이 아니에요",
-                                    style = MaterialTheme.appTypography.titleBold22,
-                                    textAlign = TextAlign.Center,
                                 )
                             }
 
@@ -257,10 +322,18 @@ fun HomeScreen(
                                     textAlign = TextAlign.Center,
                                 )
                             }
-
                         }
-
                     }
+
+                    // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
+                    AdCouponDialog(
+                        showDialog = uiState.isShowAdModalDialog,
+                        couponCount = 9,
+                        maxCouponCount = 10,
+                        onDismiss = { viewModel.closeAdModal() },
+                        onUseCoupon = { /* 프리뷰에서는 동작하지 않음 */ },
+                        onChargeCoupon = { /* 프리뷰에서는 동작하지 않음 */ }
+                    )
 
                     // 🔹 목표 만료 알림 모달
                     if (uiState.isShowGoalExpiredDialog) {
