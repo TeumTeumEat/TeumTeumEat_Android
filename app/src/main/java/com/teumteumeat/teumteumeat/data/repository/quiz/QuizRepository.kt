@@ -27,4 +27,6 @@ interface QuizRepository {
         documentId: Int,
         documentType: GoalTypeUiState
     ): ApiResultV2<List<UserQuiz>>
+
+    suspend fun getAdReward() : ApiResultV2<Unit>
 }

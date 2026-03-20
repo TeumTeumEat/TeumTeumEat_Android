@@ -1,20 +1,13 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
 import GlowingSpeechBubble
-import android.R.attr.alpha
-import android.R.attr.scaleX
-import android.R.attr.scaleY
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,12 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -52,17 +41,12 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.teumteumeat.teumteumeat.BuildConfig
-import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
-import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
-import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponModal
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_6_guide_expired_goal.GuideExpiredGoalActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
@@ -254,7 +238,6 @@ fun HomeScreen(
                                     }
                                     is SnackState.Consumed -> {
                                         viewModel.openAdModal()
-                                        // todo. 팝업에서 광고 시청 후 쿠폰 개수만 증가하도록 뷰모델 함수 구현
                                     }
                                     SnackState.Expired -> {
                                         Toast.makeText(activity, "기간이 만료된 목표입니다.", Toast.LENGTH_SHORT).show()
@@ -328,11 +311,30 @@ fun HomeScreen(
                     // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
                     AdCouponDialog(
                         showDialog = uiState.isShowAdModalDialog,
-                        couponCount = 9,
+                        couponCount = uiState.cupponCount,
                         maxCouponCount = 10,
                         onDismiss = { viewModel.closeAdModal() },
-                        onUseCoupon = { /* 프리뷰에서는 동작하지 않음 */ },
-                        onChargeCoupon = { /* 프리뷰에서는 동작하지 않음 */ }
+                        onUseCoupon = {
+                            //  현재 주제가 새로운 학습 데이터가 생성 가능할 때
+                            val latestQuery = currentUiState.summaryQuery
+
+                            val intent = Intent(
+                                activity,
+                                SummaryActivity::class.java
+                            ).apply {
+                                putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
+                                putExtra(SummaryArgs.KEY_GOAL_TYPE, latestQuery.goalType.name)
+                                putExtra(SummaryArgs.KEY_DOCUMENT_ID, latestQuery.documentId)
+                                putExtra(SummaryArgs.KEY_CATEGORY_ID, latestQuery.categoryId)
+                            }
+                            activity.startActivity(intent)
+                        },
+                        onChargeCoupon = {
+                            // 광고 시청 로직 구현
+                            viewModel.showInterstitialAdWithLoading(activity) {
+                                viewModel.submitAdWatching()
+                            }
+                        }
                     )
 
                     // 🔹 목표 만료 알림 모달
