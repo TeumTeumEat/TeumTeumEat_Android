@@ -12,5 +12,5 @@ data class HistoryItemResponse(
     val type: DailyHistoryTypeResponse,
     val title: String,
     val summarySnippet: String,
-    val lastStudiedAt: String
+    val lastStudiedAt: String,
 )

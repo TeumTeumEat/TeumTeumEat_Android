@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -11,7 +12,6 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
@@ -20,7 +20,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -33,7 +32,7 @@ class MainViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
     val sessionManager: SessionManager,
     private val dateChangeReceiver: DateChangeReceiver, // Singleton 리시버 주입
-    @ApplicationContext private val context: Context // 등록/해제를 위한 컨텍스트
+    @ApplicationContext private val context: Context, // 등록/해제를 위한 컨텍스트
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiStateMain>(UiStateMain())
@@ -47,10 +46,14 @@ class MainViewModel @Inject constructor(
     fun triggerRetry() { viewModelScope.launch { retryEvent.emit(Unit) } }
 
     init {
-        // todo. 날짜 변경 시에 viewModel.loadCalendarHistory(YearMonth.now()) 호출
+
+
+        // 날짜 변경 시에 viewModel.loadCalendarHistory(YearMonth.now()) 호출
         setupDateChangeReceiver()
         loadCalendarHistory(YearMonth.now())
     }
+
+
 
     internal fun setupDateChangeReceiver() {
 

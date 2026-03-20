@@ -83,14 +83,14 @@ class LibraryViewModel @Inject constructor(
                     sessionManager.expireSession()
                 }
 
-                is ApiResultV2.ServerError,
-                is ApiResultV2.NetworkError,
-                is ApiResultV2.UnknownError -> {
+                else -> {
                     // 👉 에러 메시지는 ViewModel 확장함수에서 처리된다고 가정
                     Log.e("LibraryViewModel", "❌ 캘린더 히스토리 로드 실패: ${result.uiMessage}")
                 }
             }
+
         }
+
     }
 
     /** 📅 월 변경 */

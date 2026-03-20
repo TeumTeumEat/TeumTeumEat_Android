@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -25,19 +23,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavBackStackEntry
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
-import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 

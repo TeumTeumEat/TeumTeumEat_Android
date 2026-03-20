@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.component
+package com.teumteumeat.teumteumeat.ui.component.modal.bubble
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

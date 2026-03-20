@@ -1,7 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 
 
@@ -15,7 +14,13 @@ data class UiStateHome(
     val stampCount: Int = 0,
     val snackState: SnackState = SnackState.Available,
 
+    // ================= 쿠폰 팝업 메시지 관련 상태 =================
+    val isShowAdModalDialog: Boolean = false,
+    val remainingLearningCount: Int = 10,
+    val cupponCount: Int = 0,
+
     /** 🔥 핵심 */
+    val hasCreatedToday: Boolean = false,
     val hasSolvedToday: Boolean = false,
     val isFirstTime: Boolean = false,
 
@@ -39,7 +44,7 @@ data class UiStateHome(
     // 현재 선택된 랜덤 음식 리소스 ID (기본값 설정 가능)
     val selectedFoodRes: Int = R.drawable.food_rice,
 
-    val isShowGoalExpiredDialog: Boolean = false
+    val isShowGoalExpiredDialog: Boolean = false,
 ){
     /**
      * 현재 상태에 따른 최종 이미지 리소스를 반환하는 헬퍼 함수
@@ -66,11 +71,6 @@ sealed class SnackState {
 
     /** ✅ 지금 간식 사용 가능 → 퀴즈 가능 */
     data object Available : SnackState()
-
-    /** ⏳ 아직 도착 전 (오늘 시간 안 됨) */
-    data class Waiting(
-        val arrivalTime: String // "09:00"
-    ) : SnackState()
 
     /** ❌ 오늘 이미 사용함 */
     data class Consumed(

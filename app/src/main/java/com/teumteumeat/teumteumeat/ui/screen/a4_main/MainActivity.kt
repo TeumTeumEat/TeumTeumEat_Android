@@ -29,6 +29,7 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+
         Log.d("MainActivity", "onCreate: taskId=$taskId, hash=${hashCode()}")
 
         val targetScreen = intent

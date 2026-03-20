@@ -15,6 +15,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel
+import java.time.LocalDate
 import java.time.YearMonth
 
 
@@ -65,7 +66,7 @@ fun MainNavHost(
 
             LaunchedEffect(Unit) {
                 mainViewModel.retryEvent.collect {
-                    viewModel.loadCalendarHistory(YearMonth.now()) // 본인의 데이터 로드
+                    viewModel.loadCalendarHistory(YearMonth.now()) // 현재 일자의 데이터 로드
                 }
             }
 

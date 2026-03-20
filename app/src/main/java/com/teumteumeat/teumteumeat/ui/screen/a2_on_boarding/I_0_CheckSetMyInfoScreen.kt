@@ -32,7 +32,7 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
