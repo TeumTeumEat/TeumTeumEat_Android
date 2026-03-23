@@ -29,4 +29,6 @@ interface QuizRepository {
     ): ApiResultV2<List<UserQuiz>>
 
     suspend fun getAdReward() : ApiResultV2<Unit>
+
+    suspend fun submitCompleteQuizSet() : ApiResultV2<Unit>
 }

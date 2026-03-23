@@ -346,7 +346,7 @@ class MyPageViewModel @Inject constructor(
                 }
                 _uiState.update { state ->
                     state.copy(
-                        isSelGoalExpired = userGoal.isExpired
+                        isSelGoalCompleted = userGoal.isCompleted
                     )
                 }
 

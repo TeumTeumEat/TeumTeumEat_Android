@@ -115,11 +115,10 @@ fun GoalListScreen(
                             // 🔹 선택된 목표를 최상단으로, 그 다음 만료되지 않은 순으로 정렬
                             val sortedGoals = uiState.goals.sortedWith(
                                 compareByDescending<GoalCardUiModel> { it.isSelected } // 1순위: 선택 여부
-                                    .thenBy { it.isExpired } // 2순위: 만료 안 된 것 우선 (false < true)
+                                    .thenBy { it.isCompleted } // 2순위: 만료 안 된 것 우선 (false < true)
                             )
 
                             // 정렬 후 결과 확인
-                            Log.d("GoalDebug", "--- 정렬 완료 ---")
                             sortedGoals.forEachIndexed { index, goal ->
                                 Log.d(
                                     "GoalDebug",
@@ -194,7 +193,7 @@ fun GoalCard(
                 // ⭐ 만료되지 않은 경우만 클릭 가능
                 .clip(shape)
                 .clickable(
-                    enabled = if (BuildConfig.DEBUG) true else !uiModel.isExpired && !uiModel.isSelected,
+                    enabled = if (BuildConfig.DEBUG) true else !uiModel.isCompleted && !uiModel.isSelected,
                     interactionSource = remember { MutableInteractionSource() },
                     onClick = {
                         onClick(uiModel.goalId)
@@ -252,7 +251,7 @@ fun GoalCard(
 
         // 2. 컨텐츠 위에 씌울 검은색 반투명 오버레이
         // uiModel.isExpired 상황 등 특정 조건에서만 보여주고 싶다면 if문 사용
-        if (uiModel.isExpired) {
+        if (uiModel.isCompleted) {
             Box(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)

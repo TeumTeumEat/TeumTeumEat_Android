@@ -46,7 +46,20 @@ class QuizViewModel @Inject constructor(
         // Repository 내부의 MutableSharedFlow에 신호를 보냅니다.
         // 이 신호는 MainActivity 등에서 감지하여 데이터를 새로고침하게 됩니다.
         viewModelScope.launch {
+            completeCurrentQuizSet()
             goalRepository.emitRefreshSignal()
+        }
+    }
+
+    /**
+     * 퀴즈 완료를 눌렀을 때 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가 API 호출
+     */
+    private fun completeCurrentQuizSet() {
+        viewModelScope.launch {
+            when (val response = quizRepository.submitCompleteQuizSet()) {
+                is ApiResultV2.Success -> {}
+                else -> { moveToError(response) }
+            }
         }
     }
 
@@ -74,14 +87,12 @@ class QuizViewModel @Inject constructor(
             val isLastQuiz = state.currentIndex == state.quizzes.lastIndex
 
             if (isLastQuiz) {
-                // 🎉 마지막 문제 정답 → 완료 상태
                 state.copy(isCompleted = true)
             } else {
                 // 다음 문제로 이동
                 state.copy(currentIndex = state.currentIndex + 1)
             }
         }
-
     }
 
     fun resetIdleState() {
@@ -225,4 +236,37 @@ class QuizViewModel @Inject constructor(
         }
     }
 
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            is ApiResultV2.NetworkError -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+
+            is ApiResultV2.ServerError -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = result.uiMessage
+                    )
+                }
+            }
+
+            else -> {
+
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "알 수 없는 오류가 발생했습니다."
+                    )
+                }
+            }
+        }
+
+    }
 }

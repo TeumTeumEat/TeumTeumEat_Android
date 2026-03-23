@@ -18,4 +18,6 @@
     <string name="app_ad_id">ca-app-pub-6258792179933715~1108884020</string>
     <string name="fullscreen_ad_id">ca-app-pub-6258792179933715/9359426058</string>
     <string name="fullscreen_ad_test_id">"ca-app-pub-3940256099942544/1033173712"</string>
+    <string name="rewarded_ad_test_id">ca-app-pub-3940256099942544/5224354917</string>
+    <string name="rewarded_ad_id">ca-app-pub-6258792179933715/4589941378</string>
 </resources>

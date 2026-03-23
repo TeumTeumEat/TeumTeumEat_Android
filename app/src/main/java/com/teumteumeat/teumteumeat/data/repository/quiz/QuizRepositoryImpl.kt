@@ -121,4 +121,13 @@ class QuizRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun submitCompleteQuizSet(): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = {
+                quizApiService.submitCompleteQuizSet()
+            },
+            mapper = {}
+        )
+    }
+
 }

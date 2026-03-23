@@ -16,6 +16,7 @@ data class GetGoalResponse(
     val studyPeriod: String,
     val difficulty: Difficulty,
     val prompt: String?,
+    val isCompleted: Boolean,
     // CATEGORY 전용
     val category: CategoryResponse?,
 

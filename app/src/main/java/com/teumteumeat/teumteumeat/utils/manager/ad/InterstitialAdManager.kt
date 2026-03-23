@@ -35,7 +35,6 @@ class InterstitialAdManager @Inject constructor(
         val adId = if(BuildConfig.DEBUG) context.getString(R.string.fullscreen_ad_test_id)
             else context.getString(R.string.fullscreen_ad_id)
 
-        // 테스트 ID 사용
         InterstitialAd.load(context, adId, adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdFailedToLoad(adError: LoadAdError) {

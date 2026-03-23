@@ -128,8 +128,8 @@ fun HomeScreen(
     var showBubbleAnimation by remember { mutableStateOf(false) }
 
     // 화면 진입 및 canOpenSummary 상태에 따라 애니메이션 시작
-    LaunchedEffect(isConsumedTodayGoal && uiState.remainingLearningCount > 0) {
-        if (isConsumedTodayGoal && uiState.remainingLearningCount > 0) {
+    LaunchedEffect(isConsumedTodayGoal && uiState.dailyCouponLimit > 0) {
+        if (isConsumedTodayGoal && uiState.dailyCouponLimit > 0) {
             delay(300) // 화면이 안정적으로 로드된 후 0.3초 뒤에 말풍선 팝업
             showBubbleAnimation = true
         } else {
@@ -312,7 +312,7 @@ fun HomeScreen(
                     AdCouponDialog(
                         showDialog = uiState.isShowAdModalDialog,
                         couponCount = uiState.cupponCount,
-                        maxCouponCount = 10,
+                        dailyCouponLimit = 10,
                         onDismiss = { viewModel.closeAdModal() },
                         onUseCoupon = {
                             //  현재 주제가 새로운 학습 데이터가 생성 가능할 때
@@ -331,10 +331,22 @@ fun HomeScreen(
                         },
                         onChargeCoupon = {
                             // 광고 시청 로직 구현
-                            viewModel.showInterstitialAdWithLoading(activity) {
-                                viewModel.submitAdWatching()
-                            }
-                        }
+                            viewModel.showRewardedAdWithLoading(
+                                activity = activity,
+                                onRewardEarned = {
+                                        viewModel.submitAdWatching()
+                                },
+                                onRewardFailed = {
+                                    // 실패: 안내 메시지 출력
+                                    Toast.makeText(
+                                        activity,
+                                        "광고를 끝까지 시청해야 쿠폰이 지급됩니다.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            )
+                        },
+                        isAdLoading = uiState.isAdLoading
                     )
 
                     // 🔹 목표 만료 알림 모달

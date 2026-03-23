@@ -58,7 +58,8 @@ class GoalListViewModel @Inject constructor(
                 is ApiResultV2.Success -> {
                     val goals = result.data.goalResponses
                     val currentGoalId = _uiState.value.currentGoalId
-                    Log.d("currentGoalId 디버깅", "$currentGoalId")
+                    Log.d("현재 유저의 GoalList 디버깅", "$goals")
+
                     // 2️⃣ 서버 → UI 모델 변환
                     val uiModels = goals.mapIndexed { index, goal ->
                         goal.toUiModel(currentGoalId)
