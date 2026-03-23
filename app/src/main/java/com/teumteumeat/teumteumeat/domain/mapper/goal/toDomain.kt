@@ -12,6 +12,7 @@ fun UserGoalResponse.toDomain(): UserGoal {
         startDate = LocalDate.parse(startDate),
         endDate = LocalDate.parse(endDate),
         isExpired = isExpired,
+        isCompleted = isCompleted,
         studyPeriod = studyPeriod,
         difficulty = Difficulty.valueOf(difficulty),
         prompt = prompt,

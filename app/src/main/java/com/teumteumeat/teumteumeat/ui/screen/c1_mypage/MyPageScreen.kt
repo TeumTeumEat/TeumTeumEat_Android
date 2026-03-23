@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -34,9 +33,7 @@ import com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info.EditUserInfoActiv
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
-import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
-import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -109,7 +106,7 @@ fun MyPageScreen(
                                     description = uiState.topicDescription,
                                     goalWeek = uiState.goalWeek,
                                     difficulty = uiState.goalDifficulty,
-                                    isSelGoalExpired = uiState.isSelGoalExpired
+                                    isSelGoalExpired = uiState.isSelGoalCompleted
                                 )
                             }
 
@@ -264,7 +261,7 @@ fun PreviewMyPageScreenSuccess() {
         topicDescription = "Jetpack Compose 마스터하기",
         goalWeek = "4주",
         goalDifficulty = "상",
-        isSelGoalExpired = false,
+        isSelGoalCompleted = false,
         isAlarmEnabled = true,
         loginProvider = "카카오 로그인",
         email = "teumteum@example.com",

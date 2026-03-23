@@ -6,8 +6,9 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import androidx.lifecycle.LiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
-class NetworkConnection(
+class NetworkConnection @Inject constructor(
     @ApplicationContext private val context: Context
 ) : LiveData<Boolean>() {
 

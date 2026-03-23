@@ -29,14 +29,15 @@ fun FillSecondaryButton(
     text: String = "",
     textStyle: TextStyle = MaterialTheme.appTypography.btnBold20_h24,
     isEnabled: Boolean = true,
+    isModalBtn: Boolean = false,
     onClick: () -> Unit,
     conerRadius: Dp = 16.dp,
 ) {
     val primaryColor = MaterialTheme.extendedColors.primary
     val buttonFillSecondary = MaterialTheme.extendedColors.btnFillSecondary
 
-    val disableContainerColor = MaterialTheme.colorScheme.surfaceVariant
-    val disableContentColor = Color.White
+    val disableContainerColor = if(isModalBtn) MaterialTheme.extendedColors.btnGray200 else MaterialTheme.colorScheme.surfaceVariant
+    val disableContentColor = if(isModalBtn) MaterialTheme.extendedColors.textGhost else Color.White
 
     val contentColor = if(isEnabled) primaryColor else disableContentColor
 
@@ -55,7 +56,6 @@ fun FillSecondaryButton(
             ),
             shape = RoundedCornerShape(conerRadius), // border-radius: 8px
             modifier = Modifier
-                .height(60.dp)
                 .fillMaxWidth()
         ) {
             Text(

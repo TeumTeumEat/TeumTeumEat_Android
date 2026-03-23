@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
-import androidx.compose.ui.graphics.Color
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.R
 
@@ -16,7 +15,7 @@ data class UiStateMyPage(
                 "Kotlin을 활용해 생산성을 높이는 방법을 학습합니다.",
     val goalWeek: String = "4주",
     val goalDifficulty: String = "난이도 상",
-    val isSelGoalExpired: Boolean = true,
+    val isSelGoalCompleted: Boolean = true,
 
     // 알림
     val isAlarmEnabled: Boolean = true,
