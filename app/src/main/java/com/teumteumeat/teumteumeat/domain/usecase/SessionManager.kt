@@ -31,7 +31,6 @@ class SessionManager @Inject constructor(
         if (fcmToken.isBlank()) Log.e("${this@SessionManager}", "fcmToken: $fcmToken")
 
         notificationRepository.deleteDeviceToken(token = fcmToken) // 디바이스 토큰 삭제
-        // todo. 알림 수신 여부 삭제
         logoutUseCase() /* 🔥 로그인 토큰 삭제 */
         PrefsUtil.setOnboardingCompleted(appContext, false)
         _sessionEvent.emit(SessionEvent.Expired)

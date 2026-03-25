@@ -153,6 +153,8 @@ class Utils {
 
     object UiUtils{
 
+
+
         fun formatTestTime(timeTaken: Int, examDuration: Int = 0): String {
             val showedTimeSecond = if( examDuration == 0) timeTaken else examDuration - timeTaken
             val minutes = showedTimeSecond / 60
@@ -273,6 +275,20 @@ class Utils {
                 hour = hour12,
                 amPm = newAmPm
             )
+        }
+
+        /**
+         * 앱의 알림이 실제로 사용자에게 전달될 수 있는 상태인지 통합 확인합니다.
+         * 1. 시스템 설정에서 앱 알림이 켜져 있는지 확인
+         * 2. Android 13 이상일 경우 POST_NOTIFICATIONS 권한 허용 여부 확인
+         *
+         * @return 알림 권한과 설정이 모두 허용된 경우 true
+         */
+        fun checkNotificationPermission(context: Context): Boolean {
+            val isSystemEnabled = areAppNotificationsEnabled(context)
+            val isRuntimeGranted = isPostNotificationsGranted(context)
+
+            return isSystemEnabled && isRuntimeGranted
         }
 
         fun isPostNotificationsGranted(context: Context): Boolean {

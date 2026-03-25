@@ -3,16 +3,13 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.common.api.Api
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -20,9 +17,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
 
-sealed interface LibraryUiEvent {
-    data class NavigateToHistoryDetail(val historyId: Long) : LibraryUiEvent
-}
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
@@ -33,88 +27,101 @@ class LibraryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateLibrary>(UiStateLibrary())
     val uiState = _uiState.asStateFlow()
 
-    private val _uiEvent = MutableSharedFlow<LibraryUiEvent>()
-    val uiEvent = _uiEvent.asSharedFlow()
-
-    // Flow 값으로 currentPage 읽기
-    private val currentPage get() = uiState.value.currentPage
-    private val totalPage get() = uiState.value.totalPage
 
     init {
-        // 최초 진입 시 현재 월 히스토리 로드
-        loadCalendarHistory(YearMonth.now())
+        viewModelScope.launch {
+            // 1. 월별 데이터 로드가 끝날 때까지 여기서 '일시 정지'합니다.
+            loadCalendarHistory(YearMonth.now())
+
+            // 2. 위 함수가 완료된 후 최신 상태값을 확인합니다.
+            if (_uiState.value.isSolvedToday) {
+                onCalendarDateSelected(LocalDate.now())
+            }
+        }
     }
 
     /** 📅 월별 퀴즈 히스토리 로드 */
-    fun loadCalendarHistory(yearMonth: YearMonth) {
-        viewModelScope.launch {
-            when (
-                val result = historyRepository.getCalendarHistory(
-                    year = yearMonth.year,
-                    month = yearMonth.monthValue
-                )
-            ) {
-                is ApiResultV2.Success -> {
-                    val data = result.data
+    // 함수 앞에 suspend를 붙여 비동기 작업임을 명시합니다.
+    suspend fun loadCalendarHistory(yearMonth: YearMonth) {
+        // ⚠️ 내부의 viewModelScope.launch를 제거합니다.
+        when (
+            val result = historyRepository.getCalendarHistory(
+                year = yearMonth.year,
+                month = yearMonth.monthValue
+            )
+        ) {
+            is ApiResultV2.Success -> {
+                val data = result.data
 
-                    val solvedDates = data.stampedDates
-                        .map { LocalDate.parse(it) }
-                        .toSet()
+                val solvedDates = data.stampedDates
+                    .map { LocalDate.parse(it) }
+                    .toSet()
 
-                    _uiState.update { state ->
-                        state.copy(
-                            currentStreak = data.currentStreak,
-                            stampCount = data.totalStamps,
-                            monthStampCount = data.monthlyStamps,
+                // 현재 날짜 포함 여부 확인
+                val isTodayIncluded = solvedDates.contains(LocalDate.now())
 
-                            calendarUiState = state.calendarUiState.copy(
-                                currentMonth = yearMonth,
-                                solvedDates = solvedDates
-                            ),
+                // UiState 업데이트 (copy를 사용하여 특정 값만 변경)
+                _uiState.update { currentState ->
+                    currentState.copy(isSolvedToday = isTodayIncluded)
+                }
 
-                            motivationUiState = state.motivationUiState.copy(
-                                streakCount = data.currentStreak
-                            )
+                _uiState.update { state ->
+                    state.copy(
+                        currentStreak = data.currentStreak,
+                        stampCount = data.totalStamps,
+                        monthStampCount = data.monthlyStamps,
+
+                        calendarUiState = state.calendarUiState.copy(
+                            currentMonth = yearMonth,
+                            solvedDates = solvedDates,
+                        ),
+
+                        motivationUiState = state.motivationUiState.copy(
+                            streakCount = data.currentStreak
                         )
-                    }
-                }
-
-                is ApiResultV2.SessionExpired -> {
-                    sessionManager.expireSession()
-                }
-
-                else -> {
-                    // 👉 에러 메시지는 ViewModel 확장함수에서 처리된다고 가정
-                    Log.e("LibraryViewModel", "❌ 캘린더 히스토리 로드 실패: ${result.uiMessage}")
+                    )
                 }
             }
 
-        }
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
 
+            else -> {
+                // 👉 에러 메시지는 ViewModel 확장함수에서 처리된다고 가정
+                Log.e("LibraryViewModel", "❌ 캘린더 히스토리 로드 실패: ${result.uiMessage}")
+            }
+        }
     }
 
     /** 📅 월 변경 */
     fun onCalendarMonthChanged(yearMonth: YearMonth) {
-        Log.d("Calendar", "📅 월 변경: ${yearMonth.year}-${yearMonth.monthValue}")
-
-        _uiState.update { state ->
-            state.copy(
-                calendarUiState = state.calendarUiState.copy(
-                    currentMonth = yearMonth,
-
-                    // ✅ 핵심: 날짜 선택 해제
-                    selectedDate = null,
-
-                    // ✅ 하단 일별 상태 초기화
-                    dailyLearningList = emptyList(),
-                    isDailyLoading = false,
-                    dailyErrorMessage = null
-                )
-            )
+        // ✅ 현재 뷰모델이 가진 월과 같다면 (탭 이동으로 인한 초기 방출이라면) 무시
+        if (_uiState.value.calendarUiState.currentMonth == yearMonth) {
+            return
         }
 
-        // ✅ 월 변경 시 해당 월 이력 다시 로드
-        loadCalendarHistory(yearMonth)
+        Log.d("Calendar", "📅 월 변경: ${yearMonth.year}-${yearMonth.monthValue}")
+        viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(
+                    calendarUiState = state.calendarUiState.copy(
+                        currentMonth = yearMonth,
+
+                        // ✅ 핵심: 날짜 선택 해제
+                        selectedDate = null,
+
+                        // ✅ 하단 일별 상태 초기화
+                        dailyLearningList = emptyList(),
+                        isDailyLoading = false,
+                        dailyErrorMessage = null
+                    )
+                )
+            }
+
+            // ✅ 월 변경 시 해당 월 이력 다시 로드
+            loadCalendarHistory(yearMonth)
+        }
     }
 
     /** 📆 날짜 선택 */
