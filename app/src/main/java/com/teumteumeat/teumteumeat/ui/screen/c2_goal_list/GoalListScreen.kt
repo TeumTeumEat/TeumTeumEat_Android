@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
+import com.teumteumeat.teumteumeat.ui.component.card.GoalCard
 import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.component.mypage.TagChip
@@ -175,130 +176,6 @@ fun ChangeGoalOverlay(
     }
 }
 
-@Composable
-fun GoalCard(
-    modifier: Modifier = Modifier,
-    uiModel: GoalCardUiModel,
-    onClick: (Int) -> Unit,
-) {
-    val theme = MaterialTheme.extendedColors
-    val shape = RoundedCornerShape(12.dp)
-
-
-    Box {
-        Box(
-            modifier = modifier
-                .padding(horizontal = 20.dp)
-                .fillMaxWidth()
-                // ⭐ 만료되지 않은 경우만 클릭 가능
-                .clip(shape)
-                .clickable(
-                    enabled = if (BuildConfig.DEBUG) true else !uiModel.isCompleted && !uiModel.isSelected,
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = {
-                        onClick(uiModel.goalId)
-                    }
-                )
-                .border(
-                    width = if (uiModel.isSelected) 2.dp else 1.dp,
-                    color = if (uiModel.isSelected) theme.primary else Color.LightGray,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .background(
-                    color = when {
-                        uiModel.isSelected -> theme.primaryContainer
-                        else -> MaterialTheme.extendedColors.backgroundW100
-                    },
-                    shape = shape
-                )
-                .padding(16.dp)
-        ) {
-
-            Column {
-
-                // 🔹 배지 영역
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    TagChip(text = uiModel.weekText)
-
-                    if (uiModel.showDifficulty && uiModel.difficultyText.isNotBlank()) {
-                        TagChip(text = uiModel.difficultyText)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 🔹 제목
-                Text(
-                    text = uiModel.title,
-                    style = MaterialTheme.appTypography.bodyMedium16,
-                    maxLines = 2
-                )
-
-                // 🔹 설명
-                if (uiModel.description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = uiModel.description,
-                        style = MaterialTheme.appTypography.lableMedium12_h14,
-                        color = Color.Gray,
-                        maxLines = 2
-                    )
-                }
-
-            }
-        }
-
-        // 2. 컨텐츠 위에 씌울 검은색 반투명 오버레이
-        // uiModel.isExpired 상황 등 특정 조건에서만 보여주고 싶다면 if문 사용
-        if (uiModel.isCompleted) {
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .matchParentSize()
-                    .clip(shape)
-                    .border(
-                        width = if (uiModel.isSelected) 2.dp else 1.dp,
-                        color = if (uiModel.isSelected) theme.primary else Color.LightGray,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .background(
-                        color = Color.Black.copy(alpha = 0.4f), // 검은색 투명도 40%
-                        shape = shape
-                    )
-            ){
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.End
-                ){
-                    // 🔹 배지 영역
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Cancel,
-                            contentDescription = null,
-                            tint = theme.textOnError,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            "만료된 주제",
-                            style = MaterialTheme.appTypography.captionRegular14
-                                .copy(
-                                    color = theme.textOnError
-                                )
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 

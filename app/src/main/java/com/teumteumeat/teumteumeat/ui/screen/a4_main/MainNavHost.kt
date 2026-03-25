@@ -1,11 +1,13 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -37,7 +39,9 @@ fun MainNavHost(
                 navController.getBackStackEntry(BottomNavItem.Home.route)
             }
 
-            val viewModel: HomeViewModel = hiltViewModel(parentEntry)
+//            val viewModel: HomeViewModel = hiltViewModel(parentEntry)
+            val viewModel: HomeViewModel = hiltViewModel(LocalActivity.current as MainActivity)
+
             val uiStateHome by viewModel.uiState.collectAsStateWithLifecycle()
             val screenState by viewModel.screenState.collectAsStateWithLifecycle()
 
@@ -61,7 +65,8 @@ fun MainNavHost(
         composable(BottomNavItem.Library.route) {
             val parentEntry =
                 remember(it) { navController.getBackStackEntry(BottomNavItem.Library.route) }
-            val viewModel: LibraryViewModel = hiltViewModel(parentEntry)
+//            val viewModel: LibraryViewModel = hiltViewModel(parentEntry)
+            val viewModel: LibraryViewModel = hiltViewModel(LocalActivity.current as MainActivity)
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {

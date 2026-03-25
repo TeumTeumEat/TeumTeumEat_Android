@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.MarkdownText
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
@@ -75,165 +76,169 @@ fun DailySummaryScreen(
             onBack = onBackClick,
         )
     }else{
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            content = { padding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding()
-                        .padding(),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                ) {
+        DefaultMonoBg(
 
-                    Box(
+        ) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                content = { padding ->
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .systemBarsPadding()
+                            .padding(),
+                        verticalArrangement = Arrangement.SpaceBetween,
                     ) {
 
-                        Column(
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
                         ) {
-                            /**
-                             * 홈화면 타이틀 바
-                             */
-                            TitleBar(
-                                title = "오늘의 냠냠지식",
-                                onBackClick = onBackClick,
-                            )
-                            /*Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 19.dp)
-                                    .drawBehind {
-                                        val strokeWidth = 1.dp.toPx()
-                                        drawLine(
-                                            color = theme.unableContainer, // 연한 회색
-                                            start = Offset(0f, size.height - strokeWidth),
-                                            end = Offset(size.width, size.height - strokeWidth),
-                                            strokeWidth = strokeWidth
-                                        )
-                                    },
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Start,
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(vertical = 16.dp, horizontal = 20.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    IconButton(
-                                        onClick = { onBackClick() },
-                                        modifier = Modifier.size(30.dp)
-                                    ) {
-                                        Icon(
-                                            modifier = Modifier.padding(0.dp),
-                                            imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                                            contentDescription = "previous page"
-                                        )
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.weight(1f),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            "오늘의 냠냠지식",
-                                            style = MaterialTheme.appTypography.subtitleSemiBold20,
-                                        )
-                                    }
-                                }
-                            }*/
 
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .verticalScroll(rememberScrollState())
-                                    .padding(horizontal = 20.dp)
                             ) {
-
-                                Spacer(modifier = Modifier.height(32.dp))
-
-                                Text(
-                                    text = uiState.title,
-                                    style = MaterialTheme.appTypography.titleBold24
+                                /**
+                                 * 홈화면 타이틀 바
+                                 */
+                                TitleBar(
+                                    title = "오늘의 냠냠지식",
+                                    onBackClick = onBackClick,
                                 )
+                                /*Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 19.dp)
+                                        .drawBehind {
+                                            val strokeWidth = 1.dp.toPx()
+                                            drawLine(
+                                                color = theme.unableContainer, // 연한 회색
+                                                start = Offset(0f, size.height - strokeWidth),
+                                                end = Offset(size.width, size.height - strokeWidth),
+                                                strokeWidth = strokeWidth
+                                            )
+                                        },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start,
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(vertical = 16.dp, horizontal = 20.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        IconButton(
+                                            onClick = { onBackClick() },
+                                            modifier = Modifier.size(30.dp)
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.padding(0.dp),
+                                                imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                                                contentDescription = "previous page"
+                                            )
+                                        }
 
-                                Spacer(modifier = Modifier.height(12.dp))
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                "오늘의 냠냠지식",
+                                                style = MaterialTheme.appTypography.subtitleSemiBold20,
+                                            )
+                                        }
+                                    }
+                                }*/
 
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(horizontal = 20.dp)
+                                ) {
 
-                                Text(
-                                    text = uiState.dateText,
-                                    style = MaterialTheme.appTypography.captionRegular12,
-                                    color = Color.Gray
-                                )
+                                    Spacer(modifier = Modifier.height(32.dp))
 
-                                Spacer(modifier = Modifier.height(24.dp))
-
-                                if (uiState.errorMessage != null) {
                                     Text(
-                                        text = uiState.errorMessage,
-                                        color = Color.Red,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        text = uiState.title,
+                                        style = MaterialTheme.appTypography.titleBold24
                                     )
-                                } else {
-                                    MarkdownText(
-                                        markdown = uiState.summary,
-                                        modifier = Modifier.fillMaxSize()
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+
+                                    Text(
+                                        text = uiState.dateText,
+                                        style = MaterialTheme.appTypography.captionRegular12,
+                                        color = Color.Gray
                                     )
+
+                                    Spacer(modifier = Modifier.height(24.dp))
+
+                                    if (uiState.errorMessage != null) {
+                                        Text(
+                                            text = uiState.errorMessage,
+                                            color = Color.Red,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    } else {
+                                        MarkdownText(
+                                            markdown = uiState.summary,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(110.dp))
                                 }
-
-                                Spacer(modifier = Modifier.height(110.dp))
                             }
-                        }
 
-                        // 🔵 로딩 화면
-                        if (screenState is UiScreenState.Loading) {
-                            LoadingScreen(
-                                title = "요약글을 생성하는 중",
-                                message = "잠시만 기다려주세요...",
-                            )
-                        }
+                            // 🔵 로딩 화면
+                            if (screenState is UiScreenState.Loading) {
+                                LoadingScreen(
+                                    title = "요약글을 생성하는 중",
+                                    message = "잠시만 기다려주세요...",
+                                )
+                            }
 
 
-                        // 2️⃣ 하단 그라데이션 (페이드 효과)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(170.dp)
-                                .align(Alignment.BottomCenter)
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            MaterialTheme.colorScheme.surface,
+                            // 2️⃣ 하단 그라데이션 (페이드 효과)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(170.dp)
+                                    .align(Alignment.BottomCenter)
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color.Transparent,
+                                                MaterialTheme.colorScheme.surface,
+                                            )
                                         )
                                     )
-                                )
-                        )
+                            )
 
-                        // 하단 퀴즈 버튼
-                        BaseFillButton(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(20.dp)
-                                .fillMaxWidth(),
-                            onClick = onViewQuizResultClick,
-//                        isEnabled = true,
-                            isEnabled = screenState !is UiScreenState.Loading,
-                            text = if((screenState is UiScreenState.Loading)) {
-                                "잠시만 기다려주세요"
-                            }else{
-                                "풀이 결과 확인"
-                            }
-                        )
+                            // 하단 퀴즈 버튼
+                            BaseFillButton(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(20.dp)
+                                    .fillMaxWidth(),
+                                onClick = onViewQuizResultClick,
+                                //                        isEnabled = true,
+                                isEnabled = screenState !is UiScreenState.Loading,
+                                text = if ((screenState is UiScreenState.Loading)) {
+                                    "잠시만 기다려주세요"
+                                } else {
+                                    "풀이 결과 확인"
+                                }
+                            )
+                        }
                     }
-                }
-            },
-        )
+                },
+            )
+        }
     }
 
 

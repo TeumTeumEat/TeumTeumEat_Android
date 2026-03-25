@@ -1,6 +1,10 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
 import android.app.Application
+import android.os.Build
+import androidx.activity.result.launch
+import androidx.compose.animation.core.copy
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -18,10 +22,14 @@ import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.notification.GetPushNotificationStatusUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.InfoUtil.getAppVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -40,6 +48,10 @@ class MyPageViewModel @Inject constructor(
     private val tokenLocalDataSource: TokenLocalDataSource,
     private val notificationRepository: NotificationRepository,
     val sessionManager: SessionManager,
+
+    // + UseCase 주입 추가
+    private val getPushNotificationStatusUseCase: GetPushNotificationStatusUseCase,
+
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateMyPage())
@@ -63,42 +75,51 @@ class MyPageViewModel @Inject constructor(
         loadMyPageData()
     }
 
+    // 1. 초기화 로직 최적화 (병렬 실행)
     fun loadMyPageData() {
+        // 전체 로딩 상태 시작
+        _uiState.update { it.copy(isLoading = true, appVersion = version) }
+
+        // 각 데이터를 병렬로 요청
         viewModelScope.launch {
-            loadUserGoal()
-            loadAccountInfo()
-            fetchPushNotifiState()
-            _uiState.update {
-                it.copy(
-                    appVersion = version
-                )
+            try {
+                // async를 사용하여 3개의 작업을 동시에 시작
+                val goalDeferred = async { loadUserGoal() }
+                val accountDeferred = async { loadAccountInfo() } // launch 제거 버전
+                val pushDeferred = async { fetchPushNotifiState() } // launch 제거 버전
+
+                // 세 작업이 모두 끝날 때까지 병렬로 대기
+                awaitAll(goalDeferred, accountDeferred, pushDeferred)
+
+                _screenState.value = UiScreenState.Success
+            } catch (e: Exception) {
+                // 에러 처리
+                _uiState.update { it.copy(isLoading = false) }
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
-            _screenState.value = UiScreenState.Success
         }
     }
 
-    suspend fun fetchPushNotifiState(){
+    /**
+     * 알림 상태를 서버와 기기 권한을 통합하여 가져옵니다.
+     */
+    fun fetchPushNotifiState() {
         viewModelScope.launch {
-            // 로딩 시작 로직 (필요시 추가)
-
-            when (val result = userRepository.getUserPushEnableSettings()) {
+            // 1. UseCase 호출: 내부에서 서버 데이터와 기기 권한을 이미 연산해서 반환함
+            when (val result = getPushNotificationStatusUseCase()) {
                 is ApiResultV2.Success -> {
-                    // 성공 시 데이터 업데이트
+                    // 성공 시 통합된 Boolean 값(result.data)으로 UI 업데이트
                     _uiState.update {
                         it.copy(
-                            isAlarmEnabled = result.data.pushEnabled
+                            isAlarmEnabled = result.data
                         )
                     }
                 }
 
-                is ApiResultV2.SessionExpired -> {
-                    // 세션 만료 처리 (예: 로그인 화면 이동 이벤트 발생)
-                    sessionManager.expireSession()
-                }
-
                 else -> {
-                    // ServerError, NetworkError, UnknownError 통합 처리
-                    // 확장 프로퍼티인 uiMessage를 활용해 가독성 높게 처리 가능합니다.
+                    // 2. 에러 발생 시 공통 에러 처리 함수 호출
+                    // 이 result.message 안에는 이미 map 과정에서 가공된 uiMessage가 들어있습니다.
                     moveToError(result)
                 }
             }
@@ -134,40 +155,18 @@ class MyPageViewModel @Inject constructor(
 
     fun toogleAlarm(isAlarmEnabled: Boolean) {
         viewModelScope.launch {
-            if (isAlarmEnabled){
-                when(val result = registerDeviceTokenInternal()) {
-                    is ApiResultV2.Success -> {
-                        _uiState.update {
-                            it.copy(
-                                isAlarmEnabled = true
-                            )
-                        }
-                    }
-                    is ApiResultV2.SessionExpired -> {
-                        userRepository.updateUserPushEnableSettings(isAlarmEnabled)
-                        sessionManager.expireSession()
-                    }
-                    else -> {
-                        moveToError(result)
-                    }
+            val result = if (isAlarmEnabled) registerDeviceTokenInternal()
+            else deleteDeviceTokenInternal()
+
+            when(result) {
+                is ApiResultV2.Success -> {
+                    _uiState.update { it.copy(isAlarmEnabled = isAlarmEnabled) }
                 }
-            }else{
-                when(val result = deleteDeviceTokenInternal()) {
-                    is ApiResultV2.Success -> {
-                        _uiState.update {
-                            it.copy(
-                                isAlarmEnabled = false
-                            )
-                        }
-                    }
-                    is ApiResultV2.SessionExpired -> {
-                        userRepository.updateUserPushEnableSettings(isAlarmEnabled)
-                        sessionManager.expireSession()
-                    }
-                    else -> {
-                        moveToError(result)
-                    }
+                is ApiResultV2.SessionExpired -> {
+                    userRepository.updateUserPushEnableSettings(isAlarmEnabled)
+                    sessionManager.expireSession()
                 }
+                else -> moveToError(result)
             }
         }
     }
@@ -246,70 +245,24 @@ class MyPageViewModel @Inject constructor(
         }
     }
 
-    private suspend fun moveToError(result: ApiResultV2<*>) {
+    /**
+     * 공통 에러 처리 함수
+     * 세션 만료는 세션 매니저로 전달하고, 나머지는 로딩 해제 및 에러 메시지를 노출합니다.
+     */
+    suspend fun moveToError(result: ApiResultV2<*>) {
         when (result) {
             is ApiResultV2.SessionExpired -> {
                 sessionManager.expireSession()
             }
 
-            is ApiResultV2.NetworkError -> {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.uiMessage
-                    )
-                }
-            }
-
-            is ApiResultV2.ServerError -> {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.uiMessage
-                    )
-                }
-            }
             else -> {
-
-
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "알 수 없는 오류가 발생했습니다."
+                        // UseCase의 map 함수에서 이미 uiMessage 로직이 적용된 message가 넘어옵니다.
+                        // result.uiMessage 확장 프로퍼티를 사용하면 안전하게 가공된 메시지를 가져옵니다.
+                        errorMessage = result.uiMessage
                     )
-                }
-            }
-        }
-
-    }
-
-    private fun loadMyPage() {
-        viewModelScope.launch {
-
-            // 1️⃣ 로딩 시작
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-
-            when (val result = getGoalListUseCase()) {
-
-                is ApiResultV2.Success -> {
-                    val firstGoal = result.data.goalResponses.firstOrNull()
-
-                    if (firstGoal == null) {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = "설정된 목표가 없습니다."
-                            )
-                        }
-                        return@launch
-                    }
-
-                    // 2️⃣ Goal → UiState 매핑
-                    applyFirstGoal(firstGoal)
-                }
-
-                else -> {
-                    moveToError(result)
                 }
             }
         }

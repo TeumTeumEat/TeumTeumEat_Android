@@ -47,7 +47,6 @@ class MainViewModel @Inject constructor(
 
     init {
 
-
         // 날짜 변경 시에 viewModel.loadCalendarHistory(YearMonth.now()) 호출
         setupDateChangeReceiver()
         loadCalendarHistory(YearMonth.now())
