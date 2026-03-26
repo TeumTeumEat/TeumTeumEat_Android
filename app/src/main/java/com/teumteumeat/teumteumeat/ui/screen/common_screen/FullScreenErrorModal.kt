@@ -32,7 +32,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 fun FullScreenErrorModal(
     errorState: ErrorState,
     isShowBackBtn: Boolean = true,
-    onBack: () -> Unit,
+    onBack: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -53,6 +53,7 @@ fun FullScreenErrorModal(
         )
 
         ErrorBottomAction(
+            modifier = Modifier.align(Alignment.BottomCenter),
             primaryText = errorState.retryLabel,
             onPrimary = errorState.onRetry,
             secondaryText = errorState.secondaryLabel,
@@ -111,13 +112,14 @@ fun ErrorContent(
 
 @Composable
 fun ErrorBottomAction(
+    modifier: Modifier = Modifier,
     primaryText: String,
     onPrimary: () -> Unit,
     secondaryText: String? = null,
     onSecondary: (() -> Unit)? = null,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(16.dp),
         contentAlignment = Alignment.BottomCenter

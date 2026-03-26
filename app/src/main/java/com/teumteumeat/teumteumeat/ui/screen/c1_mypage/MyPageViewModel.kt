@@ -24,6 +24,7 @@ import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.notification.GetPushNotificationStatusUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.NotificationSettingGuideType
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
@@ -81,6 +82,7 @@ class MyPageViewModel @Inject constructor(
     fun loadMyPageData() {
         // 전체 로딩 상태 시작
         _uiState.update { it.copy(isLoading = true, appVersion = version) }
+        _screenState.value = UiScreenState.Loading
 
         // 각 데이터를 병렬로 요청
         viewModelScope.launch {
@@ -96,15 +98,30 @@ class MyPageViewModel @Inject constructor(
                 _screenState.value = UiScreenState.Success
             } catch (e: Exception) {
                 // 에러 처리
-                _uiState.update { it.copy(isLoading = false) }
+                _screenState.value = UiScreenState.Error(
+                    message = e.message ?: "데이터를 불러오는 중 문제가 발생했습니다."
+                )
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
 
+    fun getErrorState(
+        message: String,
+        onRetry: () -> Unit
+    ): ErrorState {
+        return ErrorState(
+            title = "문제가 발생했어요",
+            description = message,
+            retryLabel = "다시 시도",
+            onRetry = onRetry
+        )
+    }
+
     /**
      * 알림 상태를 서버와 기기 권한을 통합하여 가져옵니다.
+...
      */
     fun fetchPushNotifiState() {
         viewModelScope.launch {

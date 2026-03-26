@@ -32,10 +32,6 @@ import kotlinx.coroutines.flow.collectLatest
 @AndroidEntryPoint
 class MyPageActivity : BaseActivity() {
 
-    override fun onRetryClick() {
-
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -122,11 +118,19 @@ class MyPageActivity : BaseActivity() {
                         },
                         onNotificationGuideDismiss = {
                             viewModel.closeNotificationGuide()
+                        },
+                        onRetryClick = {
+                            viewModel.loadMyPageData()
                         }
                     )
                 }
             }
         }
+    }
+
+    override fun onRetryClick() {
+        // ViewModel을 찾을 수 없으므로(onCreate 내부 지역변수), 
+        // MyPageScreen의 onRetryClick 콜백에서 직접 viewModel.loadMyPageData()를 호출하도록 처리했습니다.
     }
 
     private fun openNotificationSetting(activity: Activity) {
