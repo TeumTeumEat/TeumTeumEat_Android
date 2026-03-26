@@ -72,7 +72,7 @@ class HomeViewModel @Inject constructor(
         loadHomeState()
         // 2. 목표 변경 리프래시 시그널 감지
         viewModelScope.launch {
-            // todo. 목표를 완료하고 돌아왔을 때도 loadHomeState() 호출 되게 변경
+            // todo. 목표를 완료하고 돌아왔을 때도 loadHomeState() 호출 되는지 확인
             goalRepository.refreshSignal.collect {
                 // 다른 액티비티에서 목표를 변경하고 돌아왔을 때 호출됨
                 loadHomeState()
@@ -369,6 +369,7 @@ class HomeViewModel @Inject constructor(
                                     hasSolvedToday = quizStatus.hasSolvedToday,
                                     hasCreatedToday = quizStatus.hasCreatedToday,
                                     isFirstTime = quizStatus.isFirstTime,
+                                    dailyCouponLimit = quizStatus.dailyCouponLimit,
                                     cupponCount = quizStatus.availableQuizCount,
 
                                     // 🔥 HomeViewModel에서만 SnackState 분기
@@ -472,7 +473,7 @@ class HomeViewModel @Inject constructor(
     private fun calculateStampCount(goal: UserGoal): Int =
         if (goal.isExpired) 0 else 1
 
-    private suspend fun buildSummaryQuery(goal: UserGoal): SummaryQuery =
+    private fun buildSummaryQuery(goal: UserGoal): SummaryQuery =
         SummaryQuery(
             goalId = goal.goalId,
             goalType = goal.type,
