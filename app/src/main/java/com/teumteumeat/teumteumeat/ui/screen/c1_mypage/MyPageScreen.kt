@@ -40,6 +40,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.tooling.preview.Preview
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
 
 @Composable
 fun MyPageScreen(
@@ -51,6 +52,8 @@ fun MyPageScreen(
     onTermsClick: () -> Unit,
     onCustomerCenterClick: () -> Unit,
     onWithdroawClick: () -> Unit,
+    onNotificationGuideConfirm: () -> Unit,
+    onNotificationGuideDismiss: () -> Unit,
 ) {
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
@@ -245,12 +248,14 @@ fun MyPageScreen(
                 }
             }
 
+            NotificationSettingGuideOverlay(
+                notificationGuideType = uiState.notificationGuideType,
+                onConfirm = onNotificationGuideConfirm,
+                onDismiss = onNotificationGuideDismiss
+            )
         }
     }
 }
-
-
-
 
 @Preview(showBackground = true)
 @Composable
@@ -269,13 +274,7 @@ fun PreviewMyPageScreenSuccess() {
         appVersion = "1.0.0"
     )
 
-    // 2. 프리뷰용 가짜 뷰모델 (필요한 함수들이 구현되어 있어야 함)
-    // 만약 MyPageViewModel이 인터페이스가 아니라면,
-    // 실제 객체를 생성하거나 Mockito 등을 사용해야 할 수도 있습니다.
-    // 여기서는 단순히 인스턴스를 생성한다고 가정합니다.
-
     TeumTeumEatTheme {
-        // 🔥 핵심: 에러가 발생하는 모든 Local 값을 Provider로 감쌉니다.
         CompositionLocalProvider(
             LocalScreenState provides UiScreenState.Success, // 성공 상태로 고정
         ) {
@@ -287,7 +286,9 @@ fun PreviewMyPageScreenSuccess() {
                 onAlarmToggle = {},
                 onTermsClick = {},
                 onCustomerCenterClick = {},
-                onWithdroawClick = {}
+                onWithdroawClick = {},
+                onNotificationGuideConfirm = {},
+                onNotificationGuideDismiss = {}
             )
         }
     }
