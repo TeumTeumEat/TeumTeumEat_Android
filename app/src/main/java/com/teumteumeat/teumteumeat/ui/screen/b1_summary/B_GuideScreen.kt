@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +21,6 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 import com.teumteumeat.teumteumeat.ui.component.canvas_icon.NumberBadge
@@ -28,12 +28,17 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.btnGray200
+import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 
 @Composable
 fun GuideScreen(
@@ -45,86 +50,100 @@ fun GuideScreen(
 
     val theme = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
+    val scrollState = rememberScrollState()
 
     BackHandler {
         onBackClick()
     }
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(theme.backSurface),
-        content = { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()
-                    .padding(),
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-
-                Box(
+    DefaultMonoBg() {
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(theme.backSurface),
+            content = { padding ->
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .systemBarsPadding()
+                        .padding()
+                        .verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.SpaceBetween,
                 ) {
 
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
                     ) {
-                        /**
-                         * 타이틀 바
-                         */
-                        TitleBar(
-                            title = "오늘의 냠냠지식",
-                            onBackClick = { onBackClick() }
-                        )
 
                         Column(
                             modifier = Modifier
-                                .fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .fillMaxSize()
                         ) {
-                            Box(
-                                modifier = Modifier,
+                            /**
+                             * 타이틀 바
+                             */
+                            TitleBar(
+                                title = "오늘의 냠냠지식",
+                                onBackClick = { onBackClick() }
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                /*Image(
-                                    painterResource(id = R.drawable.back_quiz_guide),
-                                    contentDescription = "",
-                                    modifier = Modifier
-                                        .offset(
-                                            x = (30).dp,     // 👉 왼쪽으로 +30dp
-                                        ),
-                                    contentScale = ContentScale.Fit
-                                )*/
 
-
-                                Column(
+                                // 2. 캐릭터와 카드를 감싸는 핵심 Box 레이아웃
+                                Box(
                                     modifier = Modifier
+                                        .wrapContentWidth()
                                         .padding(
-                                            horizontal = 30.dp
-                                        )
-                                        .padding(top = 114.dp),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                            horizontal = 16.dp,
+                                            vertical = 24.dp
+                                        ) // 카드 주변의 기본 패딩
                                 ) {
-                                    QuizGuideCard(
-                                        isDontShowChecked = isChecked,
-                                        onCheckedChange = onCheckedChange,
-                                        onQuizClick = onQuizClick
+
+                                    // --- 2.2 캐릭터 이미지 (오버레이 역할을 함) ---
+                                    Image(
+                                        painter = painterResource(id = R.drawable.back_char_quiz_guid_seen), // 이미지 리소스 ID
+                                        contentDescription = "귀여운 캐릭터",
+                                        modifier = Modifier
+                                            .size(203.dp) // 이미지 크기 조절 (필요에 따라 변경 가능)
+                                            .align(Alignment.TopEnd) // 핵심: Box 내에서 좌상단 배치
+                                        // 음수 오프셋을 주어 카드 밖으로 겹치게 함
+                                        // y축을 음수로 주어 위로 올리고, x축을 음수로 주어 왼쪽으로 이동시킴
                                     )
+
+                                    Column(
+                                        modifier = Modifier
+                                            .wrapContentWidth()
+                                            .padding(
+                                                horizontal = 30.dp
+                                            )
+                                            .padding(top = 114.dp),
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        QuizGuideCard(
+                                            isDontShowChecked = isChecked,
+                                            onCheckedChange = onCheckedChange,
+                                            onQuizClick = onQuizClick
+                                        )
+                                    }
+
+
                                 }
+
 
                             }
 
-
                         }
-
                     }
                 }
-            }
-        },
-    )
+            },
+        )
+    }
 }
 
 @Preview(
@@ -153,7 +172,7 @@ fun QuizGuideCard(
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth(),
+            .wrapContentWidth(),
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(
             width = 2.dp,
@@ -166,7 +185,7 @@ fun QuizGuideCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .wrapContentWidth()
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -189,19 +208,27 @@ fun QuizGuideCard(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            DontShowAgainCheckbox(
-                checked = isDontShowChecked,
-                onCheckedChange = onCheckedChange
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            BaseFillButton(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                onClick = onQuizClick,
-                text = "퀴즈 풀러가기",
-            )
+                    .wrapContentWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                DontShowAgainCheckbox(
+                    checked = isDontShowChecked,
+                    onCheckedChange = onCheckedChange
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BaseFillButton(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .width(260.dp),
+                    onClick = onQuizClick,
+                    text = "퀴즈 풀러가기",
+                )
+            }
         }
     }
 }
@@ -230,18 +257,25 @@ private fun QuizGuideBulletList(numberCount : Int) {
     )
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.wrapContentWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        guideTexts
-            .take(numberCount)
-            .forEachIndexed { index, text ->
-                QuizGuideBulletItem(
-                    index = index + 1,   // ✅ 1부터 시작
-                    text = text,
-                    highlightWord = if(index == guideTexts.lastIndex) "히스토리" else ""
-                )
-            }
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            guideTexts
+                .take(numberCount)
+                .forEachIndexed { index, text ->
+                    QuizGuideBulletItem(
+                        index = index + 1,   // ✅ 1부터 시작
+                        text = text,
+                        highlightWord = if(index == guideTexts.lastIndex) "히스토리" else ""
+                    )
+                }
+        }
+
     }
 }
 
@@ -297,7 +331,9 @@ private fun DontShowAgainCheckbox(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .wrapContentWidth()
+            .width(260.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {

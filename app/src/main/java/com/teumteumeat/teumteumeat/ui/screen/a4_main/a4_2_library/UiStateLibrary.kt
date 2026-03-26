@@ -25,9 +25,7 @@ data class UiStateLibrary(
 
     val motivationUiState: MotivationUiState = MotivationUiState(),
 
-    val errorMessage: String = ""
+    val errorMessage: String = "",
 
+    val isSolvedToday: Boolean = false,
 )
-
-
-

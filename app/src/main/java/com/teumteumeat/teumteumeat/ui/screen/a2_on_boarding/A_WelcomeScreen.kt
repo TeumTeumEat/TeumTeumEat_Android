@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,16 +11,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -36,8 +39,19 @@ fun OnBoardingFirstScreen(
     val currentPage = uiState.currentPage
     val totalPages = uiState.totalPage
 
+    // 🐧 캐릭터 Lottie 애니메이션
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(R.raw.onboarding_comp)
+    )
+
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
+
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
+        extensionHeight = 0.dp,
         content = {
             Box(
                 modifier = Modifier
@@ -66,10 +80,9 @@ fun OnBoardingFirstScreen(
                         horizontalArrangement = Arrangement.Center
 
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.char_onboarding_zero),
-                            contentDescription = "앞을 보는 케릭터",
-                            contentScale = ContentScale.Fit,
+                        LottieAnimation(
+                            composition = composition,
+                            progress = { progress },
                         )
                     }
 

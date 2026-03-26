@@ -8,6 +8,8 @@ import java.time.LocalDate
 
 
 data class UiStateGoalList(
+    val isChanged: Boolean = false,
+
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 
@@ -33,10 +35,8 @@ data class GoalCardUiModel(
     val title: String,
     val description: String,
 
-    // 날짜
-    val startDate: LocalDate,
-    val endDate: LocalDate,
-    val isExpired: Boolean,
+    /** 목표의 만료여부는 목표가 완료되었는지로 구분됨 **/
+    val isCompleted: Boolean,
 
     // 상태
     val isSelected: Boolean
@@ -65,14 +65,13 @@ fun GetGoalResponse.toUiModel(
 
 
 
-    val start = startDate.toLocalDate()
+    /*val start = startDate.toLocalDate()
     val end = endDate.toLocalDate()
     val today = LocalDate.now()
-    val isExpired = today.isAfter(end)
+    val isExpired = today.isAfter(end)*/
 
     // ⭐ 만료된 목표는 선택 해제
-    val isSelected =
-        !isExpired && goalId.toLong() == currentGoalId
+    val isSelected = goalId.toLong() == currentGoalId
 
     return GoalCardUiModel(
         goalId = goalId,
@@ -83,9 +82,7 @@ fun GetGoalResponse.toUiModel(
         title = title,
         description = description,
         isSelected = isSelected,
-        startDate = start,
-        endDate = end,
-        isExpired = isExpired,
+        isCompleted = isCompleted,
     )
 }
 

@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a0_splash
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,7 +13,10 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.auth.AutoLoginUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompletedUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -27,23 +31,21 @@ class SplashViewModel @Inject constructor(
     private val getOnboardingCompletedUseCase: GetOnboardingCompletedUseCase,
     private val tokenLocalDataSource: TokenLocalDataSource,
     private val remoteConfig: FirebaseRemoteConfig,
-    val sessionManager: SessionManager
+    val sessionManager: SessionManager,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SplashUiState>(SplashUiState())
     val uiState = _uiState.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<SplashUiEvent>(
-        replay = 1,
-        extraBufferCapacity = 1
+        replay = 0,
+        extraBufferCapacity = 0
     )
     val uiEvent = _uiEvent.asSharedFlow()
 
-    init {
 
-    }
-
-    private fun checkAppVersion() {
+    private fun checkAppVersion(onNext: () -> Unit) { // 콜백 추가
 
         val minVersion =
             remoteConfig.getLong("android_min_version_code")
@@ -76,10 +78,11 @@ class SplashViewModel @Inject constructor(
                     )
                 }
 
+                // 👉 여기서는 기본 동작으로 이후 동작 진행
                 else -> {
-                    // 👉 여기서는 예시로 Main 이동
-                    _uiEvent.emit(SplashUiEvent.NavigateToMain)
+                    onNext()
                 }
+
             }
         }
     }
@@ -89,12 +92,16 @@ class SplashViewModel @Inject constructor(
      * 🔥 로티 애니메이션 종료 시 호출
      */
     fun onAnimationFinished() {
-        remoteConfig
-            .fetchAndActivate()
-            .addOnCompleteListener {
-                checkAppVersion()
+        remoteConfig.fetchAndActivate()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // 서버값을 확실히 가져온 후 버전 체크
+                    checkAppVersion{ tryAutoLogin() }
+                } else {
+                    // 실패 시 기본 동작 진행
+                    tryAutoLogin()
+                }
             }
-        tryAutoLogin()
     }
 
     /**
@@ -118,14 +125,20 @@ class SplashViewModel @Inject constructor(
 
             when (val result = autoLoginUseCase()) {
                 is AutoLogin.Success -> {
+                    Log.d("SplshVM", "리프래쉬 토큰 확인: ${tokenLocalDataSource.getRefreshToken()}")
                     checkOnboardingCompleted()
                 }
                 is AutoLogin.SessionExpired -> {
                     sessionManager.expireSession()
                 }
                 else -> {
-                    Log.d("${this@SplashViewModel}", "자동 로그인 실패 ${result}")
-                    setGoLoginState()
+                    // [수정 포인트] 네트워크 오류 등으로 실패한 경우
+                    // 토큰이 이미 기기에 있다면(리프레시 토큰 존재) 메인으로 이동시킵니다.
+                    if (tokenLocalDataSource.getRefreshToken() != null) {
+                        checkOnboardingCompleted() // 또는 직접 NavigateToMain 호출
+                    } else {
+                        sessionManager.expireSession()
+                    }
                 }
             }
 
@@ -134,20 +147,37 @@ class SplashViewModel @Inject constructor(
     }
 
     private suspend fun checkOnboardingCompleted() {
-        when (val result = getOnboardingCompletedUseCase()) {
 
+        // 1. 로컬에 저장된 온보딩 완료 여부를 먼저 확인 (오프라인 플래그 참조)
+        val isCompleted = PrefsUtil.isOnboardingCompleted(getApplication(context))
+
+        when (val result = getOnboardingCompletedUseCase()) {
             is OnboardingDecision.GoMain -> {
-                _uiEvent.emit(SplashUiEvent.NavigateToMain)
+                Log.d("SplashVM", "Emit NavigateToMain")
+                PrefsUtil.setOnboardingCompleted(getApplication(context), true)
             }
 
             is OnboardingDecision.GoOnboarding -> {
-                _uiEvent.emit(SplashUiEvent.NavigateToOnboarding)
+                Log.d("SplashVM", "Emit NavigateToOnboarding")
+                // _uiEvent.emit(SplashUiEvent.NavigateToOnboarding)
             }
 
             is OnboardingDecision.NeedLogin -> {
                 // 🔑 핵심: 에러 UI ❌
-                _uiEvent.emit(SplashUiEvent.NavigateToLogin)
+                Log.d("SplashVM", "Emit NavigateToLogin")
+                // _uiEvent.emit(SplashUiEvent.NavigateToLogin)
             }
+        }
+
+        if (isCompleted) {
+            // 온보딩을 이미 했다면 메인으로 이동
+            Log.d("SplashVM", "Emit NavigateToMain (Offline Flag Checked)")
+            _uiEvent.emit(SplashUiEvent.NavigateToMain)
+        } else {
+            // 온보딩 기록이 없다면 온보딩 화면으로 이동
+            // todo. 네트워크가 연결되어 있지 않다면 로그인 화면으로 fall back
+            Log.d("SplashVM", "Emit NavigateToOnboarding")
+            _uiEvent.emit(SplashUiEvent.NavigateToOnboarding)
         }
     }
 

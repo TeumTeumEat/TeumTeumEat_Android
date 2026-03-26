@@ -32,6 +32,9 @@ class QuizResultActivity : ComponentActivity() {
         const val EXTRA_DOCUMENT_ID = "extra_document_id"
         const val INVALID_DOCUMENT_ID = -1
 
+        const val GOAL_TYPE = "goal_type"
+        const val INVAILD_GOAL_TYPE = -1
+
         fun newIntent(
             context: Context,
             documentId: Int

@@ -112,4 +112,22 @@ class QuizRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun getAdReward(): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = {
+                quizApiService.submitAdWatching()
+            },
+            mapper = {}
+        )
+    }
+
+    override suspend fun submitCompleteQuizSet(): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = {
+                quizApiService.submitCompleteQuizSet()
+            },
+            mapper = {}
+        )
+    }
+
 }

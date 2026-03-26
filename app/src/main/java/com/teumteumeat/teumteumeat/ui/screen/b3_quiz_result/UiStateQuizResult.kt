@@ -15,7 +15,7 @@ data class UiStateQuizResult(
     val createdAt: String = "",
 
     /** 파생 상태 */
-    val correctCount: Int = 0,
+    val correctCount: Int = -1,
 
     /** PDF / Summary API */
     val summary: UiStateSummary = UiStateSummary(isLoading = true),

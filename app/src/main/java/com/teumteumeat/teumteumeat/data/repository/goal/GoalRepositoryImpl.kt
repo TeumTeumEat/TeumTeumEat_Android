@@ -14,13 +14,26 @@ import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.mapper.goal.toDomain
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 import com.teumteumeat.teumteumeat.utils.Utils.RepositoryUtils.requireNotNullOrError
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class GoalRepositoryImpl @Inject constructor(
     private val goalApiService: GoalApiService,
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource,
 ) : BaseRepository(authApiService, tokenLocalDataSource), GoalRepository {
+
+    // 내부에서만 수정 가능한 MutableSharedFlow
+    private val _refreshSignal = MutableSharedFlow<Unit>()
+    override val refreshSignal = _refreshSignal.asSharedFlow()
+
+    // ViewModel에서 성공 시 호출하면 구독자들에게 신호를 전달합니다.
+    override suspend fun emitRefreshSignal() {
+        _refreshSignal.emit(Unit)
+    }
 
     /**
      * 목표 수정 요청

@@ -1,8 +1,10 @@
 package com.teumteumeat.teumteumeat.ui.component.button
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,37 +27,44 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 fun FillSecondaryButton(
     modifier: Modifier = Modifier, // 추가: Modifier 적용 가능
     text: String = "",
-    textStyle: TextStyle = TextStyle(),
+    textStyle: TextStyle = MaterialTheme.appTypography.btnBold20_h24,
     isEnabled: Boolean = true,
+    isModalBtn: Boolean = false,
     onClick: () -> Unit,
     conerRadius: Dp = 16.dp,
 ) {
     val primaryColor = MaterialTheme.extendedColors.primary
     val buttonFillSecondary = MaterialTheme.extendedColors.btnFillSecondary
 
+    val disableContainerColor = if(isModalBtn) MaterialTheme.extendedColors.btnGray200 else MaterialTheme.colorScheme.surfaceVariant
+    val disableContentColor = if(isModalBtn) MaterialTheme.extendedColors.textGhost else Color.White
+
+    val contentColor = if(isEnabled) primaryColor else disableContentColor
+
     Row(
         modifier = modifier.fillMaxWidth()
     ) {
         Button(
+            contentPadding = PaddingValues(0.dp),
             onClick = onClick,
             enabled = isEnabled,
             colors = ButtonDefaults.buttonColors(
                 containerColor = buttonFillSecondary,
                 contentColor = primaryColor,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContentColor = Color.White
+                disabledContainerColor = disableContainerColor,
+                disabledContentColor = disableContentColor
             ),
             shape = RoundedCornerShape(conerRadius), // border-radius: 8px
             modifier = Modifier
-                .height(60.dp)
                 .fillMaxWidth()
         ) {
             Text(
                 text = text,
-                style = MaterialTheme.appTypography.btnMedium18_h24.copy(
+                style = textStyle.copy(
                     textAlign = TextAlign.Center,
-                    color = primaryColor
-                )
+                    color = contentColor
+                ),
+                modifier = Modifier.padding(vertical = 18.dp),
             )
         }
     }

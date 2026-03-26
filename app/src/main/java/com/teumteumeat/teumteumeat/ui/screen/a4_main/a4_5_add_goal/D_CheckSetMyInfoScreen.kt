@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -33,9 +32,7 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.toDisplayText
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -54,6 +51,7 @@ fun AddGoalCheckSetMyInfoScreen(
 
     val bottomFixedHeight = 170.dp // ✅ 그라데이션 + 버튼 영역
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(
@@ -68,21 +66,16 @@ fun AddGoalCheckSetMyInfoScreen(
                         .padding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
-                    Text(
-                        "널 뭐라고 불러줄까?",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    SpeechBubble(text = "‘다음으로' 버튼을 눌러\n" +
+                            "틈틈잇을 시작해보세요!")
+                    Spacer(modifier = Modifier.height(12.dp))
                     Image(
-                        painter = painterResource(R.drawable.character_front),
+                        painter = painterResource(R.drawable.char_onboarding_five_five),
                         contentDescription = "앞을 보는 케릭터",
-                        modifier = Modifier.size(width = 200.dp, height = 162.dp),
                         contentScale = ContentScale.Fit,
                     )
-                    Spacer(modifier = Modifier.height(25.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Column(
                         modifier = Modifier

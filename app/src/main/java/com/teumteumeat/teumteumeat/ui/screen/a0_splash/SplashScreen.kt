@@ -23,12 +23,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
@@ -89,9 +87,12 @@ fun SplashScreen(
     }
 
 
+
     // ✅ 네비게이션 처리 (단발성)
     LaunchedEffect(Unit) {
+        Log.d("SplashActivity", "Collect Started")
         viewModel.uiEvent.collect { event ->
+            Log.d("SplashActivity", "Collected event = $event")
             when (event) {
                 SplashUiEvent.NavigateToLogin ->
                     Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
@@ -135,6 +136,30 @@ fun SplashScreen(
             contentAlignment = Alignment.Center,
 
         ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+//                LottieAnimation(
+//                    composition = composition,
+//                    progress = { progress },
+//                )
+                Image(
+                    painter = painterResource(id = R.drawable.logo_login),
+                    contentDescription = "메인 로고",
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            // 2️⃣ 에러 발생 시 전체화면 모달 덮기
+            uiState.errorState?.let { error ->
+                FullScreenErrorModal(
+                    errorState = error,
+                    onBack = { },
+                    isShowBackBtn = false,
+                )
+            }
+
             // ======= 🚫 강제 업데이트 모달 =======
             if (forceUpdateMessage != null) {
                 ModalOverlay(
@@ -178,29 +203,7 @@ fun SplashScreen(
                 }
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-//                LottieAnimation(
-//                    composition = composition,
-//                    progress = { progress },
-//                )
-                Image(
-                    painter = painterResource(id = R.drawable.logo_login),
-                    contentDescription = "메인 로고",
-                    contentScale = ContentScale.Fit
-                )
-            }
 
-            // 2️⃣ 에러 발생 시 전체화면 모달 덮기
-            uiState.errorState?.let { error ->
-                FullScreenErrorModal(
-                    errorState = error,
-                    onBack = { },
-                    isShowBackBtn = false,
-                )
-            }
         }
     }
 }

@@ -12,6 +12,8 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
@@ -30,7 +32,9 @@ class QuizResultViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
     private val categoryRepository: CategoryRepository,
     private val goalRepository: GoalRepository,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
+
     companion object {
         private const val KEY_DOCUMENT_ID = "document_id"
         private const val KEY_DATE = "quiz_date"
@@ -44,13 +48,13 @@ class QuizResultViewModel @Inject constructor(
         savedStateHandle[KEY_DATE] = date
     }
 
-
     private val _uiState = MutableStateFlow(UiStateQuizResult())
     val uiState = _uiState.asStateFlow()
 
     private val _screenState =
-        MutableStateFlow<UiScreenState>(UiScreenState.Idle)
+        MutableStateFlow<UiScreenState>(UiScreenState.Loading)
     val screenState = _screenState.asStateFlow()
+
 
     fun getDocumentId(): Int =
         savedStateHandle[KEY_DOCUMENT_ID] ?: error("documentId missing")
@@ -96,14 +100,7 @@ class QuizResultViewModel @Inject constructor(
                 }
 
                 else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = goalResult.uiMessage
-                        )
-                    }
-                    _screenState.value =
-                        UiScreenState.Error(goalResult.uiMessage)
+                    moveToError(goalResult)
                 }
             }
 
@@ -156,40 +153,8 @@ class QuizResultViewModel @Inject constructor(
                     }
                 }
 
-                is ApiResultV2.ServerError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResultV2.NetworkError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResultV2.SessionExpired -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResultV2.UnknownError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
+                else -> {
+                    moveToError(result)
                 }
             }
         }
@@ -238,52 +203,33 @@ class QuizResultViewModel @Inject constructor(
                 }
 
                 else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
+                    moveToError(result)
                 }
-                /*is ApiResultV2.ServerError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResultV2.NetworkError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "네트워크 연결을 확인해주세요."
-                        )
-                    }
-                }
-
-                is ApiResultV2.SessionExpired -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "로그인이 만료되었습니다. 다시 로그인해주세요."
-                        )
-                    }
-                    // 👉 여기서 로그아웃 이벤트 트리거 가능
-                }
-
-                is ApiResultV2.UnknownError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "알 수 없는 오류가 발생했습니다."
-                        )
-                    }
-                }*/
             }
         }
     }
+
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            else -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
+                }
+                _screenState.value =
+                    UiScreenState.Error(result.uiMessage)
+            }
+        }
+
+    }
+
 
     fun loadCategorySummary(categoryId: Int) {
         viewModelScope.launch {
@@ -330,41 +276,10 @@ class QuizResultViewModel @Inject constructor(
 
                 }
 
-                is ApiResultV2.ServerError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
+                else -> {
+                    moveToError(result)
                 }
 
-                is ApiResultV2.NetworkError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
-
-                is ApiResultV2.SessionExpired -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
-                }
-
-                is ApiResultV2.UnknownError -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
             }
         }
     }

@@ -18,10 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,13 +32,14 @@ import com.teumteumeat.teumteumeat.utils.appTypography
 
 @Composable
 fun NoLableTextField(
+    modifier: Modifier = Modifier,
     value: String,
     labelText: String = "",
     placeholderText: String,
-    modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit,
     showCharCount: Boolean = true, // ← 글자 수 표시 ON/OFF
-    maxLength: Int = 10,
+    seenMaxLength: Int = 10,
+    rearMaxLength: Int = Int.MAX_VALUE,
     isFocused: Boolean,
     focusRequesterThis: FocusRequester,
     interactionSource: MutableInteractionSource,
@@ -87,14 +86,48 @@ fun NoLableTextField(
             )
         }
 
-        // 입력 텍스트
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            BasicTextField(
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequesterThis),
+                value = value,
+                onValueChange = { text ->
+                    if (text.length <= rearMaxLength) onValueChange(text)
+                },
+                textStyle = TextStyle(
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Start
+                ),
+                singleLine = true,
+                interactionSource = interactionSource,
+            )
+
+            if (showCharCount) {
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = "${value.length}/$seenMaxLength",
+                    fontSize = 12.sp,
+                    color = containerColor
+                )
+            }
+        }
+
+        /*// 입력 텍스트
         BasicTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(focusRequesterThis),
             value = value,
             onValueChange = { text ->
-                if (text.length <= maxLength) onValueChange(text)
+                if (text.length <= rearMaxLength) onValueChange(text)
             },
             textStyle = TextStyle(
                 fontSize = 16.sp,
@@ -117,12 +150,12 @@ fun NoLableTextField(
         // 글자 수 표시 (옵션)
         if (showCharCount) {
             Text(
-                text = "${value.length}/$maxLength",
+                text = "${value.length}/$seenMaxLength",
                 style = TextStyle(fontSize = 12.sp, color = containerColor),
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
             )
-        }
+        }*/
     }
 }
 

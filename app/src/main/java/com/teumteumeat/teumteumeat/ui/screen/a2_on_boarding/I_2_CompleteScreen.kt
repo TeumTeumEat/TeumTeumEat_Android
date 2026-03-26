@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,15 +7,20 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -27,6 +31,17 @@ fun OnBoardingSuccessScreen(
     nickname: String,
     onStartClick: () -> Unit,
 ) {
+    // 🎬 Lottie Composition 로드
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(R.raw.onboarding_comp)
+    )
+
+    // 🎬 애니메이션 상태
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -52,9 +67,9 @@ fun OnBoardingSuccessScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // 🐧 캐릭터 이미지
-            Image(
-                painter = painterResource(id = R.drawable.onboarding_ch_pdf),
-                contentDescription = "성공 캐릭터",
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
                 modifier = Modifier.size(260.dp)
             )
 

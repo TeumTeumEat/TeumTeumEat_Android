@@ -241,24 +241,7 @@ abstract class BaseRepository(
             )
 
         return try {
-            val reissueResponse = authApiService.reissueAccessToken(
-                ResponseBody(refreshToken)
-            )
-            val accessToken = reissueResponse.data
-
-            tokenLocalDataSource.save(
-                AuthToken(
-                    accessToken = accessToken,
-                    refreshToken = refreshToken,
-                )
-            )
-            val retryResponse = apiCall()
-
-            ApiResultV2.Success(
-                message = retryResponse.message,
-                data = mapper(retryResponse.data)
-            )
-/*        else{
+            if (BuildConfig.VERSION_CODE >= 11) {
                 val tokenResponse =
                     authApiService.reissueAccessTokenV2(ResponseBody(refreshToken))
 
@@ -275,7 +258,27 @@ abstract class BaseRepository(
                     message = retryResponse.message,
                     data = mapper(retryResponse.data)
                 )
-            }*/
+
+            }else{
+                val reissueResponse = authApiService.reissueAccessToken(
+                    ResponseBody(refreshToken)
+                )
+                val accessToken = reissueResponse.data
+
+                tokenLocalDataSource.save(
+                    AuthToken(
+                        accessToken = accessToken,
+                        refreshToken = refreshToken,
+                    )
+                )
+                val retryResponse = apiCall()
+
+                ApiResultV2.Success(
+                    message = retryResponse.message,
+                    data = mapper(retryResponse.data)
+                )
+            }
+
 
         } catch (e: Exception) {
             tokenLocalDataSource.clear()

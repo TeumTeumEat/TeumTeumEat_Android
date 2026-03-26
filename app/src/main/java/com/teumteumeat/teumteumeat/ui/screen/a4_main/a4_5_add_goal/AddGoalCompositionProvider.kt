@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import android.content.Context
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +32,7 @@ import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.SizeAnimationInvisible
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.PopupOverlay
@@ -40,6 +42,8 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.jvm.java
 
 
 @Composable
@@ -52,10 +56,21 @@ fun AddCategoryGoalCompositionProvider(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mainState by viewModel.mainState.collectAsStateWithLifecycle()
     val navHostController = rememberNavController()
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     val visibleStates = remember(mainState) {
         mutableStateListOf(false, false, false)
     }
+
+    val progress by viewModel.progress.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(
         LocalAppContext provides context,
@@ -63,6 +78,14 @@ fun AddCategoryGoalCompositionProvider(
         LocalAddGoalUiState provides uiState,
         LocalViewModelContext provides viewModel,
     ) {
+
+        // ✅ Loading 상태일 때 물리 뒤로가기 차단
+        BackHandler(
+            enabled = mainState is UiStateAddGoalScreenState.Loading
+        ) {
+            // 아무것도 하지 않음 = 뒤로가기 무시
+        }
+
         // ✅ 항상 최상단에 위치
         PopupOverlay(
             popoUpErrorTitle = uiState.popoUpErrorTitle,
@@ -85,18 +108,17 @@ fun AddCategoryGoalCompositionProvider(
                 OnBoardingLoadingScreen(
                     title = "틈틈잇을 생성하는 중\n" +
                             "잠시만 기다려주세요",
-                    visibleStates = visibleStates
+                    progress = progress,
+                    visibleStates = visibleStates,
+                    isCompletedLoading = true
                 )
             }
 
             UiStateAddGoalScreenState.Success -> {
+
                 AddGoalSuccessScreen(
                     onStartClick = {
-                        Utils.UxUtils.moveActivity(
-                            context,
-                            MainActivity::class.java,
-                            exitFlag = true
-                        )
+                        activity.finish()
                     }
                 )
             }
@@ -114,11 +136,12 @@ fun AddCategoryGoalCompositionProvider(
                     ),
                     onBack = {
                         viewModel.resetMainState()
-                    }
+                    },
                 )
             }
 
             UiStateAddGoalScreenState.Idle -> {
+
                 DefaultMonoBg(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
@@ -142,7 +165,7 @@ fun AddCategoryGoalCompositionProvider(
                             ) {
                                 IconButton(
                                     onClick = {
-                                        if(uiState.currentPage < 1){
+                                        if(uiState.currentPage <= 1){
                                             Log.d("uiState.currentPage", "${uiState.currentPage}")
                                             activity.finish()
                                         }else{
@@ -188,6 +211,7 @@ fun AddCategoryGoalCompositionProvider(
                                 GoalTypeUiState.NONE -> null
                             }
                         )
+
                     }
                 }
             }

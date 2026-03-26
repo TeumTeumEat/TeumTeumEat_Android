@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -40,6 +41,7 @@ fun QuizMultiChoiceCard(
     options: List<String>,
     selectedIndex: Int?,
     onSelect: (Int) -> Unit,
+    onPass: () -> Unit = { },
 ) {
 
     val theme = MaterialTheme.extendedColors
@@ -112,19 +114,41 @@ fun QuizMultiChoiceCard(
                     )
                 }
 
+                if (options.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "서버 응답에 문제가 발생했습니다.",
+                            style = MaterialTheme.appTypography.bodyMedium14_20
+                        )
+                    }
+                }
+
                 // 🔹 하단 라디오 그룹 선택 버튼
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    options.forEachIndexed { index, option ->
-                        QuizOptionButton(
-                            text = option,
-                            isSelected = selectedIndex == index,
-                            onClick = {
-                                onSelect(index)
-                            }
+                    if (options.isEmpty()){
+
+                        BaseFillButton(
+                            text = "다음 문제",
+                            onClick = { onPass() }
                         )
+
+                    }else{
+                        options.forEachIndexed { index, option ->
+                            QuizOptionButton(
+                                text = option,
+                                isSelected = selectedIndex == index,
+                                onClick = {
+                                    onSelect(index)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -155,11 +179,12 @@ fun QuizMultiChoiceCardPreview() {
             QuizMultiChoiceCard(
                 questionIndex = 1,
                 question = "이거는 저거일까?",
-                options = listOf("이거다", "저거다", "둘 다 아니다"),
+                options = listOf(),
                 selectedIndex = selectedIndex,
                 onSelect = { index ->
                     selectedIndex = index
-                }
+                },
+                onPass = { }
             )
 
             QuizMultiChoiceCard(

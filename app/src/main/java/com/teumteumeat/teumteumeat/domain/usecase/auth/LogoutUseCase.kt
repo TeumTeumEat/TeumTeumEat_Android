@@ -7,7 +7,7 @@ class LogoutUseCase @Inject constructor(
     private val tokenLocalDataSource: TokenLocalDataSource
 ) {
 
-    suspend operator fun invoke() {
+    operator fun invoke() {
         tokenLocalDataSource.clear()
     }
 }

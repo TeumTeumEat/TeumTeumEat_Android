@@ -17,9 +17,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -34,8 +34,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.ContentSelectableBoxButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.extractFileName
 
@@ -124,8 +123,11 @@ fun AddGoalFileUploadScreen(
         )
     }
 
+
+
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
+        extensionHeight = 0.dp,
         content = {
             Box(
                 modifier = Modifier
@@ -135,34 +137,33 @@ fun AddGoalFileUploadScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(),
+                        .padding()
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(60.dp))
-                    Text(
-                        "원하는 PDF자료를 넣으세요!",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                        )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    SpeechBubble(
+                        text = "공부하고 싶은 PDF 자료를\n" +
+                                "선택해 주세요!"
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     Image(
-                        painter = painterResource(R.drawable.character_front),
+                        painter = painterResource(R.drawable.char_onboarding_five_two),
                         contentDescription = "앞을 보는 케릭터",
-                        modifier = Modifier.size(width = 200.dp, height = 162.dp),
                         contentScale = ContentScale.Fit,
                     )
-                    Spacer(modifier = Modifier.height(25.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // 파일 업로드 버튼
                     ContentSelectableBoxButton(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
                             .padding(vertical = 27.dp, horizontal = 21.dp),
                         iconRes = R.drawable.icon_files,
                         titleText = "파일 업로드",
-                        lableText = "공부하고 싶은\n내용이 있어요.",
+                        lableText = "50MB 이하 파일만 업로드 가능",
                         onClick = {
                             //  1. 서버에 한번에 보낼때 적절한 데이터의 양의 한계 50MB
                             //  2. 데이터의 형식 - .pdf 로 제한

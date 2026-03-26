@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat
 
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
 import org.junit.Test
 
 import org.junit.Assert.*

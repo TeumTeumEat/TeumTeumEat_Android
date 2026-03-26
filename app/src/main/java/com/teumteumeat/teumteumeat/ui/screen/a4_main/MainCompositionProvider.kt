@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -44,7 +43,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.UiStateHome
@@ -64,7 +62,9 @@ import kotlin.jvm.java
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.mutableLongStateOf
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
+import kotlinx.coroutines.flow.collectLatest
 
 
 @Composable
@@ -80,6 +80,15 @@ fun MainCompositionProvider(
 
     val theme = MaterialTheme.extendedColors
     var isNavReady by remember { mutableStateOf(false) }
+
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     LaunchedEffect(navHostController) {
         // ✅ NavHost가 graph를 세팅할 때까지 대기
@@ -143,7 +152,8 @@ fun MainCompositionProvider(
         }
 
         DefaultMonoBg(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
         ) {
 
             Scaffold(
@@ -176,14 +186,14 @@ fun MainCompositionProvider(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth()
-                                    .padding()
                             ) {
                                 // 1️⃣ 실제 화면 콘텐츠
                                 MainNavHost(
-                                    modifier = Modifier,
+                                    modifier = Modifier.fillMaxSize(),
                                     navController = navHostController,
                                     startDestination = BottomNavItem.Home.route,
                                     paddingValue = padding,
+                                    mainViewModel = viewModel,
                                 )
                             }
 
@@ -288,8 +298,8 @@ fun HomeMainFramePreview() {
                         onClickPlus = {},
                         onClosePlus = {},
                         isExpandedPlus = false,
-                        onAddDocument = {  },
-                        onAddCategory = {  },
+                        onAddDocument = { },
+                        onAddCategory = { },
                         onPlusPositioned = { },
                     )
                 },
@@ -346,6 +356,7 @@ fun HomeMainFramePreview() {
                                     contentDescription = "previous page"
                                 )
                             }
+
 
                         }
 
