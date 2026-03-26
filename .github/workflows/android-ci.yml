@@ -17,6 +17,17 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      # [추가] GitHub Secrets를 사용하여 local.properties 파일을 생성합니다.
+      - name: Generate local.properties
+        run: |
+          echo "TEUMTEUM_KEY_ALIAS=${{ secrets.TEUMTEUM_KEY_ALIAS }}" >> local.properties
+          echo "TEUMTEUM_KEY_PASSWORD=${{ secrets.TEUMTEUM_KEY_PASSWORD }}" >> local.properties
+          echo "TEUMTEUM_STORE_FILE=${{ secrets.TEUMTEUM_STORE_FILE }}" >> local.properties
+          echo "TEUMTEUM_STORE_PASSWORD=${{ secrets.TEUMTEUM_STORE_PASSWORD }}" >> local.properties
       
+      - name: Change permissions for gradlew
+        run: chmod +x gradlew
+
       - name: Gradle build
         run: ./gradlew build --stacktrace
