@@ -41,6 +41,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.tooling.preview.Preview
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 
 @Composable
 fun MyPageScreen(
@@ -54,6 +56,7 @@ fun MyPageScreen(
     onWithdroawClick: () -> Unit,
     onNotificationGuideConfirm: () -> Unit,
     onNotificationGuideDismiss: () -> Unit,
+    onRetryClick: () -> Unit,
 ) {
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
@@ -63,6 +66,7 @@ fun MyPageScreen(
     DefaultMonoBg() {
         Scaffold(
             modifier = Modifier
+                .fillMaxSize()
                 .systemBarsPadding(),
             topBar = {
                 TitleBar(
@@ -73,7 +77,17 @@ fun MyPageScreen(
         ) { padding ->
 
             when (screenState) {
-                is UiScreenState.Error -> {}
+                is UiScreenState.Error -> {
+                    FullScreenErrorModal(
+                        errorState = ErrorState(
+                            title = "문제가 발생했어요",
+                            description = (screenState).message,
+                            onRetry = onRetryClick,
+                        ),
+                        isShowBackBtn = false,
+                        onBack = onBackClick
+                    )
+                }
                 UiScreenState.Idle,
                 UiScreenState.Loading -> {
                     Column(
@@ -276,7 +290,7 @@ fun PreviewMyPageScreenSuccess() {
 
     TeumTeumEatTheme {
         CompositionLocalProvider(
-            LocalScreenState provides UiScreenState.Success, // 성공 상태로 고정
+            LocalScreenState provides UiScreenState.Error(message = ""), // 성공 상태로 고정
         ) {
             MyPageScreen(
                 uiState = mockUiState,
@@ -288,7 +302,8 @@ fun PreviewMyPageScreenSuccess() {
                 onCustomerCenterClick = {},
                 onWithdroawClick = {},
                 onNotificationGuideConfirm = {},
-                onNotificationGuideDismiss = {}
+                onNotificationGuideDismiss = {},
+                onRetryClick = {}
             )
         }
     }
