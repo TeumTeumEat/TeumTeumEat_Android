@@ -1,7 +1,10 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
+import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -65,6 +68,20 @@ class MyPageActivity : BaseActivity() {
 
                     val sessionManager = viewModel.sessionManager // 세션메니저 정의
 
+                    // 🔹 알림 권한 런처
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                        viewModel.onNotificationPermissionResult(isGranted)
+                    }
+
+                    // 🔔 알림 권한 요청 트리거 감지
+                    LaunchedEffect(uiState.requestNotificationPermission) {
+                        if (uiState.requestNotificationPermission) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+
                     // 🔥 전역 세션 이벤트 감지
                     LaunchedEffect(Unit) {
                         sessionManager.sessionEvent.collectLatest {
@@ -98,10 +115,24 @@ class MyPageActivity : BaseActivity() {
                         },
                         onTermsClick = { },
                         onCustomerCenterClick = { },
-                        onWithdroawClick = { viewModel.withdrawUser() }
+                        onWithdroawClick = { viewModel.withdrawUser() },
+                        onNotificationGuideConfirm = {
+                            openNotificationSetting(activity)
+                            viewModel.closeNotificationGuide()
+                        },
+                        onNotificationGuideDismiss = {
+                            viewModel.closeNotificationGuide()
+                        }
                     )
                 }
             }
         }
+    }
+
+    private fun openNotificationSetting(activity: Activity) {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+        }
+        activity.startActivity(intent)
     }
 }

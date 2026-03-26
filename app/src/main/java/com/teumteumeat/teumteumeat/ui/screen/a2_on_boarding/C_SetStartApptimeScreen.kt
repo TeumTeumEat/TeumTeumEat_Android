@@ -51,6 +51,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
+import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.areAppNotificationsEnabled
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.isPostNotificationsGranted
@@ -296,89 +297,20 @@ fun OnBoardingSetApptimeScreen(
                         onCompleteEnable = true,
                     )
                 }
+
+                NotificationSettingGuideOverlay(
+                    notificationGuideType = uiState.notificationGuideType,
+                    onConfirm = {
+                        viewModel.openNotificationSetting()
+                    },
+                    onDismiss = {
+                        viewModel.closeNotificationSettingGuide()
+                    }
+                )
             }
         },
     )
 }
-
-
-@Composable
-fun NotificationSettingGuideOverlay(
-    uiState: UiStateOnboardingState,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val type = uiState.notificationGuideType
-    if (type == NotificationSettingGuideType.NONE) return
-
-    // ✅ 타입에 따라 문구/타이틀 분기
-    val (title, body, primary, secondary) = when (type) {
-        NotificationSettingGuideType.ENABLE -> {
-            Quad(
-                "알림을 켜려면 설정이 필요해요",
-                "알림 권한이 꺼져 있어요.\n기기 설정에서 알림을 허용해주세요.",
-                "설정 화면",
-                "취소"
-            )
-        }
-
-        NotificationSettingGuideType.DISABLE -> {
-            Quad(
-                "알림을 끄려면 설정이 필요해요",
-                "알림은 앱에서 직접 끌 수 없어요.\n기기 설정에서 변경할 수 있어요.",
-                "설정 화면",
-                "취소"
-            )
-        }
-
-        NotificationSettingGuideType.NONE -> {
-            // 여기로 올 일 없음
-            Quad("", "", "", "")
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .zIndex(1f)
-    ) {
-        // 1) Dim background
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { onDismiss() }
-        )
-
-        // 2) Center modal
-        Box(modifier = Modifier.align(Alignment.Center)) {
-            BaseModal(
-                title = title,
-                body = body,
-                primaryButtonText = primary,
-                secondaryButtonText = secondary,
-                onPrimaryClick = onConfirm,
-                onSecondaryClick = onDismiss
-            )
-        }
-    }
-}
-
-/**
- * 간단히 4개 값을 묶기 위한 helper (data class 사용)
- */
-private data class Quad(
-    val first: String,
-    val second: String,
-    val third: String,
-    val fourth: String
-)
-
-
-
 
 
 @Preview(showBackground = true)

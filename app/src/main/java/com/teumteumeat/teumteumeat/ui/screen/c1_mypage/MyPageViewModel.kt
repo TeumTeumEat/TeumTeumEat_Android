@@ -23,10 +23,12 @@ import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.notification.GetPushNotificationStatusUseCase
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.NotificationSettingGuideType
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.InfoUtil.getAppVersion
+import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -154,21 +156,68 @@ class MyPageViewModel @Inject constructor(
     }
 
     fun toogleAlarm(isAlarmEnabled: Boolean) {
+        if (isAlarmEnabled) {
+            // 알림을 켜는 경우
+            if (Utils.UxUtils.isNotificationPermissionRequired()) {
+                val isGranted = Utils.UiUtils.isPostNotificationsGranted(appContext)
+                val hasDeniedBefore = PrefsUtil.hasNotificationDeniedOnce(appContext)
+
+                if (isGranted) {
+                    // 이미 권한이 있으면 서버 업데이트
+                    updateAlarmInternal(true)
+                } else if (hasDeniedBefore) {
+                    // 이전에 거절한 적이 있으면 설정 유도 모달
+                    _uiState.update { it.copy(notificationGuideType = NotificationSettingGuideType.ENABLE) }
+                } else {
+                    // 최초 요청이면 시스템 팝업 요청 트리거
+                    _uiState.update { it.copy(requestNotificationPermission = true) }
+                }
+            } else {
+                // Android 13 미만은 바로 서버 업데이트
+                updateAlarmInternal(true)
+            }
+        } else {
+            // 알림을 끄는 경우
+            updateAlarmInternal(false)
+        }
+    }
+
+    private fun updateAlarmInternal(isAlarmEnabled: Boolean) {
         viewModelScope.launch {
             val result = if (isAlarmEnabled) registerDeviceTokenInternal()
             else deleteDeviceTokenInternal()
 
-            when(result) {
+            when (result) {
                 is ApiResultV2.Success -> {
                     _uiState.update { it.copy(isAlarmEnabled = isAlarmEnabled) }
                 }
+
                 is ApiResultV2.SessionExpired -> {
                     userRepository.updateUserPushEnableSettings(isAlarmEnabled)
                     sessionManager.expireSession()
                 }
+
                 else -> moveToError(result)
             }
         }
+    }
+
+    fun onNotificationPermissionResult(granted: Boolean) {
+        if (granted) {
+            updateAlarmInternal(true)
+        } else {
+            // 거절 시 이력 저장
+            PrefsUtil.saveNotificationDeniedOnce(appContext)
+        }
+        _uiState.update { it.copy(requestNotificationPermission = false) }
+    }
+
+    fun closeNotificationGuide() {
+        _uiState.update { it.copy(notificationGuideType = NotificationSettingGuideType.NONE) }
+    }
+
+    fun consumeNotificationPermissionRequest() {
+        _uiState.update { it.copy(requestNotificationPermission = false) }
     }
 
     fun logout(
