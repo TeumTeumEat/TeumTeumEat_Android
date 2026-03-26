@@ -24,7 +24,7 @@ interface GoalRepository {
     /**
      * 현재 유저 목표 조회
      */
-    fun getUserGoal(): ApiResultV2<UserGoal>
+    suspend fun getUserGoal(): ApiResultV2<UserGoal>
 
     suspend fun getGoalList(): ApiResultV2<GoalsData>
     suspend fun createGoal(request: CreateGoalRequest): ApiResultV2<Int>

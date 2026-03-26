@@ -10,7 +10,7 @@ interface NotificationRepository {
         deviceType: String
     ): ApiResultV2<Unit>
 
-    fun deleteDeviceToken(
+    suspend fun deleteDeviceToken(
         token: String,
         deviceType: String = DeviceType.ANDROID.name
     ): ApiResultV2<Unit>
