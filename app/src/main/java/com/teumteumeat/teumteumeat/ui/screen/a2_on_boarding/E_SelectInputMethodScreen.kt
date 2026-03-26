@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +28,7 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.BoxButtonRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -47,6 +46,7 @@ fun SelectInputMethodScreen(
     val totalPages = uiState.totalPage
 
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(

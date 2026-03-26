@@ -3,10 +3,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -93,6 +89,8 @@ fun OnBoardingCompositionProvider(
             // 아무것도 하지 않음 = 뒤로가기 무시
         }
 
+        val progress by viewModel.progress.collectAsStateWithLifecycle()
+
 
         when (mainState) {
 
@@ -104,15 +102,20 @@ fun OnBoardingCompositionProvider(
                         visibleStates[index] = true
                     }
                 }
-                // todo. 로딩 스크린 구현
+
                 OnBoardingLoadingScreen(
                     title = "틈틈잇을 생성하는 중\n" +
                             "잠시만 기다려주세요",
-                    visibleStates = visibleStates
+                    progress = progress,
+                    visibleStates = visibleStates,
+                    isCompletedLoading = true,
                 )
             }
 
             UiStateOnboardingScreenState.Success -> {
+                // 온보딩 완료하면 오프라인 플래그값도 변경
+                viewModel.updateOfflineFlag()
+
                 OnBoardingSuccessScreen(
                     nickname = uiState.charName,
                     onStartClick = {
@@ -138,7 +141,7 @@ fun OnBoardingCompositionProvider(
                     ),
                     onBack = {
                         viewModel.resetMainState()
-                    }
+                    },
                 )
             }
 

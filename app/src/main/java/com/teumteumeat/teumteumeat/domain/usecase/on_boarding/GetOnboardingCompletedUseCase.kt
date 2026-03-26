@@ -16,10 +16,12 @@ class GetOnboardingCompletedUseCase@Inject constructor(
         return when (val result = userRepository.getOnboardingCompletedV2()) {
 
             is ApiResultV2.Success -> {
-                // Log.d("GetOnboardingCompletedUseCase", "invoke: ${result.data}")
+                Log.d("GetOnboardingCompletedUseCase:", "onboarding completed: ${result.data.completed}")
                 if (result.data.completed) {
+                    Log.d("GoMain:", "onboarding completed: ${result.data}")
                     OnboardingDecision.GoMain
                 } else {
+                    Log.d("GoOnboarding:", "onboarding completed: ${result.data}")
                     OnboardingDecision.GoOnboarding
                 }
             }

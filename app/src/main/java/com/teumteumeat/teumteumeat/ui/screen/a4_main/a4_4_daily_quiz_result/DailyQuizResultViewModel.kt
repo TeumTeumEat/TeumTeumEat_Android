@@ -8,6 +8,7 @@ import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toYyyyMmDd
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,9 +21,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DailyQuizResultViewModel @Inject constructor(
-    private val documentRepository: DocumentRepository,
     private val quizRepository: QuizRepository,
-    private val categoryRepository: CategoryRepository,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateDailyQuizResult())
@@ -67,7 +67,8 @@ class DailyQuizResultViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             // 2️⃣ API 호출
-            when (val result = quizRepository.getQuizHistory(type.toString(), id.toInt(), date.toYyyyMmDd())) {
+            when (val result =
+                quizRepository.getQuizHistory(type.toString(), id.toInt(), date.toYyyyMmDd())) {
 
                 is ApiResultV2.Success -> {
                     val history = result.data
@@ -86,6 +87,10 @@ class DailyQuizResultViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
                 }
 
                 else -> {

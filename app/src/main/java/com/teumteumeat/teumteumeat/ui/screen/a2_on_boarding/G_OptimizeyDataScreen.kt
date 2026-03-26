@@ -43,7 +43,7 @@ import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -83,6 +83,7 @@ fun OptimizerDataScreen(
     )
 
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Scaffold(

@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.component
 
+import android.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,6 +44,7 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.component.button.FillSecondaryButton
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -171,108 +174,117 @@ fun BottomSheetContainerRightTopConfirm(
 
 @Composable
 fun FullScreenErrorModal(
+    modifier: Modifier = Modifier,
     errorState: ErrorState,
-    isShowBackBtn: Boolean = true,
+    isShowBackBtn: Boolean = false,
     onBack: () -> Unit,
+    bgColor: androidx.compose.ui.graphics.Color = MaterialTheme.extendedColors.backgroundW100,
+    extensionHeight: androidx.compose.ui.unit.Dp = 5.dp
 ) {
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-            .windowInsetsPadding(WindowInsets.systemBars) // ✅ SafeArea,
+    DefaultMonoBg(
+       extensionHeight = extensionHeight
     ) {
-        // 🔙 뒤로가기
-        if (isShowBackBtn) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-            ) {
-                IconButton(
-                    onClick = {
-                        onBack()
-                    },
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .background(color = bgColor)
+        ) {
+            // 로그를 통해 실제 전달된 값을 확인합니다.
 
-                    ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                        contentDescription = "previous page",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(0.dp),
+            // 🔙 뒤로가기
+            if (isShowBackBtn) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                ) {
+                    IconButton(
+                        onClick = {
+                            onBack()
+                        },
+
+                        ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                            contentDescription = "previous page",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .padding(0.dp),
+                        )
+                    }
+
+                }
+            }
+
+            // 본문
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                // 아이콘/로고 자리
+                // Icon(...) 또는 Image(...)
+
+                Text(
+                    text = errorState.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = errorState.description,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        textAlign = TextAlign.Center
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+
+            }
+
+            // 이동 버튼
+            // 🔹 Secondary Action이 있는 경우 → 버튼 2개
+            if (errorState.secondaryLabel != null && errorState.onSecondaryAction != null) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                    // ➡️ Primary 액션
+                    BaseFillButton(
+                        onClick = errorState.onRetry,
+                        text = errorState.retryLabel,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // ⬅️ Secondary 액션
+                    FillSecondaryButton(
+                        onClick = errorState.onSecondaryAction,
+                        text = errorState.secondaryLabel,
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
-            }
-        }
+            } else {
 
-        // 본문
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-
-            // 아이콘/로고 자리
-            // Icon(...) 또는 Image(...)
-
-            androidx.compose.material3.Text(
-                text = errorState.title,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            androidx.compose.material3.Text(
-                text = errorState.description,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    textAlign = TextAlign.Center
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-
-        }
-
-        // 이동 버튼
-        // 🔹 Secondary Action이 있는 경우 → 버튼 2개
-        if (errorState.secondaryLabel != null && errorState.onSecondaryAction != null) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-
-                // ➡️ Primary 액션
-                BaseFillButton(
-                    onClick = errorState.onRetry,
-                    text = errorState.retryLabel,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // ⬅️ Secondary 액션
-                FillSecondaryButton(
-                    onClick = errorState.onSecondaryAction,
-                    text = errorState.secondaryLabel,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-        }else{
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp)
-            ) {
-                BaseFillButton(
-                    onClick = errorState.onRetry,
-                    text = errorState.retryLabel,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                ) {
+                    BaseFillButton(
+                        onClick = errorState.onRetry,
+                        text = errorState.retryLabel,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }

@@ -38,7 +38,6 @@ fun TitleBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 19.dp)
             .drawBehind {
                 val strokeWidth = 1.dp.toPx()
                 drawLine(

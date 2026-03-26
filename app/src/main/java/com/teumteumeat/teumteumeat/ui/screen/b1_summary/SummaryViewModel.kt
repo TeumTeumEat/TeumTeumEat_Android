@@ -1,9 +1,12 @@
 package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import android.app.Application
+import android.se.omapi.Session
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
@@ -13,6 +16,7 @@ import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.quiz.UserQuizStatus
+import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
@@ -41,7 +45,9 @@ class SummaryViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val quizRepository: QuizRepository,
     val application: Application,
+    val sessionManager: SessionManager,
 ) : ViewModel() {
+
     private val appContext = application.applicationContext
 
     private val _uiState = MutableStateFlow(UiStateSummary())
@@ -59,25 +65,22 @@ class SummaryViewModel @Inject constructor(
     private val _event = MutableSharedFlow<UiEvent>()
     val event: SharedFlow<UiEvent> = _event
 
-
     fun loadInitialData() {
         viewModelScope.launch {
-
             _uiState.update { it.copy(isLoading = true) }
-            // 🔵 로딩 시작
             _screenState.value = UiScreenState.Loading
 
-            // 🔹 동시에 실행할 작업들
-            launch {
-                loadUserQuizStatus()
-            }
+            // 각 작업의 Job을 저장
+            val job1 = launch { loadUserQuizStatus() }
+            val job2 = launch { loadSummaryByGoalType() }
 
-            // 🔹 2) 내부에서 상태를 처리하는 작업 → launch
-            launch {
-                loadSummaryByGoalType()
-            }
+            // 두 작업이 모두 끝날 때까지 '대기'
+            job1.join()
+            job2.join()
 
+            // 모든 작업 종료 후 상태 변경
             _screenState.value = UiScreenState.Success
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 
@@ -116,6 +119,10 @@ class SummaryViewModel @Inject constructor(
                 }
             }
 
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
             else -> {
                 // 공통 에러 메시지 처리
                 _event.emit(
@@ -140,6 +147,10 @@ class SummaryViewModel @Inject constructor(
                         _event.emit(UiEvent.MoveToQuiz)
                     }
 
+                    is ApiResultV2.SessionExpired -> {
+                        sessionManager.expireSession()
+                    }
+
                     else -> {
                         _event.emit(
                             UiEvent.ShowError(result.uiMessage)
@@ -154,46 +165,20 @@ class SummaryViewModel @Inject constructor(
     }
 
     fun loadSummaryByGoalType() {
-        val state = _uiState.value
-
-        val goalType = state.goalType
-        val goalId = state.goalId
-        val documentId = state.documentId
-        val categoryId = state.categoryId
-
-        if (goalType == null || goalId == null) {
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    errorMessage = "요약글을 불러오기 위한 정보가 부족합니다."
-                )
-            }
-            _screenState.value =
-                UiScreenState.Error("요약글을 불러오기 위한 정보가 부족합니다.")
-            return
-        }
-
-        when (goalType) {
-
-            DomainGoalType.DOCUMENT -> {
-                if (documentId == null) {
-                    handleInvalidParam("documentId 가 없습니다.")
-                    return
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            try {
+                // goalType에 따른 분기 로직을 여기서 실행
+                when (currentState.goalType) {
+                    DomainGoalType.CATEGORY -> { loadCategorySummary(currentState.categoryDocumentId.toInt())}
+                    DomainGoalType.DOCUMENT -> { loadDocumentSummary(currentState.goalId.toInt(), currentState.documentId.toInt()) }
+                    else -> {}
                 }
-                loadDocumentSummary(
-                    goalId = goalId.toInt(),
-                    documentId = documentId.toInt()
-                )
-            }
 
-            DomainGoalType.CATEGORY -> {
-                if (categoryId == null) {
-                    handleInvalidParam("category - documentId 가 없습니다.")
-                    return
-                }
-                loadCategorySummary(
-                    categoryId = categoryId.toInt()
-                )
+            } catch (e: Exception) {
+                Log.d("SummaryViewModel", "요약 로딩 실패: ${e.message}")
+                _screenState.value = UiScreenState.Error(message = "요약 로딩 실패") // 에러 상태 처리
+            } finally {
             }
         }
     }
@@ -212,34 +197,23 @@ class SummaryViewModel @Inject constructor(
     fun initSummary(
         goalId: Long,
         goalType: DomainGoalType,
-        documentId: Long?,
+        documentId: Long,
         categoryId: Long?
     ) {
-        // 이미 초기화되었으면 재실행 방지
-        if (_uiState.value.goalType != null) return
+        // initSummary 의 파라미터의 값을 로그로 찍어서 확인하기
+        Log.d("SummaryViewModel", "goalId: $goalId, goalType: $goalType, documentId: $documentId, categoryId: $categoryId")
 
         _uiState.update {
             it.copy(
                 goalId = goalId,
                 goalType = goalType,
-                documentId = documentId,
-                categoryId = categoryId
+                documentId = documentId.toLong(),
+                categoryId = categoryId,
+                categoryDocumentId = categoryId?.toInt() ?: -1,
             )
         }
 
-        // goalType 기준으로 API 분기
-        when (goalType) {
-            DomainGoalType.CATEGORY -> {
-                loadCategorySummary(categoryId?.toInt() ?: -1)
-            }
-
-            DomainGoalType.DOCUMENT -> {
-                loadDocumentSummary(
-                    goalId = goalId.toInt(),
-                    documentId = documentId?.toInt() ?: -1
-                )
-            }
-        }
+        loadInitialData()
     }
 
     /**
@@ -345,6 +319,10 @@ class SummaryViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+                }
+
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
                 }
 
                 else -> {
@@ -598,9 +576,12 @@ class SummaryViewModel @Inject constructor(
                     _screenState.value = UiScreenState.Success
                 }
 
+                is ApiResultV2.SessionExpired -> {
+                    sessionManager.expireSession()
+                }
+
                 is ApiResultV2.ServerError,
                 is ApiResultV2.NetworkError,
-                is ApiResultV2.SessionExpired,
                 is ApiResultV2.UnknownError -> {
                     val message = result.uiMessage
 

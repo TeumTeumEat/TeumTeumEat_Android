@@ -8,24 +8,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.WeekRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.StudyWeekOption
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
-import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -49,6 +46,7 @@ fun AddGoalSetStudyRangeScreen(
     )
 
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(
@@ -59,24 +57,20 @@ fun AddGoalSetStudyRangeScreen(
                 Column(
                     modifier = Modifier.Companion
                         .fillMaxSize()
-                        .padding(),
+                        .padding()
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.Companion.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.Companion.height(60.dp))
-                    Text(
-                        "공부하고자 하는 기간을 선택하세요!",
-                        style = Typography.headlineMedium.copy(
-                            fontSize = 18.sp,
-                        )
-                    )
-                    Spacer(modifier = Modifier.Companion.height(20.dp))
+                    Spacer(modifier = Modifier.Companion.height(4.dp))
+                    SpeechBubble(text = "선택한 주제에 대해\n" +
+                            "공부할 기간을 선택해주세요!")
+                    Spacer(modifier = Modifier.Companion.height(12.dp))
                     Image(
-                        painter = painterResource(R.drawable.character_front),
+                        painter = painterResource(R.drawable.char_onboarding_five_four),
                         contentDescription = "앞을 보는 케릭터",
-                        modifier = Modifier.Companion.size(width = 200.dp, height = 162.dp),
                         contentScale = ContentScale.Companion.Fit,
                     )
-                    Spacer(modifier = Modifier.Companion.height(25.dp))
+                    Spacer(modifier = Modifier.Companion.height(20.dp))
 
                     WeekRadioGroup(
                         options = studyWeekOptions,
@@ -85,6 +79,9 @@ fun AddGoalSetStudyRangeScreen(
                             viewModel.onStudyWeekSelected(option.value)
                         }
                     )
+
+                    Spacer(Modifier.height(150.dp))
+
                 }
 
                 Column(

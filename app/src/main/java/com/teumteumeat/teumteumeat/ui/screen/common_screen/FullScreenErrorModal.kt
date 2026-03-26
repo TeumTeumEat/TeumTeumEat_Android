@@ -58,6 +58,7 @@ fun FullScreenErrorModal(
             secondaryText = errorState.secondaryLabel,
             onSecondary = errorState.onSecondaryAction
         )
+
     }
 }
 

@@ -20,19 +20,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.quiz.result.QuizResultCard
 import com.teumteumeat.teumteumeat.ui.component.quiz.result.QuizResultType
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun DailyQuizResultScreen(
@@ -44,7 +49,16 @@ fun DailyQuizResultScreen(
     val theme = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
     val viewModel = LocalViewModelContext.current as DailyQuizResultViewModel
-    val activityContext = LocalActivityContext
+    val activity = LocalActivityContext.current as DailyQuizResultActivity
+
+    val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // 🔥 전역 세션 이벤트 감지
+    LaunchedEffect(Unit) {
+        sessionManager.sessionEvent.collectLatest {
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
 
     BackHandler {
         onViewSummaryClick()
@@ -62,69 +76,70 @@ fun DailyQuizResultScreen(
                 retryLabel = "다시 시도하기",
                 onRetry = { viewModel.loadQuizResults() }
             ),
-            isShowBackBtn = true,
-            onBack = onViewSummaryClick
+            onBack = onViewSummaryClick,
         )
     }else{
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-        ) {
-            Column(
+        DefaultMonoBg() {
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 24.dp)
+                    .systemBarsPadding()
             ) {
-
-                /** 🔹 상단 타이틀 영역 */
-                TopBar(
-                    title = "오늘의 정답 확인",
-                    onBack = onBack
-                )
-
-                /** 🔹 퀴즈 결과 리스트 */
-                LazyColumn(
+                Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(top = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(
-                        top = 20.dp,
-                        bottom = 96.dp // ⭐ 버튼 높이 + 여유
-                    )
+                        .fillMaxSize()
+                        .padding(bottom = 24.dp)
                 ) {
-                    itemsIndexed(uiState.quizzes) { index, quiz ->
 
-                        QuizResultCard(
-                            questionIndex = index + 1,
-                            title = quiz.question,
-                            answer = quiz.answer,
-                            explanation = quiz.explanation,
-                            resultType =
-                                if (quiz.isCorrect)
-                                    QuizResultType.CORRECT
-                                else
-                                    QuizResultType.WRONG
+                    /** 🔹 상단 타이틀 영역 */
+                    TopBar(
+                        title = "오늘의 정답 확인",
+                        onBack = onBack
+                    )
+
+                    /** 🔹 퀴즈 결과 리스트 */
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(top = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(
+                            top = 20.dp,
+                            bottom = 96.dp // ⭐ 버튼 높이 + 여유
                         )
+                    ) {
+                        itemsIndexed(uiState.quizzes) { index, quiz ->
+
+                            QuizResultCard(
+                                questionIndex = index + 1,
+                                title = quiz.question,
+                                answer = quiz.answer,
+                                explanation = quiz.explanation,
+                                resultType =
+                                    if (quiz.isCorrect)
+                                        QuizResultType.CORRECT
+                                    else
+                                        QuizResultType.WRONG
+                            )
+                        }
                     }
                 }
-            }
 
-            /** 🔹 하단 버튼 영역 */
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-                    .align(Alignment.BottomCenter),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                BaseFillButton(
+                /** 🔹 하단 버튼 영역 */
+                Row(
                     modifier = Modifier
-                        .weight(1f),
-                    onClick = onViewSummaryClick,
-                    text = "요약글 보기"
-                )
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                        .align(Alignment.BottomCenter),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    BaseFillButton(
+                        modifier = Modifier
+                            .weight(1f),
+                        onClick = onViewSummaryClick,
+                        text = "요약글 보기"
+                    )
+                }
             }
         }
     }

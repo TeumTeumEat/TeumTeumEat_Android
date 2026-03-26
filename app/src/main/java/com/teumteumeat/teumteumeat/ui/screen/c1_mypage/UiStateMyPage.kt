@@ -1,7 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
-import androidx.compose.ui.graphics.Color
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
+import com.teumteumeat.teumteumeat.R
 
 
 data class UiStateMyPage(
@@ -15,22 +15,23 @@ data class UiStateMyPage(
                 "Kotlin을 활용해 생산성을 높이는 방법을 학습합니다.",
     val goalWeek: String = "4주",
     val goalDifficulty: String = "난이도 상",
+    val isSelGoalCompleted: Boolean = true,
 
     // 알림
     val isAlarmEnabled: Boolean = true,
 
     // 계정 정보
     val socialProvider: SocialProvider = SocialProvider.NONE,
-    val loginProvider: String = "카카오 로그인",
-    val email: String = "teum1234@kakao.com",
+    val loginProvider: String = "Unknown",
+    val email: String = "Unknown@unknown.com",
 
     // 기타
     val appVersion: String = "v1.0.0"
 )
 
-fun SocialProvider.toIconBackgroundColor(): Color =
+fun SocialProvider.toIconImg(): Int =
     when (this) {
-        SocialProvider.KAKAO -> Color(0xFFFFE812) // 카카오 노랑
-        SocialProvider.GOOGLE -> Color.White      // 구글 흰색
-        SocialProvider.NONE -> Color.LightGray    // 기본값
+        SocialProvider.KAKAO -> R.drawable.icon_kakao_mini // 카카오 노랑
+        SocialProvider.GOOGLE -> R.drawable.icon_google_mini      // 구글 흰색
+        SocialProvider.NONE -> R.drawable.icon_none_mini    // 기본값
     }

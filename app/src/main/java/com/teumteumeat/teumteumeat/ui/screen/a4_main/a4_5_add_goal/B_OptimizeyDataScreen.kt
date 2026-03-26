@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -38,17 +37,14 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
-import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.DifficultyOption
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -86,7 +82,9 @@ fun AddGoalOptimizerDataScreen(
         DifficultyOption("하", Difficulty.EASY),
     )
 
+
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Scaffold(
@@ -128,31 +126,16 @@ fun AddGoalOptimizerDataScreen(
                             .padding(bottom = 120.dp), // ✅ 하단 버튼 공간
                         horizontalAlignment = Alignment.Companion.CenterHorizontally
                     ) {
-                        Spacer(modifier = Modifier.Companion.height(60.dp))
-                        Text(
-                            "어떤 공부를 하고싶어?",
-                            style = Typography.headlineMedium.copy(
-                                fontSize = 18.sp,
-                            )
-                        )
+                        Spacer(modifier = Modifier.Companion.height(4.dp))
+                        SpeechBubble(text = "원하는 공부 난이도와 요청사항을\n" +
+                                "자세하게 알려주시겠어요?")
                         Spacer(modifier = Modifier.Companion.height(20.dp))
                         Image(
-                            painter = painterResource(R.drawable.character_front),
+                            painter = painterResource(R.drawable.char_onboarding_five_three),
                             contentDescription = "앞을 보는 케릭터",
-                            modifier = Modifier.Companion.size(width = 200.dp, height = 162.dp),
                             contentScale = ContentScale.Companion.Fit,
                         )
-                        Spacer(modifier = Modifier.Companion.height(56.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "난이도를 선택해주세요",
-                                style = MaterialTheme.appTypography.bodySemiBold18
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.Companion.height(10.dp))
                         DifficultyRadioGroup(
                             options = difficultyOptions,
                             selected = uiState.difficulty,

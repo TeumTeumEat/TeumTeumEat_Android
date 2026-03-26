@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat
 
 import android.app.Application
+import com.google.android.gms.ads.MobileAds
 import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
@@ -24,6 +25,9 @@ class MyApplication : Application(){
         KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
 
         FcmTokenInitializer.init(this) // ✅ 앱 시작 시 FCM 토큰 미리 저장
+
+        // Google Ads SDK 초기화
+        MobileAds.initialize(this) {}
 
         // ✅ App 시작 시 토큰 최신화 + 서버 동기화
         FcmTokenSyncUtil.checkAndSyncOnAppStart(this)

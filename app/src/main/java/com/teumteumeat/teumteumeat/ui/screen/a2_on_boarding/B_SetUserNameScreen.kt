@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -35,7 +37,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -61,12 +63,19 @@ fun OnBoardingSetCharNameScreen(
 
     DefaultMonoBg(
         color = MaterialTheme.colorScheme.surface,
+        extensionHeight = 0.dp,
         content = {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 20.dp)
-                    .focusable() // ⭐ 포커스 받을 수 있는 영역 ,
+                    // ✅ 화면 전체 터치 감지 추가
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = {
+                            focusManager.clearFocus() // 키보드 내리기 및 포커스 해제
+                        })
+                    }
+                    .focusable()
             ) {
                 Column(
                     modifier = Modifier
@@ -92,6 +101,7 @@ fun OnBoardingSetCharNameScreen(
                         labelText = "",
                         placeholderText = "입력해주세요.",
                         onValueChange = { input ->
+                            // Log.d("ComposeInput", "compose input = $input length=${input.length}")
                             viewModel.onNameTextChanged(input)// viewModel set 함수 위치
                         },
                         modifier = Modifier.fillMaxWidth(),

@@ -1,8 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.common_screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +17,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.GoalProgress
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -31,7 +26,7 @@ fun LoadingScreen(
     modifier: Modifier = Modifier,
     title: String = "",
     message: String = "",
-    progress: Float? = null, // ⭐ 추가
+    contentAlignment: Alignment = Alignment.Center,
     visibleStates: SnapshotStateList<Boolean> = remember {
         mutableStateListOf(false, false, false)
     },
@@ -49,7 +44,7 @@ fun LoadingScreen(
 
         Column(
             modifier = Modifier
-                .align(Alignment.Center)
+                .align(contentAlignment)
                 .padding(bottom = 100.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -89,16 +84,6 @@ fun LoadingScreen(
                 color = extendedColors.textGhost
             )
 
-            // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
-            if (progress != null) {
-                Spacer(modifier = Modifier.height(20.dp))
-
-                CustomProgressBar(
-                    modifier = Modifier.fillMaxWidth(0.6f),
-                    progress = progress
-                )
-            }
-
         }
 
     }
@@ -115,6 +100,7 @@ fun GoalLoadingScreen(
     visibleStates: SnapshotStateList<Boolean> = remember {
         mutableStateListOf(false, false, false)
     },
+    isCompletedLoading: Boolean = false
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
@@ -134,31 +120,14 @@ fun GoalLoadingScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            /*// 🔵 원형 컨테이너 (체크박스 UI 감성)
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(
-                        color = extendedColors.primaryContainer,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    strokeWidth = 3.dp,
-                    color = extendedColors.primary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }*/
-
-
 
             // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
             if (progress != null) {
                 Spacer(modifier = Modifier.height(20.dp))
 
                 GoalProgress(
-                    progress = progress
+                    progress = progress,
+                    isCompletedLoading = isCompletedLoading
                 )
             }
 

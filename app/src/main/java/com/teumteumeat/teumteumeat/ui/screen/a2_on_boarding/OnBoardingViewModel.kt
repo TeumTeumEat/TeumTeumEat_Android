@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -11,17 +12,13 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
-import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCaseV1
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
@@ -35,10 +32,12 @@ import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -61,10 +60,10 @@ class OnBoardingViewModel @Inject constructor(
     val getDocumentsUseCase: GetDocumentsUseCase,
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
+    @ApplicationContext private val context: Context,
     application: Application,
     val sessionManager: SessionManager,
 ) : ViewModel() {
-    private val appContext = application.applicationContext
 
     // 이름 입력 제약조건 부분
     companion object {
@@ -90,6 +89,9 @@ class OnBoardingViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<UiEffect>(extraBufferCapacity = 1)
     val effect: SharedFlow<UiEffect> = _effect
 
+    private val _progress = MutableStateFlow(0f)
+    val progress: StateFlow<Float> = _progress
+
     init {
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
     }
@@ -100,6 +102,25 @@ class OnBoardingViewModel @Inject constructor(
 
         viewModelScope.launch {
             _mainState.value = UiStateOnboardingScreenState.Loading
+
+            // ⭐ progress 애니메이션 시작 (1.8초)
+            launch {
+                val duration = 1800L
+                val startTime = System.currentTimeMillis()
+
+                while (true) {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    val progress = (elapsed / duration.toFloat()).coerceIn(0f, 1f)
+
+                    _progress.value = progress
+
+                    if (progress >= 1f) break
+
+                    delay(16L) // 약 60fps
+                }
+
+                _progress.value = 1f
+            }
 
             val state = _uiState.value
 
@@ -194,7 +215,6 @@ class OnBoardingViewModel @Inject constructor(
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
-
             _mainState.value = UiStateOnboardingScreenState.Success
         }
     }
@@ -208,7 +228,6 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     private suspend fun moveToError(result: ApiResultV2<*>) {
-        // todo. session 에러 발생 시 로그인 화면으로 fall back 기능 구현
         when (result) {
             is ApiResultV2.SessionExpired -> {
                 sessionManager.expireSession()
@@ -237,7 +256,7 @@ class OnBoardingViewModel @Inject constructor(
     private suspend fun registerDeviceTokenInternal(): ApiResultV2<Unit> {
         val current = _uiState.value
 
-        val fcmToken = FcmTokenStore.get(appContext)
+        val fcmToken = FcmTokenStore.get(context)
             ?: return ApiResultV2.UnknownError("디바이스 토큰이 없습니다.")
 
         val deviceType = "ANDROID"
@@ -651,13 +670,7 @@ class OnBoardingViewModel @Inject constructor(
                 }
 
                 is ApiResult.SessionExpired -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isSessionExpired = true,
-                            pageErrorMessage = result.message
-                        )
-                    }
+                    sessionManager.expireSession()
                 }
 
                 is ApiResult.ServerError -> {
@@ -1082,7 +1095,7 @@ class OnBoardingViewModel @Inject constructor(
         )
 
         if (!isGranted) {
-            PrefsUtil.saveNotificationDeniedOnce(appContext)
+            PrefsUtil.saveNotificationDeniedOnce(context)
         }
 
         _uiState.update {
@@ -1096,9 +1109,9 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     fun hasDeniedBefore(): Boolean {
-        val denied = PrefsUtil.hasNotificationDeniedOnce(appContext)
+        val denied = PrefsUtil.hasNotificationDeniedOnce(context)
         Log.d("NotificationDebug", "hasDeniedBefore = $denied")
-        return PrefsUtil.hasNotificationDeniedOnce(appContext)
+        return PrefsUtil.hasNotificationDeniedOnce(context)
     }
 
     /**
@@ -1157,7 +1170,7 @@ class OnBoardingViewModel @Inject constructor(
 
         if (!granted) {
             // 🔴 한 번이라도 거부했으면 저장
-            PrefsUtil.saveNotificationDeniedOnce(appContext)
+            PrefsUtil.saveNotificationDeniedOnce(context)
             Log.d("NotificationDebug", "saveNotificationDeniedOnce called")
         }
 
@@ -1376,32 +1389,32 @@ class OnBoardingViewModel @Inject constructor(
 
     fun onNameTextChanged(input: String) {
         viewModelScope.launch {
-            // ✅ 입력은 최대 10자까지만 "받는다"(저장)
-            val trimmedToMax = if (input.length > MAX_LENGTH) input.take(MAX_LENGTH) else input
+            val isOverMaxLength = input.length > MAX_LENGTH
 
-            // ✅ 유효성은 별도로 판단 (입력은 되지만 invalid 가능)
             val violation = when {
-                trimmedToMax.isEmpty() -> NameViolation.Empty
-                trimmedToMax.length < MIN_LENGTH -> NameViolation.Empty // 사실상 동일
-                trimmedToMax.contains(" ") -> NameViolation.HasSpace
-                !trimmedToMax.matches(ALLOWED_REGEX) -> NameViolation.HasSpecialChar
+                input.isEmpty() -> NameViolation.Empty
+                input.length < MIN_LENGTH -> NameViolation.Empty // 사실상 동일
+                isOverMaxLength -> NameViolation.TooLong
+                input.contains(" ") -> NameViolation.HasSpace
+                !input.matches(ALLOWED_REGEX) -> NameViolation.HasSpecialChar
                 else -> NameViolation.None
             }
 
             val isValid =
-                violation == NameViolation.None && trimmedToMax.length in MIN_LENGTH..MAX_LENGTH
+                violation == NameViolation.None && input.length in MIN_LENGTH..MAX_LENGTH
 
             val message = when (violation) {
-                NameViolation.None -> ""
+                NameViolation.TooLong -> "10자 이하로 입력해주세요" // 현재 take(MAX)라 실제로는 잘 안 옴
                 NameViolation.Empty -> "1자 이상 입력해주세요"
                 NameViolation.HasSpace -> "공백은 사용할 수 없어요"
                 NameViolation.HasSpecialChar -> "특수문자는 사용할 수 없어요 (한글/영문/숫자만)"
-                NameViolation.TooLong -> "10자 이하로 입력해주세요" // 현재 take(MAX)라 실제로는 잘 안 옴
+                NameViolation.None -> ""
             }
+
 
             _uiState.update {
                 it.copy(
-                    charName = trimmedToMax,
+                    charName = input,
                     isNameValid = isValid,
                     errorMessage = message,
                     violation = violation
@@ -1522,6 +1535,12 @@ class OnBoardingViewModel @Inject constructor(
             } else {
                 currentState
             }
+        }
+    }
+
+    fun updateOfflineFlag() {
+        viewModelScope.launch {
+            PrefsUtil.setOnboardingCompleted(context, true)
         }
     }
 

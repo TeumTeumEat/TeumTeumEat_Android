@@ -43,4 +43,14 @@ interface QuizApiService {
         @Path("id") id: Long,
         @Query("date") date: String
     ): ApiResponse<QuizHistoryData, Any?>
+
+    @POST("/api/v1/user-quizzes/ad-reward")
+    suspend fun submitAdWatching(): ApiResponse<Unit, Any?>
+
+    /**
+     * 완료된 퀴즈 세트를 서버에 제출하는 API 입니다.
+     */
+    @POST("/api/v1/user-quizzes/complete-set")
+    suspend fun submitCompleteQuizSet(): ApiResponse<Unit, Any?>
+
 }

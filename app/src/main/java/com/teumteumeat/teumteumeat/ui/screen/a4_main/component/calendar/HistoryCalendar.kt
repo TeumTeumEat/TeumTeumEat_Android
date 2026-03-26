@@ -144,6 +144,6 @@ fun CalendarPager(
     // ✅ 월 상태 변경은 여기서만
     LaunchedEffect(pagerState.currentPage) {
         Log.d("pagerState.currentPage: ", "${pagerState.currentPage}")
-        onMonthChange(visibleMonth)
+         onMonthChange(visibleMonth)
     }
 }

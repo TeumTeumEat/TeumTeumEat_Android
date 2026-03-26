@@ -1,6 +1,9 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import androidx.navigation.NavHostController
@@ -12,6 +15,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.FileUploadScreen
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OptimizerDataScreen
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.SetStudyRangeScreen
+import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAddGoalUiState
 import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
 
@@ -21,13 +25,19 @@ fun AddGoalNavHost(
     navController: NavHostController,
     startDestination: String?,
 ) {
-    val context = LocalContext.current
+    val activity = LocalActivityContext.current as AddGoalActivity
     val viewModel = LocalViewModelContext.current as AddGoalViewModel
     val uiState = LocalAddGoalUiState.current
 
+
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.collect {
+            Log.d("NAV_DEBUG", "현재 route=${it.destination.route}")
+        }
+    }
+
     NavHost(
         navController = navController,
-        // todo. null 이면 에러스크린으로 이동 시키기
         startDestination = startDestination!!
     ) {
 
@@ -35,6 +45,14 @@ fun AddGoalNavHost(
         composable(
             route = AddGoalScreens.SixthCategorySelectScreen.route
         ) { backStackEntry ->
+
+            AddGoalBackHandler(
+                currentPage = uiState.currentPage,
+                navController = navController,
+                onFinish = { activity.finish() },
+                onPrevPage = { viewModel.prevPage() }
+            )
+
             AddGoalCategorySelectScreen(
                 name = AddGoalScreens.SixthCategorySelectScreen.route,
                 onNext = {
@@ -42,18 +60,27 @@ fun AddGoalNavHost(
                     navController.navigate(AddGoalScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
-                    navController.popBackStack()
+                    activity.finish()
                 },
                 viewModel = viewModel,
                 uiState = uiState,
                 navBackStackEntry = backStackEntry,
             )
+
         }
 
         // ✅ 1-2 파일 업로드 입력 화면
         composable(
             route = AddGoalScreens.SixthFileUploadScreen.route
         ) {
+
+            AddGoalBackHandler(
+                currentPage = uiState.currentPage,
+                navController = navController,
+                onFinish = { activity.finish() },
+                onPrevPage = { viewModel.prevPage() }
+            )
+
             AddGoalFileUploadScreen(
                 name = AddGoalScreens.SixthFileUploadScreen.route,
                 onNext = {
@@ -61,6 +88,7 @@ fun AddGoalNavHost(
                     navController.navigate(AddGoalScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
+                    viewModel.prevPage()
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -72,6 +100,14 @@ fun AddGoalNavHost(
         composable(
             route = AddGoalScreens.SeventhOptimizerDataScreen.route
         ) {
+
+            AddGoalBackHandler(
+                currentPage = uiState.currentPage,
+                navController = navController,
+                onFinish = { activity.finish() },
+                onPrevPage = { viewModel.prevPage() }
+            )
+
             AddGoalOptimizerDataScreen(
                 name = AddGoalScreens.SeventhOptimizerDataScreen.route,
                 onNext = {
@@ -93,6 +129,14 @@ fun AddGoalNavHost(
         composable(
             route = AddGoalScreens.EighthSetStudyRangeScreen.route
         ) {
+
+            AddGoalBackHandler(
+                currentPage = uiState.currentPage,
+                navController = navController,
+                onFinish = { activity.finish() },
+                onPrevPage = { viewModel.prevPage() }
+            )
+
             AddGoalSetStudyRangeScreen(
                 name = AddGoalScreens.EighthSetStudyRangeScreen.route,
                 onNext = {
@@ -114,6 +158,14 @@ fun AddGoalNavHost(
         composable(
             route = AddGoalScreens.CheckSetMyInfoScreen.route
         ) {
+
+            AddGoalBackHandler(
+                currentPage = uiState.currentPage,
+                navController = navController,
+                onFinish = { activity.finish() },
+                onPrevPage = { viewModel.prevPage() }
+            )
+
             AddGoalCheckSetMyInfoScreen(
                 onNext = {
                     viewModel.nextPage()
@@ -155,7 +207,7 @@ sealed class AddGoalScreens(val route: String) {
         AddGoalScreens("check_set_my_info")
 
     data object CompleteScreen :
-            AddGoalScreens("complete")
+        AddGoalScreens("complete")
 }
 
 object AddGoalFlow {
@@ -171,13 +223,13 @@ object AddGoalFlow {
 
     /** 전체 페이지 수 */
     val totalCount: Int
-        get() = 3
+        get() = 4
 
     /** 현재 페이지 (1부터 시작)
      * FirstScreen 은 카운트에 포함X
      * */
     fun currentPage(screen: AddGoalScreens): Int {
-        return screens.indexOf(screen)
+        return screens.indexOf(screen) + 1
     }
 
     /** 이전 화면 */

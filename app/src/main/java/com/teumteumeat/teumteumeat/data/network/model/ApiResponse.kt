@@ -80,6 +80,36 @@ sealed class ApiResultV2<out T> {
     ) : ApiResultV2<Nothing>()
 }
 
+// ApiResultV2.kt 근처 또는 Utils 파일
+fun <T, R> ApiResultV2<T>.map(transform: (T) -> R): ApiResultV2<R> {
+    return when (this) {
+        is ApiResultV2.Success -> ApiResultV2.Success(
+            message = this.message, // 성공 메시지는 그대로 유지
+            data = transform(this.data)
+        )
+
+        is ApiResultV2.SessionExpired -> ApiResultV2.SessionExpired(
+            code = this.code,
+            message = this.uiMessage // 확장 프로퍼티 uiMessage의 로직 결과(RETRY/FAIL 처리된 문자열)를 할당
+        )
+
+        is ApiResultV2.NetworkError -> ApiResultV2.NetworkError(
+            message = this.uiMessage // "네트워크 에러" 메시지 유지
+        )
+
+        is ApiResultV2.ServerError -> ApiResultV2.ServerError(
+            code = this.code,
+            message = this.uiMessage, // DomainError(Validation, Message 등)가 처리된 최종 문자열을 할당
+            errorType = this.errorType
+        )
+
+        is ApiResultV2.UnknownError -> ApiResultV2.UnknownError(
+            message = this.uiMessage,
+            throwable = this.throwable
+        )
+    }
+}
+
 val ApiResultV2<*>.uiMessage: String
     get() = when (this) {
 

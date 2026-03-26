@@ -23,7 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.WeekRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -49,6 +49,7 @@ fun SetStudyRangeScreen(
     )
 
     DefaultMonoBg(
+        extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
         content = {
             Box(

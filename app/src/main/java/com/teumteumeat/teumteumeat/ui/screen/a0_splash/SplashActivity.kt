@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.a0_splash
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +20,7 @@ class SplashActivity : ComponentActivity()  {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("SplashActivity", "onCreate")
         enableEdgeToEdge()
 
         setContent {

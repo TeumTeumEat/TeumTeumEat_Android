@@ -1,1 +1,14 @@
 CI rule set test2
+
+"data" : {
+     "hasSolvedToday" : true,
+     "isFirstTime" : false,
+     "hasCreatedToday" : false,
+     "isQuizGuideSeen" : true,
+     "availableQuizCount" : 1,
+     "dailyAdRewardCount" : 1,
+     "canIssueCoupon" : true,
+     "targetQuizSetCount" : 0,
+     "completedQuizSetCount" : 0,
+     "isCompleted" : false
+}

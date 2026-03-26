@@ -21,7 +21,7 @@ interface AuthApiService {
     @GET("/api/v1/users/name")
     suspend fun checkMyToken(): ApiResponse<UserName, Unit>
 
-    @POST("/api/v1/users/reissue")
+    @POST("/api/v2/users/reissue")
     suspend fun reissueAccessTokenV2(
         @Body refreshToken: ResponseBody
     ): ApiResponse<ReissueTokenResponse, Unit>

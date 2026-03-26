@@ -11,7 +11,8 @@ import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import com.teumteumeat.teumteumeat.data.api.user.UpdateNameRequest
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
-import com.teumteumeat.teumteumeat.data.network.model_request.UpdateUserSettingRequest
+import com.teumteumeat.teumteumeat.data.network.model_request.user.GetUserSettingRequest
+import com.teumteumeat.teumteumeat.data.network.model_request.user.UpdateUserSettingRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfoResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.CategoriesResponseDto
@@ -20,6 +21,7 @@ import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomain
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDomainCategoryTree
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
+import com.teumteumeat.teumteumeat.utils.Utils.RepositoryUtils.requireNotNullOrError
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -29,6 +31,19 @@ class UserRepositoryImpl @Inject constructor(
     private val tokenLocalDataSource: TokenLocalDataSource
 ) : BaseRepository(authApiService, tokenLocalDataSource),
     UserRepository {
+
+    override suspend fun getUserPushEnableSettings(): ApiResultV2<GetUserSettingRequest> {
+        return safeApiVer2(
+            apiCall = {
+                userApiService.getUserSettings()
+            },
+            mapper = { response ->
+                response.requireNotNullOrError("GET /api/v1/users/settings")
+            }
+        )
+
+    }
+
 
     override suspend fun updateUserPushEnableSettings(
         pushEnabled: Boolean
