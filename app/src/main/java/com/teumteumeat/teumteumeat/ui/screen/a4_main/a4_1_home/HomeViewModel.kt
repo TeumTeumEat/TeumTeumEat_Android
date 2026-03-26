@@ -139,7 +139,9 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { currentState ->
                         currentState.copy(
                             isShowAdModalDialog = true,
-                            cupponCount = quizStatus.availableQuizCount // 서버에서 받아온 새 개수
+                            cupponCount = quizStatus.availableQuizCount, // 서버에서 받아온 새 개수
+                            dailyAdRewardCount = quizStatus.dailyAdRewardCount,
+                            canIssueCoupon = quizStatus.canIssueCoupon
                         )
                     }
                 }
@@ -369,7 +371,8 @@ class HomeViewModel @Inject constructor(
                                     hasSolvedToday = quizStatus.hasSolvedToday,
                                     hasCreatedToday = quizStatus.hasCreatedToday,
                                     isFirstTime = quizStatus.isFirstTime,
-                                    dailyCouponLimit = quizStatus.dailyCouponLimit,
+                                    dailyAdRewardCount = quizStatus.dailyAdRewardCount,
+                                    canIssueCoupon = quizStatus.canIssueCoupon,
                                     cupponCount = quizStatus.availableQuizCount,
 
                                     // 🔥 HomeViewModel에서만 SnackState 분기
