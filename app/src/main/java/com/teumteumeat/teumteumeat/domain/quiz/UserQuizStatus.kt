@@ -6,6 +6,8 @@ data class UserQuizStatus(
     val hasCreatedToday: Boolean,
     val isQuizGuideSeen: Boolean,
     val availableQuizCount: Int,
+    val dailyAdRewardCount: Int,
+    val canIssueCoupon: Boolean,
     val targetQuizSetCount: Int,
     val completedQuizSetCount: Int,
     val isCompleted: Boolean,

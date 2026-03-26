@@ -19,7 +19,7 @@ data class UiStateHome(
     val isAdLoading: Boolean = false,
     val cupponCount: Int = 0,
     val canIssueCoupon: Boolean = false,
-    val dailyCouponLimit: Int = 10,
+    val dailyAdRewardCount: Int = 0,
 
     /** 🔥 핵심 */
     val hasCreatedToday: Boolean = false,
