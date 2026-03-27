@@ -381,7 +381,8 @@ class HomeViewModel @Inject constructor(
                                         hasSolvedToday = quizStatus.hasSolvedToday,
                                     ),
                                     currentGoalCompleted = goal.isCompleted,
-                                    summaryQuery = buildSummaryQuery(goal)
+                                    summaryQuery = buildSummaryQuery(goal),
+                                    isShowGoalExpiredDialog = quizStatus.isCompleted // ✅ 퀴즈 상태의 isCompleted 기반으로 모달 노출 여부 결정
                                 )
                             }
                             // update 호출 직후 확인
@@ -413,14 +414,6 @@ class HomeViewModel @Inject constructor(
                 is ApiResultV2.NetworkError,
                 is ApiResultV2.UnknownError -> {
                     _screenState.value = Error(goalResult.uiMessage)
-                }
-            }
-
-            if (checkExpiredGoal()) {
-                _uiState.update {
-                    it.copy(
-                        isShowGoalExpiredDialog = true
-                    )
                 }
             }
         }

@@ -16,10 +16,13 @@ import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepositoryImpl
+import com.teumteumeat.teumteumeat.domain.repository.date.DateChangeRepository
+import com.teumteumeat.teumteumeat.data.repository.date.DateChangeRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -56,6 +59,10 @@ abstract class RepositoryModule {
     @Binds abstract fun bindNotificationRepository(
         impl: NotificationRepositoryImpl
     ): NotificationRepository
+
+    @Binds @Singleton abstract fun bindDateChangeRepository(
+        impl: DateChangeRepositoryImpl
+    ): DateChangeRepository
 
 }
 

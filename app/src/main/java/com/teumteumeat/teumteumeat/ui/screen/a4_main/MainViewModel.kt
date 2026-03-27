@@ -14,6 +14,7 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.date.ObserveDateChangeUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +34,7 @@ class MainViewModel @Inject constructor(
     val sessionManager: SessionManager,
     private val dateChangeReceiver: DateChangeReceiver, // Singleton 리시버 주입
     @ApplicationContext private val context: Context, // 등록/해제를 위한 컨텍스트
+    private val observeDateChangeUseCase: ObserveDateChangeUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiStateMain>(UiStateMain())
@@ -48,11 +50,24 @@ class MainViewModel @Inject constructor(
     init {
 
         // 날짜 변경 시에 viewModel.loadCalendarHistory(YearMonth.now()) 호출
-        setupDateChangeReceiver()
+        // setupDateChangeReceiver()
+
+        // 1. 날짜 변경 감지 시작
+        subscribeToDateChanges()
+
         loadCalendarHistory(YearMonth.now())
     }
 
 
+    private fun subscribeToDateChanges() {
+        viewModelScope.launch {
+            observeDateChangeUseCase()
+                .collect {
+                    // 날짜 변경 시 비즈니스 로직 수행
+                    loadCalendarHistory(YearMonth.now())
+                }
+        }
+    }
 
     internal fun setupDateChangeReceiver() {
 
