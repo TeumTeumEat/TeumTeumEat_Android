@@ -18,16 +18,30 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # [추가] GitHub Secrets를 사용하여 local.properties 파일을 생성합니다.
+      # 1. google-services.json 복구 (빌드 전에 반드시 실행!)
+      - name: Restore google-services.json
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
+
+      # 2. 키스토어 파일 복원 (추가)
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEY_BASE64 }}" | base64 --decode > release_key_v2
+          
+      # 3. local.properties 생성
       - name: Generate local.properties
         run: |
           echo "TEUMTEUM_KEY_ALIAS=${{ secrets.TEUMTEUM_KEY_ALIAS }}" >> local.properties
           echo "TEUMTEUM_KEY_PASSWORD=${{ secrets.TEUMTEUM_KEY_PASSWORD }}" >> local.properties
-          echo "TEUMTEUM_STORE_FILE=${{ secrets.TEUMTEUM_STORE_FILE }}" >> local.properties
+          # 환경변수 $GITHUB_WORKSPACE를 사용하여 원격 서버의 절대 경로를 완성합니다.
+          echo "TEUMTEUM_STORE_FILE=$GITHUB_WORKSPACE/release_key_v2" >> local.properties
           echo "TEUMTEUM_STORE_PASSWORD=${{ secrets.TEUMTEUM_STORE_PASSWORD }}" >> local.properties
-      
+          
       - name: Change permissions for gradlew
         run: chmod +x gradlew
 
+      # 4. 모든 파일이 준비된 후 빌드 실행
       - name: Gradle build
         run: ./gradlew build --stacktrace
+
+      

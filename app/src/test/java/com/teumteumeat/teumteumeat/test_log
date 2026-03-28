@@ -12,3 +12,5 @@ CI rule set test2
      "completedQuizSetCount" : 0,
      "isCompleted" : false
 }
+
+CI test

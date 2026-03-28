@@ -127,9 +127,9 @@ fun HomeScreen(
     // 화면 로드 후 말풍선 애니메이션을 트리거할 상태 변수
     var showBubbleAnimation by remember { mutableStateOf(false) }
 
-    // 화면 진입 및 canOpenSummary 상태에 따라 애니메이션 시작
-    LaunchedEffect(isConsumedTodayGoal && uiState.dailyCouponLimit > 0) {
-        if (isConsumedTodayGoal && uiState.dailyCouponLimit > 0) {
+    // isConsumedTodayGoal 과 canIssueCuppon 의 상태 값에 따라 말풍선이 표시되도록 구현
+    LaunchedEffect(isConsumedTodayGoal && uiState.dailyAdRewardCount > 0) {
+        if (isConsumedTodayGoal && uiState.dailyAdRewardCount > 0) {
             delay(300) // 화면이 안정적으로 로드된 후 0.3초 뒤에 말풍선 팝업
             showBubbleAnimation = true
         } else {
@@ -312,7 +312,8 @@ fun HomeScreen(
                     AdCouponDialog(
                         showDialog = uiState.isShowAdModalDialog,
                         couponCount = uiState.cupponCount,
-                        dailyCouponLimit = 10,
+                        dailyAdRewardCount = uiState.dailyAdRewardCount,
+                        canIssueCoupon = uiState.canIssueCoupon,
                         onDismiss = { viewModel.closeAdModal() },
                         onUseCoupon = {
                             //  현재 주제가 새로운 학습 데이터가 생성 가능할 때

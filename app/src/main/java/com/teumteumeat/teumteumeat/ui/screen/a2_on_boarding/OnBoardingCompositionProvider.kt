@@ -33,6 +33,7 @@ import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.SizeAnimationInvisible
+import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
@@ -152,20 +153,19 @@ fun OnBoardingCompositionProvider(
                 ) {
                     // 🔔 설정 안내 오버레이
                     NotificationSettingGuideOverlay(
-                        uiState = uiState,
                         onConfirm = {
                             viewModel.openNotificationSetting()
                         },
                         onDismiss = {
                             viewModel.closeNotificationDisableGuide()
-                        }
+                        },
+                        notificationGuideType = uiState.notificationGuideType,
                     )
 
                     /* ------------------------------
                  * 2️⃣ 알림 설정 안내 Overlay (최상단)
                  * ------------------------------ */
                     NotificationSettingGuideOverlay(
-                        uiState = uiState,
                         onConfirm = {
                             // 설정으로 이동
                             openNotificationSetting(activity)
@@ -173,7 +173,9 @@ fun OnBoardingCompositionProvider(
                         },
                         onDismiss = {
                             viewModel.closeNotificationSettingGuide()
-                        }
+                        },
+                        notificationGuideType = uiState.notificationGuideType,
+
                     )
 
 
