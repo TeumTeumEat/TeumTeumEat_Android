@@ -121,7 +121,6 @@ class MyPageViewModel @Inject constructor(
 
     /**
      * 알림 상태를 서버와 기기 권한을 통합하여 가져옵니다.
-...
      */
     fun fetchPushNotifiState() {
         viewModelScope.launch {
@@ -231,6 +230,20 @@ class MyPageViewModel @Inject constructor(
 
     fun closeNotificationGuide() {
         _uiState.update { it.copy(notificationGuideType = NotificationSettingGuideType.NONE) }
+    }
+
+    fun onOpenedSettings() {
+        _uiState.update { it.copy(isWaitingForPermissionUpdate = true) }
+    }
+
+    fun checkPermissionAfterReturn() {
+        if (_uiState.value.isWaitingForPermissionUpdate) {
+            val isGranted = Utils.UiUtils.isPostNotificationsGranted(appContext)
+            if (isGranted) {
+                updateAlarmInternal(true)
+            }
+            _uiState.update { it.copy(isWaitingForPermissionUpdate = false) }
+        }
     }
 
     fun consumeNotificationPermissionRequest() {

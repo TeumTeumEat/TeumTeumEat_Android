@@ -290,7 +290,8 @@ fun PreviewMyPageScreenSuccess() {
 
     TeumTeumEatTheme {
         CompositionLocalProvider(
-            LocalScreenState provides UiScreenState.Error(message = ""), // 성공 상태로 고정
+            // LocalScreenState provides UiScreenState.Error(message = ""), // 에러 상태로 고정
+            LocalScreenState provides UiScreenState.Success, // 성공 상태로 고정
         ) {
             MyPageScreen(
                 uiState = mockUiState,
