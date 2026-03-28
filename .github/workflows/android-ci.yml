@@ -26,7 +26,7 @@ jobs:
       # 2. 키스토어 파일 복원 (추가)
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.SIGNING_KEY_BASE64 }}" | base64 --decode > app/release-keystore.jks
+          echo "${{ secrets.SIGNING_KEY_BASE64 }}" | base64 --decode > release_key_v2
           
       # 3. local.properties 생성
       - name: Generate local.properties
