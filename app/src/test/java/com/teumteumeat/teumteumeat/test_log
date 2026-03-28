@@ -13,4 +13,4 @@ CI rule set test2
      "isCompleted" : false
 }
 
-CD test
+CI test
