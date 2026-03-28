@@ -301,6 +301,10 @@ fun LibraryScreen(
                                 }
                             }
                         }
+
+                        item {
+                            Spacer(Modifier.height(200.dp))
+                        }
                     }
                 }
             }

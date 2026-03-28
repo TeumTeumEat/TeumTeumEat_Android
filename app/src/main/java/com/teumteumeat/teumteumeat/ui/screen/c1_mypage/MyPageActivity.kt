@@ -1,7 +1,10 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
+import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -28,10 +31,6 @@ import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
 class MyPageActivity : BaseActivity() {
-
-    override fun onRetryClick() {
-
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +63,20 @@ class MyPageActivity : BaseActivity() {
                     val activity = LocalActivityContext.current
 
                     val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+                    // 🔹 알림 권한 런처
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                        viewModel.onNotificationPermissionResult(isGranted)
+                    }
+
+                    // 🔔 알림 권한 요청 트리거 감지
+                    LaunchedEffect(uiState.requestNotificationPermission) {
+                        if (uiState.requestNotificationPermission) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
 
                     // 🔥 전역 세션 이벤트 감지
                     LaunchedEffect(Unit) {
@@ -98,10 +111,32 @@ class MyPageActivity : BaseActivity() {
                         },
                         onTermsClick = { },
                         onCustomerCenterClick = { },
-                        onWithdroawClick = { viewModel.withdrawUser() }
+                        onWithdroawClick = { viewModel.withdrawUser() },
+                        onNotificationGuideConfirm = {
+                            openNotificationSetting(activity)
+                            viewModel.closeNotificationGuide()
+                        },
+                        onNotificationGuideDismiss = {
+                            viewModel.closeNotificationGuide()
+                        },
+                        onRetryClick = {
+                            viewModel.loadMyPageData()
+                        }
                     )
                 }
             }
         }
+    }
+
+    override fun onRetryClick() {
+        // ViewModel을 찾을 수 없으므로(onCreate 내부 지역변수), 
+        // MyPageScreen의 onRetryClick 콜백에서 직접 viewModel.loadMyPageData()를 호출하도록 처리했습니다.
+    }
+
+    private fun openNotificationSetting(activity: Activity) {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+        }
+        activity.startActivity(intent)
     }
 }
