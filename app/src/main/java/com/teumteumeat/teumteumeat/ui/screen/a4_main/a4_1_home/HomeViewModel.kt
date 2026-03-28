@@ -139,7 +139,9 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { currentState ->
                         currentState.copy(
                             isShowAdModalDialog = true,
-                            cupponCount = quizStatus.availableQuizCount // 서버에서 받아온 새 개수
+                            cupponCount = quizStatus.availableQuizCount, // 서버에서 받아온 새 개수
+                            dailyAdRewardCount = quizStatus.dailyAdRewardCount,
+                            canIssueCoupon = quizStatus.canIssueCoupon
                         )
                     }
                 }
@@ -369,7 +371,8 @@ class HomeViewModel @Inject constructor(
                                     hasSolvedToday = quizStatus.hasSolvedToday,
                                     hasCreatedToday = quizStatus.hasCreatedToday,
                                     isFirstTime = quizStatus.isFirstTime,
-                                    dailyCouponLimit = quizStatus.dailyCouponLimit,
+                                    dailyAdRewardCount = quizStatus.dailyAdRewardCount,
+                                    canIssueCoupon = quizStatus.canIssueCoupon,
                                     cupponCount = quizStatus.availableQuizCount,
 
                                     // 🔥 HomeViewModel에서만 SnackState 분기
@@ -378,7 +381,8 @@ class HomeViewModel @Inject constructor(
                                         hasSolvedToday = quizStatus.hasSolvedToday,
                                     ),
                                     currentGoalCompleted = goal.isCompleted,
-                                    summaryQuery = buildSummaryQuery(goal)
+                                    summaryQuery = buildSummaryQuery(goal),
+                                    isShowGoalExpiredDialog = quizStatus.isCompleted // ✅ 퀴즈 상태의 isCompleted 기반으로 모달 노출 여부 결정
                                 )
                             }
                             // update 호출 직후 확인
@@ -410,14 +414,6 @@ class HomeViewModel @Inject constructor(
                 is ApiResultV2.NetworkError,
                 is ApiResultV2.UnknownError -> {
                     _screenState.value = Error(goalResult.uiMessage)
-                }
-            }
-
-            if (checkExpiredGoal()) {
-                _uiState.update {
-                    it.copy(
-                        isShowGoalExpiredDialog = true
-                    )
                 }
             }
         }

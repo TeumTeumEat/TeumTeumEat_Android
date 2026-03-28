@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.NotificationSettingGuideType
 
 
 data class UiStateMyPage(
@@ -19,6 +20,8 @@ data class UiStateMyPage(
 
     // 알림
     val isAlarmEnabled: Boolean = true,
+    val requestNotificationPermission: Boolean = false,
+    val notificationGuideType: NotificationSettingGuideType = NotificationSettingGuideType.NONE,
 
     // 계정 정보
     val socialProvider: SocialProvider = SocialProvider.NONE,
