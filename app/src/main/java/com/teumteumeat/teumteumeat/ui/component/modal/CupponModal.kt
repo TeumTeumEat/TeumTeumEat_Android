@@ -73,7 +73,8 @@ fun AdCouponModalPreview() {
             AdCouponDialog(
                 showDialog = showDialog,
                 couponCount = 1,         // 프리뷰 테스트용 데이터
-                dailyCouponLimit = 2,
+                dailyAdRewardCount = 2,
+                canIssueCoupon = true,
                 onDismiss = { showDialog = false },
                 onUseCoupon = { /* 프리뷰에서는 동작하지 않음 */ },
                 onChargeCoupon = { /* 프리뷰에서는 동작하지 않음 */ },
@@ -83,7 +84,8 @@ fun AdCouponModalPreview() {
             // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
             AdCouponModal(
                 couponCount = 1,         // 프리뷰 테스트용 데이터
-                dailyCouponLimit = 2,
+                dailyAdRewardCount = 2,
+                canIssueCoupon = true,
                 onClose = { showDialog = false },
                 onUseCoupon = { /* 프리뷰에서는 동작하지 않음 */ },
                 onChargeCoupon = { /* 프리뷰에서는 동작하지 않음 */ },
@@ -98,7 +100,8 @@ fun AdCouponModalPreview() {
 fun AdCouponDialog(
     showDialog: Boolean,
     couponCount: Int,
-    dailyCouponLimit: Int,
+    dailyAdRewardCount: Int,
+    canIssueCoupon: Boolean,
     onDismiss: () -> Unit,
     onUseCoupon: () -> Unit,
     onChargeCoupon: () -> Unit,
@@ -117,7 +120,8 @@ fun AdCouponDialog(
             AdCouponModal(
                 isAdLoading = isAdLoading,
                 couponCount = couponCount,
-                dailyCouponLimit = dailyCouponLimit,
+                dailyAdRewardCount = dailyAdRewardCount,
+                canIssueCoupon = canIssueCoupon,
                 onClose = onDismiss, // 모달 내의 닫기(X) 버튼 클릭 시 onDismiss 실행
                 onUseCoupon = onUseCoupon,
                 onChargeCoupon = onChargeCoupon
@@ -130,7 +134,8 @@ fun AdCouponDialog(
 fun AdCouponModal(
     isAdLoading: Boolean = false,
     couponCount: Int = 0,
-    dailyCouponLimit: Int = 10,
+    dailyAdRewardCount: Int = 10,
+    canIssueCoupon: Boolean = false,
     onClose: () -> Unit,
     onUseCoupon: () -> Unit,
     onChargeCoupon: () -> Unit
@@ -171,7 +176,7 @@ fun AdCouponModal(
 
                 // ✅ 텍스트에 카운트 변수 적용
                 Text(
-                    text = "사용 가능 쿠폰 $couponCount/${dailyCouponLimit}",
+                    text = "사용 가능 쿠폰 $couponCount/10",
                     style = MaterialTheme.appTypography.captionRegular14
                         .copy(color = theme.textSecondary),
                     modifier = Modifier.padding(top = 4.dp)
@@ -256,15 +261,11 @@ fun AdCouponModal(
                     BaseFillButton(
                         // 로딩 중일 때는 텍스트를 비우거나 "로딩 중..."으로 변경
                         text = if (isAdLoading) "" else {
-                            when (dailyCouponLimit) {
-                                0 -> "쿠폰 충전"
-                                in 1..couponCount -> "미리 충전하기"
-                                else -> "미리 충전하기"
-                            }
+                            if (dailyAdRewardCount > 0) "쿠폰 충전" else "충전 완료"
                         },
                         isLoading = isAdLoading,
                         textStyle = MaterialTheme.appTypography.btnSemiBold18_h24,
-                        isEnabled = dailyCouponLimit > 0 && couponCount < dailyCouponLimit,
+                        isEnabled = dailyAdRewardCount > 0 && canIssueCoupon,
                         isModalBtn = true,
                         modifier = Modifier.weight(1f),
                         conerRadius = 16.dp,
