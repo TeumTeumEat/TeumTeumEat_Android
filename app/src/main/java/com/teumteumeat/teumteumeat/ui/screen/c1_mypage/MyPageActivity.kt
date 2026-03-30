@@ -5,16 +5,15 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.aa0_base.BaseActivity
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
@@ -32,13 +31,14 @@ import kotlinx.coroutines.flow.collectLatest
 @AndroidEntryPoint
 class MyPageActivity : BaseActivity() {
 
+    private val viewModel: MyPageViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             TeumTeumEatTheme {
 
-                val viewModel: MyPageViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val screenState by viewModel.screenState.collectAsStateWithLifecycle()
 
@@ -114,6 +114,7 @@ class MyPageActivity : BaseActivity() {
                         onWithdroawClick = { viewModel.withdrawUser() },
                         onNotificationGuideConfirm = {
                             openNotificationSetting(activity)
+                            viewModel.onOpenedSettings()
                             viewModel.closeNotificationGuide()
                         },
                         onNotificationGuideDismiss = {
@@ -128,9 +129,14 @@ class MyPageActivity : BaseActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 🔹 설정에서 돌아왔을 때 권한 체크 후 서버 업데이트
+        viewModel.checkPermissionAfterReturn()
+    }
+
     override fun onRetryClick() {
-        // ViewModel을 찾을 수 없으므로(onCreate 내부 지역변수), 
-        // MyPageScreen의 onRetryClick 콜백에서 직접 viewModel.loadMyPageData()를 호출하도록 처리했습니다.
+        viewModel.loadMyPageData()
     }
 
     private fun openNotificationSetting(activity: Activity) {

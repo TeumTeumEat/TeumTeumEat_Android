@@ -1,0 +1,128 @@
+name: PR Auto Summary
+
+on:
+  pull_request:
+    types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to regenerate'
+        required: true
+        type: string
+
+jobs:
+  generate-pr-summary:
+    name: Generate PR with AI
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'ai-generated') ||
+      (github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'ai-generated'))
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get PR Info
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            HEAD_BRANCH=$(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
+            BASE_BRANCH=$(gh pr view "$PR_NUMBER" --json baseRefName -q .baseRefName)
+          else
+            HEAD_BRANCH="$PR_HEAD_REF"
+            BASE_BRANCH="$PR_BASE_REF"
+          fi
+
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "branch_name=$HEAD_BRANCH" >> $GITHUB_OUTPUT
+          echo "base_branch=$BASE_BRANCH" >> $GITHUB_OUTPUT
+
+          echo "================================================"
+          echo "🤖 AI PR Generation"
+          echo "================================================"
+          echo "PR Number: #$PR_NUMBER"
+          echo "Head Branch: $HEAD_BRANCH"
+          echo "Base Branch: $BASE_BRANCH"
+          echo "================================================"
+
+      - name: Fetch Jira Card Info
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }} # 예: https://your-domain.atlassian.net
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          HEAD_BRANCH: ${{ steps.pr.outputs.branch_name }}
+        run: |
+          echo "🔍 브랜치명에서 Jira 키 추출 중..."
+          # 브랜치명에서 영문대문자-숫자 형태의 Jira 키를 추출합니다.
+          JIRA_KEY=$(echo "$HEAD_BRANCH" | grep -oE '[A-Z]+-[0-9]+' || echo "")
+
+          if [ -n "$JIRA_KEY" ]; then
+            echo "✅ Jira 키 발견: $JIRA_KEY"
+            
+            # Jira REST API 호출
+            RESPONSE=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+              -H "Accept: application/json" \
+              "$JIRA_BASE_URL/rest/api/2/issue/$JIRA_KEY")
+            
+            # jq를 활용해 제목과 설명글 추출
+            SUMMARY=$(echo "$RESPONSE" | jq -r '.fields.summary // "제목 없음"')
+            DESC=$(echo "$RESPONSE" | jq -r '.fields.description // "설명 없음"')
+            
+            echo "Jira Ticket: $JIRA_KEY" > /tmp/jira.txt
+            echo "Title: $SUMMARY" >> /tmp/jira.txt
+            echo "Description: $DESC" >> /tmp/jira.txt
+            echo "✅ Jira 데이터 수집 완료"
+          else
+            echo "❌ 브랜치명에서 Jira 키를 찾을 수 없습니다."
+            echo "No Jira Info" > /tmp/jira.txt
+          fi
+          
+      - name: Collect Data
+        env:
+          BASE_BRANCH: ${{ steps.pr.outputs.base_branch }}
+        run: |
+          echo "📊 Collecting git data..."
+
+          git diff --name-status origin/$BASE_BRANCH...HEAD > /tmp/files.txt
+          echo "✅ Files: $(wc -l < /tmp/files.txt) files changed"
+
+          git diff origin/$BASE_BRANCH...HEAD > /tmp/diff.txt
+          DIFF_SIZE=$(wc -c < /tmp/diff.txt)
+          echo "✅ Diff: $DIFF_SIZE bytes"
+
+          git diff --shortstat origin/$BASE_BRANCH...HEAD > /tmp/stats.txt
+          echo "✅ Stats: $(cat /tmp/stats.txt)"
+
+          echo ""
+          echo "📁 Changed files:"
+          cat /tmp/files.txt
+
+      - name: Generate PR
+        id: ai
+        uses: ./.github/actions/generate-pr-summary
+        with:
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          stats_file: /tmp/stats.txt
+          files_file: /tmp/files.txt
+          diff_file: /tmp/diff.txt
+
+      - name: Update PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${{ steps.ai.outputs.body }}" > /tmp/pr_body.md
+          gh pr edit "${{ steps.pr.outputs.pr_number }}" --body-file /tmp/pr_body.md
+
+          echo "✅ PR #${{ steps.pr.outputs.pr_number }} body generated with AI"
+          echo "💡 Remove 'ai-generated' label to prevent auto-regeneration"
