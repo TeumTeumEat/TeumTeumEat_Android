@@ -1,0 +1,17 @@
+name: 'Generate PR Summary'
+description: 'Collects data and calls OpenAI to generate PR body'
+inputs:
+  openai_api_key:
+    required: true
+  stats_file:
+    required: true
+  files_file:
+    required: true
+  diff_file:
+    required: true
+  jira_file:     # 추가된 부분
+    required: true
+outputs:
+  body:
+    description: 'Generated PR body'
+    # 실제 구현 시에는 여기서 스크립트(Python/Node)를 실행하여 결과를 추출합니다.
