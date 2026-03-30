@@ -21,6 +21,7 @@ data class UiStateMyPage(
     // 알림
     val isAlarmEnabled: Boolean = true,
     val requestNotificationPermission: Boolean = false,
+    val isWaitingForPermissionUpdate: Boolean = false,
     val notificationGuideType: NotificationSettingGuideType = NotificationSettingGuideType.NONE,
 
     // 계정 정보
