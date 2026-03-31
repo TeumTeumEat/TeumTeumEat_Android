@@ -116,6 +116,7 @@ jobs:
           stats_file: /tmp/stats.txt
           files_file: /tmp/files.txt
           diff_file: /tmp/diff.txt
+          jira_file: /tmp/jira.txt # 추출된 Jira 정보 파일을 전달!
 
       - name: Update PR
         env:
