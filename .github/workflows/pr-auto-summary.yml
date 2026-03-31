@@ -82,7 +82,14 @@ jobs:
             echo "Jira Ticket: $JIRA_KEY" > /tmp/jira.txt
             echo "Title: $SUMMARY" >> /tmp/jira.txt
             echo "Description: $DESC" >> /tmp/jira.txt
-            echo "✅ Jira 데이터 수집 완료"
+            
+            
+            # 2. 로그 출력 (개발자 확인용) - 이 부분이 추가되었습니다.
+            echo "================================================"
+            echo "📋 [Jira 데이터 검증 로그]"
+            cat /tmp/jira.txt
+            echo "================================================"
+            echo "✅ Jira 데이터 수집 및 로그 출력 완료"
           else
             echo "❌ 브랜치명에서 Jira 키를 찾을 수 없습니다."
             echo "No Jira Info" > /tmp/jira.txt
@@ -116,6 +123,7 @@ jobs:
           stats_file: /tmp/stats.txt
           files_file: /tmp/files.txt
           diff_file: /tmp/diff.txt
+          jira_file: /tmp/jira.txt # 추출된 Jira 정보 파일을 전달!
 
       - name: Update PR
         env:
