@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info
 
+import androidx.activity.compose.BackHandler
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,7 +59,7 @@ fun EditUserInfoScreen(
         remember { MutableInteractionSource() } // 사용자가 특정 UI 요소와 상호작용하고 있는지를 감지하는 객체
     val inputFocused by inputInteractionSource.collectIsFocusedAsState() // ✅ 포커스 여부 감지
     val focusManager = LocalFocusManager.current
-    val isNameValid = uiState.isNameValid && uiState.errorMessage == ""
+    val isNameValid = uiState.isNameValid && uiState.errorMessage.isNullOrEmpty()
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val isInfoChanged = with(uiState){
@@ -69,6 +70,15 @@ fun EditUserInfoScreen(
     }
 
     val activity = LocalActivityContext.current as EditUserInfoActivity
+
+    // 시스템 뒤로가기 버튼 처리
+    BackHandler {
+        if (isInfoChanged) {
+            viewModel.checkUnsavedChanges()
+        } else {
+            onBackClick()
+        }
+    }
 
     LaunchedEffect(uiState) {
         Log.d(
@@ -91,24 +101,26 @@ fun EditUserInfoScreen(
             topBar = {
                 TitleBar(
                     title = "틈틈잇 사용 설정",
-                    onBackClick = onBackClick,
-                )
-            },
-            bottomBar = {
-                // 하단 퀴즈 버튼
-                BaseFillButton(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .fillMaxWidth(),
-                    onClick = {
-                        // viewModel에서 현재 정보 post
+                    onBackClick = {
                         if (isInfoChanged) {
                             viewModel.checkUnsavedChanges()
                         } else {
                             onBackClick()
                         }
                     },
-                    isEnabled = !isNameValid,
+                )
+            },
+            bottomBar = {
+                // 하단 저장 버튼
+                BaseFillButton(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxWidth(),
+                    onClick = {
+                        onInfoSaveClick()
+                        activity.finish()
+                    },
+                    isEnabled = isNameValid && isInfoChanged,
                     text = "저장하기"
                 )
             }
@@ -315,11 +327,12 @@ fun EditUserInfoScreen(
                             secondaryButtonText = "뒤로가기",
                             primaryButtonText = "저장하기",
                             onSecondaryClick = {
-                                // '뒤로가기' 클릭 시 동작
+                                // '뒤로가기' 클릭 시 동작: 저장하지 않고 뒤로 감
                                 viewModel.dismissConfirmationDialog()
+                                onBackClick()
                             },
                             onPrimaryClick = {
-                                // '저장하기' 클릭 시 동작 (저장 로직 추가)
+                                // '저장하기' 클릭 시 동작: 저장 후 뒤로 감
                                 onInfoSaveClick()
                                 viewModel.dismissConfirmationDialog()
                                 activity.finish()
