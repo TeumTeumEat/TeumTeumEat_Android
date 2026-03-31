@@ -32,7 +32,14 @@ runs:
         # 1) Prompt (MARKDOWN ONLY)
         # -----------------------------
         cat > /tmp/prompt.txt << 'EOF'
-        당신은 숙련된 소프트웨어 엔지니어이며, 리뷰어가 한눈에 이해할 수 있는 '좋은 PR' 본문을 한국어로 작성해야 합니다.
+        당신은 한국의 숙련된 소프트웨어 엔지니어입니다. 아래 제공된 Jira 티켓 정보와 코드 변경점을 분석하고,
+        '좋은 PR' 본문을 한국어로 작성하세요.
+        
+        [제공 데이터]
+        --- Jira Info ---
+          EOF
+          cat "${{ inputs.jira_file }}" >> /tmp/prompt.txt # 이 부분이 추가됩니다.
+          cat >> /tmp/prompt.txt << 'EOF'
 
         [작성 원칙]
         1. Context 우선: Jira 티켓의 목적을 바탕으로 '왜(Why)' 이 작업을 했는지 명시하세요.
@@ -41,8 +48,6 @@ runs:
         4. 시각화 유도: UI 변경이 있을 경우 스크린샷을 올릴 수 있는 자리를 마련하세요.
 
         [출력 양식]
-        > 🤖 **AI가 Jira 티켓과 코드 변경점을 분석하여 생성후 수정할 PR입니다.**
-
         ## 🔗 What is the PR?
         - Jira Ticket: (Jira 정보를 바탕으로 작성)
 
