@@ -70,6 +70,48 @@ class DocumentRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * 오늘의 PDF 문서 요약글을 생성(POST)합니다.
+     */
+    override suspend fun createDocumentSummary(
+        goalId: Int,
+        documentId: Int
+    ): ApiResultV2<DocumentSummaryResponse> {
+        return safeApiVer2(
+            apiCall = {
+                documentApiService.createDocumentSummary(
+                    goalId = goalId,
+                    documentId = documentId
+                )
+            },
+            mapper = { data ->
+                data // ✅ 단건 조회이므로 그대로 반환
+            }
+        ).let { result ->
+            when (result) {
+
+                is ApiResultV2.Success -> {
+                    val summary = result.data
+                        ?: return ApiResultV2.ServerError(
+                            code = "INVALID_DOCUMENT_SUMMARY_RESPONSE",
+                            message = "문서 요약을 생성하지 못했습니다.",
+                            errorType = DomainError.Message("document summary is null")
+                        )
+
+                    ApiResultV2.Success(
+                        message = result.message,
+                        data = summary
+                    )
+                }
+
+                is ApiResultV2.ServerError -> result
+                is ApiResultV2.NetworkError -> result
+                is ApiResultV2.SessionExpired -> result
+                is ApiResultV2.UnknownError -> result
+            }
+        }
+    }
+
 
     override suspend fun getDocuments(
         goalId: Int

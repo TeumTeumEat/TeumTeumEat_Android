@@ -33,4 +33,23 @@ class CategoryRepositoryImpl @Inject constructor(
             }
         )
     }
+
+    /**
+     * 오늘의 카테고리 요약글을 생성(POST)합니다.
+     */
+    override suspend fun createDailyCategoryDocument(
+        categoryId: Long
+    ): ApiResultV2<DailyCategoryDocument> {
+        return safeApiVer2(
+            apiCall = {
+                categoryApiService.createDailyCategoryDocument(categoryId)
+            },
+            mapper = { dto ->
+                if (dto == null) {
+                    error("DailyCategoryDocumentDto is null")
+                }
+                dto.toDomain()
+            }
+        )
+    }
 }

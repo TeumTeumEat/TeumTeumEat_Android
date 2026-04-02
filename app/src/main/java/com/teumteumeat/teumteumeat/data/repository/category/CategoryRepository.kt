@@ -7,4 +7,8 @@ interface CategoryRepository {
     suspend fun getDailyCategoryDocument(
         categoryId: Long
     ): ApiResultV2<DailyCategoryDocument>
+
+    suspend fun createDailyCategoryDocument(
+        categoryId: Long
+    ): ApiResultV2<DailyCategoryDocument>
 }
