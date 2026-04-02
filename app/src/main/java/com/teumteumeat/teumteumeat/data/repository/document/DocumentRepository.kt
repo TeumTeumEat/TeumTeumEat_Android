@@ -47,6 +47,11 @@ interface DocumentRepository {
         documentId: Int,
     ): ApiResultV2<DocumentSummaryResponse>
 
+    suspend fun createDocumentSummary(
+        goalId: Int,
+        documentId: Int,
+    ): ApiResultV2<DocumentSummaryResponse>
+
 
 }
 

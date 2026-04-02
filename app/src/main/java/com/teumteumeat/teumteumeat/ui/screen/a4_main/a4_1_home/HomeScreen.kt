@@ -316,19 +316,44 @@ fun HomeScreen(
                         canIssueCoupon = uiState.canIssueCoupon,
                         onDismiss = { viewModel.closeAdModal() },
                         onUseCoupon = {
-                            //  현재 주제가 새로운 학습 데이터가 생성 가능할 때
-                            val latestQuery = currentUiState.summaryQuery
-
-                            val intent = Intent(
-                                activity,
-                                SummaryActivity::class.java
-                            ).apply {
-                                putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
-                                putExtra(SummaryArgs.KEY_GOAL_TYPE, latestQuery.goalType.name)
-                                putExtra(SummaryArgs.KEY_DOCUMENT_ID, latestQuery.documentId)
-                                putExtra(SummaryArgs.KEY_CATEGORY_ID, latestQuery.categoryId)
+                            /*
+                             * 1. 방어 로직: 이미 오늘 목표를 모두 완료한 상태라면 쿠폰 사용을 막고 알림을 띄웁니다.
+                             *    (SummaryActivity로 넘어가더라도 목표가 완료된 상태면 진행이 안 될 수 있기 때문)
+                             */
+                            if (uiState.currentGoalCompleted) {
+                                Toast.makeText(activity, "이미 완료된 목표입니다.", Toast.LENGTH_SHORT).show()
+                                return@AdCouponDialog
                             }
-                            activity.startActivity(intent)
+
+                            /*
+                             * 2. ViewModel의 useCoupon을 호출하여 서버에 오늘의 요약글 생성을 요청합니다.
+                             */
+                            viewModel.useCoupon(
+                                onSuccess = { latestQuery ->
+                                    /*
+                                     * 3. 성공 시: 생성된 최신 요약글 정보(latestQuery)를 Intent에 담아 요약글 화면(SummaryActivity)으로 이동합니다.
+                                     */
+                                    val intent = Intent(
+                                        activity,
+                                        SummaryActivity::class.java
+                                    ).apply {
+                                        putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
+                                        putExtra(SummaryArgs.KEY_GOAL_TYPE, latestQuery.goalType.name)
+                                        putExtra(SummaryArgs.KEY_DOCUMENT_ID, latestQuery.documentId)
+                                        putExtra(SummaryArgs.KEY_CATEGORY_ID, latestQuery.categoryId)
+                                    }
+                                    activity.startActivity(intent)
+
+                                    // 화면 전환 후에는 광고 모달을 닫아줍니다.
+                                    viewModel.closeAdModal()
+                                },
+                                onError = { message ->
+                                    /*
+                                     * 4. 실패 시: 사용자에게 에러 메시지를 Toast로 보여줍니다.
+                                     */
+                                    Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         },
                         onChargeCoupon = {
                             // 광고 시청 로직 구현

@@ -15,8 +15,11 @@ import com.google.android.gms.ads.rewarded.RewardedAd
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
+import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
@@ -41,6 +44,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val quizRepository: QuizRepository,
+    private val documentRepository: DocumentRepository,
+    private val categoryRepository: CategoryRepository,
     val sessionManager: SessionManager,
     private val dateChangeReceiver: DateChangeReceiver,
     @ApplicationContext private val context: Context, // Context 주입 필요
@@ -323,6 +328,67 @@ class HomeViewModel @Inject constructor(
     // 모달 닫기
     fun closeAdModal() {
         _uiState.update { it.copy(isShowAdModalDialog = false) }
+    }
+
+    /**
+     * [쿠폰 사용] 버튼 클릭 시 호출되는 비즈니스 로직입니다.
+     * 
+     * 동작 순서:
+     * 1. 현재 사용자의 목표 타입(CATEGORY 또는 DOCUMENT)을 확인합니다.
+     * 2. 해당 타입에 맞는 '오늘의 요약글 생성' API(POST)를 호출합니다.
+     * 3. 성공 시:
+     *    - 서버의 쿠폰 개수 및 퀴즈 상태를 최신화하기 위해 [updateUserQuizStatus]를 호출합니다.
+     *    - 생성된 요약글의 ID를 포함하여 [SummaryQuery]를 업데이트한 후 [onSuccess] 콜백을 통해 화면 전환을 트리거합니다.
+     * 4. 실패 시: [onError] 콜백을 통해 에러 메시지를 전달합니다.
+     */
+    fun useCoupon(
+        onSuccess: (SummaryQuery) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            // 1. 현재 홈 화면에 설정된 요약 정보를 가져옵니다.
+            val query = _uiState.value.summaryQuery
+
+            // 2. 목표 타입에 따라 카테고리 기반 또는 문서(PDF) 기반 요약글 생성 API를 분기 호출합니다.
+            val result = when (query.goalType) {
+                DomainGoalType.CATEGORY -> {
+                    categoryRepository.createDailyCategoryDocument(query.categoryId ?: -1L)
+                }
+                DomainGoalType.DOCUMENT -> {
+                    documentRepository.createDocumentSummary(query.goalId.toInt(), query.documentId?.toInt() ?: -1)
+                }
+            }
+
+            when (result) {
+                is ApiResultV2.Success -> {
+                    // 3. 성공 시: 사용한 쿠폰 반영을 위해 유저의 퀴즈 상태(쿠폰 개수 등)를 서버로부터 다시 조회합니다.
+                    updateUserQuizStatus()
+
+                    // 4. API 응답으로 받은 새로운 문서 ID(documentId)를 Query 객체에 업데이트합니다.
+                    //    이를 통해 SummaryActivity 진입 시 올바른 요약글을 조회할 수 있게 합니다.
+                    val updatedQuery = when (val data = result.data) {
+                        is com.teumteumeat.teumteumeat.data.network.model_response.DailyCategoryDocument -> {
+                            query.copy(documentId = data.documentId)
+                        }
+                        is com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse -> {
+                            query.copy(documentId = data.documentId.toLong())
+                        }
+                        else -> query
+                    }
+
+                    // 5. 업데이트된 정보를 UI 레이어(HomeScreen)로 전달하여 화면 이동을 수행합니다.
+                    onSuccess(updatedQuery)
+                }
+                is ApiResultV2.SessionExpired -> {
+                    // 세션 만료 처리
+                    sessionManager.expireSession()
+                }
+                else -> {
+                    // API 호출 실패 시 에러 메시지 전달
+                    onError(result.uiMessage)
+                }
+            }
+        }
     }
 
     // 테스트에서 감시(Spy)하기 위해 open 또는 internal로 선언

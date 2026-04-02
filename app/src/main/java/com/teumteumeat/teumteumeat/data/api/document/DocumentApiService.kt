@@ -43,4 +43,10 @@ interface DocumentApiService {
         @Path("documentId") documentId: Int
     ): ApiResponse<DocumentSummaryResponse, Any?>
 
+    @POST("/api/v1/goals/{goalId}/documents/{documentId}/summary")
+    suspend fun createDocumentSummary(
+        @Path("goalId") goalId: Int,
+        @Path("documentId") documentId: Int
+    ): ApiResponse<DocumentSummaryResponse, Any?>
+
 }
