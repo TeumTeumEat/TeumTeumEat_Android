@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
@@ -30,6 +31,7 @@ fun BaseModal(
     onPrimaryClick: () -> Unit,
     onSecondaryClick: (() -> Unit)? = null,
     isPrimaryBtnFillSecondary: Boolean = false,
+    isVerticalButtons: Boolean = false, // ✅ 버튼 상하 정렬 옵션 추가
 ) {
 
     Surface(
@@ -66,7 +68,8 @@ fun BaseModal(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = it,
-                    style = MaterialTheme.appTypography.bodyMedium14Reg
+                    style = MaterialTheme.appTypography.bodyMedium14Reg,
+                    textAlign = TextAlign.Center
                 )
             }
 
@@ -74,24 +77,46 @@ fun BaseModal(
 
             // 🔹 Buttons
             if (secondaryButtonText != null && onSecondaryClick != null) {
-                // 버튼 2개 케이스
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    FillSecondaryButton(
-                        text = secondaryButtonText,
-                        modifier = Modifier.weight(1f),
-                        onClick = onSecondaryClick,
-                        conerRadius = 16.dp,
-                    )
+                if (isVerticalButtons) {
+                    // ✅ 버튼 상하 정렬 케이스 (Secondary가 위(연한 파란색), Primary가 아래(파란색))
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        FillSecondaryButton(
+                            text = secondaryButtonText,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onSecondaryClick,
+                            conerRadius = 16.dp,
+                        )
 
-                    BaseFillButton(
-                        text = primaryButtonText,
-                        modifier = Modifier.weight(1f),
-                        conerRadius = 16.dp,
-                        onClick = onPrimaryClick,
-                    )
+                        BaseFillButton(
+                            text = primaryButtonText,
+                            modifier = Modifier.fillMaxWidth(),
+                            conerRadius = 16.dp,
+                            onClick = onPrimaryClick,
+                        )
+                    }
+                } else {
+                    // 버튼 2개 가로 정렬 케이스
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        FillSecondaryButton(
+                            text = secondaryButtonText,
+                            modifier = Modifier.weight(1f),
+                            onClick = onSecondaryClick,
+                            conerRadius = 16.dp,
+                        )
+
+                        BaseFillButton(
+                            text = primaryButtonText,
+                            modifier = Modifier.weight(1f),
+                            conerRadius = 16.dp,
+                            onClick = onPrimaryClick,
+                        )
+                    }
                 }
             } else {
                 // 버튼 1개 케이스
@@ -125,11 +150,14 @@ fun BaseModalSingleButtonPreview() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .systemBarsPadding()
                 .padding(20.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Spacer(Modifier.height(20.dp))
+
             BaseModal(
                 title = "알림",
                 body = "변경사항이 저장되었습니다.",
@@ -152,6 +180,18 @@ fun BaseModalSingleButtonPreview() {
                 primaryButtonText = "다시 시도",
                 onPrimaryClick = {}
             )
+
+            BaseModal(
+                title = "풀고 있는 틈틈잇이 없어요",
+                body = "먹을 간식이 없어요!\n새로운 지식을 먹여줄래요?",
+                primaryButtonText = "진행중인 틈틈잇 선택하기",
+                secondaryButtonText = "새로운 틈틈잇 시작하기",
+                isVerticalButtons = true,
+                onPrimaryClick = {},
+                onSecondaryClick = {}
+            )
+
+            Spacer(Modifier.height(20.dp))
         }
     }
 }

@@ -261,11 +261,11 @@ fun AdCouponModal(
                     BaseFillButton(
                         // 로딩 중일 때는 텍스트를 비우거나 "로딩 중..."으로 변경
                         text = if (isAdLoading) "" else {
-                            if (dailyAdRewardCount > 0) "쿠폰 충전" else "충전 완료"
+                            if (canIssueCoupon) "쿠폰 충전" else "충전 완료"
                         },
                         isLoading = isAdLoading,
                         textStyle = MaterialTheme.appTypography.btnSemiBold18_h24,
-                        isEnabled = dailyAdRewardCount > 0 && canIssueCoupon,
+                        isEnabled = canIssueCoupon,
                         isModalBtn = true,
                         modifier = Modifier.weight(1f),
                         conerRadius = 16.dp,
