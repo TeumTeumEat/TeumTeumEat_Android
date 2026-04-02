@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -47,7 +48,9 @@ import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_6_guide_expired_goal.GuideExpiredGoalActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.GoalRegisterArgs
+import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -108,6 +111,16 @@ fun HomeScreen(
     }
 
     val sessionManager = viewModel.sessionManager // 세션메니저 정의
+
+    // errorMessage가 변경될 때마다 토스트를 띄움
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            // ⚠️ 중요: 토스트를 띄운 후 에러 메시지를 비워줘야 다음 에러 시 다시 반응함
+            viewModel.clearErrorMessage()
+        }
+    }
+
 
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
@@ -396,15 +409,25 @@ fun HomeScreen(
                                 BaseModal(
                                     title = "풀고 있는 틈틈잇이 없어요",
                                     body = "먹을 간식이 없어요!\n새로운 지식을 먹여줄래요?",
-                                    primaryButtonText = "새로운 틈틈잇 시작하기",
-                                    isPrimaryBtnFillSecondary = true, // 이미지처럼 연한 파란색 버튼 적용
+                                    primaryButtonText = "진행중인 틈틈잇 선택하기",
+                                    secondaryButtonText = "새로운 틈틈잇 시작하기",
+                                    isVerticalButtons = true,
                                     onPrimaryClick = {
                                         viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                        Utils.UxUtils.moveActivity(
-                                            activity,
-                                            GuideExpiredGoalActivity::class.java,
-                                            exitFlag = false
-                                        )
+                                        // 학습 주제 설정 화면(GoalListActivity)으로 이동
+                                        val intent = Intent(activity, GoalListActivity::class.java)
+                                        activity.startActivity(intent)
+                                    },
+                                    onSecondaryClick = {
+                                        viewModel.dismissGoalExpiredDialog() // 모달 닫기
+                                        // 새로운 목표 설정 화면(AddGoalActivity)으로 이동
+                                        val intent = Intent(activity, AddGoalActivity::class.java).apply {
+                                            putExtra(
+                                                GoalRegisterArgs.KEY_GOAL_TYPE,
+                                                uiState.summaryQuery.goalType.name
+                                            )
+                                        }
+                                        activity.startActivity(intent)
                                     }
                                 )
                             }

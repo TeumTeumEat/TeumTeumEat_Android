@@ -255,8 +255,12 @@ class HomeViewModel @Inject constructor(
                 if (!isRewardEarned) {
                     // 보상을 못 받고 닫혔다면 실패 콜백 실행
                     // 💡 2. 여기 추가! 노출에 실패하면 화면에 광고가 안 뜨므로 로딩 상태를 수동으로 해제해줘야 합니다.
-                    _uiState.update { it.copy(isAdLoading = false) }
-                    onRewardFailed()
+                    _uiState.update {
+                        it.copy(
+                            isAdLoading = false,
+                            errorMessage = "광고를 끝까지 시청해야 쿠폰이 지급됩니다."
+                        )
+                    }
                 }
             }
 
@@ -267,6 +271,15 @@ class HomeViewModel @Inject constructor(
 
                 // 2. 고장난 현재 광고 버리기
                 adManager.clearAd()
+                adManager.loadAd() // 실패했으므로 즉시 새 광고 로드 시도
+
+                _uiState.update {
+                    it.copy(
+                        isAdLoading = false,
+                        // ✅ 요구사항: "쿠폰 충전을 다시 시도해주세요!" 메시지 전달
+                        errorMessage = "쿠폰 충전을 다시 시도해주세요!"
+                    )
+                }
             }
 
             override fun onAdShowedFullScreenContent() {
@@ -555,6 +568,10 @@ class HomeViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e("HomeViewModel", "Receiver unregister error", e)
         }*/
+    }
+
+    fun clearErrorMessage() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
 }
