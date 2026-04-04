@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.GoalProgress
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -24,6 +25,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 @Composable
 fun LoadingScreen(
     modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.extendedColors.backgroundW100,
     title: String = "",
     message: String = "",
     contentAlignment: Alignment = Alignment.Center,
@@ -38,7 +40,7 @@ fun LoadingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(extendedColors.backgroundW100)
+            .background(backgroundColor)
             .windowInsetsPadding(WindowInsets.systemBars) // ✅ SafeArea
     ) {
 

@@ -63,8 +63,12 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.mutableLongStateOf
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import kotlinx.coroutines.flow.collectLatest
+import androidx.hilt.navigation.compose.hiltViewModel
 
 
 @Composable
@@ -73,6 +77,9 @@ fun MainCompositionProvider(
     context: Context,
     activity: MainActivity,
 ) {
+    val homeViewModel: HomeViewModel = hiltViewModel(activity)
+    val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val homeScreenState by homeViewModel.screenState.collectAsStateWithLifecycle()
 
     val mainUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navHostController = rememberNavController()
@@ -269,6 +276,16 @@ fun MainCompositionProvider(
                 offset = mainUiState.plusBtnOffset,
                 isExpanded = mainUiState.isExpandedBottomNavItemPlus,
             )
+
+            // 🔹 요약글 생성 로딩 오버레이 (전체 화면을 덮음)
+            if (homeScreenState is UiScreenState.Loading && homeUiState.processingState != null) {
+                GoalLoadingScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    title = homeUiState.loadingTitle,
+                    message = homeUiState.loadingMessage,
+                    progress = homeUiState.processingState?.progress
+                )
+            }
 
         }
 

@@ -113,14 +113,13 @@ fun GoalListScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // 🔹 선택된 목표를 최상단으로, 그 다음 만료되지 않은 순으로 정렬
-                            val sortedGoals = uiState.goals.sortedWith(
-                                compareByDescending<GoalCardUiModel> { it.isSelected } // 1순위: 선택 여부
-                                    .thenBy { it.isCompleted } // 2순위: 만료 안 된 것 우선 (false < true)
-                            )
+                            // 🔹 선택된 목표를 최상단으로 정렬하되, 완료된 목표는 리스트에서 제외합니다.
+                            val filteredGoals = uiState.goals
+                                .filter { !it.isCompleted } // 완료되지 않은 목표만 표시
+                                .sortedByDescending { it.isSelected } // 선택된 목표 최상단 배치
 
                             // 정렬 후 결과 확인
-                            sortedGoals.forEachIndexed { index, goal ->
+                            filteredGoals.forEachIndexed { index, goal ->
                                 Log.d(
                                     "GoalDebug",
                                     "[$index] ID: ${goal.goalId} | Selected: ${goal.isSelected}"
@@ -128,7 +127,7 @@ fun GoalListScreen(
                             }
 
                             // 🔹 목표 리스트
-                            sortedGoals.forEach { goal ->
+                            filteredGoals.forEach { goal ->
                                 GoalCard(
                                     uiModel = goal,
                                     onClick = { onGoalClick(goal.goalId) }
