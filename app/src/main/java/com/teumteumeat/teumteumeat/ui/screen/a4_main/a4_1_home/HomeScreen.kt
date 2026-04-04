@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,11 +33,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -54,6 +58,7 @@ import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -63,6 +68,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import java.time.LocalDate
 import kotlin.jvm.java
 
 
@@ -112,12 +118,40 @@ fun HomeScreen(
 
     val sessionManager = viewModel.sessionManager // 세션메니저 정의
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    // 앱이 포그라운드로 올 때마다 날짜가 바뀌었는지 서버 상태를 확인
+                    viewModel.checkAndLoadHomeState()
+                }
+                Lifecycle.Event.ON_PAUSE -> {
+                    // 앱이 백그라운드로 갈 때 현재 날짜를 기록
+                    viewModel.saveCurrentDate()
+                }
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // errorMessage가 변경될 때마다 토스트를 띄움
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
             Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
             // ⚠️ 중요: 토스트를 띄운 후 에러 메시지를 비워줘야 다음 에러 시 다시 반응함
             viewModel.clearErrorMessage()
+        }
+    }
+
+    // toastMessage가 변경될 때마다 토스트를 띄움
+    LaunchedEffect(uiState.toastMessage) {
+        uiState.toastMessage?.let { message ->
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearToastMessage()
         }
     }
 
@@ -192,10 +226,20 @@ fun HomeScreen(
         when (screenState) {
 
             UiScreenState.Idle, UiScreenState.Loading -> {
-                LoadingScreen(
-                    title = "홈화면 로딩중",
-                    message = "",
-                )
+                if (uiState.processingState != null) {
+                    GoalLoadingScreen(
+                        title = uiState.loadingTitle,
+                        message = uiState.loadingMessage,
+                        progress = uiState.processingState.progress
+                    )
+
+                } else {
+                    LoadingScreen(
+                        title = "홈화면 로딩중",
+                        backgroundColor = theme.backSurface,
+                        message = uiState.loadingMessage,
+                    )
+                }
             }
 
             UiScreenState.Success -> {

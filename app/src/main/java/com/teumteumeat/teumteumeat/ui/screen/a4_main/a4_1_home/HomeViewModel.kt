@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
@@ -22,6 +23,7 @@ import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.*
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
@@ -29,14 +31,18 @@ import com.teumteumeat.teumteumeat.utils.manager.ad.RewardedAdManager
 import com.teumteumeat.teumteumeat.utils.monitor.NetworkConnection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import java.time.LocalDate
 import javax.inject.Inject
 
 
@@ -51,7 +57,13 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context, // Context 주입 필요
     private val adManager: RewardedAdManager,
     private val networkConnection: NetworkConnection,
+    private val savedStateHandle: SavedStateHandle, // 프로세스 죽음 대비
 ) : ViewModel() {
+
+    // SavedStateHandle에 날짜를 저장 (메모리 유실 방지)
+    private var lastDate: String?
+        get() = savedStateHandle["last_checked_date"]
+        set(value) { savedStateHandle["last_checked_date"] = value }
 
     private val _uiState = MutableStateFlow(UiStateHome())
     val uiState = _uiState.asStateFlow()
@@ -63,10 +75,12 @@ class HomeViewModel @Inject constructor(
     // 서버에서 받은 goal 캐싱 (SnackState 계산용)
     private var cachedGoal: UserGoal? = null
 
+    private var processingJob: Job? = null
+
     init {
         // 실제 앱 구동 시에만 리시버 등록
         // 만료된 목표일 때 만
-        // setupDateChangeReceiver()
+        setupDateChangeReceiver()
 
         // ✅ 1. 네트워크 상태 감지 시작
         observeNetworkState()
@@ -84,6 +98,22 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    fun checkAndLoadHomeState() {
+        val today = LocalDate.now().toString()
+        val savedDate = lastDate
+
+        Log.d("HomeViewModel", "체크 시작 - 저장된 날짜: $savedDate, 오늘: $today")
+
+        // 💡 날짜가 다를 때만(null 포함) API를 호출합니다.
+        if (savedDate != today) {
+            loadHomeState()
+            // 성공/실패 여부와 관계없이 일단 오늘 체크했음을 기록 (중복 호출 방지)
+            lastDate = today
+            _uiState.update { it.copy(lastCheckedDate = today) }
+        }
+    }
+
 
     private fun observeNetworkState() {
         viewModelScope.launch {
@@ -301,6 +331,8 @@ class HomeViewModel @Inject constructor(
     internal fun setupDateChangeReceiver() {
 
         dateChangeReceiver.setOnDateChangedListener {
+            // 💡 자정이 되면 서버에 현재 상태(쿠폰, 생성 여부 등)를 다시 물어봅니다.
+            // 서버가 날짜 변경을 판단하여 hasCreatedToday = false를 줄 것입니다.
             loadHomeState() // 날짜 변경 시 실행할 비즈니스 로직
         }
 
@@ -345,7 +377,7 @@ class HomeViewModel @Inject constructor(
 
     /**
      * [쿠폰 사용] 버튼 클릭 시 호출되는 비즈니스 로직입니다.
-     * 
+     *
      * 동작 순서:
      * 1. 현재 사용자의 목표 타입(CATEGORY 또는 DOCUMENT)을 확인합니다.
      * 2. 해당 타입에 맞는 '오늘의 요약글 생성' API(POST)를 호출합니다.
@@ -360,17 +392,74 @@ class HomeViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             // 1. 현재 홈 화면에 설정된 요약 정보를 가져옵니다.
+            val currentState = _uiState.value
             val query = _uiState.value.summaryQuery
+
+            // ✅ [추가] 이미 오늘 요약글을 생성했다면 (쿠폰을 이미 소모한 상태)
+            // 로딩 애니메이션이나 API 호출 없이 바로 조회 화면으로 이동합니다.
+            /*            if (currentState.hasCreatedToday) {
+                            onSuccess(query)
+                            return@launch
+                            // 만약 hasCreatedToday는 true인데 documentId가 없다면 아래 생성 로직을 타게 하거나
+                            // 별도의 조회를 먼저 수행하도록 안전장치를 둘 수 있습니다.
+                        }*/
+
+
+            // 로딩 상태 시작
+            _screenState.value = UiScreenState.Loading
+            _uiState.update { 
+                it.copy(
+                    loadingTitle = "새로운 퀴즈를 만들고 있어요!",
+                    loadingMessage = "잠시만 기다려주세요."
+                )
+            }
+            // 로딩 애니메이션 시작 (10초 동안 차올랐다가 다시 빠지는 무한 루프)
+            processingJob?.cancel()
+            processingJob = launch {
+                var currentProgress = 0f
+                var isIncreasing = true
+                val interval = 50L           // 0.05초마다 부드럽게 업데이트
+                val stepChange = 0.01f        // 업데이트 당 변화량 (약 5초에 100% 도달)
+
+                while (isActive) {
+                    if (isIncreasing) {
+                        currentProgress += stepChange
+                        if (currentProgress >= 1f) {
+                            currentProgress = 1f
+                            isIncreasing = false // 다 차면 감소 모드로 전환
+                        }
+                    } else {
+                        currentProgress -= stepChange
+                        if (currentProgress <= 0f) {
+                            currentProgress = 0f
+                            isIncreasing = true // 다 빠지면 다시 증가 모드로 전환
+                        }
+                    }
+
+                    _uiState.update {
+                        it.copy(processingState = ProcessingUiState(progress = currentProgress))
+                    }
+                    delay(interval)
+                }
+            }
 
             // 2. 목표 타입에 따라 카테고리 기반 또는 문서(PDF) 기반 요약글 생성 API를 분기 호출합니다.
             val result = when (query.goalType) {
                 DomainGoalType.CATEGORY -> {
                     categoryRepository.createDailyCategoryDocument(query.categoryId ?: -1L)
                 }
+
                 DomainGoalType.DOCUMENT -> {
-                    documentRepository.createDocumentSummary(query.goalId.toInt(), query.documentId?.toInt() ?: -1)
+                    documentRepository.createDocumentSummary(
+                        query.goalId.toInt(),
+                        query.documentId?.toInt() ?: -1
+                    )
                 }
             }
+
+            // API 응답 도착 시 애니메이션 중단 및 100% 처리
+            processingJob?.cancel()
+            _uiState.update { it.copy(processingState = ProcessingUiState(progress = 1f)) }
 
             when (result) {
                 is ApiResultV2.Success -> {
@@ -383,20 +472,28 @@ class HomeViewModel @Inject constructor(
                         is com.teumteumeat.teumteumeat.data.network.model_response.DailyCategoryDocument -> {
                             query.copy(documentId = data.documentId)
                         }
+
                         is com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse -> {
                             query.copy(documentId = data.documentId.toLong())
                         }
+
                         else -> query
                     }
 
+                    _screenState.value = UiScreenState.Success
+                    _uiState.update { it.copy(processingState = null) }
                     // 5. 업데이트된 정보를 UI 레이어(HomeScreen)로 전달하여 화면 이동을 수행합니다.
                     onSuccess(updatedQuery)
                 }
+
                 is ApiResultV2.SessionExpired -> {
-                    // 세션 만료 처리
+                    _screenState.value = UiScreenState.Idle
                     sessionManager.expireSession()
                 }
+
                 else -> {
+                    _screenState.value = UiScreenState.Success
+                    _uiState.update { it.copy(processingState = null) }
                     // API 호출 실패 시 에러 메시지 전달
                     onError(result.uiMessage)
                 }
@@ -418,7 +515,7 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * 홈 진입 시 서버 기준 상태 로딩
+     * 홈 진입 시 서버 기준 상태 로딩 및 요약글 자동 생성 로직
      */
     fun loadHomeState() {
         viewModelScope.launch {
@@ -442,6 +539,16 @@ class HomeViewModel @Inject constructor(
                         is ApiResultV2.Success -> {
                             val quizStatus = quizResult.data
 
+                            // 현재 날짜 가져오기 (예: "2023-10-27")
+                            val today = LocalDate.now().toString()
+                            val currentState = _uiState.value
+
+                            // 💡 [핵심 방어 로직]
+                            // 1. 오늘 요약글이 생성되지 않았고 (Server Status)
+                            // 2. 현재 진행 중인 목표가 완료되지 않았을 때만 자동 생성 실행
+                            val shouldAutoGenerate = !quizStatus.hasCreatedToday &&
+                                    !goal.isCompleted
+
                             _uiState.update {
                                 it.copy(
                                     fireState = resolveFireState(goal),
@@ -449,6 +556,7 @@ class HomeViewModel @Inject constructor(
                                     // 🔥 서버 기준 값 저장
                                     hasSolvedToday = quizStatus.hasSolvedToday,
                                     hasCreatedToday = quizStatus.hasCreatedToday,
+                                    lastCheckedDate = today, // ✅ 오늘 날짜로 갱신
                                     isFirstTime = quizStatus.isFirstTime,
                                     dailyAdRewardCount = quizStatus.dailyAdRewardCount,
                                     canIssueCoupon = quizStatus.canIssueCoupon,
@@ -469,7 +577,21 @@ class HomeViewModel @Inject constructor(
                                 "디버깅_업데이트",
                                 "4. 업데이트 완료 후 실제 State 값: ${_uiState.value.summaryQuery}"
                             )
-                            _screenState.value = UiScreenState.Success
+
+                            // 🔥 [핵심 로직] 자정이 지나 hasCreatedToday가 false가 되었다면 자동으로 요약글 생성
+                            // 단, 이미 목표가 완료되었거나(isCompleted) 생성 중일 때는 제외
+                            if (shouldAutoGenerate) {
+                                // 자동 생성 시에도 로딩 화면에 진행 바를 표시하기 위해 loadingTitle 등을 설정
+                                _uiState.update { 
+                                    it.copy(
+                                        loadingTitle = "새로운 퀴즈를 만들고 있어요!",
+                                        loadingMessage = "새로운 하루가 시작되어 퀴즈를 준비하고 있어요."
+                                    )
+                                }
+                                autoGenerateDailySummary(buildSummaryQuery(goal))
+                            } else {                                // 자동 생성이 필요 없는 경우에만 즉시 Success로 전환
+                                _screenState.value = UiScreenState.Success
+                            }
                         }
 
                         is ApiResultV2.SessionExpired -> {
@@ -479,7 +601,7 @@ class HomeViewModel @Inject constructor(
                         is ApiResultV2.ServerError,
                         is ApiResultV2.NetworkError,
                         is ApiResultV2.UnknownError -> {
-                            _screenState.value = Error(quizResult.uiMessage)
+                            //_screenState.value = Error(quizResult.uiMessage)
                         }
 
                     }
@@ -494,6 +616,56 @@ class HomeViewModel @Inject constructor(
                 is ApiResultV2.UnknownError -> {
                     _screenState.value = Error(goalResult.uiMessage)
                 }
+            }
+        }
+    }
+
+
+    /**
+     * 자정이 지났을 때 백그라운드에서 요약글을 자동으로 생성합니다.
+     */
+    private fun autoGenerateDailySummary(query: SummaryQuery) {
+        viewModelScope.launch {
+            // 시작시 로딩 페이지를 표시한다.
+            _uiState.update {
+                it.copy(
+                    toastMessage = "오늘도 틈틈잇! 오늘의 요약글을 생성 합니다!",
+                    loadingMessage = "새로운 퀴즈를 만들고 있어요!"
+                )
+            }
+
+
+            val result = when (query.goalType) {
+                DomainGoalType.CATEGORY -> {
+                    categoryRepository.createDailyCategoryDocument(query.categoryId ?: -1L)
+                }
+
+                DomainGoalType.DOCUMENT -> {
+                    documentRepository.createDocumentSummary(
+                        query.goalId.toInt(),
+                        query.documentId?.toInt() ?: -1
+                    )
+                }
+            }
+
+
+            if (result is ApiResultV2.Success) {
+                // 생성 성공 시 내부 상태 갱신 (쿠폰 차감 반영 등)
+                _uiState.update {
+                    it.copy(
+                        hasCreatedToday = true,
+                        toastMessage = "오늘의 요약글 생성이 완료되었습니다!",
+                    )
+                }
+                updateUserQuizStatus()
+                Log.d("HomeViewModel", "자정 경과: 요약글 자동 생성 완료")
+                 _screenState.value = UiScreenState.Success
+            } else {
+                // 실패 시 다음 loadHomeState() 호출 때 재시도할 수 있도록
+                // lastCheckedDate를 초기화하거나 로그를 남깁니다.
+                _uiState.update { it.copy(lastCheckedDate = null) }
+                Log.e("HomeViewModel", "요약글 자동 생성 실패: ${result.uiMessage}")
+                 _screenState.value = UiScreenState.Success // 실패하더라도 홈화면은 보여줌
             }
         }
     }
@@ -563,15 +735,31 @@ class HomeViewModel @Inject constructor(
      */
     override fun onCleared() {
         super.onCleared()
-        /*try {
+        try {
             context.unregisterReceiver(dateChangeReceiver)
         } catch (e: Exception) {
             Log.e("HomeViewModel", "Receiver unregister error", e)
-        }*/
+        }
     }
 
     fun clearErrorMessage() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
+    fun clearToastMessage() {
+        _uiState.update { it.copy(toastMessage = null) }
+    }
+
+    /**
+     * 앱이 백그라운드로 전환될 때 현재 날짜를 기록합니다.
+     */
+    fun saveCurrentDate() {
+        val today = java.time.LocalDate.now().toString()
+        lastDate = today
+        _uiState.update { it.copy(lastCheckedDate = today) }
+        Log.d("HomeViewModel", "백그라운드 전환: 날짜 기록 ($today)")
+    }
+
+
 
 }
