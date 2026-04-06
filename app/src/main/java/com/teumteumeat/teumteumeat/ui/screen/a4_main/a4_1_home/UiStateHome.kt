@@ -92,6 +92,9 @@ sealed class SnackState {
         val nextArrivalTime: String // 내일 "09:00"
     ) : SnackState()
 
+    /** 목표 완료 */
+    data object Completed : SnackState()
+
     /** 🚫 기간 종료 */
     data object Expired : SnackState()
 }

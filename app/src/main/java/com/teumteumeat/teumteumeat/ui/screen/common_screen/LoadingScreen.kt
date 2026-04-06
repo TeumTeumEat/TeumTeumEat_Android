@@ -102,7 +102,8 @@ fun GoalLoadingScreen(
     visibleStates: SnapshotStateList<Boolean> = remember {
         mutableStateListOf(false, false, false)
     },
-    isCompletedLoading: Boolean = false
+    isCompletedLoading: Boolean = false,
+    backgroundColor: Color = MaterialTheme.extendedColors.backgroundW100,
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
@@ -111,7 +112,7 @@ fun GoalLoadingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(extendedColors.backgroundW100)
+            .background(backgroundColor)
             .windowInsetsPadding(WindowInsets.systemBars) // ✅ SafeArea
     ) {
 
