@@ -534,6 +534,22 @@ class HomeViewModel @Inject constructor(
                     cachedGoal = goal
                     Log.d("user's current goal", "${goal}")
 
+                    val goalResult = goalRepository.getUserGoal()
+
+                    if (goalResult is ApiResultV2.Success) {
+                        val goal = goalResult.data
+
+                        // 💡 목표가 만료되었거나 없을 경우 다이얼로그 상태를 true로 유지
+                        if (goal.isExpired || goal.goalId == -1L) {
+                            _uiState.update { it.copy(isShowGoalExpiredDialog = true) }
+                        } else {
+                            _uiState.update { it.copy(isShowGoalExpiredDialog = false) }
+                        }
+                    } else {
+                        // 목표가 아예 없는 에러 상황(404 등)에서도 팝업을 띄워야 함
+                        _uiState.update { it.copy(isShowGoalExpiredDialog = true) }
+                    }
+
                     // 2️⃣ 오늘 퀴즈 상태 조회
                     when (val quizResult = quizRepository.getUserQuizStatus()) {
 
@@ -607,6 +623,7 @@ class HomeViewModel @Inject constructor(
                                 _screenState.value = UiScreenState.Success
                             }
                         }
+
 
                         is ApiResultV2.SessionExpired -> {
                             sessionManager.expireSession()

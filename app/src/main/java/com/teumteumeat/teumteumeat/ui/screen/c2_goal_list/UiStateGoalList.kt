@@ -39,7 +39,8 @@ data class GoalCardUiModel(
     val isCompleted: Boolean,
 
     // 상태
-    val isSelected: Boolean
+    val isSelected: Boolean,
+    val isExpired: Boolean,
 )
 
 fun GetGoalResponse.toUiModel(
@@ -65,10 +66,10 @@ fun GetGoalResponse.toUiModel(
 
 
 
-    /*val start = startDate.toLocalDate()
+    val start = startDate.toLocalDate()
     val end = endDate.toLocalDate()
     val today = LocalDate.now()
-    val isExpired = today.isAfter(end)*/
+    val isExpired = today.isAfter(end)
 
     // ⭐ 만료된 목표는 선택 해제
     val isSelected = goalId.toLong() == currentGoalId
@@ -83,6 +84,7 @@ fun GetGoalResponse.toUiModel(
         description = description,
         isSelected = isSelected,
         isCompleted = isCompleted,
+        isExpired = isExpired,
     )
 }
 

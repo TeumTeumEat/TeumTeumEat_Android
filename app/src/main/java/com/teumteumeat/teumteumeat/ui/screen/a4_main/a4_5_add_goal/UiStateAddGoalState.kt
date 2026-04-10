@@ -41,7 +41,8 @@ data class UiStateAddGoalState(
 
     val documentId: Int = 0,
     val goalId: Int = 0,
-    val currentScreen: AddGoalScreens = AddGoalScreens.SixthCategorySelectScreen,
+    val currentPage: Int = 1,
+    val totalPage: Int = 5,
 
     val isSetWorkInTime: Boolean = false,
     val isSetWorkOutTime: Boolean = false,
@@ -97,18 +98,17 @@ data class UiStateAddGoalState(
 
     val studyPeriod: Int? = null,
     val endDate: String = "",
+    val isFileUploadComplete: Boolean = false,
+    val isCategorySelectionComplete: Boolean = false,
+
+    val isSkipTypeSelect: Boolean = false,
 ){
-    val currentPage: Int
-        get() = AddGoalFlow.currentPage(currentScreen)
+/*    val currentPage: Int
+        get() = AddGoalFlow.currentPage(currentScreen, goalTypeUiState)
 
     val totalPage: Int
-        get() = AddGoalFlow.totalCount
+        get() = AddGoalFlow.totalCount(goalTypeUiState)*/
 
     val canGoBack: Boolean
         get() = currentPage > 1
-
-    val isCategorySelectionComplete: Boolean
-        get() = targetCategoryPage == 2
-                && categorySelection.depth4 != null
-                && selectedCategoryId != null
 }

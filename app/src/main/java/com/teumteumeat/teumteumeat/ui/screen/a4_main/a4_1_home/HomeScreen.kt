@@ -126,7 +126,8 @@ fun HomeScreen(
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
                     // 앱이 포그라운드로 올 때마다 날짜가 바뀌었는지 서버 상태를 확인
-                    viewModel.checkAndLoadHomeState()
+                    // viewModel.checkAndLoadHomeState()
+                    viewModel.loadHomeState()
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
@@ -630,11 +631,12 @@ fun HomeScreen(
                         ) {
                             Dialog(
                                 onDismissRequest = {
-                                    // 다이얼로그 바깥을 터치하거나 뒤로가기 버튼을 눌렀을 때 처리
                                     // viewModel.dismissGoalExpiredDialog() // 모달 닫기
                                 },
                                 properties = DialogProperties(
-                                    usePlatformDefaultWidth = false // 커스텀 패딩을 적용하기 위해 기본 너비 제한 해제
+                                    usePlatformDefaultWidth = false,
+                                    dismissOnBackPress = false, // 뒤로가기 버튼으로도 닫히지 않게 하려면 false
+                                    dismissOnClickOutside = false // 외부 터치 시 닫히지 않게 설정
                                 )
                             ) {
 
@@ -653,13 +655,8 @@ fun HomeScreen(
                                     onSecondaryClick = {
                                         viewModel.dismissGoalExpiredDialog() // 모달 닫기
                                         // 새로운 목표 설정 화면(AddGoalActivity)으로 이동
-                                        val intent =
-                                            Intent(activity, AddGoalActivity::class.java).apply {
-                                                putExtra(
-                                                    GoalRegisterArgs.KEY_GOAL_TYPE,
-                                                    uiState.summaryQuery.goalType.name
-                                                )
-                                            }
+                                        // KEY_GOAL_TYPE을 넘기지 않음으로써 목표 방식 선택 화면이 첫 화면이 되도록 함
+                                        val intent = Intent(activity, AddGoalActivity::class.java)
                                         activity.startActivity(intent)
                                     }
                                 )
