@@ -11,30 +11,20 @@ import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
-import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCaseV1
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.UpdateGoalUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingFlow
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.PromptViolation
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingState
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -82,11 +72,47 @@ class AddGoalViewModel @Inject constructor(
     /** Activity 에서 1회 호출 */
     fun initGoalType(type: DomainGoalType) {
         if (_uiState.value.goalTypeUiState == GoalTypeUiState.NONE) {
+            val startScreen = when (type) {
+                DomainGoalType.CATEGORY -> AddGoalScreens.SixthCategorySelectScreen
+                DomainGoalType.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen
+                else -> AddGoalScreens.SelectInputMethodScreen
+            }
             _uiState.update{
                 it.copy(
-                    goalTypeUiState = GoalTypeUiState.valueOf(type.name)
+                    goalTypeUiState = GoalTypeUiState.valueOf(type.name),
+                    isSkipTypeSelect = startScreen != AddGoalScreens.SelectInputMethodScreen,
+                    totalPage = if (startScreen == AddGoalScreens.SelectInputMethodScreen) 5 else 4,
+                    currentPage = 1
                 )
             }
+
+        }
+    }
+
+    fun selectLearningMethod(type: GoalTypeUiState) {
+        _uiState.update {
+            it.copy(
+                goalTypeUiState = type,
+            )
+        }
+    }
+
+    fun resetCategorySelection() {
+        _uiState.update {
+            it.copy(
+                categorySelection = CategorySelectionState(),
+                isCategorySelectionComplete = false,
+            )
+        }
+    }
+
+    fun onFileDeleted() {
+        _uiState.update {
+            it.copy(
+                selectedFileUri = null,
+                selectedFileName = "",
+                isFileUploadComplete = false
+            )
         }
     }
 
@@ -210,6 +236,7 @@ class AddGoalViewModel @Inject constructor(
             state.copy(
                 categorySelection = newSelection,
                 selectedCategoryId = null,
+                isCategorySelectionComplete = false,
 
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
@@ -242,6 +269,7 @@ class AddGoalViewModel @Inject constructor(
                     depth4 = null // ⭐ 3뎁스 변경 시 4뎁스 초기화
                 ),
                 selectedCategoryId = null,
+                isCategorySelectionComplete = false,
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
                     0 // 2뎁스 페이지
@@ -262,6 +290,14 @@ class AddGoalViewModel @Inject constructor(
 
             val newDepth4 = if (isUnselecting) null else category
 
+            val newTargetCategoryPage = if (isUnselecting) {
+                1 // 3뎁스 페이지
+            } else {
+                state.targetCategoryPage // ❗ 페이지 유지
+            }
+
+            val isComplete = !isUnselecting && newDepth4 != null && newDepth4.serverCategoryId != null && newTargetCategoryPage == 2
+
             state.copy(
                 categorySelection = state.categorySelection.copy(
                     depth4 = newDepth4
@@ -270,11 +306,8 @@ class AddGoalViewModel @Inject constructor(
                 selectedCategoryId = newDepth4?.serverCategoryId,
 
                 // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    1 // 3뎁스 페이지
-                } else {
-                    state.targetCategoryPage // ❗ 페이지 유지
-                }
+                targetCategoryPage = newTargetCategoryPage,
+                isCategorySelectionComplete = isComplete
             )
         }
 
@@ -283,6 +316,12 @@ class AddGoalViewModel @Inject constructor(
             "depth4=${_uiState.value.categorySelection.depth4?.name}, " +
                     "selectedCategoryId=${_uiState.value.selectedCategoryId}"
         )
+    }
+
+    fun updateCategorySelectionComplete(isComplete: Boolean) {
+        _uiState.update {
+            it.copy(isCategorySelectionComplete = isComplete)
+        }
     }
 
     fun showFileError(title: String, message: String) {
@@ -398,15 +437,7 @@ class AddGoalViewModel @Inject constructor(
     }
 
 
-    fun onFileDeleted(
-    ) {
-        _uiState.update {
-            it.copy(
-                selectedFileUri = null,
-                selectedFileName = ""
-            )
-        }
-    }
+
 
     fun loadCategories() {
         viewModelScope.launch {
@@ -764,8 +795,9 @@ class AddGoalViewModel @Inject constructor(
     }
 
     fun nextPage() {
-        _uiState.update { currentState ->
-            val nextScreen = AddGoalFlow.next(currentState.currentScreen)
+        _uiState.update { it.copy(currentPage = it.currentPage + 1) }
+        /*_uiState.update { currentState ->
+            val nextScreen = AddGoalFlow.next(currentState.currentScreen, currentState.goalTypeUiState)
 
             if (nextScreen != null) {
                 Log.d(
@@ -778,14 +810,18 @@ class AddGoalViewModel @Inject constructor(
             } else {
                 currentState
             }
-        }
+        }*/
     }
 
     fun prevPage() {
-        _uiState.update { currentState ->
-            val prevScreen = AddGoalFlow.prev(currentState.currentScreen)
+        _uiState.update {
+            val prev = (it.currentPage - 1).coerceAtLeast(1)
+            it.copy(currentPage = prev)
+        }
+        /*_uiState.update { currentState ->
+            val prevScreen = AddGoalFlow.prev(currentState.currentScreen, currentState.goalTypeUiState)
 
-            if (prevScreen != null && currentState.currentPage > 0) {
+            if (prevScreen != null && currentState.currentPage > 1) {
                 Log.d(
                     "OnBoarding",
                     "prevPage: ${currentState.currentPage} → ${currentState.currentPage - 1}"
@@ -796,7 +832,7 @@ class AddGoalViewModel @Inject constructor(
             } else {
                 currentState
             }
-        }
+        }*/
     }
 
 }

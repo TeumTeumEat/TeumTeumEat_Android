@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
@@ -49,7 +50,7 @@ import kotlin.jvm.java
 @Composable
 fun AddCategoryGoalCompositionProvider(
     viewModel: AddGoalViewModel,
-    context: Context,
+    startRoute: GoalTypeUiState,
     activity: AddGoalActivity,
 ) {
 
@@ -73,7 +74,6 @@ fun AddCategoryGoalCompositionProvider(
     val progress by viewModel.progress.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(
-        LocalAppContext provides context,
         LocalActivityContext provides activity,
         LocalAddGoalUiState provides uiState,
         LocalViewModelContext provides viewModel,
@@ -204,12 +204,7 @@ fun AddCategoryGoalCompositionProvider(
 
                         AddGoalNavHost(
                             navController = navHostController,
-                            startDestination = when(uiState.goalTypeUiState){
-                                GoalTypeUiState.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen.route
-                                GoalTypeUiState.CATEGORY -> AddGoalScreens.SixthCategorySelectScreen.route
-                                // todo. 분기를 정확히 전달 못받았을 때 에러스크린 노출
-                                GoalTypeUiState.NONE -> null
-                            }
+                            startDestination = startRoute,
                         )
 
                     }

@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -16,28 +18,38 @@ object GoalRegisterArgs {
 
 @AndroidEntryPoint
 class AddGoalActivity : ComponentActivity() {
-    // ✅ Activity 전역 ViewModel
     private val viewModel: AddGoalViewModel by viewModels()
 
-    private val goalType: DomainGoalType by lazy {
-        intent.getStringExtra(GoalRegisterArgs.KEY_GOAL_TYPE)
-            ?.let { DomainGoalType.valueOf(it) }
-            ?: error("DomainGoalType 이 전달되지 않았습니다.")
+    // 1. Intent로부터 String을 받아 DomainGoalType Enum으로 변환
+    private val initialGoalType: DomainGoalType? by lazy {
+        val typeString = intent.getStringExtra(GoalRegisterArgs.KEY_GOAL_TYPE)
+        runCatching {
+            DomainGoalType.valueOf(typeString ?: "")
+        }.getOrDefault(null) // 없거나 잘못된 값이면 NONE
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // ✅ 여기서 진입 타입 초기화
-        viewModel.initGoalType(goalType)
+        // 1️⃣ 외부 진입 데이터가 있다면 뷰모델 초기화
+        initialGoalType?.let { viewModel.initGoalType(it) }
 
         setContent {
             TeumTeumEatTheme {
+                // 2️⃣ hiltViewModel() 사용 시, 현재 Activity 스코프의 뷰모델을 공유하도록 설정 가능
                 val viewModel: AddGoalViewModel = hiltViewModel()
+
+                // 2. initialGoalType에 따라 시작 route 결정
+                val startRoute = when (initialGoalType) {
+                    DomainGoalType.CATEGORY -> GoalTypeUiState.CATEGORY
+                    DomainGoalType.DOCUMENT -> GoalTypeUiState.DOCUMENT
+                    else -> GoalTypeUiState.NONE
+                }
+
                 AddCategoryGoalCompositionProvider(
                     viewModel = viewModel,
-                    context = this.applicationContext,
+                    startRoute = startRoute, // 시작 경로 전달
                     activity = this@AddGoalActivity
                 )
             }

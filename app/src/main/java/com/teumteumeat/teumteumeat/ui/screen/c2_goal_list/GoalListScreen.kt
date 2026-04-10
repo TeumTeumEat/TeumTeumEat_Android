@@ -115,6 +115,7 @@ fun GoalListScreen(
 
                             // 🔹 선택된 목표를 최상단으로 정렬하되, 완료된 목표는 리스트에서 제외합니다.
                             val filteredGoals = uiState.goals
+                                .filter { !it.isExpired }
                                 .filter { !it.isCompleted } // 완료되지 않은 목표만 표시
                                 .sortedByDescending { it.isSelected } // 선택된 목표 최상단 배치
 
