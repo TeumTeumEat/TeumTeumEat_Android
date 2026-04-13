@@ -1,6 +1,6 @@
 package com.teumteumeat.teumteumeat.domain.model.history
 
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import java.time.LocalDateTime
 
 data class CategoryHistoryUiModel(
@@ -14,5 +14,5 @@ data class LearningHistoryUiModel(
     val description: String,
     val date: LocalDateTime,
     val dateText: String,
-    val goalType: GoalType,
+    val domainGoalTypeV1: DomainGoalType_v1,
 )

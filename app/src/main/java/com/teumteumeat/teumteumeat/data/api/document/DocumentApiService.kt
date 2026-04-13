@@ -5,7 +5,6 @@ import com.teumteumeat.teumteumeat.data.network.model_request.PresignedRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.RegisterDocumentRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.GetDocumentsResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.QuizListResponse
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse
 import retrofit2.http.Body
 import retrofit2.http.GET

@@ -1,6 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail
 
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import java.time.LocalDate
 
 
@@ -14,7 +14,7 @@ data class UiStateDailySummary(
 
     // 📌 요청 파라미터 (상태로 보존)
     val id: Long? = null,
-    val type: GoalType? = null,
+    val type: DomainGoalType? = null,
     val date: LocalDate? = null,
 
     // 📌 에러

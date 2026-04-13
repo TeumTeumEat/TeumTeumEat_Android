@@ -69,7 +69,6 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import java.time.LocalDate
 import kotlin.jvm.java
 
 
@@ -125,8 +124,6 @@ fun HomeScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    // 앱이 포그라운드로 올 때마다 날짜가 바뀌었는지 서버 상태를 확인
-                    // viewModel.checkAndLoadHomeState()
                     viewModel.loadHomeState()
                 }
 
@@ -283,7 +280,8 @@ fun HomeScreen(
                                 title = uiState.loadingTitle,
                                 message = uiState.loadingMessage,
                                 progress = uiState.processingState.progress,
-                                backgroundColor = Color.Transparent
+                                backgroundColor = Color.Transparent,
+                                progressPadding = 30.dp
                             )
                         } else {
                             // 🌟 기존 음식 이미지 및 말풍선 Box 로직
@@ -597,7 +595,7 @@ fun HomeScreen(
                                     /*
                                      * 4. 실패 시: 사용자에게 에러 메시지를 Toast로 보여줍니다.
                                      */
-                                    Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+                                    // Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
                                 }
                             )
                         },

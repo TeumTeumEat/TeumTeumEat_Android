@@ -17,6 +17,9 @@ data class UiStateQuizResult(
     /** 파생 상태 */
     val correctCount: Int = -1,
 
+    /** 카테고리 목표 요약글 문서Id */
+    val categoryDocumentId: Long = -1,
+
     /** PDF / Summary API */
     val summary: UiStateSummary = UiStateSummary(isLoading = true),
 

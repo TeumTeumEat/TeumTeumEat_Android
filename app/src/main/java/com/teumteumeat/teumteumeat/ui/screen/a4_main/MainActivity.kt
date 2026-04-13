@@ -68,6 +68,7 @@ class MainActivity : BaseActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Log.d("MainActivity", "onNewIntent: taskId=$taskId, hash=${hashCode()}")
+        setIntent(intent)
     }
 
     override fun onDestroy() {

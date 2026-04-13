@@ -1,12 +1,9 @@
 package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import android.app.Application
-import android.se.omapi.Session
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse

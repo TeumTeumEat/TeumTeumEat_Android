@@ -9,10 +9,8 @@ import com.teumteumeat.teumteumeat.data.network.model_response.AccountInfoRespon
 import com.teumteumeat.teumteumeat.data.network.model_response.user.CommuteInfoResponse
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import retrofit2.http.Body
-import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
-import retrofit2.http.POST
 import com.teumteumeat.teumteumeat.data.network.model_response.user.UserNameResponseDto
 
 interface UserApiService {

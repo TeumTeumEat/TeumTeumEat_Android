@@ -12,12 +12,11 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
-import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +29,7 @@ class QuizResultViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val documentRepository: DocumentRepository,
     private val quizRepository: QuizRepository,
+    private val historyRepository: HistoryRepository,
     private val categoryRepository: CategoryRepository,
     private val goalRepository: GoalRepository,
     val sessionManager: SessionManager,
@@ -41,7 +41,7 @@ class QuizResultViewModel @Inject constructor(
     }
 
     fun initArgs(
-        documentId: Int,
+        documentId: Long,
         date: String
     ) {
         savedStateHandle[KEY_DOCUMENT_ID] = documentId
@@ -56,7 +56,7 @@ class QuizResultViewModel @Inject constructor(
     val screenState = _screenState.asStateFlow()
 
 
-    fun getDocumentId(): Int =
+    fun getDocumentId(): Long =
         savedStateHandle[KEY_DOCUMENT_ID] ?: error("documentId missing")
 
     fun getDate(): String =
@@ -83,14 +83,14 @@ class QuizResultViewModel @Inject constructor(
 
                     // 2️⃣ 퀴즈 결과 조회
                     val goalType = userGoal.type
-                    when(goalType){
+                    when (goalType) {
                         DomainGoalType.CATEGORY -> {
-                            loadQuizResults(goalType.name, documentId.toInt(), date)
+                            loadQuizResults(goalType, documentId, date)
                         }
 
                         DomainGoalType.DOCUMENT -> {
                             val documentId = userGoal.documentId
-                            loadQuizResults(goalType.name, documentId!!.toInt(), date)
+                            loadQuizResults(goalType, documentId!!, date)
                         }
                     }
 
@@ -107,31 +107,13 @@ class QuizResultViewModel @Inject constructor(
         }
     }
 
-    private fun loadSummaryByGoal(
-        goal: UserGoal
-    ) {
-        when (goal.type) {
-            DomainGoalType.DOCUMENT -> {
-                val goalId = goal.goalId.toInt()
-                val documentId = goal.documentId ?: return
-                loadDocumentSummary(goalId, documentId.toInt())
-            }
-
-            DomainGoalType.CATEGORY -> {
-                val categoryId = goal.category?.categoryId ?: return
-                loadCategorySummary(categoryId.toInt())
-            }
-        }
-    }
-
-
-
     fun loadQuizResults(
-        type: String,
-        id: Int,
+        type: DomainGoalType,
+        id: Long,
         date: String
     ) {
         viewModelScope.launch {
+
 
             // 2️⃣ API 호출
             when (val result = quizRepository.getQuizHistory(type, id, date)) {
@@ -160,28 +142,107 @@ class QuizResultViewModel @Inject constructor(
         }
     }
 
+
+    private suspend fun loadSummaryByGoal(
+        goal: UserGoal
+    ) {
+        val date = getDate() // ViewModel에 저장된 퀴즈 날짜 사용
+
+        val goalId = goal.goalId.toInt()
+
+        if (goalId == -1) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = "goalId 를 전달받지 못했습니다. (id 전달 오류)"
+                )
+            }
+        }
+
+        when (goal.type) {
+            DomainGoalType.DOCUMENT -> {
+                val documentId = goal.documentId ?: return
+                loadDocumentSummary(goal.type, documentId, date)
+            }
+
+            DomainGoalType.CATEGORY -> {
+                val categoryId = goal.category?.categoryId ?: return
+                setCategoryDocumentId(categoryId)
+                val categoryDocumentId = uiState.value.categoryDocumentId
+                loadCategorySummary(goal.type, categoryDocumentId, date)
+            }
+        }
+    }
+
+    private suspend fun setCategoryDocumentId(categoryId: Long) {
+
+        when (val result = categoryRepository.getDailyCategoryDocument(categoryId)) {
+            is ApiResultV2.Success -> {
+                val data = result.data
+
+                _uiState.update {
+                    it.copy(
+                        categoryDocumentId = data.documentId
+                    )
+                }
+
+            }
+
+            else -> {
+                moveToError(result)
+            }
+        }
+    }
+
     /**
      * 오늘의 남남지식 요약 조회
      */
-    fun loadDocumentSummary(goalId: Int, documentId: Int) {
-        Log.d("TAG", "loadDocumentSummary: $goalId, $documentId")
+    fun loadDocumentSummary(goalType: DomainGoalType, documentId: Long, date: String) {
+        Log.d("loadDocumentSummary", "요약글 번호: $documentId")
         viewModelScope.launch {
-            _uiState.update{
+            _uiState.update {
                 it.copy(
                     isLoading = true,
                 )
             }
 
-            if (goalId == -1 || documentId == -1){
+            if (documentId == -1L) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "goalId 나 documentId 가 등록되지 않았습니다."
+                        errorMessage = "존재하지 않는 documentId 입니다.(요약글 조회 오류)"
                     )
                 }
             }
 
-            when (val result = documentRepository.getDocumentSummary(goalId, documentId)) {
+            when (val result = historyRepository.getLearningHistorySummary(
+                goalType, documentId, date
+            )
+            ) {
+                is ApiResultV2.Success -> {
+                    val data = result.data
+
+                    _uiState.update {
+                        it.copy(
+                            summary = UiStateSummary(
+                                title = data.title,
+                                dateText = Utils.TimeUtil.todayText(),
+                                summary = data.summary, // ⭐ 아래 유틸 참고
+                                isLoading = false,
+                                errorMessage = null,
+                            ),
+                            errorMessage = null,
+                        )
+                    }
+
+                }
+
+                else -> {
+                    moveToError(result)
+                }
+            }
+
+            /*when (val result = documentRepository.getDocumentSummary(goalId, documentId)) {
 
                 is ApiResultV2.Success -> {
                     val data = result.data
@@ -205,52 +266,52 @@ class QuizResultViewModel @Inject constructor(
                 else -> {
                     moveToError(result)
                 }
-            }
+            }*/
         }
     }
 
-    private suspend fun moveToError(result: ApiResultV2<*>) {
 
-        when (result) {
-            is ApiResultV2.SessionExpired -> {
-                sessionManager.expireSession()
-            }
+    fun loadCategorySummary(goalType: DomainGoalType, categoryId: Long, date: String) {
 
-            else -> {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = result.uiMessage
-                    )
-                }
-                _screenState.value =
-                    UiScreenState.Error(result.uiMessage)
-            }
-        }
-
-    }
-
-
-    fun loadCategorySummary(categoryId: Int) {
         viewModelScope.launch {
-            _uiState.update{
-                it.copy(
-                    isLoading = true,
-                    errorMessage = null,
-                )
-            }
-
-            if (categoryId == -1 ){
+            if (categoryId == -1L) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "goalId 나 documentId 가 등록되지 않았습니다."
+                        errorMessage = "documentId 가 없습니다. (요약글 조회 오류)"
                     )
                 }
             }
 
-            // 2️⃣ 레포 호출
-            when (
+            // 2️⃣ 카테고리 목표 요약글 API 호출
+            when (val result = historyRepository.getLearningHistorySummary(
+                goalType, categoryId, date
+            )
+            ) {
+                is ApiResultV2.Success -> {
+                    val data = result.data
+
+                    _uiState.update {
+                        it.copy(
+                            summary = UiStateSummary(
+                                title = data.title,
+                                dateText = Utils.TimeUtil.todayText(),
+                                summary = data.summary, // ⭐ 아래 유틸 참고
+                                isLoading = false,
+                                errorMessage = null,
+                            ),
+                            errorMessage = null,
+                        )
+                    }
+
+                }
+
+                else -> {
+                    moveToError(result)
+                }
+            }
+
+            /*when (
                 val result =
                     categoryRepository.getDailyCategoryDocument(categoryId.toLong())
             ) {
@@ -280,9 +341,34 @@ class QuizResultViewModel @Inject constructor(
                     moveToError(result)
                 }
 
-            }
+            }*/
         }
     }
+
+    /**
+     * 에러 처리 함수
+     */
+    private suspend fun moveToError(result: ApiResultV2<*>) {
+
+        when (result) {
+            is ApiResultV2.SessionExpired -> {
+                sessionManager.expireSession()
+            }
+
+            else -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = result.uiMessage
+                    )
+                }
+                _screenState.value =
+                    UiScreenState.Error(result.uiMessage)
+            }
+        }
+
+    }
+
 
 }
 

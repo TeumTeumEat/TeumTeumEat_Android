@@ -6,13 +6,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 object GoalRegisterArgs {
+    const val EXTRA_FROM_REGISTRATION = "extra_from_registration"
+
     const val KEY_GOAL_TYPE = "key_goal_type"
 }
 

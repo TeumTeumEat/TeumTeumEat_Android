@@ -1,7 +1,5 @@
 package com.teumteumeat.teumteumeat.data.network.model_response.history
 
-import java.time.LocalDateTime
-
 data class CategoryHistoryResponse(
     val categoryName: String,
     val histories: List<HistoryItemResponse>

@@ -1,12 +1,9 @@
 package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 
 import android.app.Application
-import android.os.Build
-import androidx.activity.result.launch
-import androidx.compose.animation.core.copy
-import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.mapper.toLable
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
@@ -20,7 +17,6 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
-import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.notification.GetPushNotificationStatusUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.NotificationSettingGuideType
@@ -360,7 +356,7 @@ class MyPageViewModel @Inject constructor(
                                 selectedTopic = userGoal.category?.path!!,
                                 topicDescription = userGoal.prompt ?: "",
                                 goalWeek = userGoal.studyPeriod,
-                                goalDifficulty = mapDifficultyToKorean(userGoal.difficulty)
+                                goalDifficulty = userGoal.difficulty.toLable()
                             )
                         }
                     }
@@ -370,7 +366,7 @@ class MyPageViewModel @Inject constructor(
                                 selectedTopic = userGoal.fileName!!,
                                 topicDescription = userGoal.prompt ?: "",
                                 goalWeek = userGoal.studyPeriod,
-                                goalDifficulty = mapDifficultyToKorean(userGoal.difficulty)
+                                goalDifficulty = userGoal.difficulty.toLable()
                             )
                         }
                     }
