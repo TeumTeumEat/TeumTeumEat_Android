@@ -10,7 +10,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_4_daily_quiz_result.DailyQuizResultActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -18,7 +19,6 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalDailySummaryUiState
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
-import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.DailySummaryArgs
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveScreenWithDailyItem
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,7 +38,7 @@ class DailySummaryActivity : ComponentActivity() {
         val type = intent.getStringExtra(
             DailySummaryArgs.KEY_TYPE
         )?.let {
-            GoalType.valueOf(it)
+            DomainGoalType.valueOf(it)
         }
 
         val date = intent.getStringExtra(

@@ -1,10 +1,11 @@
 package com.teumteumeat.teumteumeat.data.network.model_response.goal
 
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
+
 
 data class UserGoalResponse(
     val goalId: Long,
-    val type: GoalType,
+    val type: DomainGoalType,
     val startDate: String,
     val endDate: String,
     val isExpired: Boolean,

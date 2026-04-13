@@ -1,6 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
-import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
-import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
@@ -39,7 +38,6 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.PopupOverlay
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAddGoalUiState
-import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import kotlinx.coroutines.delay
@@ -118,6 +116,11 @@ fun AddCategoryGoalCompositionProvider(
 
                 AddGoalSuccessScreen(
                     onStartClick = {
+                        val intent = Intent(activity, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            putExtra(GoalRegisterArgs.EXTRA_FROM_REGISTRATION, true)
+                        }
+                        activity.startActivity(intent)
                         activity.finish()
                     }
                 )

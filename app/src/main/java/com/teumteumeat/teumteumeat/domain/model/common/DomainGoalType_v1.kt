@@ -8,7 +8,7 @@ package com.teumteumeat.teumteumeat.domain.model.common
  *
  * ❗ NONE은 UI 초기 상태 전용으로만 사용
  */
-enum class GoalType {
+enum class DomainGoalType_v1 {
     CATEGORY,
     DOCUMENT,
 }

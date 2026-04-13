@@ -17,6 +17,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.GoalProgress
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -104,6 +105,7 @@ fun GoalLoadingScreen(
     },
     isCompletedLoading: Boolean = false,
     backgroundColor: Color = MaterialTheme.extendedColors.backgroundW100,
+    progressPadding: Dp = 0.dp,
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
@@ -130,7 +132,8 @@ fun GoalLoadingScreen(
 
                 GoalProgress(
                     progress = progress,
-                    isCompletedLoading = isCompletedLoading
+                    isCompletedLoading = isCompletedLoading,
+                    progressPadding = progressPadding,
                 )
             }
 

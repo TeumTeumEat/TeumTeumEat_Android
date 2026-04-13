@@ -63,7 +63,9 @@ class HomeViewModel @Inject constructor(
     // SavedStateHandle에 날짜를 저장 (메모리 유실 방지)
     private var lastDate: String?
         get() = savedStateHandle["last_checked_date"]
-        set(value) { savedStateHandle["last_checked_date"] = value }
+        set(value) {
+            savedStateHandle["last_checked_date"] = value
+        }
 
     private val _uiState = MutableStateFlow(UiStateHome())
     val uiState = _uiState.asStateFlow()
@@ -91,29 +93,13 @@ class HomeViewModel @Inject constructor(
         loadHomeState()
         // 2. 목표 변경 리프래시 시그널 감지
         viewModelScope.launch {
-            // todo. 목표를 완료하고 돌아왔을 때도 loadHomeState() 호출 되는지 확인
+            // 목표를 완료하고 돌아왔을 때도 loadHomeState() 호출 되는지 확인
             goalRepository.refreshSignal.collect {
                 // 다른 액티비티에서 목표를 변경하고 돌아왔을 때 호출됨
                 loadHomeState()
             }
         }
     }
-
-    fun checkAndLoadHomeState() {
-        val today = LocalDate.now().toString()
-        val savedDate = lastDate
-
-        Log.d("HomeViewModel", "체크 시작 - 저장된 날짜: $savedDate, 오늘: $today")
-
-        // 💡 날짜가 다를 때만(null 포함) API를 호출합니다.
-        if (savedDate != today) {
-            loadHomeState()
-            // 성공/실패 여부와 관계없이 일단 오늘 체크했음을 기록 (중복 호출 방지)
-            lastDate = today
-            _uiState.update { it.copy(lastCheckedDate = today) }
-        }
-    }
-
 
     private fun observeNetworkState() {
         viewModelScope.launch {
@@ -173,7 +159,7 @@ class HomeViewModel @Inject constructor(
                     val quizStatus = response.data
                     _uiState.update { currentState ->
                         currentState.copy(
-                            isShowAdModalDialog = true,
+                            // isShowAdModalDialog = true,
                             cupponCount = quizStatus.availableQuizCount, // 서버에서 받아온 새 개수
                             dailyAdRewardCount = quizStatus.dailyAdRewardCount,
                             canIssueCoupon = quizStatus.canIssueCoupon
@@ -328,6 +314,13 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 앱이 백그라운드로 전환될 때 날짜를 기록하는 리시버를 등록합니다.
+     * 테스트 방법: 터미널 zshrc 쉘에 아래 명령어를 입력합니다.
+     * - adb -d shell am broadcast -a com.teumteumeat.test.ACTION_DATE_CHANGED
+     * - '-d' 옵션은 device 를 지칭하는 옵션이다.
+     * - 따라서 1개의 실기기를 연결 후 '디버깅'모든에서 위 명령어를 입력하여 테스트한다.
+     */
     internal fun setupDateChangeReceiver() {
 
         dateChangeReceiver.setOnDateChangedListener {
@@ -407,7 +400,7 @@ class HomeViewModel @Inject constructor(
 
             // 로딩 상태 시작
             _screenState.value = UiScreenState.Loading
-            _uiState.update { 
+            _uiState.update {
                 it.copy(
                     loadingTitle = "새로운 퀴즈를 만들고 있어요!",
                     loadingMessage = "잠시만 기다려주세요."
@@ -481,14 +474,23 @@ class HomeViewModel @Inject constructor(
                         else -> query
                     }
 
-                    _screenState.value = UiScreenState.Success
                     _uiState.update { it.copy(processingState = null) }
                     // 5. 업데이트된 정보를 UI 레이어(HomeScreen)로 전달하여 화면 이동을 수행합니다.
                     onSuccess(updatedQuery)
                 }
 
+                is ApiResultV2.ServerError -> {
+                    if(result.code == "QUIZ-003"){
+                        _uiState.update { it.copy(processingState = null) }
+                        onError(result.uiMessage)
+                        // 바로 요약글 화면으로 이동하기
+                        onSuccess(query)
+                    }
+                }
+
                 is ApiResultV2.SessionExpired -> {
                     _screenState.value = UiScreenState.Idle
+                    _uiState.update { it.copy(processingState = null) }
                     sessionManager.expireSession()
                 }
 
@@ -524,7 +526,6 @@ class HomeViewModel @Inject constructor(
 
             Log.d("요약글 조회 디버깅", "홈화면 상태 가져옴 - 목표 조회 완료")
 
-            setRandomFood()
 
             // 1️⃣ 목표 조회
             when (val goalResult = goalRepository.getUserGoal()) {
@@ -560,14 +561,6 @@ class HomeViewModel @Inject constructor(
                             val today = LocalDate.now().toString()
                             val currentState = _uiState.value
 
-                            // 💡 요약글 자동생성 조건
-                            // 오늘 풀지 않았고, 오늘 생성하지 않았고
-                            // 목표가 완료되거나, 만료되지 않았고
-                            // 목표에 생성되어 있는 퀴즈가 0개 일때
-                            val shouldAutoGenerate = !quizStatus.hasCreatedToday &&
-                                    !quizStatus.hasSolvedToday &&
-                                    !goal.isExpired && !goal.isCompleted &&
-                                    quizStatus.availableQuizCount == 0
 
                             _uiState.update {
                                 it.copy(
@@ -592,26 +585,29 @@ class HomeViewModel @Inject constructor(
                                     isShowGoalExpiredDialog = quizStatus.isCompleted // ✅ 퀴즈 상태의 isCompleted 기반으로 모달 노출 여부 결정
                                 )
                             }
-                            // update 호출 직후 확인
-                            Log.d(
-                                "디버깅_업데이트",
-                                "4. 업데이트 완료 후 실제 State 값: ${_uiState.value.summaryQuery}"
-                            )
 
-                            // 🔥 [핵심 로직] 자정이 지나 hasCreatedToday가 false가 되었다면 자동으로 요약글 생성
-                            // 단, 이미 목표가 완료되었거나(isCompleted) 생성 중일 때는 제외
+                            // 시작시 성공 화면에서 가운데 음식 부분에 로딩을 표시한다.
+                            _screenState.value = UiScreenState.Success
 
-                            Log.d(
-                                "자동 요약글 생성 여부",
-                                "자동 요약글 생성 여부: ${shouldAutoGenerate}"
-                            )
+                            // 리소스 찾을 수 없으면 요약글 다시 생성
+                            // 모든 로딩이 끝난 후 (Success 상태 전환 후)
+                            // 3. 요약글 존재 여부 확인 (조회 API 호출)
+                            checkSummaryAndHandleMissing(buildSummaryQuery(goal))
+
+                            // 💡 요약글 자동생성 조건
+                            // 오늘 풀지 않았고, 오늘 생성하지 않았고
+                            // 목표가 완료되거나, 만료되지 않았고
+                            // 목표에 생성되어 있는 퀴즈가 0개 일때
+                            val shouldAutoGenerate = !quizStatus.hasCreatedToday &&
+                                    !quizStatus.hasSolvedToday &&
+                                    !goal.isExpired && !goal.isCompleted &&
+                                    quizStatus.availableQuizCount == 0
+
 
                             if (shouldAutoGenerate) {
-                                // 시작시 성공 화면에서 가운데 음식 부분에 로딩을 표시한다.
-                                _screenState.value = UiScreenState.Success
 
                                 // 자동 생성 시에도 로딩 화면에 진행 바를 표시하기 위해 loadingTitle 등을 설정
-                                _uiState.update { 
+                                _uiState.update {
                                     it.copy(
                                         loadingTitle = "새로운 퀴즈를 만들고 있어요!",
                                         loadingMessage = "새로운 하루가 시작되어 퀴즈를 준비하고 있어요."
@@ -651,17 +647,78 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 요약글을 조회하고, 만약 COMMON-005(데이터 없음) 에러가 발생하면
+     * 자동으로 생성 로직(autoGenerateDailySummary)을 호출합니다.
+     */
+    private suspend fun checkSummaryAndHandleMissing(query: SummaryQuery) {
+        val currentState = _uiState.value
+        val summaryResult = when (query.goalType) {
+            DomainGoalType.DOCUMENT -> documentRepository.getDocumentSummary(
+                currentState.summaryQuery.goalId.toInt(),
+                query.documentId!!.toInt()
+            )
+
+            DomainGoalType.CATEGORY -> categoryRepository.getDailyCategoryDocument(
+                query.categoryId!!
+            )
+        }
+
+        when (summaryResult) {
+            is ApiResultV2.Success -> {
+                // 요약글이 이미 존재함
+            }
+
+            is ApiResultV2.ServerError -> {
+                when (summaryResult.code) {
+                    "COMMON-005" -> {
+                        // ✅ 요약글이 아예 없음 -> 자동 생성 로직 호출
+                        Log.d("HomeViewModel", "COMMON-005 감지: 요약글 자동 생성 시작")
+                        autoGenerateDailySummary(query)
+                    }
+
+                    "DOCUMENT-002" -> {
+                        // ✅ 요약글 생성 중 -> 로딩 UI 표시 후 2초 뒤 재시도
+                        Log.d("HomeViewModel", "DOCUMENT-002 감지: 2초 후 재시도")
+
+                        _uiState.update {
+                            it.copy(
+                                loadingTitle = "pdf 목표를 등록하고 있어요",
+                                loadingMessage = "잠시만 기다려주세요...",
+                                processingState = ProcessingUiState(progress = 0f)
+                            )
+                        }
+
+                        delay(2000L) // 2초 대기
+                        checkSummaryAndHandleMissing(query) // 재귀 호출을 통한 재시도
+                    }
+
+                    else -> {
+                        _uiState.update { it.copy(processingState = null) }
+                        moveToError(summaryResult)
+                    }
+                }
+            }
+
+
+            else -> {
+                moveToError(summaryResult)
+            }
+        }
+    }
+
 
     /**
      * 자정이 지났을 때 백그라운드에서 요약글을 자동으로 생성합니다.
+     * * @param isExplicitEntry 목표 추가/온보딩을 통해 직접 진입했는지 여부
      */
-    private fun autoGenerateDailySummary(query: SummaryQuery) {
+    fun autoGenerateDailySummary(query: SummaryQuery) {
         viewModelScope.launch {
             // 1️⃣ 로딩 상태 활성화 (이 순간 HomeScreen의 GoalLoadingScreen이 나타남)
             _uiState.update {
                 it.copy(
                     loadingTitle = "새로운 요약글 생성 중",
-                    loadingMessage = "자정이 지나 새로운 지식을 준비하고 있어요.",
+                    loadingMessage = "새로운 요약글을 준비하고 있어요.",
                     processingState = ProcessingUiState(progress = 0f) // null이 아니게 설정
                 )
             }
@@ -687,15 +744,16 @@ class HomeViewModel @Inject constructor(
             // 3️⃣ 로딩 애니메이션 중지
             stopProcessingAnimation()
 
+
             // 4️⃣ 결과 처리 및 로딩 상태 해제 (processingState = null)
             if (result is ApiResultV2.Success) {
                 _uiState.update {
                     it.copy(
-                        hasCreatedToday = true,
                         processingState = null // 로딩 해제 -> 다시 음식 이미지 노출
                     )
                 }
                 updateUserQuizStatus()
+                setRandomFood()
             } else {
                 // 실패 시에도 로딩은 꺼줘야 합니다.
                 _uiState.update { it.copy(processingState = null) }
@@ -813,7 +871,6 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(lastCheckedDate = today) }
         Log.d("HomeViewModel", "백그라운드 전환: 날짜 기록 ($today)")
     }
-
 
 
 }
