@@ -2,8 +2,8 @@ package com.teumteumeat.teumteumeat.di
 
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepositoryImpl
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepositoryImpl
+import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
+import com.teumteumeat.teumteumeat.data.repository.pdf_document.PdfDocumentRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepositoryImpl
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
@@ -37,8 +37,8 @@ abstract class RepositoryModule {
     ): UserRepository
 
     @Binds abstract fun bindDocumentRepository(
-        impl: DocumentRepositoryImpl
-    ): DocumentRepository
+        impl: PdfDocumentRepositoryImpl
+    ): PdfDocumentRepository
 
     @Binds abstract fun bindGoalRepository(
         impl: GoalRepositoryImpl

@@ -2,7 +2,7 @@ package com.teumteumeat.teumteumeat.data.repository.history
 
 import com.teumteumeat.teumteumeat.data.api.HistoryApiService
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
-import com.teumteumeat.teumteumeat.data.mapper.toDomain
+import com.teumteumeat.teumteumeat.data.mapper.toPdfDocumentSummary
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model_response.CalendarHistoryResponse
@@ -30,7 +30,7 @@ class HistoryRepositoryImpl @Inject constructor(
         return safeApiVer2(
             apiCall = { historyApiService.getCategoryHistories() },
             mapper = { response ->
-                response.requireNotNullOrError("/api/v1/history/topics")
+                response.requireNotNullOrError()
                     .map { category ->
                         CategoryHistoryUiModel(
                             categoryName = category.categoryName,
@@ -78,8 +78,8 @@ class HistoryRepositoryImpl @Inject constructor(
             },
             mapper = { data ->
                 data
-                    .requireNotNullOrError(requestUrl) // 응답 데이터 null 체크 (BaseRepository 유틸 사용)
-                    .toDomain() // DTO(HistorySummaryResponse)를 Domain Entity(DailySummary)로 변환
+                    .requireNotNullOrError() // 응답 데이터 null 체크 (BaseRepository 유틸 사용)
+                    .toPdfDocumentSummary() // DTO(HistorySummaryResponse)를 Domain Entity(DailySummary)로 변환
             }
         )
     }
@@ -96,7 +96,7 @@ class HistoryRepositoryImpl @Inject constructor(
             },
             mapper = { data ->
                 data
-                    .requireNotNullOrError(requestUrl)      // null 방어
+                    .requireNotNullOrError()      // null 방어
                     .map { it.toCalendarDailyItem() }
             }
         )
@@ -114,7 +114,7 @@ class HistoryRepositoryImpl @Inject constructor(
                 )
             },
             mapper = { data ->
-                data.requireNotNullOrError("api/v1/history/calendar")
+                data.requireNotNullOrError()
             }
         )
 }

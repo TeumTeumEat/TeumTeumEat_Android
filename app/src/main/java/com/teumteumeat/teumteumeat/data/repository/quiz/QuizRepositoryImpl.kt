@@ -35,7 +35,7 @@ class QuizRepositoryImpl @Inject constructor(
             mapper = { response ->
                 // ✅ data 는 null 이면 안됨
                 response
-                    .requireNotNullOrError(url)
+                    .requireNotNullOrError()
                     .isQuizGuideSeen
             }
         )
@@ -48,7 +48,7 @@ class QuizRepositoryImpl @Inject constructor(
             },
             mapper = { response ->
                 response
-                    .requireNotNullOrError("/api/v1/user-quizzes/status")
+                    .requireNotNullOrError()
                     .toDomain()
             }
         )

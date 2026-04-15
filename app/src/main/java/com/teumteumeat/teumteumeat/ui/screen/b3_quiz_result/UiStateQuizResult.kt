@@ -20,6 +20,9 @@ data class UiStateQuizResult(
     /** 카테고리 목표 요약글 문서Id */
     val categoryDocumentId: Long = -1,
 
+    /** PDF 문서 목표 요약글 조회용 ID */
+    val pdfDocumentSummaryId: Int = -1,
+
     /** PDF / Summary API */
     val summary: UiStateSummary = UiStateSummary(isLoading = true),
 

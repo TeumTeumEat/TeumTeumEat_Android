@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
+import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
@@ -27,7 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class QuizResultViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val documentRepository: DocumentRepository,
+    private val pdfDocumentRepository: PdfDocumentRepository,
     private val quizRepository: QuizRepository,
     private val historyRepository: HistoryRepository,
     private val categoryRepository: CategoryRepository,
@@ -81,18 +81,9 @@ class QuizResultViewModel @Inject constructor(
                         it.copy(userGoal = userGoal)
                     }
 
-                    // 2️⃣ 퀴즈 결과 조회
+                    // 2️⃣ 목표 타입 별 퀴즈 결과 조회
                     val goalType = userGoal.type
-                    when (goalType) {
-                        DomainGoalType.CATEGORY -> {
-                            loadQuizResults(goalType, documentId, date)
-                        }
-
-                        DomainGoalType.DOCUMENT -> {
-                            val documentId = userGoal.documentId
-                            loadQuizResults(goalType, documentId!!, date)
-                        }
-                    }
+                    loadQuizResultByGoalType(goalType, userGoal, documentId, date)
 
                     // 3️⃣ 목표 타입 기반 요약 조회
                     loadSummaryByGoal(userGoal)
@@ -104,6 +95,26 @@ class QuizResultViewModel @Inject constructor(
                 }
             }
 
+        }
+    }
+
+    private suspend fun loadQuizResultByGoalType(
+        type: DomainGoalType,
+        goal: UserGoal,
+        documentId: Long,
+        date: String
+    ) {
+        when (type) {
+            DomainGoalType.CATEGORY -> {
+                setCategoryDocumentId(goal.category!!.categoryId)
+                loadQuizResults(type, documentId, date)
+            }
+
+            DomainGoalType.DOCUMENT -> {
+                setDocumentSummaryId(goal.goalId, documentId)
+                val pdfDocumentSummaryId = _uiState.value.pdfDocumentSummaryId
+                loadQuizResults(type, pdfDocumentSummaryId.toLong(), date)
+            }
         }
     }
 
@@ -161,28 +172,25 @@ class QuizResultViewModel @Inject constructor(
 
         when (goal.type) {
             DomainGoalType.DOCUMENT -> {
-                val documentId = goal.documentId ?: return
-                loadDocumentSummary(goal.type, documentId, date)
+                val pdfDocumentSummaryId = uiState.value.pdfDocumentSummaryId
+                loadDocumentSummary(goal.type, pdfDocumentSummaryId, date)
             }
 
             DomainGoalType.CATEGORY -> {
-                val categoryId = goal.category?.categoryId ?: return
-                setCategoryDocumentId(categoryId)
                 val categoryDocumentId = uiState.value.categoryDocumentId
-                loadCategorySummary(goal.type, categoryDocumentId, date)
+                loadCategoryGoalSummary(goal.type, categoryDocumentId, date)
             }
         }
     }
 
-    private suspend fun setCategoryDocumentId(categoryId: Long) {
-
-        when (val result = categoryRepository.getDailyCategoryDocument(categoryId)) {
+    private suspend fun setDocumentSummaryId(goalId: Long, documentId: Long) {
+        when (val result = pdfDocumentRepository.getPdfDocumentSummaryId(goalId.toInt(), documentId.toInt())) {
             is ApiResultV2.Success -> {
                 val data = result.data
 
                 _uiState.update {
                     it.copy(
-                        categoryDocumentId = data.documentId
+                        pdfDocumentSummaryId = data.value
                     )
                 }
 
@@ -197,8 +205,8 @@ class QuizResultViewModel @Inject constructor(
     /**
      * 오늘의 남남지식 요약 조회
      */
-    fun loadDocumentSummary(goalType: DomainGoalType, documentId: Long, date: String) {
-        Log.d("loadDocumentSummary", "요약글 번호: $documentId")
+    fun loadDocumentSummary(goalType: DomainGoalType, documentSummaryId: Int, date: String) {
+        Log.d("loadDocumentSummary", "Pdf 문서 요약글 Id: $documentSummaryId")
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -206,17 +214,17 @@ class QuizResultViewModel @Inject constructor(
                 )
             }
 
-            if (documentId == -1L) {
+            if (documentSummaryId == -1) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = "존재하지 않는 documentId 입니다.(요약글 조회 오류)"
+                        errorMessage = "documentId 를 전달받지 못했습니다. (id 전달 오류)"
                     )
                 }
             }
 
             when (val result = historyRepository.getLearningHistorySummary(
-                goalType, documentId, date
+                goalType, documentSummaryId.toLong(), date
             )
             ) {
                 is ApiResultV2.Success -> {
@@ -241,37 +249,37 @@ class QuizResultViewModel @Inject constructor(
                     moveToError(result)
                 }
             }
+        }
+    }
 
-            /*when (val result = documentRepository.getDocumentSummary(goalId, documentId)) {
+    /**
+     * 카테고리 목표 요약글 문서Id 조회 및 설정
+     */
+    private suspend fun setCategoryDocumentId(categoryId: Long) {
 
-                is ApiResultV2.Success -> {
-                    val data = result.data
+        when (val result = categoryRepository.getDailyCategoryDocument(categoryId)) {
+            is ApiResultV2.Success -> {
+                val data = result.data
 
-                    _uiState.update {
-                        it.copy(
-                            summary = UiStateSummary(
-                                title = data.fileName,
-                                dateText = Utils.TimeUtil.todayText(),
-                                summary = data.summary, // ⭐ 아래 유틸 참고
-                                hasSolvedToday = data.hasSolvedToday,
-                                isFirstTime = data.isFirstTime,
-                                isLoading = false,
-                                errorMessage = null,
-                            ),
-                            errorMessage = null,
-                        )
-                    }
+                _uiState.update {
+                    it.copy(
+                        categoryDocumentId = data.documentId
+                    )
                 }
 
-                else -> {
-                    moveToError(result)
-                }
-            }*/
+            }
+
+            else -> {
+                moveToError(result)
+            }
         }
     }
 
 
-    fun loadCategorySummary(goalType: DomainGoalType, categoryId: Long, date: String) {
+    /**
+     * 카테고리 목표 요약글 조회
+     */
+    private fun loadCategoryGoalSummary(goalType: DomainGoalType, categoryId: Long, date: String) {
 
         viewModelScope.launch {
             if (categoryId == -1L) {
@@ -311,37 +319,6 @@ class QuizResultViewModel @Inject constructor(
                 }
             }
 
-            /*when (
-                val result =
-                    categoryRepository.getDailyCategoryDocument(categoryId.toLong())
-            ) {
-
-                is ApiResultV2.Success -> {
-                    val data = result.data
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            summary = UiStateSummary(
-                                title = data.title,
-                                dateText = toMonthDay(data.createdAt),
-                                summary = data.content,
-                                isFirstTime = data.isFirstTime,
-                                categoryDocumentId = data.documentId.toInt(),
-                                isLoading = false,
-                                errorMessage = null,
-                            ),
-                            errorMessage = null,
-                        )
-                    }
-
-                }
-
-                else -> {
-                    moveToError(result)
-                }
-
-            }*/
         }
     }
 
