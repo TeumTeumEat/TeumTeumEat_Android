@@ -98,7 +98,7 @@ jobs:
           git diff origin/$BASE_BRANCH...HEAD -- . ':(exclude)*.xml' ':(exclude)*.json' > /tmp/diff.txt
 
           # 최대 50,000자까지만 보관하고 나머지는 삭제
-          git diff origin/$BASE_BRANCH...HEAD | head -c 50000 > /tmp/diff.txt
+          git diff origin/$BASE_BRANCH...HEAD | head -c 20000 > /tmp/diff.txt
           
           git diff --name-status origin/$BASE_BRANCH...HEAD > /tmp/files.txt
           echo "✅ Files: $(wc -l < /tmp/files.txt) files changed"
