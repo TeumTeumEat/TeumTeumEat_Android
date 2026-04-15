@@ -2,7 +2,7 @@ package com.teumteumeat.teumteumeat.data.api
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.CalendarHistoryResponse
-import com.teumteumeat.teumteumeat.data.history.remote.response.HistorySummaryResponse
+import com.teumteumeat.teumteumeat.data.history.response.HistorySummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.history.CategoryHistoryResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.history.HistoryItemResponse
 import retrofit2.http.GET

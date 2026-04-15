@@ -60,11 +60,9 @@ class Utils {
          *
          * @param requestUrl 디버깅 및 프론트 노출용 메시지에 포함할 API 경로
          */
-        inline fun <T : Any> T?.requireNotNullOrError(
-            requestUrl: String
-        ): T {
+        inline fun <T : Any> T?.requireNotNullOrError(): T {
             if (this == null) {
-                error("$requestUrl 이 null 을 반환했습니다.")
+                error("서버 응답값이 null 입니다.")
             }
             return this
         }

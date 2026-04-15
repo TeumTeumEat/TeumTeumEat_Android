@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.data.repository.document
+package com.teumteumeat.teumteumeat.data.repository.pdf_document
 
 import android.content.Context
 import android.net.Uri
@@ -12,7 +12,13 @@ import com.teumteumeat.teumteumeat.data.network.model_request.RegisterDocumentRe
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository // safeApiVer2 사용을 위해 필요
-import com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse
+import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
+import com.teumteumeat.teumteumeat.data.mapper.toPdfDocumentSummary
+import com.teumteumeat.teumteumeat.data.mapper.toDocumentSummaryId
+import com.teumteumeat.teumteumeat.domain.model.document.DocumentSummaryId
+import com.teumteumeat.teumteumeat.domain.model.document.PdfDocumentSummary
+import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
+import com.teumteumeat.teumteumeat.utils.Utils.RepositoryUtils.requireNotNullOrError
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,18 +28,21 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class DocumentRepositoryImpl @Inject constructor(
+class PdfDocumentRepositoryImpl @Inject constructor(
     private val documentApiService: DocumentApiService,
     private val okHttpClient: OkHttpClient,
     @ApplicationContext private val context: Context,
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource,
-) : BaseRepository(authApiService, tokenLocalDataSource), DocumentRepository{
+) : BaseRepository(authApiService, tokenLocalDataSource), PdfDocumentRepository {
 
-    override suspend fun getDocumentSummary(
+    /**
+     * 오늘의 PDF 문서 요약글 정보를 조회(GET)합니다.
+     */
+    override suspend fun getPdfDocumentSummary(
         goalId: Int,
         documentId: Int,
-    ): ApiResultV2<DocumentSummaryResponse> {
+    ): ApiResultV2<PdfDocumentSummary> {
 
         return safeApiVer2(
             apiCall = {
@@ -43,18 +52,15 @@ class DocumentRepositoryImpl @Inject constructor(
                 )
             },
             mapper = { data ->
-                data // ✅ 단건 조회이므로 그대로 반환
+                val requestUrl = "/api/v1/goals/{goalId}/documents/{documentId}/summary"
+                data.requireNotNullOrError()
+                    .toPdfDocumentSummary()
             }
         ).let { result ->
             when (result) {
 
                 is ApiResultV2.Success -> {
                     val summary = result.data
-                        ?: return ApiResultV2.ServerError(
-                            code = "INVALID_DOCUMENT_SUMMARY_RESPONSE",
-                            message = "문서 요약을 불러오지 못했습니다.",
-                            errorType = DomainError.Message("document summary is null")
-                        )
 
                     ApiResultV2.Success(
                         message = result.message,
@@ -62,13 +68,44 @@ class DocumentRepositoryImpl @Inject constructor(
                     )
                 }
 
-                is ApiResultV2.ServerError -> result
-                is ApiResultV2.NetworkError -> result
-                is ApiResultV2.SessionExpired -> result
-                is ApiResultV2.UnknownError -> result
+                else -> result
             }
         }
     }
+
+    override suspend fun getPdfDocumentSummaryId(
+        goalId: Int,
+        documentId: Int
+    ): ApiResultV2<DocumentSummaryId> {
+        return safeApiVer2(
+            apiCall = {
+                documentApiService.getDocumentSummary(
+                    goalId = goalId,
+                    documentId = documentId
+                )
+            },
+            mapper = { data ->
+                val requestUrl = "/api/v1/goals/{goalId}/documents/{documentId}/summary"
+                data.requireNotNullOrError()
+                    .toDocumentSummaryId()
+            }
+        ).let { result ->
+            when (result) {
+
+                is ApiResultV2.Success -> {
+                    val summary = result.data
+
+                    ApiResultV2.Success(
+                        message = result.message,
+                        data = summary
+                    )
+                }
+
+                else -> result
+            }
+        }
+    }
+
 
     /**
      * 오늘의 PDF 문서 요약글을 생성(POST)합니다.

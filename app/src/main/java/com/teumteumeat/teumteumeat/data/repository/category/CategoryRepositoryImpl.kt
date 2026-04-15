@@ -6,7 +6,7 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import javax.inject.Inject
-import com.teumteumeat.teumteumeat.data.network.model_response.DailyCategoryDocument
+import com.teumteumeat.teumteumeat.data.network.model_response.CategoryDocument
 import com.teumteumeat.teumteumeat.data.network.model_response.toDomain
 
 
@@ -19,7 +19,7 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override suspend fun getDailyCategoryDocument(
         categoryId: Long
-    ): ApiResultV2<DailyCategoryDocument> {
+    ): ApiResultV2<CategoryDocument> {
 
         return safeApiVer2(
             apiCall = {
@@ -39,7 +39,7 @@ class CategoryRepositoryImpl @Inject constructor(
      */
     override suspend fun createDailyCategoryDocument(
         categoryId: Long
-    ): ApiResultV2<DailyCategoryDocument> {
+    ): ApiResultV2<CategoryDocument> {
         return safeApiVer2(
             apiCall = {
                 categoryApiService.createDailyCategoryDocument(categoryId)

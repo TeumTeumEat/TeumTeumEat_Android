@@ -61,7 +61,7 @@ class GoalRepositoryImpl @Inject constructor(
                 // ✅ data 는 null 이면 안되는 API
                 // → mapper 단계에서 바로 Domain 변환
                 response
-                    .requireNotNullOrError(url)
+                    .requireNotNullOrError()
                     .toDomain()
             }
         )

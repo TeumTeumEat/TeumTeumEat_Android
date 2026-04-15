@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.data.history.remote.response
+package com.teumteumeat.teumteumeat.data.history.response
 
 data class HistorySummaryResponse(
     val title: String,

@@ -5,7 +5,7 @@ import com.teumteumeat.teumteumeat.data.network.model_request.PresignedRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.RegisterDocumentRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.GetDocumentsResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
-import com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse
+import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -31,11 +31,10 @@ interface DocumentApiService {
         @Path("goalId") goalId: Int
     ): ApiResponse<GetDocumentsResponse, Any?>
 
-    // todo. summary 조회 전 OCR 처리가 되었는지 확인 api 구현
-    // todo. 처리가 안됬으면 30초 대기로딩 표시 후 api 처리 완료 확인 후 아래 api 재요청
-
-    // todo. OCR 처리가 되었는지 확인 api 확인 후 아래 호출 구현
-    // ---- 유저 퀴즈 생성하는데 summary 요약글 조회 필요 ---
+    /**
+     * ## PDF 문서 목표의 요약글 조회 요청
+     * * ❗호출 전 주의 사항 : 요약글 생성 요청 응답으로 status(OCR 처리상태)가 'completed' 되었는지 확인 후 요청
+     */
     @GET("/api/v1/goals/{goalId}/documents/{documentId}/summary")
     suspend fun getDocumentSummary(
         @Path("goalId") goalId: Int,

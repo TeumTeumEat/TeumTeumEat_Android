@@ -1,12 +1,14 @@
-package com.teumteumeat.teumteumeat.data.repository.document
+package com.teumteumeat.teumteumeat.domain.repository.pff_document
 
 import android.net.Uri
+import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
-import com.teumteumeat.teumteumeat.ui.screen.b1_summary.DocumentSummaryResponse
+import com.teumteumeat.teumteumeat.domain.model.document.DocumentSummaryId
+import com.teumteumeat.teumteumeat.domain.model.document.PdfDocumentSummary
 
-interface DocumentRepository {
+interface PdfDocumentRepository {
 
     /**
      * 1️⃣ presigned URL 발급
@@ -19,7 +21,7 @@ interface DocumentRepository {
 
     /**
      * 2️⃣ S3 presigned PUT 업로드
-     * - 서버 API ❌
+     * - 서버 API 가 아님❌
      * - 단순 성공 / 실패만 판단
      */
     suspend fun uploadFileToS3(
@@ -42,10 +44,15 @@ interface DocumentRepository {
         goalId: Int
     ): ApiResultV2<List<DocumentResponse>>
 
-    suspend fun getDocumentSummary(
+    suspend fun getPdfDocumentSummaryId(
         goalId: Int,
         documentId: Int,
-    ): ApiResultV2<DocumentSummaryResponse>
+    ): ApiResultV2<DocumentSummaryId>
+
+    suspend fun getPdfDocumentSummary(
+        goalId: Int,
+        documentId: Int,
+    ): ApiResultV2<PdfDocumentSummary>
 
     suspend fun createDocumentSummary(
         goalId: Int,
@@ -54,4 +61,3 @@ interface DocumentRepository {
 
 
 }
-
