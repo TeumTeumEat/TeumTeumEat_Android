@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -14,32 +13,31 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
-import com.teumteumeat.teumteumeat.ui.component.AmPm
-import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
-import java.io.FileInputStream
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.util.Locale
-import java.util.Properties
 import androidx.core.net.toUri
 import com.google.firebase.messaging.FirebaseMessaging
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.di.NotificationEntryPoint
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.ui.component.AmPm
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
+import java.io.FileInputStream
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
+import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoField
+import java.util.Locale
+import java.util.Properties
 
 sealed interface NotificationPermissionEvent {
     data object RequestPermission : NotificationPermissionEvent
@@ -62,11 +60,9 @@ class Utils {
          *
          * @param requestUrl 디버깅 및 프론트 노출용 메시지에 포함할 API 경로
          */
-        inline fun <T : Any> T?.requireNotNullOrError(
-            requestUrl: String
-        ): T {
+        inline fun <T : Any> T?.requireNotNullOrError(): T {
             if (this == null) {
-                error("$requestUrl 이 null 을 반환했습니다.")
+                error("서버 응답값이 null 입니다.")
             }
             return this
         }
@@ -321,7 +317,7 @@ class Utils {
             context: Context,
             targetActivity: Class<out Activity>,   // ✅ 이동 대상 Activity
             id: Long,
-            type: GoalType,
+            type: DomainGoalType,
             date: LocalDate,
             exitCurrent: Boolean = false
         ) {

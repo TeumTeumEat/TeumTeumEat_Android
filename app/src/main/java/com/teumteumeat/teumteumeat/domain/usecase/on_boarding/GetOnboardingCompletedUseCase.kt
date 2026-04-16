@@ -1,12 +1,10 @@
 package com.teumteumeat.teumteumeat.domain.usecase.on_boarding
 
 import android.util.Log
-import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingDecision
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingStatus
 import javax.inject.Inject
 
 class GetOnboardingCompletedUseCase@Inject constructor(

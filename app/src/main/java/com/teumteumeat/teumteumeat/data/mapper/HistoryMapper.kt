@@ -1,15 +1,10 @@
-package com.teumteumeat.teumteumeat.data.network.model_response
+package com.teumteumeat.teumteumeat.data.mapper
 
 import com.teumteumeat.teumteumeat.domain.model.history.DailySummary
+import com.teumteumeat.teumteumeat.data.history.response.HistorySummaryResponse
 import java.time.LocalDateTime
 
-data class HistorySummaryResponse(
-    val title: String,
-    val summary: String,
-    val createdAt: String
-)
-
-fun HistorySummaryResponse.toDomain(): DailySummary {
+fun HistorySummaryResponse.toPdfDocumentSummary(): DailySummary {
     return DailySummary(
         title = title,
         summary = summary,

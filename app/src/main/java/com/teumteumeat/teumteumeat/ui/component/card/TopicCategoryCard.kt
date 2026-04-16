@@ -26,7 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -146,7 +146,7 @@ fun TopicTabMockPreviewContent() {
                                 title = history.title,
                                 description = history.description,
                                 dateText = history.dateText,
-                                goalType = GoalType.CATEGORY,
+                                domainGoalTypeV1 = DomainGoalType_v1.CATEGORY,
                                 onClick = {}
                             )
 

@@ -17,25 +17,4 @@ data class UserGoal(
     val category: GoalCategory?
 )
 
-data class GoalCategory(
-    val categoryId: Long,
-    val name: String,
-    val path: String
-)
 
-enum class DomainGoalType {
-    CATEGORY, DOCUMENT
-}
-
-enum class Difficulty {
-    EASY, MEDIUM, HARD, NONE
-}
-
-fun mapDifficultyToKorean(difficulty: Difficulty): String {
-    return when (difficulty) {
-        Difficulty.EASY -> "하"
-        Difficulty.MEDIUM -> "중"
-        Difficulty.HARD -> "상"
-        Difficulty.NONE -> "선택안함"
-    }
-}

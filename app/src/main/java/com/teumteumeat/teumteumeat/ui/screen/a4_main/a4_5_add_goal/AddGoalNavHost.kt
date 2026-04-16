@@ -1,33 +1,32 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import android.util.Log
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectScreen
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CheckSetMyInfoScreen
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.FileUploadScreen
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingViewModel
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OptimizerDataScreen
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.SetStudyRangeScreen
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAddGoalUiState
-import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
 
 
 @Composable
 fun AddGoalNavHost(
     navController: NavHostController,
-    startDestination: String?,
+    startDestination: GoalTypeUiState,
 ) {
     val activity = LocalActivityContext.current as AddGoalActivity
     val viewModel = LocalViewModelContext.current as AddGoalViewModel
     val uiState = LocalAddGoalUiState.current
+
+
+    val startRoute = when (startDestination) {
+        GoalTypeUiState.CATEGORY ->  AddGoalScreens.SixthCategorySelectScreen.route
+        GoalTypeUiState.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen.route
+        GoalTypeUiState.NONE -> AddGoalScreens.SelectInputMethodScreen.route
+    }
 
 
     LaunchedEffect(navController) {
@@ -36,10 +35,43 @@ fun AddGoalNavHost(
         }
     }
 
+
     NavHost(
         navController = navController,
-        startDestination = startDestination!!
+        startDestination = startRoute
     ) {
+
+        // ✅ 1-0. 목표 타입 선택 화면
+        composable(
+            route = AddGoalScreens.SelectInputMethodScreen.route
+        ) {
+
+            AddGoalBackHandler(
+                currentPage = uiState.currentPage,
+                navController = navController,
+                // 💡 라디오 버튼은 상태만 바꾸고, 이동은 이 콜백을 통해 버튼 클릭 시 수행
+                onFinish = { activity.finish() },
+                onPrevPage = { viewModel.prevPage() }
+            )
+
+            SelectInputMethodScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onPrev = {
+                    activity.finish()
+                },
+
+                onNextFileUpload = {
+                    viewModel.nextPage()
+                    navController.navigate(AddGoalScreens.SixthFileUploadScreen.route)
+                },
+                // 요청하신 구현 부분: 선택된 타입에 따라 분기 처리
+                onNextCateGorySelect = {
+                    viewModel.nextPage() // 페이지 번호 증가
+                    navController.navigate(AddGoalScreens.SixthCategorySelectScreen.route)
+                }
+            )
+        }
 
         // ✅ 1-1 카테고리 선택 화면
         composable(
@@ -50,7 +82,7 @@ fun AddGoalNavHost(
                 currentPage = uiState.currentPage,
                 navController = navController,
                 onFinish = { activity.finish() },
-                onPrevPage = { viewModel.prevPage() }
+                onPrevPage = { viewModel.prevPage() },
             )
 
             AddGoalCategorySelectScreen(
@@ -60,7 +92,8 @@ fun AddGoalNavHost(
                     navController.navigate(AddGoalScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
-                    activity.finish()
+                    viewModel.prevPage()
+                    navController.popBackStack()
                 },
                 viewModel = viewModel,
                 uiState = uiState,
@@ -78,7 +111,7 @@ fun AddGoalNavHost(
                 currentPage = uiState.currentPage,
                 navController = navController,
                 onFinish = { activity.finish() },
-                onPrevPage = { viewModel.prevPage() }
+                onPrevPage = { viewModel.prevPage() },
             )
 
             AddGoalFileUploadScreen(
@@ -105,7 +138,7 @@ fun AddGoalNavHost(
                 currentPage = uiState.currentPage,
                 navController = navController,
                 onFinish = { activity.finish() },
-                onPrevPage = { viewModel.prevPage() }
+                onPrevPage = { viewModel.prevPage() },
             )
 
             AddGoalOptimizerDataScreen(
@@ -134,7 +167,7 @@ fun AddGoalNavHost(
                 currentPage = uiState.currentPage,
                 navController = navController,
                 onFinish = { activity.finish() },
-                onPrevPage = { viewModel.prevPage() }
+                onPrevPage = { viewModel.prevPage() },
             )
 
             AddGoalSetStudyRangeScreen(
@@ -163,7 +196,7 @@ fun AddGoalNavHost(
                 currentPage = uiState.currentPage,
                 navController = navController,
                 onFinish = { activity.finish() },
-                onPrevPage = { viewModel.prevPage() }
+                onPrevPage = { viewModel.prevPage() },
             )
 
             AddGoalCheckSetMyInfoScreen(
@@ -191,6 +224,9 @@ fun AddGoalNavHost(
 
 sealed class AddGoalScreens(val route: String) {
 
+    data object SelectInputMethodScreen :
+        AddGoalScreens("select_input_method")
+
     data object SixthCategorySelectScreen :
         AddGoalScreens("select_category")
 
@@ -214,6 +250,7 @@ object AddGoalFlow {
 
     /** 목표 추가 순서 */
     val screens: List<AddGoalScreens> = listOf(
+        AddGoalScreens.SelectInputMethodScreen,
         AddGoalScreens.SixthCategorySelectScreen,
         AddGoalScreens.SixthFileUploadScreen,
         AddGoalScreens.SeventhOptimizerDataScreen,
@@ -222,26 +259,58 @@ object AddGoalFlow {
     )
 
     /** 전체 페이지 수 */
-    val totalCount: Int
-        get() = 4
+    fun totalCount(goalType: GoalTypeUiState): Int {
+        return if (goalType == GoalTypeUiState.NONE) 5 else 4
+    }
 
     /** 현재 페이지 (1부터 시작)
      * FirstScreen 은 카운트에 포함X
      * */
-    fun currentPage(screen: AddGoalScreens): Int {
-        return screens.indexOf(screen) + 1
+    fun currentPage(screen: AddGoalScreens, goalType: GoalTypeUiState): Int {
+        return when (screen) {
+            AddGoalScreens.SelectInputMethodScreen -> 1
+            AddGoalScreens.SixthCategorySelectScreen,
+            AddGoalScreens.SixthFileUploadScreen -> if (goalType == GoalTypeUiState.NONE) 2 else 1
+            AddGoalScreens.SeventhOptimizerDataScreen -> if (goalType == GoalTypeUiState.NONE) 3 else 2
+            AddGoalScreens.EighthSetStudyRangeScreen -> if (goalType == GoalTypeUiState.NONE) 4 else 3
+            AddGoalScreens.CheckSetMyInfoScreen -> if (goalType == GoalTypeUiState.NONE) 5 else 4
+            else -> 0
+        }
     }
 
     /** 이전 화면 */
-    fun prev(screen: AddGoalScreens): AddGoalScreens? {
-        val index = screens.indexOf(screen)
-        return screens.getOrNull(index - 1)
+    fun prev(screen: AddGoalScreens, goalType: GoalTypeUiState): AddGoalScreens? {
+        return when (screen) {
+            AddGoalScreens.SixthCategorySelectScreen,
+            AddGoalScreens.SixthFileUploadScreen -> {
+                if (goalType == GoalTypeUiState.NONE) AddGoalScreens.SelectInputMethodScreen else null
+            }
+            AddGoalScreens.SeventhOptimizerDataScreen -> {
+                if (goalType == GoalTypeUiState.CATEGORY) AddGoalScreens.SixthCategorySelectScreen
+                else AddGoalScreens.SixthFileUploadScreen
+            }
+            AddGoalScreens.EighthSetStudyRangeScreen -> AddGoalScreens.SeventhOptimizerDataScreen
+            AddGoalScreens.CheckSetMyInfoScreen -> AddGoalScreens.EighthSetStudyRangeScreen
+            else -> null
+        }
     }
 
     /** 다음 화면 */
-    fun next(screen: AddGoalScreens): AddGoalScreens? {
-        val index = screens.indexOf(screen)
-        return screens.getOrNull(index + 1)
+    fun next(screen: AddGoalScreens, goalType: GoalTypeUiState): AddGoalScreens? {
+        return when (screen) {
+            AddGoalScreens.SelectInputMethodScreen -> {
+                when (goalType) {
+                    GoalTypeUiState.CATEGORY -> AddGoalScreens.SixthCategorySelectScreen
+                    GoalTypeUiState.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen
+                    else -> null
+                }
+            }
+            AddGoalScreens.SixthCategorySelectScreen,
+            AddGoalScreens.SixthFileUploadScreen -> AddGoalScreens.SeventhOptimizerDataScreen
+            AddGoalScreens.SeventhOptimizerDataScreen -> AddGoalScreens.EighthSetStudyRangeScreen
+            AddGoalScreens.EighthSetStudyRangeScreen -> AddGoalScreens.CheckSetMyInfoScreen
+            else -> null
+        }
     }
 }
 

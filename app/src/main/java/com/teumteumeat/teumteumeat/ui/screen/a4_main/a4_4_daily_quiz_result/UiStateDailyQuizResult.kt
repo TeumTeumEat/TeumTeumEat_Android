@@ -1,10 +1,9 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_4_daily_quiz_result
 
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
-import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultItem
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 data class UiStateDailyQuizResult(
     val isLoading: Boolean = false,
@@ -18,7 +17,7 @@ data class UiStateDailyQuizResult(
 
     // 📌 요청 파라미터 (상태로 보존)
     val id: Long? = null,
-    val type: GoalType? = null,
+    val type: DomainGoalType? = null,
     val date: LocalDate? = null,
 
     /** 공통 에러 */

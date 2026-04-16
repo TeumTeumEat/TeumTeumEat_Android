@@ -1,6 +1,6 @@
 package com.teumteumeat.teumteumeat.domain.model.history
 
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import java.time.LocalDateTime
 
 
@@ -9,7 +9,7 @@ import java.time.LocalDateTime
  */
 data class CalendarDailyItem(
     val id: Long = 0,
-    val type: GoalType = GoalType.DOCUMENT,
+    val type: DomainGoalType_v1 = DomainGoalType_v1.DOCUMENT,
     val title: String = "",
     val summarySnippet: String = "",
     val lastStudiedAt: LocalDateTime = LocalDateTime.now()
