@@ -10,7 +10,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
@@ -22,7 +21,6 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalSummaryUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
-import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
 
 

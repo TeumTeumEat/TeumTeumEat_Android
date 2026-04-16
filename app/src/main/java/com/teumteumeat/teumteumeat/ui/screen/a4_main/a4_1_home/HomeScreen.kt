@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,13 +30,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -47,10 +53,13 @@ import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_6_guide_expired_goal.GuideExpiredGoalActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.GoalRegisterArgs
+import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -109,6 +118,45 @@ fun HomeScreen(
 
     val sessionManager = viewModel.sessionManager // 세션메니저 정의
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    viewModel.loadHomeState()
+                }
+
+                Lifecycle.Event.ON_PAUSE -> {
+                    // 앱이 백그라운드로 갈 때 현재 날짜를 기록
+                    viewModel.saveCurrentDate()
+                }
+
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // errorMessage가 변경될 때마다 토스트를 띄움
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            // ⚠️ 중요: 토스트를 띄운 후 에러 메시지를 비워줘야 다음 에러 시 다시 반응함
+            viewModel.clearErrorMessage()
+        }
+    }
+
+    // toastMessage가 변경될 때마다 토스트를 띄움
+    LaunchedEffect(uiState.toastMessage) {
+        uiState.toastMessage?.let { message ->
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearToastMessage()
+        }
+    }
+
+
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
@@ -127,10 +175,13 @@ fun HomeScreen(
     // 화면 로드 후 말풍선 애니메이션을 트리거할 상태 변수
     var showBubbleAnimation by remember { mutableStateOf(false) }
 
-    // isConsumedTodayGoal 과 canIssueCuppon 의 상태 값에 따라 말풍선이 표시되도록 구현
-    LaunchedEffect(isConsumedTodayGoal && uiState.dailyAdRewardCount > 0) {
-        if (isConsumedTodayGoal && uiState.dailyAdRewardCount > 0) {
-            delay(300) // 화면이 안정적으로 로드된 후 0.3초 뒤에 말풍선 팝업
+    // LaunchedEffect의 Key로 감시할 상태값들을 직접 나열하면 더 명확합니다.
+    LaunchedEffect(isConsumedTodayGoal, uiState.canIssueCoupon, uiState.cupponCount) {
+        val canShowMoreQuiz =
+            isConsumedTodayGoal && (uiState.canIssueCoupon || uiState.cupponCount > 0)
+
+        if (canShowMoreQuiz) {
+            delay(300)
             showBubbleAnimation = true
         } else {
             showBubbleAnimation = false
@@ -179,10 +230,20 @@ fun HomeScreen(
         when (screenState) {
 
             UiScreenState.Idle, UiScreenState.Loading -> {
-                LoadingScreen(
-                    title = "홈화면 로딩중",
-                    message = "",
-                )
+                if (uiState.processingState != null) {
+                    GoalLoadingScreen(
+                        title = uiState.loadingTitle,
+                        message = uiState.loadingMessage,
+                        progress = uiState.processingState.progress
+                    )
+
+                } else {
+                    LoadingScreen(
+                        title = "홈화면 로딩중",
+                        backgroundColor = theme.backSurface,
+                        message = uiState.loadingMessage,
+                    )
+                }
             }
 
             UiScreenState.Success -> {
@@ -207,6 +268,180 @@ fun HomeScreen(
                     }
 
                     Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(bottom = 30.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // 🌟 요약글 생성 중(processingState 존재)일 때는 로딩 UI를 표시합니다.
+                        if (uiState.processingState != null) {
+                            GoalLoadingScreen(
+                                title = uiState.loadingTitle,
+                                message = uiState.loadingMessage,
+                                progress = uiState.processingState.progress,
+                                backgroundColor = Color.Transparent,
+                                progressPadding = 30.dp
+                            )
+                        } else {
+                            // 🌟 기존 음식 이미지 및 말풍선 Box 로직
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // 1. 하단 레이어 (공간을 차지하는 메인 콘텐츠)
+                                BouncingImage(foodRes) {
+                                    val latestQuery = currentUiState.summaryQuery
+                                    when (uiState.snackState) {
+                                        SnackState.Available -> {
+                                            val intent = Intent(
+                                                activity,
+                                                SummaryActivity::class.java
+                                            ).apply {
+                                                putExtra(
+                                                    SummaryArgs.KEY_GOAL_ID,
+                                                    latestQuery.goalId
+                                                )
+                                                putExtra(
+                                                    SummaryArgs.KEY_GOAL_TYPE,
+                                                    latestQuery.goalType.name
+                                                )
+                                                putExtra(
+                                                    SummaryArgs.KEY_DOCUMENT_ID,
+                                                    latestQuery.documentId
+                                                )
+                                                putExtra(
+                                                    SummaryArgs.KEY_CATEGORY_ID,
+                                                    latestQuery.categoryId
+                                                )
+                                            }
+                                            activity.startActivity(intent)
+                                        }
+
+                                        is SnackState.Consumed -> {
+                                            if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
+                                                viewModel.openAdModal()
+                                            }
+                                        }
+
+                                        SnackState.Expired -> {
+                                            Toast.makeText(
+                                                activity,
+                                                "학습 기간이 만료된 목표입니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+
+                                        SnackState.Completed -> {
+                                            Toast.makeText(
+                                                activity,
+                                                "학습을 완료한 목표입니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+
+                                    }
+                                }
+
+                                // 🌟 수정된 말풍선 로직
+                                if (isConsumedTodayGoal && bubbleScale > 0f) {
+                                    // 퀴즈를 더 풀 수 있는 상태인지 확인
+                                    val canPlayMore = uiState.canIssueCoupon || uiState.cupponCount > 0
+
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .offset(x = 0.dp, y = (-70).dp)
+                                            .zIndex(1f)
+                                            .graphicsLayer {
+                                                scaleX = bubbleScale
+                                                scaleY = bubbleScale
+                                                transformOrigin = TransformOrigin(0.8f, 0f)
+                                                alpha = if (bubbleScale > 0.3f) 1f else 0f
+                                            }
+                                    ) {
+                                        GlowingSpeechBubble(
+                                            // 상태에 따른 텍스트 분기
+                                            text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
+                                            onClick = {
+                                                if (canPlayMore) {
+                                                    viewModel.openAdModal()
+                                                } else {
+                                                    // 더 이상 못 푸는 경우 토스트 알림
+                                                    Toast.makeText(activity, "오늘 준비된 퀴즈를 모두 완료했어요!", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+
+                                // 2. 최상단 오버레이 레이어 (말풍선)
+                                if (isConsumedTodayGoal && bubbleScale > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .offset(x = 0.dp, y = (-70).dp)
+                                            .zIndex(1f)
+                                            .graphicsLayer {
+                                                scaleX = bubbleScale
+                                                scaleY = bubbleScale
+                                                transformOrigin = TransformOrigin(0.8f, 0f)
+                                                alpha = if (bubbleScale > 0.3f) 1f else 0f
+                                            }
+                                    ) {
+                                        GlowingSpeechBubble(
+                                            text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
+                                            onClick = { viewModel.openAdModal() }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(50.dp))
+
+                            // 안내 문구
+                            when (snackState) {
+                                is SnackState.Available -> {
+                                    Text(
+                                        "오늘의 냠냠지식이 \n도착했어요!",
+                                        style = MaterialTheme.appTypography.titleBold22,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+
+                                is SnackState.Consumed -> {
+                                    val message = if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
+                                        "오늘의 지식을\n다 먹었어요!" // 아직 쿠폰 충전 및 사용 가능
+                                    } else {
+                                        "내일 새로운 퀴즈를 풀어봐요" // 완전히 끝남
+                                    }
+
+                                    Text(
+                                        message,
+                                        style = MaterialTheme.appTypography.titleBold22,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+
+                                is SnackState.Expired -> {
+                                    Text(
+                                        "학습 목표 기간이 종료되었어요",
+                                        style = MaterialTheme.appTypography.titleBold22,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+
+                                SnackState.Completed -> {
+                                    Text(
+                                        "목표 학습을 완료했어요",
+                                        style = MaterialTheme.appTypography.titleBold22,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    /*Column(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(bottom = 30.dp),
@@ -306,7 +541,7 @@ fun HomeScreen(
                                 )
                             }
                         }
-                    }
+                    }*/
 
                     // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
                     AdCouponDialog(
@@ -316,26 +551,60 @@ fun HomeScreen(
                         canIssueCoupon = uiState.canIssueCoupon,
                         onDismiss = { viewModel.closeAdModal() },
                         onUseCoupon = {
-                            //  현재 주제가 새로운 학습 데이터가 생성 가능할 때
-                            val latestQuery = currentUiState.summaryQuery
-
-                            val intent = Intent(
-                                activity,
-                                SummaryActivity::class.java
-                            ).apply {
-                                putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
-                                putExtra(SummaryArgs.KEY_GOAL_TYPE, latestQuery.goalType.name)
-                                putExtra(SummaryArgs.KEY_DOCUMENT_ID, latestQuery.documentId)
-                                putExtra(SummaryArgs.KEY_CATEGORY_ID, latestQuery.categoryId)
+                            /*
+                             * 1. 방어 로직: 이미 오늘 목표를 모두 완료한 상태라면 쿠폰 사용을 막고 알림을 띄웁니다.
+                             *    (SummaryActivity로 넘어가더라도 목표가 완료된 상태면 진행이 안 될 수 있기 때문)
+                             */
+                            if (uiState.currentGoalCompleted) {
+                                Toast.makeText(activity, "이미 완료된 목표입니다.", Toast.LENGTH_SHORT).show()
+                                return@AdCouponDialog
                             }
-                            activity.startActivity(intent)
+
+                            /*
+                             * 2. ViewModel의 useCoupon을 호출하여 서버에 오늘의 요약글 생성을 요청합니다.
+                             */
+                            viewModel.useCoupon(
+                                onSuccess = { latestQuery ->
+                                    /*
+                                     * 3. 성공 시: 생성된 최신 요약글 정보(latestQuery)를 Intent에 담아 요약글 화면(SummaryActivity)으로 이동합니다.
+                                     */
+                                    val intent = Intent(
+                                        activity,
+                                        SummaryActivity::class.java
+                                    ).apply {
+                                        putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
+                                        putExtra(
+                                            SummaryArgs.KEY_GOAL_TYPE,
+                                            latestQuery.goalType.name
+                                        )
+                                        putExtra(
+                                            SummaryArgs.KEY_DOCUMENT_ID,
+                                            latestQuery.documentId
+                                        )
+                                        putExtra(
+                                            SummaryArgs.KEY_CATEGORY_ID,
+                                            latestQuery.categoryId
+                                        )
+                                    }
+                                    activity.startActivity(intent)
+
+                                    // 화면 전환 후에는 광고 모달을 닫아줍니다.
+                                    viewModel.closeAdModal()
+                                },
+                                onError = { message ->
+                                    /*
+                                     * 4. 실패 시: 사용자에게 에러 메시지를 Toast로 보여줍니다.
+                                     */
+                                    // Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+                                }
+                            )
                         },
                         onChargeCoupon = {
                             // 광고 시청 로직 구현
                             viewModel.showRewardedAdWithLoading(
                                 activity = activity,
                                 onRewardEarned = {
-                                        viewModel.submitAdWatching()
+                                    viewModel.submitAdWatching()
                                 },
                                 onRewardFailed = {
                                     // 실패: 안내 메시지 출력
@@ -360,26 +629,33 @@ fun HomeScreen(
                         ) {
                             Dialog(
                                 onDismissRequest = {
-                                    // 다이얼로그 바깥을 터치하거나 뒤로가기 버튼을 눌렀을 때 처리
-                                    viewModel.dismissGoalExpiredDialog() // 모달 닫기
+                                    // viewModel.dismissGoalExpiredDialog() // 모달 닫기
                                 },
                                 properties = DialogProperties(
-                                    usePlatformDefaultWidth = false // 커스텀 패딩을 적용하기 위해 기본 너비 제한 해제
+                                    usePlatformDefaultWidth = false,
+                                    dismissOnBackPress = false, // 뒤로가기 버튼으로도 닫히지 않게 하려면 false
+                                    dismissOnClickOutside = false // 외부 터치 시 닫히지 않게 설정
                                 )
                             ) {
 
                                 BaseModal(
                                     title = "풀고 있는 틈틈잇이 없어요",
                                     body = "먹을 간식이 없어요!\n새로운 지식을 먹여줄래요?",
-                                    primaryButtonText = "새로운 틈틈잇 시작하기",
-                                    isPrimaryBtnFillSecondary = true, // 이미지처럼 연한 파란색 버튼 적용
+                                    primaryButtonText = "진행중인 틈틈잇 선택하기",
+                                    secondaryButtonText = "새로운 틈틈잇 시작하기",
+                                    isVerticalButtons = true,
                                     onPrimaryClick = {
                                         viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                        Utils.UxUtils.moveActivity(
-                                            activity,
-                                            GuideExpiredGoalActivity::class.java,
-                                            exitFlag = false
-                                        )
+                                        // 학습 주제 설정 화면(GoalListActivity)으로 이동
+                                        val intent = Intent(activity, GoalListActivity::class.java)
+                                        activity.startActivity(intent)
+                                    },
+                                    onSecondaryClick = {
+                                        viewModel.dismissGoalExpiredDialog() // 모달 닫기
+                                        // 새로운 목표 설정 화면(AddGoalActivity)으로 이동
+                                        // KEY_GOAL_TYPE을 넘기지 않음으로써 목표 방식 선택 화면이 첫 화면이 되도록 함
+                                        val intent = Intent(activity, AddGoalActivity::class.java)
+                                        activity.startActivity(intent)
                                     }
                                 )
                             }

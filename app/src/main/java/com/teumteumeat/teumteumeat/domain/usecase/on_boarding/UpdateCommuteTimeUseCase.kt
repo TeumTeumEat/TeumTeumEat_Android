@@ -1,13 +1,9 @@
 package com.teumteumeat.teumteumeat.domain.usecase.on_boarding
 
 import com.teumteumeat.teumteumeat.data.api.user.CommuteTimeRequest
-import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
-import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.isValidTime
 import javax.inject.Inject
 

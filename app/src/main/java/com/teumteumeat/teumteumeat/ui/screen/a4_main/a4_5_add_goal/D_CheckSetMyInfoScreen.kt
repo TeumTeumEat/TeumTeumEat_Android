@@ -27,11 +27,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.data.mapper.toLable
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
-import com.teumteumeat.teumteumeat.domain.model.goal.mapDifficultyToKorean
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -146,7 +146,7 @@ fun AddGoalCheckSetMyInfoScreen(
 
 // Difficulty Enum 값을 한글 표기 등으로 변환 필요 (여기서는 name 사용하거나 별도 매핑)
                         BaseOutlineButton(
-                            text = mapDifficultyToKorean(uiState.difficulty),  // 필요하다면 별도 mapper 함수 사용 (ex: Difficulty.MIDDLE -> "중")
+                            text = uiState.difficulty.toLable(),
                             contentAligment = Alignment.Center,
                             isEnabled = false,
                             textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(

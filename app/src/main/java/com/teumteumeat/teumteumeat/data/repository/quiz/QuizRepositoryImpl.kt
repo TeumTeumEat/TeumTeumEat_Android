@@ -11,6 +11,7 @@ import com.teumteumeat.teumteumeat.data.network.model_response.toDomain
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.mapper.toDomain
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.quiz.UserQuizStatus
 import com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizHistory
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.SubmitQuizResult
@@ -34,7 +35,7 @@ class QuizRepositoryImpl @Inject constructor(
             mapper = { response ->
                 // ✅ data 는 null 이면 안됨
                 response
-                    .requireNotNullOrError(url)
+                    .requireNotNullOrError()
                     .isQuizGuideSeen
             }
         )
@@ -47,23 +48,23 @@ class QuizRepositoryImpl @Inject constructor(
             },
             mapper = { response ->
                 response
-                    .requireNotNullOrError("/api/v1/user-quizzes/status")
+                    .requireNotNullOrError()
                     .toDomain()
             }
         )
     }
 
     override suspend fun getQuizHistory(
-        type: String,
-        id: Int,
+        type: DomainGoalType,
+        id: Long,
         date: String
     ): ApiResultV2<QuizHistory> {
 
         return safeApiVer2(
             apiCall = {
                 quizApiService.getQuizHistory(
-                    type = type,
-                    id = id.toLong(),   // ⭐ Int → Long 변환
+                    type = type.name,
+                    id = id,   // ⭐ Int → Long 변환
                     date = date
                 )
             },

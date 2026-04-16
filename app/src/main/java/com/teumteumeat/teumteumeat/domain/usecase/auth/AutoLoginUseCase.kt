@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.domain.usecase.auth
 
-import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin
 import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin.*
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository

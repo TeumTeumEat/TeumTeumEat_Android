@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -12,7 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
+import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.date.ObserveDateChangeUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
@@ -48,9 +47,6 @@ class MainViewModel @Inject constructor(
     fun triggerRetry() { viewModelScope.launch { retryEvent.emit(Unit) } }
 
     init {
-
-        // 날짜 변경 시에 viewModel.loadCalendarHistory(YearMonth.now()) 호출
-        // setupDateChangeReceiver()
 
         // 1. 날짜 변경 감지 시작
         subscribeToDateChanges()

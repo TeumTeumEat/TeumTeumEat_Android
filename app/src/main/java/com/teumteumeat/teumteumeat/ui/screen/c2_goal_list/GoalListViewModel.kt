@@ -1,17 +1,13 @@
 package com.teumteumeat.teumteumeat.ui.screen.c2_goal_list
 
-import android.app.Application
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.UiStateOnboardingScreenState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

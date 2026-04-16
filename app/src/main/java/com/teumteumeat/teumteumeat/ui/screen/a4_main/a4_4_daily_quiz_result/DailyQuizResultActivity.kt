@@ -10,7 +10,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail.DailySummaryActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -35,7 +36,7 @@ class DailyQuizResultActivity : ComponentActivity() {
         val type = intent.getStringExtra(
             DailySummaryArgs.KEY_TYPE
         )?.let {
-            GoalType.valueOf(it)
+            DomainGoalType.valueOf(it)
         }
 
         val date = intent.getStringExtra(
@@ -64,7 +65,6 @@ class DailyQuizResultActivity : ComponentActivity() {
 
                 // ⭐ 최초 진입 시 API 호출
                 LaunchedEffect(Unit) {
-                    // todo. daily 퀴즈 결과 로드하기
                     // ✅ ViewModel에 초기값 전달
                     viewModel.initArgs(
                         id = id,

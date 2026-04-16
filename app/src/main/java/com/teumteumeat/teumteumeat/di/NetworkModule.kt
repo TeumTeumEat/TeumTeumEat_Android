@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.di
 
-import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.interceptor.AuthInterceptor
 import com.teumteumeat.teumteumeat.data.network.retrofit.NetworkConfig
 import dagger.Module

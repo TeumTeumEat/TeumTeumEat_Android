@@ -2,7 +2,7 @@ package com.teumteumeat.teumteumeat.domain.mapper.history
 
 import com.teumteumeat.teumteumeat.data.network.model_response.history.DailyHistoryTypeResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.history.HistoryItemResponse
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import com.teumteumeat.teumteumeat.domain.model.history.CalendarDailyItem
 import java.time.LocalDateTime
 
@@ -20,10 +20,10 @@ fun HistoryItemResponse.toCalendarDailyItem(): CalendarDailyItem {
  * Network enum → Domain GoalType
  * ❗ NONE은 절대 반환하지 않음
  */
-private fun DailyHistoryTypeResponse.toDomainGoalType(): GoalType {
+private fun DailyHistoryTypeResponse.toDomainGoalType(): DomainGoalType_v1 {
     return when (this) {
-        DailyHistoryTypeResponse.CATEGORY -> GoalType.CATEGORY
-        DailyHistoryTypeResponse.DOCUMENT -> GoalType.DOCUMENT
+        DailyHistoryTypeResponse.CATEGORY -> DomainGoalType_v1.CATEGORY
+        DailyHistoryTypeResponse.DOCUMENT -> DomainGoalType_v1.DOCUMENT
     }
 }
 

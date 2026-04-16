@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.data.repository.login
 
-import android.os.Build
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService

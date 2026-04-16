@@ -36,7 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.card.CalendarDailyLearningCard
 import com.teumteumeat.teumteumeat.ui.component.card.TopicCategoryCard
@@ -167,7 +167,7 @@ fun LibraryScreen(
                                 description = item.summarySnippet,
                                 dateText = item.lastStudiedAt.toLocalDate()
                                     .format(DateTimeFormatter.ofPattern("MM.dd")),
-                                goalType = item.type,   // ✅ Domain → UI 그대로 전달
+                                domainGoalTypeV1 = item.type,   // ✅ Domain → UI 그대로 전달
                                 onClick = {
                                     val intent = Intent(
                                         activity,
@@ -268,7 +268,7 @@ fun LibraryScreen(
                                                             title = history.title,
                                                             description = history.description,
                                                             dateText = history.dateText,
-                                                            goalType = history.goalType,
+                                                            domainGoalTypeV1 = history.domainGoalTypeV1,
                                                             onClick = {
                                                                 val intent = Intent(
                                                                     activity,
@@ -280,7 +280,7 @@ fun LibraryScreen(
                                                                     )
                                                                     putExtra(
                                                                         DailySummaryArgs.KEY_TYPE,
-                                                                        GoalType.CATEGORY.name
+                                                                        DomainGoalType_v1.CATEGORY.name
                                                                     )
                                                                     putExtra(
                                                                         DailySummaryArgs.KEY_DATE,

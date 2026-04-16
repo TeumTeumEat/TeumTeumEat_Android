@@ -1,19 +1,14 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail
 
 import android.app.Application
-import android.se.omapi.Session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
-import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepository
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
-import com.teumteumeat.teumteumeat.utils.Utils
-import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.formatDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +36,7 @@ class DailySummaryViewModel @Inject constructor(
     /** 🔹 Activity 진입 시 초기 값 세팅 */
     fun initArgs(
         id: Long,
-        type: GoalType,
+        type: DomainGoalType,
         date: LocalDate
     ) {
         _uiState.update {
@@ -55,9 +50,8 @@ class DailySummaryViewModel @Inject constructor(
     }
 
     /**
-     * 오늘의 남남지식 요약 조회
+     * 해당 일자의 요약글 조회
      */
-    /** 🔹 요약 조회 */
     fun loadSummary() {
         val state = _uiState.value
         val id = state.id
@@ -75,7 +69,7 @@ class DailySummaryViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
             when (
-                val result = historyRepository.getDailySummary(
+                val result = historyRepository.getLearningHistorySummary(
                     id = id,
                     type = type,
                     date = date.toString()
@@ -113,10 +107,6 @@ class DailySummaryViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun resetIdleState() {
-        _screenState.value = UiScreenState.Idle
     }
 
 }

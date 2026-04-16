@@ -12,7 +12,6 @@ import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
-import com.teumteumeat.teumteumeat.domain.model.auth.SessionResult
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
