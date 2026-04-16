@@ -68,9 +68,9 @@ fun SummaryScreen(
                 retryLabel = "다시 시도하기",
                 onRetry = onRetryApi
             ),
-            onBack = { Utils.UxUtils.moveActivity(context, MainActivity::class.java)},
+            onBack = { Utils.UxUtils.moveActivity(context, MainActivity::class.java) },
         )
-    }else{
+    } else {
         DefaultMonoBg() {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -179,9 +179,7 @@ fun SummaryScreen(
                                         ),
                                 text = if ((screenState is UiScreenState.Loading)) {
                                     "잠시만 기다려주세요"
-                                } else {
-                                    if (uiState.hasSolvedToday) "오늘의 퀴즈를 다 풀었어요!" else "퀴즈 풀러가기"
-                                }
+                                } else "퀴즈 풀러가기"
                             )
                         }
                     }
@@ -189,7 +187,6 @@ fun SummaryScreen(
             )
         }
     }
-
 
 
 }
@@ -219,7 +216,7 @@ fun SummaryScreenPreview() {
         onQuizClick = {},
         screenState = UiScreenState.Idle,
         onSetIdleScreen = {},
-        onRetryApi = {  }
+        onRetryApi = { }
     )
 }
 

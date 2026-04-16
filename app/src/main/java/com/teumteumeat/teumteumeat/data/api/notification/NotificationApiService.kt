@@ -5,7 +5,6 @@ import com.teumteumeat.teumteumeat.data.network.model.EmptyResponse
 import com.teumteumeat.teumteumeat.data.network.model_request.notification.DeleteDeviceTokenRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.notification.RegisterDeviceTokenRequest
 import retrofit2.http.Body
-import retrofit2.http.DELETE
 import retrofit2.http.HTTP
 import retrofit2.http.POST
 

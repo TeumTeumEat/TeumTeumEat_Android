@@ -1,6 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
-import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +38,6 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.PopupOverlay
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAddGoalUiState
-import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import kotlinx.coroutines.delay
@@ -49,7 +48,7 @@ import kotlin.jvm.java
 @Composable
 fun AddCategoryGoalCompositionProvider(
     viewModel: AddGoalViewModel,
-    context: Context,
+    startRoute: GoalTypeUiState,
     activity: AddGoalActivity,
 ) {
 
@@ -73,7 +72,6 @@ fun AddCategoryGoalCompositionProvider(
     val progress by viewModel.progress.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(
-        LocalAppContext provides context,
         LocalActivityContext provides activity,
         LocalAddGoalUiState provides uiState,
         LocalViewModelContext provides viewModel,
@@ -118,6 +116,11 @@ fun AddCategoryGoalCompositionProvider(
 
                 AddGoalSuccessScreen(
                     onStartClick = {
+                        val intent = Intent(activity, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            putExtra(GoalRegisterArgs.EXTRA_FROM_REGISTRATION, true)
+                        }
+                        activity.startActivity(intent)
                         activity.finish()
                     }
                 )
@@ -204,12 +207,7 @@ fun AddCategoryGoalCompositionProvider(
 
                         AddGoalNavHost(
                             navController = navHostController,
-                            startDestination = when(uiState.goalTypeUiState){
-                                GoalTypeUiState.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen.route
-                                GoalTypeUiState.CATEGORY -> AddGoalScreens.SixthCategorySelectScreen.route
-                                // todo. 분기를 정확히 전달 못받았을 때 에러스크린 노출
-                                GoalTypeUiState.NONE -> null
-                            }
+                            startDestination = startRoute,
                         )
 
                     }

@@ -38,7 +38,7 @@ class UserRepositoryImpl @Inject constructor(
                 userApiService.getUserSettings()
             },
             mapper = { response ->
-                response.requireNotNullOrError("GET /api/v1/users/settings")
+                response.requireNotNullOrError()
             }
         )
 

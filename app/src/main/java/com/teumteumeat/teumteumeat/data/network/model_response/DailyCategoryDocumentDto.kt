@@ -9,8 +9,8 @@ data class DailyCategoryDocumentDto(
     val createdAt: String
 )
 
-fun DailyCategoryDocumentDto.toDomain(): DailyCategoryDocument {
-    return DailyCategoryDocument(
+fun DailyCategoryDocumentDto.toDomain(): CategoryDocument {
+    return CategoryDocument(
         title = this.title,
         documentId = this.documentId,
         content = this.content,

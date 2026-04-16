@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a1_login
 
-import com.teumteumeat.teumteumeat.data.network.model_response.SocialLoginRequest
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
