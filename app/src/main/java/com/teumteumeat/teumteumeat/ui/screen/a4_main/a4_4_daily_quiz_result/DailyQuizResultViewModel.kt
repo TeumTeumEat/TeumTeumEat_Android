@@ -4,10 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toYyyyMmDd
@@ -35,7 +34,7 @@ class DailyQuizResultViewModel @Inject constructor(
     /** 🔹 Activity 진입 시 초기 값 세팅 */
     fun initArgs(
         id: Long,
-        type: GoalType,
+        type: DomainGoalType,
         date: LocalDate
     ) {
         _uiState.update {
@@ -68,7 +67,7 @@ class DailyQuizResultViewModel @Inject constructor(
 
             // 2️⃣ API 호출
             when (val result =
-                quizRepository.getQuizHistory(type.toString(), id.toInt(), date.toYyyyMmDd())) {
+                quizRepository.getQuizHistory(type, id, date.toYyyyMmDd())) {
 
                 is ApiResultV2.Success -> {
                     val history = result.data

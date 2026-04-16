@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 import androidx.compose.ui.tooling.preview.Preview
-import com.teumteumeat.teumteumeat.domain.model.common.GoalType
+import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 @Composable
@@ -28,14 +28,14 @@ fun CalendarDailyLearningCard(
     title: String,
     description: String,
     dateText: String, // ex) "01.03"
-    goalType: GoalType,      // ✅ 추가
+    domainGoalTypeV1: DomainGoalType_v1,      // ✅ 추가
     onClick: () -> Unit,
 ) {
 
     // ✅ 타입별 UI 분기 포인트
-    val typeLabel = when (goalType) {
-        GoalType.CATEGORY -> "카테고리"
-        GoalType.DOCUMENT -> "문서"
+    val typeLabel = when (domainGoalTypeV1) {
+        DomainGoalType_v1.CATEGORY -> "카테고리"
+        DomainGoalType_v1.DOCUMENT -> "문서"
     }
 
     TeumTeumEatTheme {
@@ -112,7 +112,7 @@ fun LibraryHistoryCardPreview() {
                 description = "개념에 대한 간단한 요약입니다 어떻게 보여줄지는 논의 해봐야할듯 1줄? 2줄? 저는 많아도 2줄이 적당한 것 같은데, 개념에 대한 간단한 요약입니다 어떻게 보여줄지는 논의 해봐야할듯 1줄? 2줄? 저는 많아도 2줄이 적당한 것 같은데",
                 dateText = "01.03",
                 onClick = { },
-                goalType = GoalType.DOCUMENT,
+                domainGoalTypeV1 = DomainGoalType_v1.DOCUMENT,
             )
         }
     }

@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -139,7 +140,8 @@ fun CustomProgressBar(
 @Composable
 fun GoalProgress(
     progress: Float,
-    isCompletedLoading: Boolean = false
+    isCompletedLoading: Boolean = false,
+    progressPadding: Dp = 0.dp
 ) {
 
     val composition by rememberLottieComposition(
@@ -155,6 +157,7 @@ fun GoalProgress(
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.size(260.dp)
+            .padding(progressPadding)
     ) {
 
         CircularProgressCanvas(progress)

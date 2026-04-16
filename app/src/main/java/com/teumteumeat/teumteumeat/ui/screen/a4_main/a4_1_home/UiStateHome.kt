@@ -21,8 +21,11 @@ data class UiStateHome(
     val canIssueCoupon: Boolean = false,
     val dailyAdRewardCount: Int = 0,
 
-    /** 🔥 핵심 */
+    /** ✅ 오늘 퀴즈를 풀었는지 확인하는 변수값 (기본값 false) */
     val hasCreatedToday: Boolean = false,
+
+    /** 앱이 백그라운드로 전환됬을 때 날짜를 확인용 상태 값 */
+    val lastCheckedDate: String? = null, // 추가: "2023-10-27" 형태의 날짜 저장
     val hasSolvedToday: Boolean = false,
     val isFirstTime: Boolean = false,
 
@@ -49,8 +52,14 @@ data class UiStateHome(
     val isShowGoalExpiredDialog: Boolean = false,
 
     val errorMessage: String? = null,
+    val toastMessage: String? = null,
 
     val currentGoalCompleted: Boolean = false,
+
+    // ================= 로딩 상태 관련 =================
+    val processingState: com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState? = null,
+    val loadingTitle: String = "새로운 퀴즈를 만들고 있어요!",
+    val loadingMessage: String = "잠시만 기다려주세요...",
 ){
     /**
      * 현재 상태에 따른 최종 이미지 리소스를 반환하는 헬퍼 함수
@@ -82,6 +91,9 @@ sealed class SnackState {
     data class Consumed(
         val nextArrivalTime: String // 내일 "09:00"
     ) : SnackState()
+
+    /** 목표 완료 */
+    data object Completed : SnackState()
 
     /** 🚫 기간 종료 */
     data object Expired : SnackState()

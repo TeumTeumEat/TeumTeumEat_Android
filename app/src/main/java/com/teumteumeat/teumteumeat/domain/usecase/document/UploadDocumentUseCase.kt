@@ -2,11 +2,11 @@ package com.teumteumeat.teumteumeat.domain.usecase.document
 
 import android.net.Uri
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
+import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import javax.inject.Inject
 
 class UploadDocumentUseCase @Inject constructor(
-    private val repository: DocumentRepository
+    private val repository: PdfDocumentRepository
 ) {
 
     suspend operator fun invoke(

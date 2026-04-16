@@ -100,12 +100,19 @@ jobs:
           BASE_BRANCH: ${{ steps.pr.outputs.base_branch }}
         run: |
           echo "📊 Collecting git data..."
-
+          
           git diff --name-status origin/$BASE_BRANCH...HEAD > /tmp/files.txt
           echo "✅ Files: $(wc -l < /tmp/files.txt) files changed"
 
           git diff origin/$BASE_BRANCH...HEAD > /tmp/diff.txt
           DIFF_SIZE=$(wc -c < /tmp/diff.txt)
+
+          # .xml이나 .json 등 텍스트가 긴 파일 제외
+          git diff origin/$BASE_BRANCH...HEAD -- . ':(exclude)*.xml' ':(exclude)*.json' > /tmp/diff.txt
+
+          # 최대 20,000자까지만 보관하고 나머지는 삭제
+          git diff origin/$BASE_BRANCH...HEAD | head -c 20000 > /tmp/diff.txt
+
           echo "✅ Diff: $DIFF_SIZE bytes"
 
           git diff --shortstat origin/$BASE_BRANCH...HEAD > /tmp/stats.txt

@@ -3,12 +3,8 @@ package com.teumteumeat.teumteumeat.data.repository.goal
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.goal.GoalApiService
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
-import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_response.CreateGoalResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
 import com.teumteumeat.teumteumeat.domain.mapper.goal.toDomain
@@ -65,7 +61,7 @@ class GoalRepositoryImpl @Inject constructor(
                 // ✅ data 는 null 이면 안되는 API
                 // → mapper 단계에서 바로 Domain 변환
                 response
-                    .requireNotNullOrError(url)
+                    .requireNotNullOrError()
                     .toDomain()
             }
         )

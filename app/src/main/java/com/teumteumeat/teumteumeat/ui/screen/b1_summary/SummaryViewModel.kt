@@ -1,18 +1,15 @@
 package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import android.app.Application
-import android.se.omapi.Session
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentStatus
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
-import com.teumteumeat.teumteumeat.data.repository.document.DocumentRepository
+import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.quiz.UserQuizStatus
@@ -41,7 +38,7 @@ sealed interface UiEvent {
 
 @dagger.hilt.android.lifecycle.HiltViewModel
 class SummaryViewModel @Inject constructor(
-    private val documentRepository: DocumentRepository,
+    private val pdfDocumentRepository: PdfDocumentRepository,
     private val categoryRepository: CategoryRepository,
     private val quizRepository: QuizRepository,
     val application: Application,
@@ -290,7 +287,7 @@ class SummaryViewModel @Inject constructor(
 
             // 2️⃣ Summary API 호출
             val result = async {
-                documentRepository.getDocumentSummary(goalId, documentId)
+                pdfDocumentRepository.getPdfDocumentSummary(goalId, documentId)
             }.await()
 
             // 3️⃣ 응답 도착 → 애니메이션 중단
@@ -312,8 +309,6 @@ class SummaryViewModel @Inject constructor(
                             title = summary.fileName,
                             dateText = toMonthDay(summary.updatedAt),
                             summary = summary.summary,
-                            hasSolvedToday = summary.hasSolvedToday,
-                            isFirstTime = summary.isFirstTime,
                             errorMessage = null
                         )
                     }
@@ -456,7 +451,7 @@ class SummaryViewModel @Inject constructor(
                     ProcessingUiState(progress = progress)
 
                 // 2️⃣ 1초마다 서버 재요청
-                val result = documentRepository.getDocuments(goalId)
+                val result = pdfDocumentRepository.getDocuments(goalId)
 
                 if (result is ApiResultV2.Success) {
 

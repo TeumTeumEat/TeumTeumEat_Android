@@ -30,14 +30,14 @@ import java.time.format.DateTimeFormatter
 class QuizResultActivity : ComponentActivity() {
     companion object {
         const val EXTRA_DOCUMENT_ID = "extra_document_id"
-        const val INVALID_DOCUMENT_ID = -1
+        const val INVALID_DOCUMENT_ID = -1L
 
         const val GOAL_TYPE = "goal_type"
         const val INVAILD_GOAL_TYPE = -1
 
         fun newIntent(
             context: Context,
-            documentId: Int
+            documentId: Long,
         ): Intent {
             return Intent(context, QuizResultActivity::class.java).apply {
                 putExtra(EXTRA_DOCUMENT_ID, documentId)
@@ -48,7 +48,7 @@ class QuizResultActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val documentId = intent.getIntExtra(EXTRA_DOCUMENT_ID, INVALID_DOCUMENT_ID)
+        val documentId = intent.getLongExtra(EXTRA_DOCUMENT_ID, INVALID_DOCUMENT_ID)
 
         if (documentId == INVALID_DOCUMENT_ID) {
             // 필수 값 누락 → 방어 코드

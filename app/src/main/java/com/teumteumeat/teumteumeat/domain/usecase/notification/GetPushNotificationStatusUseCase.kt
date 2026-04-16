@@ -1,9 +1,7 @@
 package com.teumteumeat.teumteumeat.domain.usecase.notification
 
-import android.content.Context
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.map
-import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.qualifiers.ApplicationContext

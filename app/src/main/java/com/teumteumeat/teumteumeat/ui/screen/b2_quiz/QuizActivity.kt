@@ -123,7 +123,7 @@ class QuizActivity : BaseActivity() {
                             viewModel.loadQuizzes(documentId, GoalTypeUiState.fromString(goalType))
                         },
                         onCompleteQuiz = {
-                            val documentId = viewModel.documentId.toInt()
+                            val documentId = viewModel.documentId
 
                             viewModel.completeQuiz()
 

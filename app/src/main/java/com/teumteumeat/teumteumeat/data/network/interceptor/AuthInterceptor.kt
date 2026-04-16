@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.data.network.interceptor
 
-import com.teumteumeat.teumteumeat.data.network.exception.UnauthorizedException
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import okhttp3.Interceptor
 import okhttp3.Response

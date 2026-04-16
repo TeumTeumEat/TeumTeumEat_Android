@@ -2,8 +2,6 @@ package com.teumteumeat.teumteumeat.data.repository.goal
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
 import kotlinx.coroutines.flow.SharedFlow

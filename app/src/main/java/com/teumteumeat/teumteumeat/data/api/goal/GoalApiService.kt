@@ -2,7 +2,6 @@ package com.teumteumeat.teumteumeat.data.api.goal
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
-import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.CreateGoalResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.GoalsData
 import com.teumteumeat.teumteumeat.data.network.model_response.goal.UserGoalResponse
