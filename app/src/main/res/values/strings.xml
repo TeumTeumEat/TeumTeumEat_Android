@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TeumTeumEat</string>
+    <string name="app_name">틈틈잇</string>
     <string name="title_activity_on_boarding">OnBoardingActivity</string>
     <string name="title_activity_home">HomeActivity</string>
     <string name="kakao_native_app_key">2d5b8758966c24367eebd1926dd090bf</string>

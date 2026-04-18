@@ -86,7 +86,7 @@ class QuizResultViewModel @Inject constructor(
                     loadQuizResultByGoalType(goalType, userGoal, documentId, date)
 
                     // 3️⃣ 목표 타입 기반 요약 조회
-                    loadSummaryByGoal(userGoal)
+                    loadSummaryByGoal(userGoal, documentId)
                     _screenState.value = UiScreenState.Success
                 }
 
@@ -106,7 +106,7 @@ class QuizResultViewModel @Inject constructor(
     ) {
         when (type) {
             DomainGoalType.CATEGORY -> {
-                setCategoryDocumentId(goal.category!!.categoryId)
+                // setCategoryDocumentId(goal.category!!.categoryId)
                 loadQuizResults(type, documentId, date)
             }
 
@@ -154,8 +154,9 @@ class QuizResultViewModel @Inject constructor(
     }
 
 
-    private suspend fun loadSummaryByGoal(
-        goal: UserGoal
+    private fun loadSummaryByGoal(
+        goal: UserGoal,
+        documentId: Long
     ) {
         val date = getDate() // ViewModel에 저장된 퀴즈 날짜 사용
 
@@ -177,14 +178,15 @@ class QuizResultViewModel @Inject constructor(
             }
 
             DomainGoalType.CATEGORY -> {
-                val categoryDocumentId = uiState.value.categoryDocumentId
+                val categoryDocumentId = documentId
                 loadCategoryGoalSummary(goal.type, categoryDocumentId, date)
             }
         }
     }
 
     private suspend fun setDocumentSummaryId(goalId: Long, documentId: Long) {
-        when (val result = pdfDocumentRepository.getPdfDocumentSummaryId(goalId.toInt(), documentId.toInt())) {
+        when (val result =
+            pdfDocumentRepository.getPdfDocumentSummaryId(goalId.toInt(), documentId.toInt())) {
             is ApiResultV2.Success -> {
                 val data = result.data
 

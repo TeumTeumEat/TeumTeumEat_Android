@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.component
 
+import android.widget.Space
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,7 +8,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 @Composable
 fun CheckBoxCircle(
@@ -35,7 +39,7 @@ fun CheckBoxCircle(
                 color = if (checked) Color(0xFF2B8FFF) else materialTheme.onPrimary,
                 shape = RoundedCornerShape(16.dp),
 
-            )
+                )
             .border(
                 width = if (checked) 0.dp else 2.dp, // 체크 안 되었을 때만 테두리
                 color = materialTheme.secondaryContainer,
@@ -62,14 +66,23 @@ fun CheckBoxCircle(
 fun CustomCheckBoxPreview() {
     var checked by remember { mutableStateOf(true) }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CheckBoxCircle(
-            checked = checked,
-            onCheckedChange = { checked = it }
-        )
+    TeumTeumEatTheme {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CheckBoxCircle(
+                checked = checked,
+                onCheckedChange = { checked = it }
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            CheckBoxCircle(
+                checked = false,
+                onCheckedChange = { checked = it }
+            )
+        }
     }
 }
