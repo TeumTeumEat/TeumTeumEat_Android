@@ -19,10 +19,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
+import com.teumteumeat.teumteumeat.domain.model.history.CategoryHistoryUiModel
+import com.teumteumeat.teumteumeat.domain.model.history.LearningHistoryUiModel
+import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.card.CalendarDailyLearningCard
 import com.teumteumeat.teumteumeat.ui.component.card.TopicCategoryCard
@@ -56,6 +61,7 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.DailySummaryArgs
+import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 import kotlinx.coroutines.flow.collectLatest
 import java.time.LocalDate
@@ -84,9 +90,10 @@ fun LibraryScreen(
         }
     }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(color = MaterialTheme.extendedColors.backgroundW100)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.extendedColors.backgroundW100)
     ) {
 
         Column(
@@ -102,7 +109,7 @@ fun LibraryScreen(
                 onTabSelected = { viewModel.selectLibraryTab(it) }
             )
 
-            when(uiState.selectedLibraryTab){
+            when (uiState.selectedLibraryTab) {
                 LibraryTabType.DATE -> {
                     Column(
                         modifier = Modifier
@@ -197,68 +204,107 @@ fun LibraryScreen(
                         // 👆 하단 버튼 + 페이드에 가려지지 않도록 여유
                     }
                 }
+
                 LibraryTabType.TOPIC -> {
-                    // 🔹 주제별 탭
-                    LazyColumn(
+                    Column(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .padding(vertical = 32.dp, horizontal = 22.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp),
+                            .padding(vertical = 24.dp)
+                            .background(theme.backgroundW100),
                     ) {
-                        // 1. 등록된 주제가 없는 경우 처리
-                        if (uiState.categoryHistories.isEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillParentMaxHeight() // LazyColumn 전체 높이를 채우기 위해 사용
-                                        .fillMaxWidth(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "등록된 주제가 없습니다.\n새로운 학습을 시작해보세요!",
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            textAlign = TextAlign.Center
-                                        ),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        } else {
-                            uiState.categoryHistories.forEach { category ->
+                        // 필터링 라디오 버튼 UI 배치
 
-                                // ✅ 카테고리 단위 Section
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 22.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CheckBoxCircle(
+                                modifier = Modifier.size(24.dp),
+                                checked = true,
+                                onCheckedChange = {},
+                            )
+
+                            Text(
+                                "진행중인 주제 보기",
+                                modifier = Modifier.padding(start = 8.dp),
+                                style = MaterialTheme.appTypography.captionRegular14
+                                    .copy(color = theme.textGhost),
+                            )
+                        }
+
+                        // 🔹 주제별 탭
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .padding(horizontal = 22.dp)
+                                .padding(top = 23.5.dp, bottom = 32.dp),
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                        ) {
+
+                            // 1. 등록된 주제가 없는 경우 처리
+                            if (uiState.categoryHistories.isEmpty()) {
                                 item {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth()
+                                    Box(
+                                        modifier = Modifier
+                                            .fillParentMaxHeight() // LazyColumn 전체 높이를 채우기 위해 사용
+                                            .fillMaxWidth(),
+                                        contentAlignment = Alignment.Center
                                     ) {
-
-                                        // ✅ 주제 카드 (uiState 기반)
-                                        TopicCategoryCard(
-                                            title = category.categoryName,
-                                            isSelected = uiState.selectedCategoryName == category.categoryName,
-                                            onClick = {
-                                                viewModel.onClickCategory(category.categoryName)
-                                            }
-                                        )
-
-                                        // ✅ AnimatedVisibility를 사용하여 애니메이션 적용
-                                        AnimatedVisibility(
-                                            visible = uiState.selectedCategoryName == category.categoryName,
-                                            // 나타날 때: 페이드 인 + 아래로 펼쳐짐
-                                            enter = fadeIn(
-                                                animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
-                                            ) + expandVertically(
-                                                expandFrom = Alignment.Top
+                                        Text(
+                                            text = "등록된 주제가 없습니다.\n새로운 학습을 시작해보세요!",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                textAlign = TextAlign.Center
                                             ),
-                                            // 사라질 때: 페이드 아웃 + 위로 접힘
-                                            exit = fadeOut(
-                                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                                            ) + shrinkVertically(
-                                                shrinkTowards = Alignment.Top
-                                            )
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            } else {
+                                uiState.categoryHistories.forEach { category ->
+
+                                    // ✅ 카테고리 단위 Section
+                                    item {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            // ✅ 선택된 카테고리일 때만 학습 카드 표시
+
+                                            // ✅ 주제 카드 (uiState 기반)
+                                            TopicCategoryCard(
+                                                title = category.categoryName,
+                                                isSelected = uiState.selectedCategoryName == category.categoryName,
+                                                onClick = {
+                                                    viewModel.onClickCategory(category.categoryName)
+                                                }
+                                            )
+
+                                            // ✅ AnimatedVisibility를 사용하여 애니메이션 적용
+                                            AnimatedVisibility(
+                                                visible = uiState.selectedCategoryName == category.categoryName,
+                                                // 나타날 때: 페이드 인 + 아래로 펼쳐짐
+                                                enter = fadeIn(
+                                                    animationSpec = tween(
+                                                        durationMillis = 400,
+                                                        easing = FastOutSlowInEasing
+                                                    )
+                                                ) + expandVertically(
+                                                    expandFrom = Alignment.Top
+                                                ),
+                                                // 사라질 때: 페이드 아웃 + 위로 접힘
+                                                exit = fadeOut(
+                                                    animationSpec = tween(
+                                                        durationMillis = 300,
+                                                        easing = FastOutSlowInEasing
+                                                    )
+                                                ) + shrinkVertically(
+                                                    shrinkTowards = Alignment.Top
+                                                )
+                                            ) {
+                                                // ✅ 선택된 카테고리일 때만 학습 카드 표시
 
                                                 Column {
                                                     Spacer(modifier = Modifier.height(12.dp))
@@ -284,7 +330,8 @@ fun LibraryScreen(
                                                                     )
                                                                     putExtra(
                                                                         DailySummaryArgs.KEY_DATE,
-                                                                        history.date.toLocalDate().toString()
+                                                                        history.date.toLocalDate()
+                                                                            .toString()
                                                                     )
                                                                 }
 
@@ -295,17 +342,18 @@ fun LibraryScreen(
                                                         Spacer(modifier = Modifier.height(12.dp))
                                                     }
                                                 }
-                                        }
+                                            }
 
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        item {
-                            Spacer(Modifier.height(200.dp))
+                            item {
+                                Spacer(Modifier.height(200.dp))
+                            }
                         }
-                    }
+                    } // Column
                 }
             }
         }
@@ -339,12 +387,8 @@ fun LibraryRoute(
 
 @Composable
 fun LibraryMockScreen(
-    name: String,
     uiState: UiStateLibrary,
-    onClickOtherTab: () -> Unit,
 ) {
-    val currentPage = uiState.currentPage
-    val totalPages = uiState.totalPage
     val theme = MaterialTheme.extendedColors
 
     DefaultMonoBg(
@@ -359,72 +403,152 @@ fun LibraryMockScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
 
-                    /** 🔹 날짜별 / 주제별 탭 */
                     LibraryTopTab(
                         selectedTab = uiState.selectedLibraryTab,
-                        onTabSelected = {
-                            // ❌ Preview에서는 ViewModel 호출 금지
-                            // no-op
-                        }
+                        onTabSelected = { /* no-op in preview */ }
                     )
 
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .background(theme.backgroundW100)
-                            .verticalScroll(rememberScrollState())
-                            .padding(18.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Spacer(Modifier.height(32.dp))
+                    when (uiState.selectedLibraryTab) {
+                        LibraryTabType.DATE -> {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .background(theme.backgroundW100)
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Spacer(Modifier.height(32.dp))
 
-                        MotivationCard(
-                            uiState = mapStreakToMotivationUiState(
-                                isStreakBroken = uiState.isStreakBroken,
-                                streak = uiState.currentStreak
-                            ),
-                            modifier = Modifier,
-                        )
+                                MotivationCard(
+                                    uiState = mapStreakToMotivationUiState(
+                                        isStreakBroken = uiState.isStreakBroken,
+                                        streak = uiState.currentStreak
+                                    ),
+                                    modifier = Modifier,
+                                )
 
-                        Spacer(Modifier.height(20.dp))
+                                Spacer(Modifier.height(20.dp))
 
-                        // ✅ 스탬프 카운트 뱃지 (상단)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            StampCountBadgeStateful(
-                                modifier = Modifier.weight(1f),
-                                title = "총 스탬프",
-                                count = uiState.stampCount,
-                            )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    StampCountBadgeStateful(
+                                        modifier = Modifier.weight(1f),
+                                        title = "총 스탬프",
+                                        count = uiState.stampCount,
+                                    )
 
-                            Spacer(Modifier.width(12.dp))
+                                    Spacer(Modifier.width(12.dp))
 
-                            StampCountBadgeStateful(
-                                modifier = Modifier.weight(1f),
-                                title = "이번달 도장",
-                                count = uiState.monthStampCount,
-                            )
+                                    StampCountBadgeStateful(
+                                        modifier = Modifier.weight(1f),
+                                        title = "이번달 도장",
+                                        count = uiState.monthStampCount,
+                                    )
+                                }
+
+                                Spacer(Modifier.height(20.dp))
+
+                                CalendarPager(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    uiState = uiState.calendarUiState,
+                                    onMonthChange = { /* no-op in preview */ },
+                                    onDateClick = { /* no-op in preview */ }
+                                )
+
+                                Spacer(Modifier.height(200.dp))
+                            }
                         }
 
-                        Spacer(Modifier.height(20.dp))
+                        LibraryTabType.TOPIC -> {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .background(theme.backgroundW100),
+                            ) {
+                                // 필터링 라디오 버튼 UI 배치
+                                CheckBoxCircle(
+                                    modifier = Modifier,
+                                    checked = false,
+                                    onCheckedChange = { /* no-op in preview */ },
+                                )
 
-                        // 📅 캘린더
-                        CalendarPager(
-                            modifier = Modifier.fillMaxWidth(),
-                            uiState = uiState.calendarUiState,
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                        .padding(vertical = 32.dp, horizontal = 22.dp),
+                                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                                ) {
+                                    if (uiState.categoryHistories.isEmpty()) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillParentMaxHeight()
+                                                    .fillMaxWidth(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "등록된 주제가 없습니다.\n새로운 학습을 시작해보세요!",
+                                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                                        textAlign = TextAlign.Center
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        uiState.categoryHistories.forEach { category ->
+                                            item {
+                                                Column(modifier = Modifier.fillMaxWidth()) {
+                                                    TopicCategoryCard(
+                                                        title = category.categoryName,
+                                                        isSelected = uiState.selectedCategoryName == category.categoryName,
+                                                        onClick = { /* no-op in preview */ }
+                                                    )
 
-                            // ❌ Preview에서는 ViewModel 호출 금지
-                            onMonthChange = { /* no-op */ },
+                                                    AnimatedVisibility(
+                                                        visible = uiState.selectedCategoryName == category.categoryName,
+                                                        enter = fadeIn(
+                                                            animationSpec = tween(
+                                                                durationMillis = 400,
+                                                                easing = FastOutSlowInEasing
+                                                            )
+                                                        ) + expandVertically(expandFrom = Alignment.Top),
+                                                        exit = fadeOut(
+                                                            animationSpec = tween(
+                                                                durationMillis = 300,
+                                                                easing = FastOutSlowInEasing
+                                                            )
+                                                        ) + shrinkVertically(shrinkTowards = Alignment.Top)
+                                                    ) {
+                                                        Column {
+                                                            Spacer(modifier = Modifier.height(12.dp))
+                                                            category.histories.forEach { history ->
+                                                                CalendarDailyLearningCard(
+                                                                    title = history.title,
+                                                                    description = history.description,
+                                                                    dateText = history.dateText,
+                                                                    domainGoalTypeV1 = history.domainGoalTypeV1,
+                                                                    onClick = { /* no-op in preview */ }
+                                                                )
+                                                                Spacer(modifier = Modifier.height(12.dp))
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
 
-                            // ❌ Preview에서는 ViewModel 호출 금지
-                            onDateClick = { /* no-op */ }
-                        )
-
-                        Spacer(Modifier.height(200.dp))
-                        // 👆 하단 버튼 + 페이드에 가려지지 않도록 여유
+                                    item { Spacer(Modifier.height(200.dp)) }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -455,16 +579,63 @@ private fun previewUiStateLibrary() = UiStateLibrary(
     )
 )
 
+private fun previewUiStateLibraryTopic() = UiStateLibrary(
+    selectedLibraryTab = LibraryTabType.TOPIC,
+    selectedCategoryName = "Kotlin",
+    categoryHistories = listOf(
+        CategoryHistoryUiModel(
+            categoryName = "Kotlin",
+            histories = listOf(
+                LearningHistoryUiModel(
+                    id = 1,
+                    title = "Kotlin 언어 개요 및 퀴즈",
+                    description = "Kotlin 개요 Kotlin은 안드로이드 개발에 최적화된 언어입니다.",
+                    date = java.time.LocalDateTime.now().minusDays(3),
+                    dateText = "04.15",
+                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY
+                ),
+                LearningHistoryUiModel(
+                    id = 2,
+                    title = "Kotlin 기초와 트렌드",
+                    description = "Kotlin 기초 개념 및 최신 트렌드를 정리합니다.",
+                    date = java.time.LocalDateTime.now().minusDays(6),
+                    dateText = "04.12",
+                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY
+                ),
+            )
+        ),
+        CategoryHistoryUiModel(
+            categoryName = "UX 디자인",
+            histories = listOf(
+                LearningHistoryUiModel(
+                    id = 3,
+                    title = "휴리스틱 평가 개요",
+                    description = "사용성 평가의 대표 기법인 휴리스틱 평가를 알아봅니다.",
+                    date = java.time.LocalDateTime.now().minusDays(10),
+                    dateText = "04.08",
+                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY
+                )
+            )
+        ),
+        CategoryHistoryUiModel(
+            categoryName = "알고리즘",
+            histories = emptyList()
+        )
+    )
+)
 
 @Preview(showBackground = true)
 @Composable
-fun LibraryScreenPreview() {
-
+fun LibraryScreenDatePreview() {
     TeumTeumEatTheme {
-        LibraryMockScreen(
-            name = "Android",
-            uiState = previewUiStateLibrary(),
-            onClickOtherTab = {}
-        )
+        LibraryMockScreen(uiState = previewUiStateLibrary())
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LibraryScreenTopicPreview() {
+    TeumTeumEatTheme {
+        LibraryMockScreen(uiState = previewUiStateLibraryTopic())
     }
 }
