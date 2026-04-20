@@ -64,7 +64,7 @@ class QuizResultViewModel @Inject constructor(
 
     fun initQuizResult() {
         viewModelScope.launch {
-            val documentId = getDocumentId()
+            val categoryDocumentId = getDocumentId()
             val date = getDate()
             _screenState.value = UiScreenState.Loading
             _uiState.update {
@@ -83,10 +83,10 @@ class QuizResultViewModel @Inject constructor(
 
                     // 2️⃣ 목표 타입 별 퀴즈 결과 조회
                     val goalType = userGoal.type
-                    loadQuizResultByGoalType(goalType, userGoal, documentId, date)
+                    loadQuizResultByGoalType(goalType, userGoal, categoryDocumentId, date)
 
                     // 3️⃣ 목표 타입 기반 요약 조회
-                    loadSummaryByGoal(userGoal)
+                    loadSummaryByGoal(userGoal, categoryDocumentId)
                     _screenState.value = UiScreenState.Success
                 }
 
@@ -106,7 +106,7 @@ class QuizResultViewModel @Inject constructor(
     ) {
         when (type) {
             DomainGoalType.CATEGORY -> {
-                setCategoryDocumentId(goal.category!!.categoryId)
+                // setCategoryDocumentId(goal.category!!.categoryId)
                 loadQuizResults(type, documentId, date)
             }
 
@@ -124,8 +124,6 @@ class QuizResultViewModel @Inject constructor(
         date: String
     ) {
         viewModelScope.launch {
-
-
             // 2️⃣ API 호출
             when (val result = quizRepository.getQuizHistory(type, id, date)) {
 
@@ -155,7 +153,8 @@ class QuizResultViewModel @Inject constructor(
 
 
     private suspend fun loadSummaryByGoal(
-        goal: UserGoal
+        goal: UserGoal,
+        categoryDocumentId: Long
     ) {
         val date = getDate() // ViewModel에 저장된 퀴즈 날짜 사용
 
@@ -177,7 +176,6 @@ class QuizResultViewModel @Inject constructor(
             }
 
             DomainGoalType.CATEGORY -> {
-                val categoryDocumentId = uiState.value.categoryDocumentId
                 loadCategoryGoalSummary(goal.type, categoryDocumentId, date)
             }
         }
