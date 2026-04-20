@@ -22,7 +22,9 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.CategoryDocument
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
@@ -51,6 +53,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
+    private val getGoalListUseCase: GetGoalListUseCase,
     private val quizRepository: QuizRepository,
     private val pdfDocumentRepository: PdfDocumentRepository,
     private val categoryRepository: CategoryRepository,
@@ -564,6 +567,13 @@ class HomeViewModel @Inject constructor(
                             val currentState = _uiState.value
 
 
+                            val hasRunningGoal = if (quizStatus.isCompleted) {
+                                when (val listResult = getGoalListUseCase()) {
+                                    is ApiResultV2.Success -> listResult.data.goalResponses.hasAnyRunningGoal()
+                                    else -> false
+                                }
+                            } else false
+
                             _uiState.update {
                                 it.copy(
                                     fireState = resolveFireState(goal),
@@ -584,7 +594,8 @@ class HomeViewModel @Inject constructor(
                                     ),
                                     currentGoalCompleted = goal.isCompleted,
                                     summaryQuery = buildSummaryQuery(goal),
-                                    isShowGoalExpiredDialog = quizStatus.isCompleted // ✅ 퀴즈 상태의 isCompleted 기반으로 모달 노출 여부 결정
+                                    isShowGoalExpiredDialog = quizStatus.isCompleted, // ✅ 퀴즈 상태의 isCompleted 기반으로 모달 노출 여부 결정
+                                    hasRunningGoal = hasRunningGoal
                                 )
                             }
 
@@ -833,6 +844,11 @@ class HomeViewModel @Inject constructor(
 
     private fun calculateStampCount(goal: UserGoal): Int =
         if (goal.isExpired) 0 else 1
+
+    private fun List<GetGoalResponse>.hasAnyRunningGoal(): Boolean {
+        val today = LocalDate.now()
+        return any { !it.isCompleted && LocalDate.parse(it.endDate) >= today }
+    }
 
     private fun buildSummaryQuery(goal: UserGoal): SummaryQuery =
         SummaryQuery(
