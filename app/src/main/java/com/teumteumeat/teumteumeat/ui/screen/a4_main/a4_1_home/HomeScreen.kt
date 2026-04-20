@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,7 +53,6 @@ import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.GoalRegisterArgs
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
@@ -642,6 +640,7 @@ fun HomeScreen(
                                     title = "풀고 있는 틈틈잇이 없어요",
                                     body = "먹을 간식이 없어요!\n새로운 지식을 먹여줄래요?",
                                     primaryButtonText = "진행중인 틈틈잇 선택하기",
+                                    isPrimaryBtnEnabled = uiState.hasRunningGoal,
                                     secondaryButtonText = "새로운 틈틈잇 시작하기",
                                     isVerticalButtons = true,
                                     onPrimaryClick = {
