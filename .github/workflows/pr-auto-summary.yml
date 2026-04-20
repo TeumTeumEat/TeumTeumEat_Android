@@ -88,28 +88,6 @@ jobs:
             RESPONSE=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
               -H "Accept: application/json" \
               "$JIRA_BASE_URL/rest/api/2/issue/$JIRA_KEY")
-
-            # ✅ [디버깅 블록] 원인 파악 후 제거 예정
-            echo "================================================"
-            echo "🔬 [RAW RESPONSE 디버깅]"
-            echo ""
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
-              -H "Accept: application/json" \
-              "$JIRA_BASE_URL/rest/api/2/issue/$JIRA_KEY")
-            echo "🔢 HTTP Status Code: $HTTP_STATUS"
-            echo "📄 Raw Response:"
-            echo "$RESPONSE"
-            echo ""
-            ERROR_MSG=$(echo "$RESPONSE" | jq -r '.errorMessages[0] // "없음"' 2>/dev/null)
-            ERRORS=$(echo "$RESPONSE" | jq -r '.errors // "없음"' 2>/dev/null)
-            echo "⚠️  errorMessages: $ERROR_MSG"
-            echo "⚠️  errors: $ERRORS"
-            echo ""
-            echo "🗂️  Available fields:"
-            echo "$RESPONSE" | jq -r '.fields | keys[]' 2>/dev/null || echo "fields 없음"
-            echo "================================================"
-            # [디버깅 블록 끝]
             
             SUMMARY=$(echo "$RESPONSE" | jq -r '.fields.summary // "제목 없음"')
             DESC=$(echo "$RESPONSE" | jq -r '.fields.description // "설명 없음"')
