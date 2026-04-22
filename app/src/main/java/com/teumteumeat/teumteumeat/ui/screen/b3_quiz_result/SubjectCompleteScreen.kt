@@ -31,10 +31,10 @@ import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Composable
-fun QuizEndingScreen(
+fun SubjectCompleteScreen(
     modifier: Modifier = Modifier,
-    onCloseClick: () -> Unit,
-    goHistory: () -> Unit,
+    onGoHomeClick: () -> Unit,
+    onStartNewSubjectClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -51,7 +51,7 @@ fun QuizEndingScreen(
                 .align(Alignment.TopEnd)
                 .padding(20.dp)
                 .size(40.dp)
-                .clickable { onCloseClick() },
+                .clickable { onGoHomeClick() },
             tint = Color.Black
         )
 
@@ -65,7 +65,7 @@ fun QuizEndingScreen(
             // 1. 로티 컴포지션 로드 (raw 폴더의 파일 지정)
             val composition by rememberLottieComposition(
                 // ⚠️ 주의: 파일명 확장자(.json)는 뺍니다.
-                spec = LottieCompositionSpec.RawRes(R.raw.quiz_fin)
+                spec = LottieCompositionSpec.RawRes(R.raw.quiz_comp)
             )
 
             // 2. 애니메이션 상태 제어 (반복 여부 등)
@@ -86,48 +86,56 @@ fun QuizEndingScreen(
 
             // 타이틀
             Text(
-                text = "오늘의 틈틈잇\n완료!",
+                text = "해당 주제를 \n모두 완주했어요!",
                 style = MaterialTheme.appTypography.titleSemiBold32.copy(
                     textAlign = TextAlign.Center
                 ),
-                fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(23.dp))
+            
+            // 서브 타이틀
+            Text(
+                text = "새로운 여정을 시작해 볼까요?",
+                style = MaterialTheme.appTypography.subtitleSemiBold20.copy(
+                    textAlign = TextAlign.Center
+                ),
+                color = Color.Black
+            )
 
-            // 설명
-            /*Text(
-                text = "아래 버튼을 눌러\n정답과 해설을 확인해보세요.",
-                style = MaterialTheme.appTypography.bodyMedium16Reg,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Center
-            )*/
         }
 
         /** 🔹 하단 버튼 영역 */
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
                 .align(Alignment.BottomCenter),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            BaseFillButton(
+            Text(
+                text = "홈으로 가기",
+                style = MaterialTheme.appTypography.subtitleSemiBold16.copy(
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.extendedColors.primary,
+                ),
                 modifier = Modifier
-                    .weight(1f),
-                onClick = goHistory,
-                text = "내 스탬프",
-                btnContainerColor = MaterialTheme.extendedColors.btnFillSecondary,
-                btnContentColor = MaterialTheme.extendedColors.textPointBlue
+                    .clickable(
+                        onClick = onGoHomeClick
+                    )
             )
-
-            BaseFillButton(
+            Row(
                 modifier = Modifier
-                    .weight(1f),
-                onClick = onCloseClick,
-                text = "홈으로"
-            )
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 12.dp, bottom = 20.dp),
+            ) {
+                BaseFillButton(
+                    modifier = Modifier
+                        .weight(1f),
+                    onClick = onStartNewSubjectClick,
+                    text = "새로운 틈틈잇 시작하기"
+                )
+            }
         }
     }
 }
@@ -136,9 +144,9 @@ fun QuizEndingScreen(
 @Preview(showBackground = true)
 private fun Preview(){
     TeumTeumEatTheme {
-        QuizEndingScreen(
-            onCloseClick = { },
-            goHistory = {}
+        SubjectCompleteScreen(
+            onGoHomeClick = {  },
+            onStartNewSubjectClick = {  },
         )
     }
 }
