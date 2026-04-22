@@ -31,3 +31,5 @@ app/google-services.json
 
 # Android Profiling
 *.hprof
+/app/release/output-metadata.json
+app/release/.DS_Store
