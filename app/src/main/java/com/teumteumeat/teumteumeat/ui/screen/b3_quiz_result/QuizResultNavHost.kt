@@ -11,6 +11,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainArgs
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainScreenType
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalQuizResultUiState
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
@@ -27,6 +28,7 @@ sealed class QuizResultRoute(val route: String) {
     data object QuizFinish : QuizResultRoute("quiz_finish")
     data object Summary : QuizResultRoute("summary")
     data object QuizEnding : QuizResultRoute("quiz_ending")
+    data object SubjectComplete : QuizResultRoute("subject_complete")
 }
 
 
@@ -80,7 +82,11 @@ fun QuizResultNavHost(
                     navController.navigate(QuizResultRoute.Summary.route)
                 },
                 goEndScreen = {
-                    navController.navigate(QuizResultRoute.QuizEnding.route)
+                    if (uiState.userGoal?.isCompleted == true) {
+                        navController.navigate(QuizResultRoute.SubjectComplete.route)
+                    } else {
+                        navController.navigate(QuizResultRoute.QuizEnding.route)
+                    }
                 },
 
             )
@@ -108,6 +114,14 @@ fun QuizResultNavHost(
                 }
             )
         }
+
+        composable(QuizResultRoute.SubjectComplete.route){
+            SubjectCompleteScreen(
+                onGoHomeClick = { activity.finish() },
+                onStartNewSubjectClick = { Utils.UxUtils.moveActivity(activity, AddGoalActivity::class.java) },
+            )
+        }
+
     }
 }
 
