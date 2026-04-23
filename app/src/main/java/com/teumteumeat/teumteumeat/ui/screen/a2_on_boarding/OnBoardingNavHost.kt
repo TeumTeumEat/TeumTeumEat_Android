@@ -38,8 +38,6 @@ fun OnBoardingNavHost(navController: NavHostController) {
             route = OnBoardingScreens.FirstScreen.route,
         ) {
             OnBoardingFirstScreen(
-                name = "OnBoardingFirst",
-                viewModel = viewModel,
                 uiState = uiState,
                 onNext = {
                     viewModel.nextPage()
