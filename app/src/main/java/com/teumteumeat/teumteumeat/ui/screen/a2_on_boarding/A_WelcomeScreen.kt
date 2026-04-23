@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,11 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.LottieAnimation
@@ -25,15 +29,15 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
+import com.teumteumeat.teumteumeat.utils.appTypography
 
 
 @Composable
 fun OnBoardingFirstScreen(
-    name: String,
-    viewModel: OnBoardingViewModel,
     uiState: UiStateOnboardingState,
-    onNext : () -> Unit,
+    onNext: () -> Unit,
 ) {
 
     val currentPage = uiState.currentPage
@@ -68,8 +72,8 @@ fun OnBoardingFirstScreen(
                 ) {
 
                     SpeechBubble(
-                        text = "틈틈잇에 오신 걸 환영해요!\n" +
-                                "저는 틈틈이예요",
+                        text = "나만의 AI 일일 퀴즈 서비스\n틈틈잇!",
+                        textStyle = MaterialTheme.appTypography.btnSemiBold18_h24
                     )
 
                     Spacer(modifier = Modifier.height(11.dp))
@@ -85,6 +89,14 @@ fun OnBoardingFirstScreen(
                             progress = { progress },
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(36.dp))
+
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_home),
+                        contentDescription = "logo",
+                        Modifier.size(width = 131.dp, height = 40.dp),
+                    )
 
                 }
 
@@ -111,18 +123,13 @@ fun OnBoardingFirstScreen(
     )
 }
 
-/*
 @Preview(showBackground = true)
 @Composable
 fun OnBoardingPreview() {
-
-    val fakeViewModel = remember { OnBoardingViewModel() }
     TeumTeumEatTheme {
         OnBoardingFirstScreen(
-            name = "Android",
-            viewModel = fakeViewModel,
-            uiState = UiStateOnBoardingMain(errorMessage = "한글 또는 영문만 입력할 수 있어요", isNameValid = false),
+            uiState = UiStateOnboardingState(),
             onNext = {}
         )
     }
-}*/
+}
