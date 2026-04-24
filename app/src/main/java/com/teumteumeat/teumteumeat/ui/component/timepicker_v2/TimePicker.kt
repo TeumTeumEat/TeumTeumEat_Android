@@ -26,37 +26,18 @@ import androidx.compose.ui.Modifier
 // 단위
 import androidx.compose.ui.unit.dp
 
-// 🔽 프로젝트 내부 타입 (같은 패키지가 아니라면 필요)
-import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.TimePickerState
-import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.Meridiem
-
-// 🔽 WheelPicker (이미 구현된 공용 컴포넌트)
-import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.WheelPicker
-
-// 🔽 Picker 데이터
-import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.meridiemItems
-import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.hourItems
-import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.minuteItems
-
 // 🔽 Picker 내부 텍스트 UI
-import com.teumteumeat.teumteumeat.ui.component.timepicker_v2.TimePickerText
-import com.teumteumeat.teumteumeat.ui.theme.Blue500
-import com.teumteumeat.teumteumeat.ui.theme.Gray40
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 // 오전 / 오후
 private val meridiemItems = listOf("오전", "오후")
 
-// 1시 ~ 12시
-private val hourItems = (1..12).map { "${it}시" }
-
-// 00분 ~ 59분
-private val minuteItems = (0..59).map { "%02d분".format(it) }
-
 private const val INFINITE_MULTIPLIER = 1000
 
-val infiniteHourItems = List(12 * INFINITE_MULTIPLIER) { index ->
+private val hourSteps = listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+
+val infiniteHourItems = List(hourSteps.size * INFINITE_MULTIPLIER) { index ->
     val hour = (index % 12) + 1
     "%02d시".format(hour)
 }
@@ -135,6 +116,7 @@ fun TimePicker(
             modifier = Modifier.weight(1f),
             items = infiniteHourItems,
             initialItem = "%02d시".format(timeState.hour),
+            cycleSize = hourSteps.size,
             onItemSelected = { _, value ->
                 val hour = value.replace("시", "").toInt()
 
@@ -152,6 +134,7 @@ fun TimePicker(
             modifier = Modifier.weight(1f),
             items = infiniteMinuteItems,
             initialItem = "%02d분".format(timeState.minute),
+            cycleSize = minuteSteps.size,
             onItemSelected = { _, value ->
                 val minute = value.replace("분", "").toInt()
 

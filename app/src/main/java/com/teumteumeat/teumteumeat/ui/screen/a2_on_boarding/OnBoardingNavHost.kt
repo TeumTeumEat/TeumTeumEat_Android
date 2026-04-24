@@ -2,7 +2,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -31,59 +30,35 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = OnBoardingScreens.FirstScreen.route
+        startDestination = OnBoardingScreens.WelcomeScreen.route
     ) {
 
         composable(
-            route = OnBoardingScreens.FirstScreen.route,
+            route = OnBoardingScreens.WelcomeScreen.route,
         ) {
-            OnBoardingFirstScreen(
+            OnBoardingWelcomeScreen(
                 uiState = uiState,
                 onNext = {
-                    viewModel.nextPage()
-                    navController.navigate(OnBoardingScreens.SecondInputNameScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.OnboardingSetRoutineScreen)
+                    navController.navigate(OnBoardingScreens.OnboardingSetRoutineScreen.route)
                 },
             )
         }
 
         composable(
-            route = OnBoardingScreens.SecondInputNameScreen.route,
+            route = OnBoardingScreens.OnboardingSetRoutineScreen.route,
         ) {
-            OnBoardingSetCharNameScreen(
+            OnBoardingSetRoutineScreen(
                 onNext = {
-                    viewModel.nextPage()
-                    navController.navigate(OnBoardingScreens.ThirdSetAppTimeScreen.route)
-                },
-
-                onPrev = {
-                    navController.navigate(OnBoardingScreens.FirstScreen.route) {
-                        viewModel.prevPage()
-                        popUpTo(OnBoardingScreens.FirstScreen.route) { inclusive = true }
-                    }
-                },
-                name = "InputName",
-                viewModel = viewModel,
-                uiState = uiState,
-            )
-        }
-
-        composable(
-            route = OnBoardingScreens.ThirdSetAppTimeScreen.route,
-        ) {
-            OnBoardingSetApptimeScreen(
-                onNext = {
-                    viewModel.nextPage()
-                    // 4번째 화면 이동 로직 구현
+                    viewModel.navigateTo(OnBoardingScreens.FourthSetUsingAppTimeScreen)
                     navController.navigate(OnBoardingScreens.FourthSetUsingAppTimeScreen.route)
                 },
-
                 onPrev = {
-                    navController.navigate(OnBoardingScreens.SecondInputNameScreen.route) {
-                        viewModel.prevPage()
-                        popUpTo(OnBoardingScreens.SecondInputNameScreen.route) { inclusive = true }
+                    viewModel.navigateTo(OnBoardingScreens.WelcomeScreen)
+                    navController.navigate(OnBoardingScreens.WelcomeScreen.route) {
+                        popUpTo(OnBoardingScreens.WelcomeScreen.route) { inclusive = true }
                     }
                 },
-                name = "set_app_time",
                 viewModel = viewModel,
                 uiState = uiState,
             )
@@ -95,11 +70,11 @@ fun OnBoardingNavHost(navController: NavHostController) {
         ) {
             OnBoardingSetUsingApptimeScreen(
                 onNext = {
-                    viewModel.nextPage()
+                    viewModel.navigateTo(OnBoardingScreens.FifthSelectInputMethodScreen)
                     navController.navigate(OnBoardingScreens.FifthSelectInputMethodScreen.route)
                 },
                 onPrev = {
-                    viewModel.prevPage()
+                    viewModel.navigateTo(OnBoardingScreens.OnboardingSetRoutineScreen)
                     navController.popBackStack()
                 },
                 name = "set_using_app_time",
@@ -115,14 +90,15 @@ fun OnBoardingNavHost(navController: NavHostController) {
             SelectInputMethodScreen(
                 name = OnBoardingScreens.FifthSelectInputMethodScreen.route,
                 onNextFileUpload = {
+                    viewModel.navigateTo(OnBoardingScreens.SixthFileUploadScreen)
                     navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
                 },
-
                 onNextCateGorySelct = {
+                    viewModel.navigateTo(OnBoardingScreens.SixthCategorySelectScreen)
                     navController.navigate(OnBoardingScreens.SixthCategorySelectScreen.route)
                 },
                 onPrev = {
-                    viewModel.prevPage()
+                    viewModel.navigateTo(OnBoardingScreens.FourthSetUsingAppTimeScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -137,10 +113,11 @@ fun OnBoardingNavHost(navController: NavHostController) {
             CategorySelectScreen(
                 name = OnBoardingScreens.SixthCategorySelectScreen.route,
                 onNext = {
-                    viewModel.nextPage()
+                    viewModel.navigateTo(OnBoardingScreens.SeventhOptimizerDataScreen)
                     navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
+                    viewModel.navigateTo(OnBoardingScreens.FifthSelectInputMethodScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -156,10 +133,11 @@ fun OnBoardingNavHost(navController: NavHostController) {
             FileUploadScreen(
                 name = OnBoardingScreens.SixthFileUploadScreen.route,
                 onNext = {
-                    viewModel.nextPage()
+                    viewModel.navigateTo(OnBoardingScreens.SeventhOptimizerDataScreen)
                     navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
+                    viewModel.navigateTo(OnBoardingScreens.FifthSelectInputMethodScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -174,12 +152,14 @@ fun OnBoardingNavHost(navController: NavHostController) {
             OptimizerDataScreen(
                 name = OnBoardingScreens.SeventhOptimizerDataScreen.route,
                 onNext = {
-                    navController.navigate(
-                        OnBoardingScreens.EighthSetStudyRangeScreen.route
-                    )
+                    viewModel.navigateTo(OnBoardingScreens.EighthSetStudyRangeScreen)
+                    navController.navigate(OnBoardingScreens.EighthSetStudyRangeScreen.route)
                 },
                 onPrev = {
-                    viewModel.prevPage()
+                    val prev = OnBoardingScreens.fromRoute(
+                        navController.previousBackStackEntry?.destination?.route
+                    )
+                    if (prev != null) viewModel.navigateTo(prev)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -194,11 +174,11 @@ fun OnBoardingNavHost(navController: NavHostController) {
             SetStudyRangeScreen(
                 name = OnBoardingScreens.EighthSetStudyRangeScreen.route,
                 onNext = {
-                    navController.navigate(
-                        OnBoardingScreens.CheckSetMyInfoScreen.route
-                    )
+                    viewModel.navigateTo(OnBoardingScreens.CheckSetMyInfoScreen)
+                    navController.navigate(OnBoardingScreens.CheckSetMyInfoScreen.route)
                 },
                 onPrev = {
+                    viewModel.navigateTo(OnBoardingScreens.SeventhOptimizerDataScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -214,12 +194,13 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 onNext = {
                     navController.navigate(OnBoardingScreens.CompleteScreen.route) {
                         // 🔑 온보딩 스택 정리 (뒤로가기 방지)
-                        popUpTo(OnBoardingScreens.FirstScreen.route) {
+                        popUpTo(OnBoardingScreens.WelcomeScreen.route) {
                             inclusive = true
                         }
                     }
                 },
                 onPrev = {
+                    viewModel.navigateTo(OnBoardingScreens.EighthSetStudyRangeScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -232,13 +213,10 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
 sealed class OnBoardingScreens(val route: String) {
 
-    data object FirstScreen :
+    data object WelcomeScreen :
         OnBoardingScreens("welcome")
 
-    data object SecondInputNameScreen :
-        OnBoardingScreens("input_name")
-
-    data object ThirdSetAppTimeScreen :
+    data object OnboardingSetRoutineScreen :
         OnBoardingScreens("set_app_time")
 
     data object FourthSetUsingAppTimeScreen :
@@ -264,40 +242,58 @@ sealed class OnBoardingScreens(val route: String) {
 
     data object CompleteScreen :
             OnBoardingScreens("complete")
+
+    companion object {
+        private val all by lazy {
+            listOf(
+                WelcomeScreen, OnboardingSetRoutineScreen,
+                FourthSetUsingAppTimeScreen, FifthSelectInputMethodScreen,
+                SixthCategorySelectScreen, SixthFileUploadScreen,
+                SeventhOptimizerDataScreen, EighthSetStudyRangeScreen,
+                CheckSetMyInfoScreen, CompleteScreen,
+            )
+        }
+        fun fromRoute(route: String?): OnBoardingScreens? {
+            if (route == null) return null
+            return all.firstOrNull { it.route == route }
+        }
+    }
 }
 
 object OnBoardingFlow {
 
-    /** ✅ 온보딩 순서의 단일 소스 */
-    val screens: List<OnBoardingScreens> = listOf(
-        OnBoardingScreens.FirstScreen,
-        OnBoardingScreens.SecondInputNameScreen,
-        OnBoardingScreens.ThirdSetAppTimeScreen,
+    private val screens: List<OnBoardingScreens> = listOf(
+        OnBoardingScreens.WelcomeScreen,
+        OnBoardingScreens.OnboardingSetRoutineScreen,
         OnBoardingScreens.FourthSetUsingAppTimeScreen,
         OnBoardingScreens.FifthSelectInputMethodScreen,
         OnBoardingScreens.SixthCategorySelectScreen,
+        OnBoardingScreens.SeventhOptimizerDataScreen,
         OnBoardingScreens.EighthSetStudyRangeScreen,
         OnBoardingScreens.CheckSetMyInfoScreen,
     )
 
-    /** 전체 페이지 수 */
-    val totalCount: Int
-        get() = 5
+    private val pageMap: Map<OnBoardingScreens, Int> = mapOf(
+        OnBoardingScreens.WelcomeScreen to 0,
+        OnBoardingScreens.OnboardingSetRoutineScreen to 1,
+        OnBoardingScreens.FourthSetUsingAppTimeScreen to 2,
+        OnBoardingScreens.FifthSelectInputMethodScreen to 3,
+        OnBoardingScreens.SixthCategorySelectScreen to 4,
+        OnBoardingScreens.SixthFileUploadScreen to 4,
+        OnBoardingScreens.SeventhOptimizerDataScreen to 5,
+        OnBoardingScreens.EighthSetStudyRangeScreen to 6,
+        OnBoardingScreens.CheckSetMyInfoScreen to 7,
+    )
 
-    /** 현재 페이지 (1부터 시작)
-     * FirstScreen 은 카운트에 포함X
-     * */
-    fun currentPage(screen: OnBoardingScreens): Int {
-        return screens.indexOf(screen)
-    }
+    const val MAX_PAGE_INDEX: Int = 7
 
-    /** 이전 화면 */
+    fun currentPage(screen: OnBoardingScreens): Int = pageMap[screen] ?: 0
+
     fun prev(screen: OnBoardingScreens): OnBoardingScreens? {
         val index = screens.indexOf(screen)
         return screens.getOrNull(index - 1)
     }
 
-    /** 다음 화면 */
     fun next(screen: OnBoardingScreens): OnBoardingScreens? {
         val index = screens.indexOf(screen)
         return screens.getOrNull(index + 1)

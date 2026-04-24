@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.MinuteRadioGroup
+import com.teumteumeat.teumteumeat.ui.component.radio_group.MinuteRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -45,7 +45,7 @@ fun OnBoardingSetUsingApptimeScreen(
     val currentPage = uiState.currentPage
     val totalPages = uiState.totalPage
 
-    val isSetAllTimeValid = uiState.isSetWorkInTime && uiState.isSetWorkOutTime
+    val isSetAllTimeValid = uiState.isSetFirstAlarmTime && uiState.isSetSecondAlarmTime
 
 
     DefaultMonoBg(

@@ -42,7 +42,7 @@ import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
 @Composable
-fun OnBoardingSetCharNameScreen(
+fun OnboardingSetUserNickNameScreen(
     name: String,
     viewModel: OnBoardingViewModel,
     uiState: UiStateOnboardingState,

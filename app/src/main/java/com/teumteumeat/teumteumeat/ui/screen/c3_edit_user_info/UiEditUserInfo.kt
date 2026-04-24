@@ -20,12 +20,12 @@ data class UiStateEditUserInfo(
     val isSetWorkOutTime: Boolean = false,
 
     // 🔹 출/퇴근 시간 설정
-    val tempTime: TimeState = TimeState.amTime(), // 임시 시간
-    val workInTime: TimeState = TimeState.amTime(),  // 집에서 나오는 시간
-    val workOutTime: TimeState = TimeState.pmTime(), // 집으로 가는 시간
+    val tempTime: TimeState = TimeState.firstTime(), // 임시 시간
+    val workInTime: TimeState = TimeState.firstTime(),  // 집에서 나오는 시간
+    val workOutTime: TimeState = TimeState.secondTime(), // 집으로 가는 시간
 
-    val originalWorkInTime: TimeState = TimeState.amTime(),  // 집에서 나오는 시간
-    val originalWorkOutTime: TimeState = TimeState.pmTime(), // 집으로 가는 시간
+    val originalWorkInTime: TimeState = TimeState.firstTime(),  // 집에서 나오는 시간
+    val originalWorkOutTime: TimeState = TimeState.secondTime(), // 집으로 가는 시간
 
     // 🔹 BottomSheet 상태
     val showBottomSheet: Boolean = false,

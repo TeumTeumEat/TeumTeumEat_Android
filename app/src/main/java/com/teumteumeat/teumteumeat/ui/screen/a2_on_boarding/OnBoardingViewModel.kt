@@ -1005,7 +1005,7 @@ class OnBoardingViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        presignedUrl = result.data.presignedUrl,
+                        preSignedUrl = result.data.presignedUrl,
                         fileKey = result.data.key
                     )
                 }
@@ -1235,18 +1235,18 @@ class OnBoardingViewModel @Inject constructor(
             // ✅ 1. 어떤 시간을 보여줄지 결정
             val initialTime = when (type) {
                 TimeType.IN -> {
-                    if (state.isSetWorkInTime) {
+                    if (state.isSetFirstAlarmTime) {
                         state.workInTime       // 🔵 이미 선택한 값
                     } else {
-                        TimeState.amTime()     // 🟡 초기 기본값
+                        TimeState.firstTime()     // 🟡 초기 기본값
                     }
                 }
 
                 TimeType.OUT -> {
-                    if (state.isSetWorkOutTime) {
+                    if (state.isSetSecondAlarmTime) {
                         state.workOutTime
                     } else {
-                        TimeState.pmTime()
+                        TimeState.secondTime()
                     }
                 }
 
@@ -1306,7 +1306,7 @@ class OnBoardingViewModel @Inject constructor(
                     println("🟢 [confirmTime] BRANCH = TimeType.IN")
                     state.copy(
                         workInTime = state.tempTime,
-                        isSetWorkInTime = true,
+                        isSetFirstAlarmTime = true,
                         currentTimeType = TimeType.NOTTING
                     )
                 }
@@ -1315,7 +1315,7 @@ class OnBoardingViewModel @Inject constructor(
                     println("🟢 [confirmTime] BRANCH = TimeType.OUT")
                     state.copy(
                         workOutTime = state.tempTime,
-                        isSetWorkOutTime = true,
+                        isSetSecondAlarmTime = true,
                         currentTimeType = TimeType.NOTTING
                     )
                 }
@@ -1370,7 +1370,7 @@ class OnBoardingViewModel @Inject constructor(
         return when (uiState.value.currentTimeType) {
             TimeType.OUT -> uiState.value.workOutTime
             TimeType.IN -> uiState.value.workInTime
-            TimeType.NOTTING -> TimeState.amTime()
+            TimeType.NOTTING -> TimeState.firstTime()
         }
     }
 
@@ -1500,6 +1500,12 @@ class OnBoardingViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun navigateTo(screen: OnBoardingScreens) {
+        val before = _uiState.value.currentScreen
+        Log.d("OnBoardingNav", "navigateTo: ${before::class.simpleName}(page=${OnBoardingFlow.currentPage(before)}) → ${screen::class.simpleName}(page=${OnBoardingFlow.currentPage(screen)})")
+        _uiState.update { it.copy(currentScreen = screen) }
     }
 
     fun nextPage() {
