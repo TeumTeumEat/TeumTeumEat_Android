@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.DifficultyRadioGroup
+import com.teumteumeat.teumteumeat.ui.component.radio_group.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton

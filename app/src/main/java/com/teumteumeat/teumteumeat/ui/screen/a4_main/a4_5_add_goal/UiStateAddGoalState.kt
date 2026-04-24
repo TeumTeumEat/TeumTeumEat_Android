@@ -48,11 +48,11 @@ data class UiStateAddGoalState(
     val isSetWorkOutTime: Boolean = false,
 
     // 🔹 출/퇴근 시간 설정
-    val workInTime: TimeState = TimeState.amTime(),  // 집에서 나오는 시간
-    val workOutTime: TimeState = TimeState.pmTime(), // 집으로 가는 시간
+    val workInTime: TimeState = TimeState.firstTime(),  // 집에서 나오는 시간
+    val workOutTime: TimeState = TimeState.secondTime(), // 집으로 가는 시간
 
     // ✅ 바텀시트에서 조작 중인 임시 시간
-    val tempTime: TimeState = TimeState.amTime(),
+    val tempTime: TimeState = TimeState.firstTime(),
 
     // 🔹 BottomSheet 상태
     val showBottomSheet: Boolean = false,

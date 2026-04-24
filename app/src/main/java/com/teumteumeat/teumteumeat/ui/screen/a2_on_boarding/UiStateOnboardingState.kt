@@ -32,7 +32,7 @@ data class UiStateOnboardingState(
 
     val documentId: Int = 0,
     val goalId: Int = 0,
-    val currentScreen: OnBoardingScreens = OnBoardingScreens.FirstScreen,
+    val currentScreen: OnBoardingScreens = OnBoardingScreens.WelcomeScreen,
 
     // 이름 설정
     val charName: String = "",
@@ -40,19 +40,15 @@ data class UiStateOnboardingState(
     val isNameValid: Boolean = false,
     val violation: NameViolation = NameViolation.None,
 
-    val isSetWorkInTime: Boolean = false,
-    val isSetWorkOutTime: Boolean = false,
+    val isSetFirstAlarmTime: Boolean = true,
+    val isSetSecondAlarmTime: Boolean = true,
 
-    // 🔹 출/퇴근 시간 설정
-    val workInTime: TimeState = TimeState.initial(
-        isSelected = isSetWorkInTime
-    ),  // 집에서 나오는 시간
-    val workOutTime: TimeState = TimeState.initial(
-        isSelected = isSetWorkOutTime
-    ), // 집으로 가는 시간
+    // 🔹 알림 시간
+    val workInTime: TimeState = TimeState.firstTime(),  // 1번째 알림 시간
+    val workOutTime: TimeState = TimeState.secondTime(), // 2번째 알림 시간
 
     // ✅ 바텀시트에서 조작 중인 임시 시간
-    val tempTime: TimeState = TimeState.amTime(),
+    val tempTime: TimeState = TimeState.firstTime(),
 
     // 🔹 BottomSheet 상태
     val showBottomSheet: Boolean = false,
@@ -82,7 +78,7 @@ data class UiStateOnboardingState(
     /**
      * 앱 이용시간
      */
-    val selectedMinute: Int? = null,
+    val selectedMinute: Int = 5,
 
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
@@ -96,7 +92,7 @@ data class UiStateOnboardingState(
     val selectedFileMimeType: String = "",
     val selectedFileSize: Long = 0L,
 
-    val presignedUrl: String? = null,
+    val preSignedUrl: String? = null,
     val fileKey: String? = null,
 
     // 카테고리 명 리스트
@@ -128,7 +124,7 @@ data class UiStateOnboardingState(
         get() = OnBoardingFlow.currentPage(currentScreen)
 
     val totalPage: Int
-        get() = OnBoardingFlow.totalCount
+        get() = OnBoardingFlow.MAX_PAGE_INDEX
 
     val canGoBack: Boolean
         get() = currentPage > 1

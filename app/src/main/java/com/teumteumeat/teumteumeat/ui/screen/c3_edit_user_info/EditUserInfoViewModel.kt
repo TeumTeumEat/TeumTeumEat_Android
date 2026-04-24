@@ -296,7 +296,7 @@ class EditUserInfoViewModel @Inject constructor(
                     showBottomSheet = true,
                     currentBottomSheetType = type,
                     tempUseMinutes = state.useMinutes,
-                    tempTime = TimeState.amTime()
+                    tempTime = TimeState.firstTime()
                 )
             }
         }
@@ -324,7 +324,7 @@ class EditUserInfoViewModel @Inject constructor(
                         workInTime = state.tempTime,
                         isChanged = true,
                         showBottomSheet = false,
-                        tempTime = TimeState.amTime()
+                        tempTime = TimeState.firstTime()
                     )
                 }
 
@@ -334,7 +334,7 @@ class EditUserInfoViewModel @Inject constructor(
                         workOutTime = state.tempTime,
                         isChanged = true,
                         showBottomSheet = false,
-                        tempTime = TimeState.amTime()
+                        tempTime = TimeState.firstTime()
                     )
                 }
 
@@ -367,7 +367,7 @@ class EditUserInfoViewModel @Inject constructor(
             it.copy(
                 showBottomSheet = false,
                 currentBottomSheetType = null,
-                tempTime = TimeState.amTime(),
+                tempTime = TimeState.firstTime(),
                 tempUseMinutes = 0
             )
         }

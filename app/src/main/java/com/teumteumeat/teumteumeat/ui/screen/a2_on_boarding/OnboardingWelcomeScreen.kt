@@ -35,7 +35,7 @@ import com.teumteumeat.teumteumeat.utils.appTypography
 
 
 @Composable
-fun OnBoardingFirstScreen(
+fun OnBoardingWelcomeScreen(
     uiState: UiStateOnboardingState,
     onNext: () -> Unit,
 ) {
@@ -127,7 +127,7 @@ fun OnBoardingFirstScreen(
 @Composable
 fun OnBoardingPreview() {
     TeumTeumEatTheme {
-        OnBoardingFirstScreen(
+        OnBoardingWelcomeScreen(
             uiState = UiStateOnboardingState(),
             onNext = {}
         )

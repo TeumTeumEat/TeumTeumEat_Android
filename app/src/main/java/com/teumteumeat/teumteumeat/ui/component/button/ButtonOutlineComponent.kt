@@ -33,9 +33,11 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 @Composable
 fun BaseOutlineButton(
-    modifier: Modifier = Modifier, // 추가: Modifier 적용 가능
+    modifier: Modifier = Modifier,
     text: String = "",
     textStyle: TextStyle = TextStyle(),
+    subText: String? = null,
+    subTextStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
     color: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit,
@@ -61,22 +63,43 @@ fun BaseOutlineButton(
                 disabledContainerColor = Color.White,
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
-            shape = RoundedCornerShape(16.dp), // border-radius: 8px
-            border = BorderStroke(1.5.dp, outlineColor), // ✅ 버튼의 테두리 설정
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.5.dp, outlineColor),
             modifier = Modifier
                 .height(btnHeight.dp)
                 .fillMaxWidth(),
         ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = contentAligment
-            ) {
-                Text(
-                    text = text,
-                    style = textStyle,
-                    maxLines = maxLine,
-                    overflow = overFlowSetting
-                )
+            if (subText != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = text,
+                        style = textStyle,
+                        maxLines = maxLine,
+                        overflow = overFlowSetting,
+                    )
+                    Text(
+                        text = subText,
+                        style = subTextStyle,
+                        maxLines = maxLine,
+                        overflow = overFlowSetting,
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = contentAligment,
+                ) {
+                    Text(
+                        text = text,
+                        style = textStyle,
+                        maxLines = maxLine,
+                        overflow = overFlowSetting,
+                    )
+                }
             }
         }
     }

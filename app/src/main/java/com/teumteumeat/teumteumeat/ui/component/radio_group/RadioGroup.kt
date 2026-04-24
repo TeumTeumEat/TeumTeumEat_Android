@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.component
+package com.teumteumeat.teumteumeat.ui.component.radio_group
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,6 +19,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.DifficultyOption
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Composable
 fun MinuteRadioGroup(
@@ -50,6 +51,46 @@ fun MinuteRadioGroup(
                     onSelect(minute)
                 }
             )
+        }
+    }
+}
+
+
+@Composable
+fun QuestionCountRadioGroup(
+    modifier: Modifier = Modifier,
+    options: List<Int>,
+    selectedQuestionCnt: Int?,
+    onSelect: (Int) -> Unit
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        options.chunked(2).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowItems.forEach { questionCount ->
+                    val isSelected = questionCount == selectedQuestionCnt
+                    BaseOutlineButton(
+                        modifier = Modifier.weight(1f),
+                        btnHeight = 50,
+                        text = "${questionCount}문제",
+                        textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
+                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.extendedColors.textGhost
+                        ),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = { onSelect(questionCount) }
+                    )
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
