@@ -98,7 +98,6 @@ fun SelectableBoxButton(
     isSelected: Boolean,
     titleText: String,
     labelText: String,
-    iconSize: Dp = 60.dp,
     iconRes: Int,
     onClick: () -> Unit,
 ) {
@@ -106,11 +105,8 @@ fun SelectableBoxButton(
     val materialTheme = MaterialTheme.colorScheme
     val theme = MaterialTheme.extendedColors
 
-    val selectedColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        theme.btnLineDisable
-    }
+    val contentColor = if (isSelected) { theme.primary } else { theme.textGhost }
+    val borderColor = if (isSelected) { theme.primary } else { theme.btnLineDisable }
 
     TeumTeumEatTheme {
         Card(
@@ -121,7 +117,7 @@ fun SelectableBoxButton(
                 disabledContainerColor = materialTheme.onSurfaceVariant,
                 disabledContentColor = materialTheme.onSurfaceVariant
             ),
-            border = BorderStroke(2.dp, selectedColor),
+            border = BorderStroke(2.dp, borderColor),
             onClick = onClick
         ) {
             Column(
@@ -132,16 +128,16 @@ fun SelectableBoxButton(
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = if(isSelected) MaterialTheme.extendedColors.primary else MaterialTheme.extendedColors.btnLineDisable,
-                    modifier = Modifier.size(iconSize)
+                    tint = if(isSelected) MaterialTheme.extendedColors.primary
+                        else MaterialTheme.extendedColors.btnGray200,
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
                     text = titleText,
                     style = MaterialTheme.appTypography.subtitleSemiBold20.copy(
-                        color = selectedColor
+                        color = contentColor
                     ),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -150,7 +146,7 @@ fun SelectableBoxButton(
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
                     style = MaterialTheme.appTypography.bodyMedium14.copy(
-                        color = selectedColor
+                        color = contentColor
                     )
                 )
             }
@@ -173,6 +169,7 @@ fun ContentSelectableBoxButton(
 
     ) {
     val materialTheme = MaterialTheme.colorScheme
+    val theme = MaterialTheme.extendedColors
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
@@ -181,7 +178,7 @@ fun ContentSelectableBoxButton(
             disabledContainerColor = materialTheme.onSurfaceVariant,
             disabledContentColor = materialTheme.onSurfaceVariant
         ),
-        border = BorderStroke(2.dp, Color(0xFFDDDDDD)),
+        border = BorderStroke(2.dp, theme.btnLineDisable),
         onClick = onClick
     ) {
         if (!isSelectableContent) {
@@ -272,24 +269,27 @@ fun ContentSelectableBoxButton(
 )
 @Composable
 fun BoxButtonPreview() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(all = 50.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        ContentSelectableBoxButton(
-            isSelectableContent = true,
-            contentFileName = "test file name.pdf",
-            onClick = {},
-            titleText = "Test",
-            lableText = "test",
-            onDelContentClick = {},
-        )
-        Spacer(modifier = Modifier.height(100.dp))
-        BoxOutlineButton(
-            onClick = {},
-        )
+    TeumTeumEatTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(all = 20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            ContentSelectableBoxButton(
+                isSelectableContent = true,
+                contentFileName = "test file name.pdf",
+                onClick = {},
+                titleText = "Test",
+                lableText = "test",
+                onDelContentClick = {},
+            )
+            Spacer(modifier = Modifier.height(100.dp))
+            BoxOutlineButton(
+                onClick = {},
+            )
+        }
     }
 }

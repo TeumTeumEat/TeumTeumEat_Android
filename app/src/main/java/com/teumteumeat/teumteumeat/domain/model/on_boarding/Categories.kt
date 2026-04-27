@@ -60,6 +60,50 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
     return root.values.map { it.toImmutable() }
 }
 
+fun String.toDepth2CategoryEmoji(): String = when (this) {
+    // IT
+    "앱개발자"                  -> "📱"
+    "웹개발자"                  -> "💻"
+    "데이터베이스"              -> "🗄️"
+    "DevOps"                   -> "⚙️"
+    "PM"                       -> "📋"
+    "네트워크"                  -> "📡"
+    "디자인"                    -> "🎨"
+    // 스포츠
+    "러닝 & 유산소"             -> "🏃"
+    "웨이트(헬스)"              -> "💪"
+    "구기 종목 (축구 & 농구)"   -> "⚽"
+    // 경제
+    "금융 기초"                 -> "💰"
+    // 주식
+    "투자 입문"                 -> "📈"
+    "분석 기초"                 -> "📊"
+    // 생활 법률 및 제도
+    "주거와 계약"               -> "🏠"
+    "생활과 노동"               -> "⚖️"
+    // 기초 과학
+    "물리 & 화학 상식"          -> "🔬"
+    "지구와 우주"               -> "🌍"
+    // 건강
+    "식품과 영양"               -> "🥗"
+    "질환과 안전"               -> "🏥"
+    // 시사 교양
+    "지리와 문화"               -> "🗺️"
+    "국제 사회"                 -> "🌏"
+    // 맞춤법
+    "표준어 규정"               -> "📖"
+    "실전 언어"                 -> "✍️"
+    else                       -> ""
+}
+
+fun String.toDepth2CategoryLabel(): String {
+    val emoji = toDepth2CategoryEmoji()
+    return when (this) {
+        "구기 종목 (축구 & 농구)" -> if (emoji.isEmpty()) "구기 종목" else "${emoji}구기 종목\n(축구 & 농구)"
+        else -> if (emoji.isEmpty()) this else "$emoji $this"
+    }
+}
+
 /**
  * 내부 전용 Mutable 모델
  */
