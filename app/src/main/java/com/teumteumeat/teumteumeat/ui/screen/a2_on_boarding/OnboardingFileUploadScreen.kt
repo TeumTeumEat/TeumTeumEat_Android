@@ -120,21 +120,18 @@ fun FileUploadScreen(
                         text = "공부하고 싶은 PDF 자료를\n" +
                                 "선택해 주세요!"
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     Image(
                         painter = painterResource(R.drawable.char_onboarding_five_two),
                         contentDescription = "앞을 보는 케릭터",
                         contentScale = ContentScale.Fit,
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
-
+                    Spacer(modifier = Modifier.height(15.dp))
                     // 파일 업로드 버튼
                     ContentSelectableBoxButton(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 27.dp, horizontal = 21.dp),
-                        iconRes = R.drawable.icon_files_big,
+                            .padding(vertical = 37.dp),
+                        iconRes = R.drawable.icon_file_fill,
                         titleText = "파일 업로드",
                         lableText = "50MB 이하 파일만 업로드 가능",
                         onClick = {

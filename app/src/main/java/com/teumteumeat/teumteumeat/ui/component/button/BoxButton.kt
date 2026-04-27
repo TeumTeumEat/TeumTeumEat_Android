@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -215,18 +216,17 @@ fun ContentSelectableBoxButton(
 
             }
         } else {
-            Column(
-                modifier = modifier,
-            ) {
-
+            Box() {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 13.dp, end = 19.dp),
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.End,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = null,
+                        contentDescription = "파일 삭제 아이콘",
                         tint = materialTheme.onTertiary,
                         modifier = Modifier
                             .size(24.dp)
@@ -241,20 +241,23 @@ fun ContentSelectableBoxButton(
                             }
                     )
                 }
-
                 Column(
-                    modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = modifier,
                 ) {
-                    Text(
-                        text = contentFileName,
-                        textAlign = TextAlign.Center,
-                        fontSize = 20.sp,
-                        style = Typography.labelMedium.copy(
-                            color = materialTheme.surfaceVariant
+                    Column(
+                        modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = contentFileName,
+                            textAlign = TextAlign.Center,
+                            fontSize = 20.sp,
+                            style = Typography.labelMedium.copy(
+                                color = materialTheme.surfaceVariant
+                            )
                         )
-                    )
+                    }
                 }
             }
         }

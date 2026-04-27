@@ -50,7 +50,7 @@ import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Composable
-fun OptimizerDataScreen(
+fun OptimizeDataScreen(
     name: String,
     viewModel: OnBoardingViewModel,
     uiState: UiStateOnboardingState,
@@ -66,6 +66,7 @@ fun OptimizerDataScreen(
         remember { MutableInteractionSource() } // 사용자가 특정 UI 요소와 상호작용하고 있는지를 감지하는 객체
     val inputFocused by inputInteractionSource.collectIsFocusedAsState() // ✅ 포커스 여부 감지
     val focusManager = LocalFocusManager.current
+
     val isPromptValid = uiState.promptInput.length <= 30 &&
             uiState.difficulty != Difficulty.NONE
     val keyboardController = LocalSoftwareKeyboardController.current
