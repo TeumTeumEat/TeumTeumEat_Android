@@ -40,15 +40,15 @@ fun OnBoardingNavHost(navController: NavHostController) {
             OnBoardingWelcomeScreen(
                 uiState = uiState,
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.OnboardingSetRoutineScreen)
-                    navController.navigate(OnBoardingScreens.OnboardingSetRoutineScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.SetRoutineScreen)
+                    navController.navigate(OnBoardingScreens.SetRoutineScreen.route)
                 },
             )
         }
 
         // 2. 학습 분량 및 알림 시간 설정 화면
         composable(
-            route = OnBoardingScreens.OnboardingSetRoutineScreen.route,
+            route = OnBoardingScreens.SetRoutineScreen.route,
         ) {
             OnBoardingSetRoutineScreen(
                 onNext = {
@@ -73,15 +73,15 @@ fun OnBoardingNavHost(navController: NavHostController) {
             SelectLearningMethodScreen(
                 name = OnBoardingScreens.SelectLearningMethodScreen.route,
                 onNextFileUpload = {
-                    viewModel.navigateTo(OnBoardingScreens.SixthFileUploadScreen)
-                    navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.UploadFileScreen)
+                    navController.navigate(OnBoardingScreens.UploadFileScreen.route)
                 },
                 onNextCateGorySelct = {
-                    viewModel.navigateTo(OnBoardingScreens.SixthCategorySelectScreen)
-                    navController.navigate(OnBoardingScreens.SixthCategorySelectScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.SelectCategoryScreen)
+                    navController.navigate(OnBoardingScreens.SelectCategoryScreen.route)
                 },
                 onPrev = {
-                    viewModel.navigateTo(OnBoardingScreens.OnboardingSetRoutineScreen)
+                    viewModel.navigateTo(OnBoardingScreens.SetRoutineScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -91,13 +91,13 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
         // ✅ 6-1 카테고리 선택 화면
         composable(
-            route = OnBoardingScreens.SixthCategorySelectScreen.route
+            route = OnBoardingScreens.SelectCategoryScreen.route
         ) { backStackEntry ->
             CategorySelectScreen(
-                name = OnBoardingScreens.SixthCategorySelectScreen.route,
+                name = OnBoardingScreens.SelectCategoryScreen.route,
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.SeventhOptimizerDataScreen)
-                    navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.OptimizeDataScreen)
+                    navController.navigate(OnBoardingScreens.OptimizeDataScreen.route)
                 },
                 onPrev = {
                     viewModel.navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
@@ -111,13 +111,13 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
         // ✅ 6-2 파일 업로드 입력 화면
         composable(
-            route = OnBoardingScreens.SixthFileUploadScreen.route
+            route = OnBoardingScreens.UploadFileScreen.route
         ) {
             FileUploadScreen(
-                name = OnBoardingScreens.SixthFileUploadScreen.route,
+                name = OnBoardingScreens.UploadFileScreen.route,
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.SeventhOptimizerDataScreen)
-                    navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.OptimizeDataScreen)
+                    navController.navigate(OnBoardingScreens.OptimizeDataScreen.route)
                 },
                 onPrev = {
                     viewModel.navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
@@ -130,10 +130,10 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
         // ✅ 7. 옵티마이저 데이터 입력 화면
         composable(
-            route = OnBoardingScreens.SeventhOptimizerDataScreen.route
+            route = OnBoardingScreens.OptimizeDataScreen.route
         ) {
-            OptimizerDataScreen(
-                name = OnBoardingScreens.SeventhOptimizerDataScreen.route,
+            OptimizeDataScreen(
+                name = OnBoardingScreens.OptimizeDataScreen.route,
                 onNext = {
                     viewModel.navigateTo(OnBoardingScreens.EighthSetStudyRangeScreen)
                     navController.navigate(OnBoardingScreens.EighthSetStudyRangeScreen.route)
@@ -161,7 +161,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     navController.navigate(OnBoardingScreens.CheckSetMyInfoScreen.route)
                 },
                 onPrev = {
-                    viewModel.navigateTo(OnBoardingScreens.SeventhOptimizerDataScreen)
+                    viewModel.navigateTo(OnBoardingScreens.OptimizeDataScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -199,19 +199,19 @@ sealed class OnBoardingScreens(val route: String) {
     data object WelcomeScreen :
         OnBoardingScreens("welcome")
 
-    data object OnboardingSetRoutineScreen :
+    data object SetRoutineScreen :
         OnBoardingScreens("set_app_time")
 
     data object SelectLearningMethodScreen :
         OnBoardingScreens("select_learning_method")
 
-    data object SixthCategorySelectScreen :
+    data object SelectCategoryScreen :
         OnBoardingScreens("select_category")
 
-    data object SixthFileUploadScreen :
+    data object UploadFileScreen :
         OnBoardingScreens("file_upload")
 
-    data object SeventhOptimizerDataScreen :
+    data object OptimizeDataScreen :
         OnBoardingScreens("optimizer_data")
 
     data object EighthSetStudyRangeScreen :
@@ -226,10 +226,10 @@ sealed class OnBoardingScreens(val route: String) {
     companion object {
         private val all by lazy {
             listOf(
-                WelcomeScreen, OnboardingSetRoutineScreen,
+                WelcomeScreen, SetRoutineScreen,
                 SelectLearningMethodScreen,
-                SixthCategorySelectScreen, SixthFileUploadScreen,
-                SeventhOptimizerDataScreen, EighthSetStudyRangeScreen,
+                SelectCategoryScreen, UploadFileScreen,
+                OptimizeDataScreen, EighthSetStudyRangeScreen,
                 CheckSetMyInfoScreen, CompleteScreen,
             )
         }
@@ -244,21 +244,21 @@ object OnBoardingFlow {
 
     private val screens: List<OnBoardingScreens> = listOf(
         OnBoardingScreens.WelcomeScreen,
-        OnBoardingScreens.OnboardingSetRoutineScreen,
+        OnBoardingScreens.SetRoutineScreen,
         OnBoardingScreens.SelectLearningMethodScreen,
-        OnBoardingScreens.SixthCategorySelectScreen,
-        OnBoardingScreens.SeventhOptimizerDataScreen,
+        OnBoardingScreens.SelectCategoryScreen,
+        OnBoardingScreens.OptimizeDataScreen,
         OnBoardingScreens.EighthSetStudyRangeScreen,
         OnBoardingScreens.CheckSetMyInfoScreen,
     )
 
     private val pageMap: Map<OnBoardingScreens, Int> = mapOf(
         OnBoardingScreens.WelcomeScreen to 0,
-        OnBoardingScreens.OnboardingSetRoutineScreen to 1,
+        OnBoardingScreens.SetRoutineScreen to 1,
         OnBoardingScreens.SelectLearningMethodScreen to 2,
-        OnBoardingScreens.SixthCategorySelectScreen to 2,
-        OnBoardingScreens.SixthFileUploadScreen to 2,
-        OnBoardingScreens.SeventhOptimizerDataScreen to 3,
+        OnBoardingScreens.SelectCategoryScreen to 2,
+        OnBoardingScreens.UploadFileScreen to 2,
+        OnBoardingScreens.OptimizeDataScreen to 3,
         OnBoardingScreens.EighthSetStudyRangeScreen to 4,
         OnBoardingScreens.CheckSetMyInfoScreen to 5,
     )
