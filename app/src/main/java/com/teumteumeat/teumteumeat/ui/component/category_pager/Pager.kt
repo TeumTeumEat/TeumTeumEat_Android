@@ -216,6 +216,7 @@ fun CategoryGrid(
     bottomPadding: Dp = 170.dp, // ✅ 하단 버튼 + 여백
     currentPage: Int = 0,
     verticalColumns: Int = 1,
+    labelMapper: ((Category) -> String)? = null,
 ) {
     LazyVerticalStaggeredGrid(
         modifier = modifier,
@@ -230,11 +231,12 @@ fun CategoryGrid(
             items = categories,
             key = { _, item -> item.id }
         ) { _, category ->
+            val label = labelMapper?.invoke(category) ?: category.name
             SelectableBaseOutlineButton(
                 modifier = Modifier
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = 52.dp),
-                text = category.name,
+                text = label,
 
                 textStyle = if (currentPage == 0) MaterialTheme.appTypography.btnSemiBold20_h24
                     else MaterialTheme.appTypography.btnSemiBold18_h24,

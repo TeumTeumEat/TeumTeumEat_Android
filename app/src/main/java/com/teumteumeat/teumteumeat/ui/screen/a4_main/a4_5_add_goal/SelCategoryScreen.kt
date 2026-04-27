@@ -29,6 +29,7 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth2CategoryLabel
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -136,6 +137,7 @@ fun AddGoalCategorySelectScreen(
                                         selectedId = selection.depth2?.id,
                                         onItemClick = viewModel::toggleDepth2,
                                         currentPage = page,
+                                        labelMapper = { it.name.toDepth2CategoryLabel() },
                                     )
 
                                     // ⭐ 3뎁스

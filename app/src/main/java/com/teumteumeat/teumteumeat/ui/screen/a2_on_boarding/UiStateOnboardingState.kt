@@ -84,7 +84,7 @@ data class UiStateOnboardingState(
     val isSuccess: Boolean = false,
 
     // 학습 방법 선택 여부
-    val goalTypeUiState: GoalTypeUiState = GoalTypeUiState.NONE,
+    val goalTypeUiState: GoalTypeUiState = GoalTypeUiState.CATEGORY,
 
     // pdf 학습시 필요한 자료
     val selectedFileUri: Uri? = null,

@@ -127,11 +127,11 @@ class OnBoardingViewModel @Inject constructor(
             val startTime = System.currentTimeMillis()
 
             // 1️⃣ 이름 등록
-            val nameResult = setUserNameInternal()
+            /*val nameResult = setUserNameInternal()
             if (nameResult !is ApiResultV2.Success) {
                 moveToError(nameResult)
                 return@launch
-            }
+            }*/
 
             // 2️⃣ 출퇴근 정보 저장
             val commuteResult = saveCommuteInfoInternal()
@@ -239,7 +239,6 @@ class OnBoardingViewModel @Inject constructor(
                 )
             }
         }
-
     }
 
     private suspend fun updateUserPushSettingInternal(): ApiResultV2<Unit> {
@@ -653,7 +652,7 @@ class OnBoardingViewModel @Inject constructor(
 
     fun loadCategories() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, pageErrorMessage = null) }
 
             when (val result = getCategoriesUseCase()) {
 
@@ -669,9 +668,11 @@ class OnBoardingViewModel @Inject constructor(
                     logLeafCategories(result.data)
                 }
 
+
                 is ApiResult.SessionExpired -> {
                     sessionManager.expireSession()
                 }
+
 
                 is ApiResult.ServerError -> {
                     _uiState.update {

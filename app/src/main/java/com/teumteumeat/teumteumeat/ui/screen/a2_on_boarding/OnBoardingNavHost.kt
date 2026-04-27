@@ -33,6 +33,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
         startDestination = OnBoardingScreens.WelcomeScreen.route
     ) {
 
+        // 1. 웰컴화면
         composable(
             route = OnBoardingScreens.WelcomeScreen.route,
         ) {
@@ -45,13 +46,14 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
+        // 2. 학습 분량 및 알림 시간 설정 화면
         composable(
             route = OnBoardingScreens.OnboardingSetRoutineScreen.route,
         ) {
             OnBoardingSetRoutineScreen(
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.FourthSetUsingAppTimeScreen)
-                    navController.navigate(OnBoardingScreens.FourthSetUsingAppTimeScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
+                    navController.navigate(OnBoardingScreens.SelectLearningMethodScreen.route)
                 },
                 onPrev = {
                     viewModel.navigateTo(OnBoardingScreens.WelcomeScreen)
@@ -64,31 +66,12 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // 4️⃣ 앱 사용 시간 관련 설정 화면
+        // 3️⃣ 학습 방법 지정 화면
         composable(
-            route = OnBoardingScreens.FourthSetUsingAppTimeScreen.route
+            route = OnBoardingScreens.SelectLearningMethodScreen.route
         ) {
-            OnBoardingSetUsingApptimeScreen(
-                onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.FifthSelectInputMethodScreen)
-                    navController.navigate(OnBoardingScreens.FifthSelectInputMethodScreen.route)
-                },
-                onPrev = {
-                    viewModel.navigateTo(OnBoardingScreens.OnboardingSetRoutineScreen)
-                    navController.popBackStack()
-                },
-                name = "set_using_app_time",
-                viewModel = viewModel,
-                uiState = uiState,
-            )
-        }
-
-        // 5️⃣ 정보 입력 방법 지정 화면
-        composable(
-            route = OnBoardingScreens.FifthSelectInputMethodScreen.route
-        ) {
-            SelectInputMethodScreen(
-                name = OnBoardingScreens.FifthSelectInputMethodScreen.route,
+            SelectLearningMethodScreen(
+                name = OnBoardingScreens.SelectLearningMethodScreen.route,
                 onNextFileUpload = {
                     viewModel.navigateTo(OnBoardingScreens.SixthFileUploadScreen)
                     navController.navigate(OnBoardingScreens.SixthFileUploadScreen.route)
@@ -98,7 +81,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     navController.navigate(OnBoardingScreens.SixthCategorySelectScreen.route)
                 },
                 onPrev = {
-                    viewModel.navigateTo(OnBoardingScreens.FourthSetUsingAppTimeScreen)
+                    viewModel.navigateTo(OnBoardingScreens.OnboardingSetRoutineScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -117,7 +100,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
-                    viewModel.navigateTo(OnBoardingScreens.FifthSelectInputMethodScreen)
+                    viewModel.navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -137,7 +120,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     navController.navigate(OnBoardingScreens.SeventhOptimizerDataScreen.route)
                 },
                 onPrev = {
-                    viewModel.navigateTo(OnBoardingScreens.FifthSelectInputMethodScreen)
+                    viewModel.navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -219,11 +202,8 @@ sealed class OnBoardingScreens(val route: String) {
     data object OnboardingSetRoutineScreen :
         OnBoardingScreens("set_app_time")
 
-    data object FourthSetUsingAppTimeScreen :
-        OnBoardingScreens("set_using_app_time")
-
-    data object FifthSelectInputMethodScreen :
-        OnBoardingScreens("select_input_method")
+    data object SelectLearningMethodScreen :
+        OnBoardingScreens("select_learning_method")
 
     data object SixthCategorySelectScreen :
         OnBoardingScreens("select_category")
@@ -241,13 +221,13 @@ sealed class OnBoardingScreens(val route: String) {
         OnBoardingScreens("check_set_my_info")
 
     data object CompleteScreen :
-            OnBoardingScreens("complete")
+        OnBoardingScreens("complete")
 
     companion object {
         private val all by lazy {
             listOf(
                 WelcomeScreen, OnboardingSetRoutineScreen,
-                FourthSetUsingAppTimeScreen, FifthSelectInputMethodScreen,
+                SelectLearningMethodScreen,
                 SixthCategorySelectScreen, SixthFileUploadScreen,
                 SeventhOptimizerDataScreen, EighthSetStudyRangeScreen,
                 CheckSetMyInfoScreen, CompleteScreen,
@@ -265,8 +245,7 @@ object OnBoardingFlow {
     private val screens: List<OnBoardingScreens> = listOf(
         OnBoardingScreens.WelcomeScreen,
         OnBoardingScreens.OnboardingSetRoutineScreen,
-        OnBoardingScreens.FourthSetUsingAppTimeScreen,
-        OnBoardingScreens.FifthSelectInputMethodScreen,
+        OnBoardingScreens.SelectLearningMethodScreen,
         OnBoardingScreens.SixthCategorySelectScreen,
         OnBoardingScreens.SeventhOptimizerDataScreen,
         OnBoardingScreens.EighthSetStudyRangeScreen,
@@ -276,16 +255,15 @@ object OnBoardingFlow {
     private val pageMap: Map<OnBoardingScreens, Int> = mapOf(
         OnBoardingScreens.WelcomeScreen to 0,
         OnBoardingScreens.OnboardingSetRoutineScreen to 1,
-        OnBoardingScreens.FourthSetUsingAppTimeScreen to 2,
-        OnBoardingScreens.FifthSelectInputMethodScreen to 3,
-        OnBoardingScreens.SixthCategorySelectScreen to 4,
-        OnBoardingScreens.SixthFileUploadScreen to 4,
-        OnBoardingScreens.SeventhOptimizerDataScreen to 5,
-        OnBoardingScreens.EighthSetStudyRangeScreen to 6,
-        OnBoardingScreens.CheckSetMyInfoScreen to 7,
+        OnBoardingScreens.SelectLearningMethodScreen to 2,
+        OnBoardingScreens.SixthCategorySelectScreen to 2,
+        OnBoardingScreens.SixthFileUploadScreen to 2,
+        OnBoardingScreens.SeventhOptimizerDataScreen to 3,
+        OnBoardingScreens.EighthSetStudyRangeScreen to 4,
+        OnBoardingScreens.CheckSetMyInfoScreen to 5,
     )
 
-    const val MAX_PAGE_INDEX: Int = 7
+    const val MAX_PAGE_INDEX: Int = 5
 
     fun currentPage(screen: OnBoardingScreens): Int = pageMap[screen] ?: 0
 

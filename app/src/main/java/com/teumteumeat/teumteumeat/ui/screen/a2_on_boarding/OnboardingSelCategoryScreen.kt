@@ -29,6 +29,9 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth2CategoryLabel
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -92,29 +95,33 @@ fun CategorySelectScreen(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        SpeechBubble(text = "관심 있는 분야를\n" +
-                                "알려주세요")
-                        Spacer(modifier = Modifier.height(12.dp))
-
+                        SpeechBubble(text = "어떤 주제에 관심 있으세요?\n맞춤 퀴즈를 준비해드릴게요")
                         Image(
                             painter = painterResource(R.drawable.char_onboarding_five_one),
                             contentDescription = "앞을 보는 케릭터",
                             contentScale = ContentScale.Fit,
                         )
-
                     }
 
-                    Spacer(modifier = Modifier.height(25.dp))
+                    Spacer(modifier = Modifier.height(15.dp))
 
-                    if(uiState.isLoading){
+                    if (uiState.isLoading) {
                         LoadingScreen(
                             title = "분야를 불러오는 중입니다.",
                             message = "잠시만 기다려주세요.",
                             contentAlignment = Alignment.TopCenter
                         )
-                    }else{
+                    } else if (uiState.pageErrorMessage != null) {
+                        FullScreenErrorModal(
+                            errorState = ErrorState(
+                                title = "분야를 불러오지 못했어요",
+                                description = uiState.pageErrorMessage,
+                                retryLabel = "다시 시도하기",
+                                onRetry = { viewModel.loadCategories() }
+                            ),
+                            isShowBackBtn = false
+                        )
+                    } else {
 
                         // ✅ Pager + Grid
                         HorizontalPager(
@@ -139,6 +146,7 @@ fun CategorySelectScreen(
                                         onItemClick = viewModel::toggleDepth2,
                                         currentPage = page,
                                         verticalColumns = 2,
+                                        labelMapper = { it.name.toDepth2CategoryLabel() },
                                     )
 
                                     // ⭐ 3뎁스
