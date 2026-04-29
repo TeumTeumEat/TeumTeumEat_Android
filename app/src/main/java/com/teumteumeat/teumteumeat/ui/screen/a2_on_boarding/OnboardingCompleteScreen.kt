@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -14,6 +15,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -31,6 +34,8 @@ fun OnBoardingSuccessScreen(
     nickname: String,
     onStartClick: () -> Unit,
 ) {
+    BackHandler(enabled = true) { /* 온보딩 완료 후 뒤로가기 차단 */ }
+
     // 🎬 Lottie Composition 로드
     val composition by rememberLottieComposition(
         LottieCompositionSpec.RawRes(R.raw.onboarding_comp)
@@ -61,10 +66,14 @@ fun OnBoardingSuccessScreen(
             Spacer(modifier = Modifier.height(80.dp))
 
             // 🗨️ 말풍선 이미지
-            SpeechBubble(text = "모든 준비 끝!\n" +
-                    "매일 배달될 틈틈잇을 확인해 보세요.")
+            SpeechBubble(
+                text = "모든 준비 끝!\n매일 배달될 틈틈잇을 확인해 보세요.",
+                textStyle = MaterialTheme.appTypography.subtitleSemiBold20.copy(
+                    lineHeight = 28.sp
+                )
+            )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(11.dp))
 
             // 🐧 캐릭터 이미지
             LottieAnimation(
@@ -82,16 +91,8 @@ fun OnBoardingSuccessScreen(
                 color = MaterialTheme.extendedColors.textTeritory
             )
 
-            Spacer(Modifier.height(100.dp))
+            Spacer(Modifier.height(24.dp))
 
-        }
-
-        // 🔵 하단 위치
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(20.dp)
-        ) {
             BaseFillButton(
                 text = "시작하기",
                 textStyle = MaterialTheme.appTypography.btnBold20_h24.copy(
@@ -108,12 +109,16 @@ fun OnBoardingSuccessScreen(
 
 @Preview(
     showBackground = true,
-    device = Devices.PIXEL_4
+    showSystemUi = true,
+    device = Devices.PIXEL_4,
+    name = "온보딩 완료 화면",
 )
 @Composable
-fun OnBoardingSuccessScreenPreview() {
-    OnBoardingSuccessScreen(
-        nickname = "닉네임",
-        onStartClick = {}
-    )
+private fun OnBoardingSuccessScreenPreview() {
+    TeumTeumEatTheme {
+        OnBoardingSuccessScreen(
+            nickname = "틈틈잇",
+            onStartClick = {}
+        )
+    }
 }
