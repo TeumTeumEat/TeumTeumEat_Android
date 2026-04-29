@@ -99,7 +99,40 @@ class AddGoalViewModel @Inject constructor(
             it.copy(
                 categorySelection = CategorySelectionState(),
                 isCategorySelectionComplete = false,
+                targetCategoryPage = 0,
             )
+        }
+    }
+
+    private fun calculateTargetPageForItemUnChecked(selection: CategorySelectionState): Int =
+        when {
+            selection.depth1 == null -> 0
+            selection.depth2 == null -> 1
+            selection.depth3 == null -> 2
+            else -> 3
+        }
+
+    fun toggleDepth1(category: Category) {
+        _uiState.update { state ->
+            val newSelection =
+                if (state.categorySelection.depth1?.id == category.id) {
+                    CategorySelectionState()
+                } else {
+                    CategorySelectionState(depth1 = category)
+                }
+            state.copy(
+                categorySelection = newSelection,
+                isCategorySelectionComplete = false,
+                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+            )
+        }
+    }
+
+    fun navigateBackInCategoryDepth() {
+        _uiState.update { state ->
+            if (state.targetCategoryPage > 0)
+                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
+            else state
         }
     }
 
@@ -215,45 +248,21 @@ class AddGoalViewModel @Inject constructor(
             val isUnselecting = currentDepth2?.id == category.id
 
             val newSelection = if (isUnselecting) {
-                // 🔁 2뎁스 해제 → 하위 전부 해제
-                state.categorySelection.copy(
-                    depth2 = null,
-                    depth3 = null,
-                    depth4 = null
-                )
+                state.categorySelection.copy(depth2 = null, depth3 = null, depth4 = null)
             } else {
-                // ✅ 2뎁스 선택 → 하위 초기화
-                state.categorySelection.copy(
-                    depth2 = category,
-                    depth3 = null,
-                    depth4 = null
-                )
+                state.categorySelection.copy(depth2 = category, depth3 = null, depth4 = null)
             }
 
             state.copy(
                 categorySelection = newSelection,
                 selectedCategoryId = null,
                 isCategorySelectionComplete = false,
-
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    state.targetCategoryPage // ❗ 페이지 유지
-                } else {
-                    1 // 3뎁스 페이지
-                }
+                targetCategoryPage = if (isUnselecting) 0 else 2
             )
         }
     }
 
     fun toggleDepth3(category: Category) {
-        Log.d(
-            "OnBoardingVM",
-            "toggleDepth3 input → " +
-                    "name=${category.name}, " +
-                    "serverId=${category.serverCategoryId}, " +
-                    "children=${category.children.size}"
-        )
-
         _uiState.update { state ->
             val currentDepth3 = state.categorySelection.depth3
             val isUnselecting = currentDepth3?.id == category.id
@@ -261,18 +270,10 @@ class AddGoalViewModel @Inject constructor(
             val newDepth3 = if (isUnselecting) null else category
 
             state.copy(
-                categorySelection = state.categorySelection.copy(
-                    depth3 = newDepth3,
-                    depth4 = null // ⭐ 3뎁스 변경 시 4뎁스 초기화
-                ),
+                categorySelection = state.categorySelection.copy(depth3 = newDepth3, depth4 = null),
                 selectedCategoryId = null,
                 isCategorySelectionComplete = false,
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    0 // 2뎁스 페이지
-                } else {
-                    2 // 4뎁스 페이지
-                }
+                targetCategoryPage = if (isUnselecting) 1 else 3
             )
         }
     }
@@ -287,22 +288,15 @@ class AddGoalViewModel @Inject constructor(
 
             val newDepth4 = if (isUnselecting) null else category
 
-            val newTargetCategoryPage = if (isUnselecting) {
-                1 // 3뎁스 페이지
-            } else {
-                state.targetCategoryPage // ❗ 페이지 유지
-            }
+            val newTargetCategoryPage = if (isUnselecting) 2 else state.targetCategoryPage
 
-            val isComplete = !isUnselecting && newDepth4 != null && newDepth4.serverCategoryId != null && newTargetCategoryPage == 2
+            val isComplete = !isUnselecting
+                    && newDepth4?.serverCategoryId != null
+                    && newTargetCategoryPage == 3
 
             state.copy(
-                categorySelection = state.categorySelection.copy(
-                    depth4 = newDepth4
-                ),
-
+                categorySelection = state.categorySelection.copy(depth4 = newDepth4),
                 selectedCategoryId = newDepth4?.serverCategoryId,
-
-                // ⭐ 핵심 규칙
                 targetCategoryPage = newTargetCategoryPage,
                 isCategorySelectionComplete = isComplete
             )
