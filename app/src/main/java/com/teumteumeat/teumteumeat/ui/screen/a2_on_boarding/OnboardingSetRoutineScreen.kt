@@ -320,6 +320,7 @@ private fun OnBoardingSetRoutineScreenContent(
                             Spacer(Modifier.height(20.dp))
                         },
                         onCompleteEnable = true,
+                        wrapContentHeight = true,
                     )
                 }
             }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
@@ -121,6 +122,7 @@ fun BottomSheetContainerRightTopConfirm(
     lockDrag: Boolean = false,
     heightFraction: Float = 0.4f,
     hasScrollbar: Boolean = false,
+    wrapContentHeight: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
@@ -142,7 +144,10 @@ fun BottomSheetContainerRightTopConfirm(
     ) {
         Column(
             modifier = modifier
-                .height(sheetHeight)
+                .then(
+                    if (wrapContentHeight) Modifier.wrapContentHeight()
+                    else Modifier.height(sheetHeight)
+                )
                 .fillMaxWidth()
                 .padding(
                     start = 32.dp,
@@ -175,8 +180,12 @@ fun BottomSheetContainerRightTopConfirm(
 
             Spacer(modifier = Modifier.height(tittleBottomPadding.dp))
 
-            Box(modifier = Modifier.weight(1f)) {
+            if (wrapContentHeight) {
                 content()
+            } else {
+                Box(modifier = Modifier.weight(1f)) {
+                    content()
+                }
             }
         }
     }
