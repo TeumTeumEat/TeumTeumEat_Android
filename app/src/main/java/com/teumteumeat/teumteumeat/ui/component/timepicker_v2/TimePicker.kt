@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 
 // Arrangement / Alignment
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -84,7 +85,7 @@ fun TimePicker(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .wrapContentHeight(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
