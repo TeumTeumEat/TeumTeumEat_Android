@@ -1,17 +1,17 @@
-package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
+package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import androidx.compose.runtime.Composable
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.component.LearningMethodSelectorContent
 
 @Composable
-fun SelectLearningMethodScreen(
+fun SelectInputMethodScreen(
     name: String = "",
-    viewModel: OnBoardingViewModel,
-    uiState: UiStateOnboardingState,
-    onNextFileUpload: () -> Unit,
     onPrev: () -> Unit,
-    onNextCateGorySelct: () -> Unit,
+    viewModel: AddGoalViewModel,
+    uiState: UiStateAddGoalState,
+    onNextFileUpload: () -> Unit,
+    onNextCateGorySelect: () -> Unit,
 ) {
     LearningMethodSelectorContent(
         selectedType = uiState.goalTypeUiState,
@@ -19,8 +19,9 @@ fun SelectLearningMethodScreen(
         onNextClick = {
             viewModel.resetCategorySelection()
             viewModel.onFileDeleted()
+            viewModel.updateCategorySelectionComplete(false)
             when (uiState.goalTypeUiState) {
-                GoalTypeUiState.CATEGORY -> onNextCateGorySelct()
+                GoalTypeUiState.CATEGORY -> onNextCateGorySelect()
                 GoalTypeUiState.DOCUMENT -> onNextFileUpload()
                 GoalTypeUiState.NONE -> {}
             }

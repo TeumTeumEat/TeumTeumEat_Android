@@ -3,6 +3,8 @@ package com.teumteumeat.teumteumeat.ui.component.button
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -25,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,7 +55,8 @@ fun BaseOutlineButton(
     btnHeight: Int = 50,
     maxLine: Int = 1,
     overFlowSetting: TextOverflow = TextOverflow.Clip,
-    showTrailingArrow: Boolean = false,
+    showTrailingIcon: Boolean = false,
+    onClearClick: (() -> Unit)? = null,
 ) {
     val contentColor =
         if (isEnabled) color else MaterialTheme.colorScheme.onSurfaceVariant
@@ -97,7 +100,7 @@ fun BaseOutlineButton(
                         overflow = overFlowSetting,
                     )
                 }
-            } else if (showTrailingArrow) {
+            } else if (showTrailingIcon) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -113,11 +116,30 @@ fun BaseOutlineButton(
                             overflow = overFlowSetting,
                         )
                     }
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = contentColor,
-                    )
+                    if (onClearClick != null) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() }
+                                ) { onClearClick() },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_close),
+                                contentDescription = "선택 해제",
+                                modifier = Modifier.size(16.dp),
+                                tint = contentColor,
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = contentColor,
+                        )
+                    }
                 }
             } else {
                 Box(

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -166,7 +165,7 @@ fun OptimizeDataScreen(
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
-                                "요청 프롬프트 (선택)",
+                                "퀴즈 유형 지정 (선택)",
                                 style = MaterialTheme.appTypography.subtitleSemiBold16
                             )
                         }
@@ -175,8 +174,9 @@ fun OptimizeDataScreen(
                         BaseOutlineButton(
                             contentAligment = Alignment.CenterStart,
                             text = if (isPromptSelected) uiState.promptInput
-                            else "원하는 프롬프트를 선택해주세요",
-                            showTrailingArrow = true,
+                            else "나만의 퀴즈/학습 스타일을 선택하세요",
+                            showTrailingIcon = true,
+                            onClearClick = if (isPromptSelected) viewModel::clearPromptInput else null,
                             textStyle = MaterialTheme.appTypography.bodyMedium16_h22.copy(
                                 color = if (isPromptSelected) MaterialTheme.extendedColors.textPointBlue
                                 else MaterialTheme.extendedColors.textGhost
@@ -211,19 +211,9 @@ fun OptimizeDataScreen(
                             },
                             onCompleteEnable = true,
                         )
-                        /*
-                        BottomSheetContainer(
-                            titleText = "난이도를 선택해주세요",
-                            onDismiss = {
-                                viewModel.closeBottomSheet()
-                            }
-                        ) {
-
-                        }*/
                     }
                 }
             )
-
         },
     )
 }

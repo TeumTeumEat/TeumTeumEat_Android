@@ -1565,4 +1565,8 @@ class OnBoardingViewModel @Inject constructor(
         closeBottomSheet()
     }
 
+    fun clearPromptInput() {
+        _uiState.update { it.copy(promptInput = "", selectedPromptId = null) }
+    }
+
 }
