@@ -139,8 +139,8 @@ fun OnBoardingNavHost(navController: NavHostController) {
                 viewModel = viewModel,
                 uiState = uiState,
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.EighthSetStudyRangeScreen)
-                    navController.navigate(OnBoardingScreens.EighthSetStudyRangeScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.SetStudyPeriodScreen)
+                    navController.navigate(OnBoardingScreens.SetStudyPeriodScreen.route)
                 },
                 onPrev = {
                     val prev = OnBoardingScreens.fromRoute(
@@ -158,13 +158,13 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
         // ✅ 8. 학습 범위 설정 화면
         composable(
-            route = OnBoardingScreens.EighthSetStudyRangeScreen.route
+            route = OnBoardingScreens.SetStudyPeriodScreen.route
         ) {
-            SetStudyRangeScreen(
-                name = OnBoardingScreens.EighthSetStudyRangeScreen.route,
+            SetStudyPeriodScreen(
+                name = OnBoardingScreens.SetStudyPeriodScreen.route,
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.CheckSetMyInfoScreen)
-                    navController.navigate(OnBoardingScreens.CheckSetMyInfoScreen.route)
+                    viewModel.navigateTo(OnBoardingScreens.ReviewScreen)
+                    navController.navigate(OnBoardingScreens.ReviewScreen.route)
                 },
                 onPrev = {
                     viewModel.navigateTo(OnBoardingScreens.OptimizeDataScreen)
@@ -177,9 +177,9 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
         // ✅ 9. 내 정보 확인 화면
         composable(
-            route = OnBoardingScreens.CheckSetMyInfoScreen.route
+            route = OnBoardingScreens.ReviewScreen.route
         ) {
-            CheckSetMyInfoScreen(
+            ReviewScreen(
                 onNext = {
                     navController.navigate(OnBoardingScreens.CompleteScreen.route) {
                         // 🔑 온보딩 스택 정리 (뒤로가기 방지)
@@ -189,7 +189,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     }
                 },
                 onPrev = {
-                    viewModel.navigateTo(OnBoardingScreens.EighthSetStudyRangeScreen)
+                    viewModel.navigateTo(OnBoardingScreens.SetStudyPeriodScreen)
                     navController.popBackStack()
                 },
                 viewModel = viewModel,
@@ -220,11 +220,11 @@ sealed class OnBoardingScreens(val route: String) {
     data object OptimizeDataScreen :
         OnBoardingScreens("optimizer_data")
 
-    data object EighthSetStudyRangeScreen :
-        OnBoardingScreens("set_study_range")
+    data object SetStudyPeriodScreen :
+        OnBoardingScreens("set_study_period")
 
-    data object CheckSetMyInfoScreen :
-        OnBoardingScreens("check_set_my_info")
+    data object ReviewScreen :
+        OnBoardingScreens("review")
 
     data object CompleteScreen :
         OnBoardingScreens("complete")
@@ -235,8 +235,8 @@ sealed class OnBoardingScreens(val route: String) {
                 WelcomeScreen, SetRoutineScreen,
                 SelectLearningMethodScreen,
                 SelectCategoryScreen, UploadFileScreen,
-                OptimizeDataScreen, EighthSetStudyRangeScreen,
-                CheckSetMyInfoScreen, CompleteScreen,
+                OptimizeDataScreen, SetStudyPeriodScreen,
+                ReviewScreen, CompleteScreen,
             )
         }
 
@@ -255,8 +255,8 @@ object OnBoardingFlow {
         OnBoardingScreens.SelectLearningMethodScreen,
         OnBoardingScreens.SelectCategoryScreen,
         OnBoardingScreens.OptimizeDataScreen,
-        OnBoardingScreens.EighthSetStudyRangeScreen,
-        OnBoardingScreens.CheckSetMyInfoScreen,
+        OnBoardingScreens.SetStudyPeriodScreen,
+        OnBoardingScreens.ReviewScreen,
     )
 
     private val pageMap: Map<OnBoardingScreens, Int> = mapOf(
@@ -266,8 +266,8 @@ object OnBoardingFlow {
         OnBoardingScreens.SelectCategoryScreen to 2,
         OnBoardingScreens.UploadFileScreen to 2,
         OnBoardingScreens.OptimizeDataScreen to 3,
-        OnBoardingScreens.EighthSetStudyRangeScreen to 4,
-        OnBoardingScreens.CheckSetMyInfoScreen to 5,
+        OnBoardingScreens.SetStudyPeriodScreen to 4,
+        OnBoardingScreens.ReviewScreen to 5,
     )
 
     const val MAX_PAGE_INDEX: Int = 5

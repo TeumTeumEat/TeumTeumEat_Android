@@ -78,7 +78,7 @@ fun OnBoardingSetUsingApptimeScreen(
 
                     MinuteRadioGroup(
                         options = listOf(5, 7, 10, 15),
-                        selectedMinute = uiState.selectedMinute,
+                        selectedMinute = uiState.selectedQuestionCnt,
                         onSelect = { viewModel.onMinuteSelected(it) }
                     )
 
@@ -113,7 +113,7 @@ fun OnBoardingSetUsingApptimeScreen(
                         textStyle = Typography.labelMedium.copy(
                             lineHeight = 24.sp
                         ),
-                        isEnabled = uiState.selectedMinute != null,
+                        isEnabled = uiState.selectedQuestionCnt != null,
                         onClick = {
                             // viewModel.saveCommuteInfo()
                             onNext()

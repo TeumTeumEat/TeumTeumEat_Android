@@ -86,7 +86,7 @@ data class UiStateOnboardingState(
     /**
      * 앱 이용시간
      */
-    val selectedMinute: Int = 5,
+    val selectedQuestionCnt: Int = 5,
 
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
@@ -125,7 +125,7 @@ data class UiStateOnboardingState(
     val promptInput: String = "",
     val promptInputErrMsg: String? = null,
 
-    val studyPeriod: Int? = null,
+    val studyPeriod: Int? = 1,
     val endDate: String = "",
 ){
     val currentPage: Int
