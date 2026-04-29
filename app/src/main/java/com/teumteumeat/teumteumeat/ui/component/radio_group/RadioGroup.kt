@@ -69,34 +69,52 @@ fun QuestionCountRadioGroup(
     modifier: Modifier = Modifier,
     options: List<Int>,
     selectedQuestionCnt: Int?,
-    onSelect: (Int) -> Unit
+    onSelect: (Int) -> Unit,
+    singleColumn: Boolean = false,
 ) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        options.chunked(2).forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowItems.forEach { questionCount ->
-                    val isSelected = questionCount == selectedQuestionCnt
-                    BaseOutlineButton(
-                        modifier = Modifier.weight(1f),
-                        btnHeight = 50,
-                        text = "${questionCount}문제",
-                        textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                            color = if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.extendedColors.textGhost
-                        ),
+        if (singleColumn) {
+            options.forEach { questionCount ->
+                val isSelected = questionCount == selectedQuestionCnt
+                BaseOutlineButton(
+                    btnHeight = 50,
+                    text = "${questionCount}문제",
+                    textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
                         color = if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = { onSelect(questionCount) }
-                    )
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
+                        else MaterialTheme.extendedColors.textGhost
+                    ),
+                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    onClick = { onSelect(questionCount) }
+                )
+            }
+        } else {
+            options.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowItems.forEach { questionCount ->
+                        val isSelected = questionCount == selectedQuestionCnt
+                        BaseOutlineButton(
+                            modifier = Modifier.weight(1f),
+                            btnHeight = 50,
+                            text = "${questionCount}문제",
+                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
+                                color = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.extendedColors.textGhost
+                            ),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            onClick = { onSelect(questionCount) }
+                        )
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }

@@ -153,7 +153,7 @@ fun BottomSheetContainerRightTopConfirm(
                     start = 32.dp,
                     end = if (hasScrollbar) 0.dp else 32.dp,
                     top = 15.dp,
-                    bottom = 15.dp,
+                    bottom = 40.dp,
                 )
         ) {
 
