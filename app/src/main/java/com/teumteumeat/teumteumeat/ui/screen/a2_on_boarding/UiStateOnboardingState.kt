@@ -1,9 +1,11 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.net.Uri
+import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.AmPm
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.defaultRequestPromptOptions
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 
 sealed class UiStateOnboardingScreenState {
@@ -26,6 +28,12 @@ sealed class UiStateOnboardingScreenState {
 data class UiStateOnboardingState(
 //    val currentPage: Int = 0,
 //    val totalPage: Int = 5,
+
+    /** 요청 프롬프트 선택지 목록 */
+    val promptOptions: List<RequestPromptOption> = defaultRequestPromptOptions,
+
+    /** 현재 선택된 프롬프트 Id (null = 미선택) */
+    val selectedPromptId: String? = null,
 
     // ⭐ 서버에 보낼 실제 categoryId
     val selectedCategoryId: Int? = null,
@@ -109,7 +117,7 @@ data class UiStateOnboardingState(
     val pageErrorMessage: String? = null,
     val isSessionExpired: Boolean = false,
 
-    val difficulty: Difficulty = Difficulty.NONE,
+    val difficulty: Difficulty = Difficulty.MEDIUM,
 
     val bottomSheetType: BottomSheetType = BottomSheetType.NONE,
 
@@ -157,6 +165,7 @@ sealed interface BottomSheetType {
     data object NONE : BottomSheetType
     data object DIFFICULTY : BottomSheetType
     data object TIME : BottomSheetType
+    data object PROMPT: BottomSheetType
 }
 
 data class CategorySelectionState(

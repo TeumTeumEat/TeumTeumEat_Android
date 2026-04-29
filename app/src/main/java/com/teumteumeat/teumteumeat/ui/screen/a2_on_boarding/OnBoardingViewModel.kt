@@ -15,6 +15,7 @@ import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
+import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
@@ -1269,7 +1270,7 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun closeTimeSheet() {
+    fun closeSheet() {
         _uiState.update {
             it.copy(
                 showBottomSheet = false,
@@ -1549,6 +1550,21 @@ class OnBoardingViewModel @Inject constructor(
         viewModelScope.launch {
             PrefsUtil.setOnboardingCompleted(context, true)
         }
+    }
+
+    // ViewModel 내부
+    fun onPromptSelected(option: RequestPromptOption) {
+        _uiState.update { it.copy(selectedPromptId = option.id) }
+    }
+
+    /** 확인 버튼 → 선택된 옵션의 label을 서버 전송용 promptInput으로 확정 */
+    fun onConfirmPromptOption() {
+        val state = _uiState.value
+        val label = state.promptOptions
+            .find { it.id == state.selectedPromptId }
+            ?.label ?: return
+        _uiState.update { it.copy(promptInput = label) }
+        closeBottomSheet()
     }
 
 }

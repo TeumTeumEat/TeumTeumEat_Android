@@ -165,7 +165,7 @@ fun ContentSelectableBoxButton(
     contentFileName: String = "",
     onDelContentClick: () -> Unit,
     onClick: () -> Unit,
-    iconRes: Int = R.drawable.icon_files,
+    iconRes: Int = R.drawable.icon_file_fill,
     iconSize: Dp = 60.dp,
 
     ) {
@@ -191,7 +191,7 @@ fun ContentSelectableBoxButton(
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = MaterialTheme.extendedColors.btnLineDisable,
+                    tint = MaterialTheme.extendedColors.btnGray200,
                     modifier = Modifier.size(iconSize)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -253,8 +253,8 @@ fun ContentSelectableBoxButton(
                             text = contentFileName,
                             textAlign = TextAlign.Center,
                             fontSize = 20.sp,
-                            style = Typography.labelMedium.copy(
-                                color = materialTheme.surfaceVariant
+                            style = MaterialTheme.appTypography.subtitleSemiBold20.copy(
+                                color = MaterialTheme.extendedColors.textGraySelcted
                             )
                         )
                     }
