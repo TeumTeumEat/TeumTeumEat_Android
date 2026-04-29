@@ -130,7 +130,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // ✅ 7. 옵티마이저 데이터 입력 화면
+        // ✅ 3. 퀴즈 및 학습의 난이도/스타일 설정
         composable(
             route = OnBoardingScreens.OptimizeDataScreen.route
         ) {
@@ -156,7 +156,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // ✅ 8. 학습 범위 설정 화면
+        // ✅ 4. 학습 기간 설정 화면
         composable(
             route = OnBoardingScreens.SetStudyPeriodScreen.route
         ) {
@@ -175,7 +175,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // ✅ 9. 내 정보 확인 화면
+        // ✅ 5. 설정 정보 확인 화면
         composable(
             route = OnBoardingScreens.ReviewScreen.route
         ) {

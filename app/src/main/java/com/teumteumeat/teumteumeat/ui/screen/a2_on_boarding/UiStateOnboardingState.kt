@@ -138,7 +138,7 @@ data class UiStateOnboardingState(
         get() = currentPage > 1
 
     val isCategorySelectionComplete: Boolean
-        get() = targetCategoryPage == 2
+        get() = targetCategoryPage == 3
                 && categorySelection.depth4 != null
                 && selectedCategoryId != null
 }

@@ -711,7 +711,8 @@ class OnBoardingViewModel @Inject constructor(
         return when {
             selection.depth1 == null -> 0
             selection.depth2 == null -> 1
-            else -> 2
+            selection.depth3 == null -> 2
+            else -> 3
         }
     }
 
@@ -760,9 +761,9 @@ class OnBoardingViewModel @Inject constructor(
 
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    state.targetCategoryPage // ❗ 페이지 유지
+                    0 // 1뎁스 페이지로 복귀
                 } else {
-                    1 // 3뎁스 페이지
+                    2 // 3뎁스 페이지
                 }
             )
         }
@@ -791,9 +792,9 @@ class OnBoardingViewModel @Inject constructor(
                 selectedCategoryId = null,
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    0 // 2뎁스 페이지
+                    1 // 2뎁스 페이지로 복귀
                 } else {
-                    2 // 4뎁스 페이지
+                    3 // 4뎁스 페이지
                 }
             )
         }
@@ -818,7 +819,7 @@ class OnBoardingViewModel @Inject constructor(
 
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    1 // 3뎁스 페이지
+                    2 // 3뎁스 페이지로 복귀
                 } else {
                     state.targetCategoryPage // ❗ 페이지 유지
                 }
@@ -844,10 +845,19 @@ class OnBoardingViewModel @Inject constructor(
     }
 
 
+    fun navigateBackInCategoryDepth() {
+        _uiState.update { state ->
+            if (state.targetCategoryPage > 0)
+                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
+            else state
+        }
+    }
+
     fun clearDepth1() {
         _uiState.update {
             it.copy(
                 categorySelection = CategorySelectionState(),
+                selectedCategoryId = null,
                 targetCategoryPage = 0
             )
         }
@@ -855,14 +865,14 @@ class OnBoardingViewModel @Inject constructor(
 
     fun clearDepth2() {
         _uiState.update { state ->
-            val newSelection =
-                state.categorySelection.copy(
-                    depth2 = null,
-                    depth3 = null
-                )
-
+            val newSelection = state.categorySelection.copy(
+                depth2 = null,
+                depth3 = null,
+                depth4 = null,
+            )
             state.copy(
                 categorySelection = newSelection,
+                selectedCategoryId = null,
                 targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
             )
         }
@@ -870,11 +880,13 @@ class OnBoardingViewModel @Inject constructor(
 
     fun clearDepth3() {
         _uiState.update { state ->
-            val newSelection =
-                state.categorySelection.copy(depth3 = null)
-
+            val newSelection = state.categorySelection.copy(
+                depth3 = null,
+                depth4 = null,
+            )
             state.copy(
                 categorySelection = newSelection,
+                selectedCategoryId = null,
                 targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
             )
         }
