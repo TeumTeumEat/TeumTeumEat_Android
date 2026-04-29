@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -20,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
@@ -29,19 +29,13 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth1CategoryLabel
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth2CategoryLabel
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
-
-private fun calculatePage(sel: CategorySelectionState): Int =
-    when {
-        sel.depth1 == null -> 0
-        sel.depth2 == null -> 1
-        else -> 2
-    }
 
 @Composable
 fun CategorySelectScreen(
@@ -53,18 +47,16 @@ fun CategorySelectScreen(
     navBackStackEntry: NavBackStackEntry,
 ) {
 
-    val context = LocalContext.current
-    val currentPage = uiState.currentPage
-    val totalPages = uiState.totalPage
-
     val selection = uiState.categorySelection
     val pagerState = rememberPagerState(
         initialPage = uiState.targetCategoryPage,
-        pageCount = { 3 }
+        pageCount = { 4 }
     )
 
-    //  - 전체 상태 초기화
-    // ✅ 핵심: backStackEntry를 key로 사용
+    BackHandler(enabled = pagerState.currentPage > 0) {
+        viewModel.navigateBackInCategoryDepth()
+    }
+
     LaunchedEffect(navBackStackEntry.id) {
         viewModel.loadCategories()
     }
@@ -72,10 +64,6 @@ fun CategorySelectScreen(
     LaunchedEffect(uiState.targetCategoryPage) {
         pagerState.animateScrollToPage(uiState.targetCategoryPage)
     }
-
-    val categorySelection = uiState.categorySelection
-    val isSelectedDepth2Category =
-        categorySelection.depth2 != null && categorySelection.depth1 != null
 
     DefaultMonoBg(
         extensionHeight = 0.dp,
@@ -138,19 +126,28 @@ fun CategorySelectScreen(
                             ) {
                                 when (page) {
 
-                                    // ⭐ 2뎁스 (기존 depth1.children)
+                                    // ⭐ 1뎁스
                                     0 -> CategoryGrid(
-                                        categories = uiState.categories
-                                            .flatMap { it.children }, // depth1 skip
+                                        categories = uiState.categories,
+                                        selectedId = selection.depth1?.id,
+                                        onItemClick = viewModel::toggleDepth1,
+                                        verticalColumns = 2,
+                                        currentPage = page,
+                                        labelMapper = { it.name.toDepth1CategoryLabel() },
+                                    )
+
+                                    // ⭐ 2뎁스
+                                    1 -> CategoryGrid(
+                                        categories = selection.depth1?.children.orEmpty(),
                                         selectedId = selection.depth2?.id,
                                         onItemClick = viewModel::toggleDepth2,
                                         currentPage = page,
-                                        verticalColumns = 2,
+                                        wrapContentWidth = true,
                                         labelMapper = { it.name.toDepth2CategoryLabel() },
                                     )
 
                                     // ⭐ 3뎁스
-                                    1 -> CategoryGrid(
+                                    2 -> CategoryGrid(
                                         categories = selection.depth2?.children.orEmpty(),
                                         selectedId = selection.depth3?.id,
                                         onItemClick = viewModel::toggleDepth3,
@@ -158,7 +155,7 @@ fun CategorySelectScreen(
                                     )
 
                                     // ⭐ 4뎁스 (진짜 leaf)
-                                    2 -> CategoryGrid(
+                                    3 -> CategoryGrid(
                                         categories = selection.depth3?.children.orEmpty(),
                                         selectedId = selection.depth4?.id,
                                         onItemClick = viewModel::toggleDepth4,
