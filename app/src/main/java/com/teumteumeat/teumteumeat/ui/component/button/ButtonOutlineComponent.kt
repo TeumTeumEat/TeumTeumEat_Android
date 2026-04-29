@@ -51,7 +51,7 @@ fun BaseOutlineButton(
     subTextStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
     color: Color = MaterialTheme.colorScheme.primary,
-    onClick: () -> Unit,
+    onClick: () -> Unit = {},
     contentAligment: Alignment = Alignment.Center,
     btnHeight: Int = 50,
     maxLine: Int = 1,

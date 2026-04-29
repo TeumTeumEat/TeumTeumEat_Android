@@ -187,7 +187,7 @@ private fun OnBoardingSetRoutineScreenContent(
                     Spacer(modifier = Modifier.height(12.dp))
                     QuestionCountRadioGroup(
                         options = listOf(3, 5, 7, 10),
-                        selectedQuestionCnt = uiState.selectedMinute,
+                        selectedQuestionCnt = uiState.selectedQuestionCnt,
                         onSelect = { questionCount ->
                             onMinuteSelected(questionCount)
                         }

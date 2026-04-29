@@ -39,7 +39,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 @Composable
-fun CheckSetMyInfoScreen(
+fun ReviewScreen(
     viewModel: OnBoardingViewModel,
     uiState: UiStateOnboardingState,
     onNext: () -> Unit,
@@ -50,6 +50,9 @@ fun CheckSetMyInfoScreen(
     val totalPages = uiState.totalPage
 
     val bottomFixedHeight = 170.dp // ✅ 그라데이션 + 버튼 영역
+    val theme = MaterialTheme.extendedColors
+    val typo = MaterialTheme.appTypography
+
     DefaultMonoBg(
         extensionHeight = 0.dp,
         color = MaterialTheme.colorScheme.surface,
@@ -66,7 +69,6 @@ fun CheckSetMyInfoScreen(
                         .padding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     SpeechBubble(text = "‘다음으로' 버튼을 눌러\n" +
                             "틈틈잇을 시작해보세요!")
                     Spacer(modifier = Modifier.height(12.dp))
@@ -75,124 +77,77 @@ fun CheckSetMyInfoScreen(
                         contentDescription = "앞을 보는 케릭터",
                         contentScale = ContentScale.Fit,
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-
+                    Spacer(modifier = Modifier.height(6.dp))
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
                             .padding(bottom = bottomFixedHeight), // ✅ 핵심,
                     ) {
+                        // ===== 학습분량 =====
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
-                                "이름",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
+                                "학습 분량",
+                                style = typo.subtitleSemiBold16
                             )
                         }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        BaseOutlineButton(
+                            text = uiState.selectedQuestionCnt.toString() + "문제",
+                            contentAligment = Alignment.Center,
+                            isEnabled = false,
+                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
+                                color = theme.textSecondary,
+                            ),
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        // ===== 학습분량 =====
+
+                        // ===== 알림 시간 =====
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                        ) {
+                            Text(
+                                "알림 시간",
+                                style = typo.subtitleSemiBold16
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         BaseOutlineButton(
-                            text = uiState.charName,
-                            isEnabled = false,
-                            contentAligment = Alignment.Center,
+                            text = "1번째 알림",
+                            textStyle = MaterialTheme.appTypography.captionRegular12.copy(
+                                color = MaterialTheme.extendedColors.textSecondary
+                            ),
+                            subText = uiState.workInTime.toDisplayText(isSelected = true),
+                            subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
+                                color = theme.textSecondary
+                            ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            onClick = { }
+                            isEnabled = false,
                         )
-                        Spacer(modifier = Modifier.height(20.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "집에서 나오는 시간",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         BaseOutlineButton(
-                            text = uiState.workInTime.toDisplayText(isSelected = true),
-                            isEnabled = false,
-                            contentAligment = Alignment.Center,
+                            text = "2번째 알림",
+                            textStyle = MaterialTheme.appTypography.captionRegular12.copy(
+                                color = MaterialTheme.extendedColors.textSecondary
+                            ),
+                            subText = uiState.workOutTime.toDisplayText(isSelected = true),
+                            subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
+                                color = theme.textSecondary
+                            ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            onClick = { }
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-// 퇴근시간 박스
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "집에 돌아가는 시간",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        BaseOutlineButton(
-                            text = uiState.workOutTime.toDisplayText(isSelected = true),
-                            contentAligment = Alignment.Center,
                             isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            onClick = {}
                         )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        // ===== 알림 시간 =====
 
-// ===== 사용시간 =====
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp, bottom = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "틈틈잇 사용 시간",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            )
-                        }
-                        BaseOutlineButton(
-                            text = uiState.selectedMinute.toString() + "분",
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            onClick = {}
-                        )
-// ===== 사용시간 =====
 
 // ===== 5. 정보입력 주제 지정 =====
                         Row(
@@ -237,7 +192,7 @@ fun CheckSetMyInfoScreen(
                             onClick = { /* 클릭 시직 정의 필요 시 추가 */ },
                             maxLine = 2,
                             overFlowSetting = TextOverflow.Ellipsis
-                            // todo. 라인이 넘치면 > 기준으로 줄바꿈
+                            // todo. 라인이 넘치면 > 기준으로 줄바꿈 설정
                         )
 
 // ===== 6. 난이도 =====
@@ -283,7 +238,7 @@ fun CheckSetMyInfoScreen(
                         }
 
                         val promptText =
-                            if (uiState.promptInput.isBlank()) "입력 안함" else uiState.promptInput
+                            if (uiState.promptInput.isBlank()) "미선택" else uiState.promptInput
 
                         BaseOutlineButton(
                             text = promptText,
@@ -296,7 +251,6 @@ fun CheckSetMyInfoScreen(
                             ),
                             btnHeight = 50,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { /* 클릭 로직 */ },
                             maxLine = 2,
                             overFlowSetting = TextOverflow.Ellipsis
                         )
@@ -360,8 +314,7 @@ fun CheckSetMyInfoScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        "수정이 필요하면\n" +
-                                "왼쪽 상단의 < 돌아가기를 눌러주세요",
+                        "입력한 정보는 마이페이지에서 수정할 수 있어요",
                         style = MaterialTheme.appTypography.captionRegular14.copy(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.extendedColors.textOnUnselected,

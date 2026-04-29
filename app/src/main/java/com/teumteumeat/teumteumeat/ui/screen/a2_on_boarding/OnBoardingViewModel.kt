@@ -317,7 +317,7 @@ class OnBoardingViewModel @Inject constructor(
     private suspend fun saveCommuteInfoInternal(): ApiResultV2<Unit> {
         val current = _uiState.value
 
-        val usageTime = current.selectedMinute
+        val usageTime = current.selectedQuestionCnt
             ?: return ApiResultV2.UnknownError("사용 시간을 선택해주세요.")
 
         Log.d("퇴근시간 디버깅", "출근시간: ${current.workInTime}, 퇴근시간: ${current.workOutTime}")
@@ -1053,7 +1053,7 @@ class OnBoardingViewModel @Inject constructor(
 
     fun onMinuteSelected(minute: Int) {
         _uiState.update {
-            it.copy(selectedMinute = minute)
+            it.copy(selectedQuestionCnt = minute)
         }
     }
 
@@ -1063,7 +1063,7 @@ class OnBoardingViewModel @Inject constructor(
             val current = uiState.value
 
             // 🔐 방어 로직 (null / invalid 상태 차단)
-            val usageTime = current.selectedMinute
+            val usageTime = current.selectedQuestionCnt
                 ?: run {
                     _uiState.update {
                         it.copy(pageErrorMessage = "사용 시간을 선택해주세요.")
