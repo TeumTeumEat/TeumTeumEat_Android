@@ -49,7 +49,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -119,8 +118,8 @@ fun OnBoardingSetRoutineScreen(
         onOpenWorkOutTimeSheet = { viewModel.openTimeSheet(TimeType.OUT) },
         onNotificationOptionClicked = { viewModel.onNotificationOptionClicked() },
         onTimeChanged = { viewModel.onTimeChanged(it) },
-        onCloseTimeSheet = { viewModel.closeTimeSheet() },
-        onConfirmTime = { viewModel.confirmTime(); viewModel.closeTimeSheet() },
+        onCloseTimeSheet = { viewModel.closeSheet() },
+        onConfirmTime = { viewModel.confirmTime(); viewModel.closeSheet() },
         onOpenNotificationSetting = { viewModel.openNotificationSetting() },
         onCloseNotificationGuide = { viewModel.closeNotificationSettingGuide() },
         onNext = onNext,

@@ -13,12 +13,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -39,13 +39,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
-import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainer
+import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.RequestPromptOptionList
 import com.teumteumeat.teumteumeat.ui.component.radio_group.DifficultyRadioGroup
-import com.teumteumeat.teumteumeat.ui.component.NoLableMultiLineTextField
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.theme.Typography
+import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
@@ -56,6 +56,10 @@ fun OptimizeDataScreen(
     uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
+    onCloseSheet: () -> Unit,
+    onConfirmPrompt: () -> Unit,
+    setSheetTitle: String,
+    onOpenPromptSheet: () -> Unit,
 ) {
 
     val currentPage = uiState.currentPage
@@ -69,6 +73,7 @@ fun OptimizeDataScreen(
 
     val isPromptValid = uiState.promptInput.length <= 30 &&
             uiState.difficulty != Difficulty.NONE
+    val isPromptSelected = uiState.promptInput.isNotBlank()
     val keyboardController = LocalSoftwareKeyboardController.current
 
 
@@ -88,7 +93,8 @@ fun OptimizeDataScreen(
         color = MaterialTheme.colorScheme.surface,
         content = {
             Scaffold(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
                     .focusable(), // ⭐ 포커스 받을 수 있는 영역,
                 containerColor = Color.Transparent,
 
@@ -128,22 +134,20 @@ fun OptimizeDataScreen(
                         horizontalAlignment = Alignment.Companion.CenterHorizontally
                     ) {
                         Spacer(modifier = Modifier.Companion.height(4.dp))
-                        SpeechBubble(text = "원하는 공부 난이도와 요청사항을\n" +
-                                "자세하게 알려주시겠어요?")
-                        Spacer(modifier = Modifier.Companion.height(20.dp))
+                        SpeechBubble(text = "원하는 난이도를 선택해주세요\n추가로 원하는 내용이 있다면 알려주세요!")
                         Image(
                             painter = painterResource(R.drawable.char_onboarding_five_three),
                             contentDescription = "앞을 보는 케릭터",
                             contentScale = ContentScale.Companion.Fit,
                         )
-                        Spacer(modifier = Modifier.Companion.height(10.dp))
+                        Spacer(modifier = Modifier.Companion.height(15.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
                                 "퀴즈 난이도 설정",
-                                style = MaterialTheme.appTypography.bodySemiBold18
+                                style = MaterialTheme.appTypography.subtitleSemiBold16
                             )
                         }
                         Spacer(modifier = Modifier.height(10.dp))
@@ -162,49 +166,52 @@ fun OptimizeDataScreen(
                             horizontalArrangement = Arrangement.Start,
                         ) {
                             Text(
-                                "요청 프롬프트",
-                                style = MaterialTheme.appTypography.bodySemiBold18
+                                "요청 프롬프트 (선택)",
+                                style = MaterialTheme.appTypography.subtitleSemiBold16
                             )
                         }
-                        Spacer(Modifier.height(10.dp))
-                        NoLableMultiLineTextField(
-                            value = uiState.promptInput,
-                            labelText = "",
-                            placeholderText = "상황설정 예시가 필요합니다.\n" +
-                                    "어떤 식으로 할지 어떤 상황인지 입력해주세요\n" +
-                                    "ex) IT 트렌드나 프로그래밍 관련 퀴즈를 \n풀고 싶어요",
-                            onValueChange = { input ->
-                                viewModel.onPromptInputChanged(input)// viewModel set 함수 위치
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .bringIntoViewRequester(bringIntoViewRequester),
-                            isFocused = inputFocused,
-                            focusRequesterThis = focusRequesterInput,
-                            interactionSource = inputInteractionSource,
-                            isError = uiState.promptInput.length > 30, // 30자 이상 초과
-                        )
-                        if (uiState.promptInput.length > 30) {
-                            Row(
-                                modifier = Modifier.Companion
-                                    .fillMaxWidth()
-                                    .padding(top = 10.dp, start = 8.dp),
-                            ) {
-                                Text(
-                                    text = uiState.errorMessage,
-                                    style = Typography.displaySmall.copy(
-                                        color = if (uiState.errorMessage != "") MaterialTheme.colorScheme.error
-                                        else MaterialTheme.colorScheme.tertiary
-                                    ),
-                                )
-                            }
-                        }
-                    }
+                        Spacer(Modifier.height(12.dp))
 
+                        BaseOutlineButton(
+                            contentAligment = Alignment.CenterStart,
+                            text = if (isPromptSelected) uiState.promptInput
+                            else "원하는 프롬프트를 선택해주세요",
+                            showTrailingArrow = true,
+                            textStyle = MaterialTheme.appTypography.bodyMedium16_h22.copy(
+                                color = if (isPromptSelected) MaterialTheme.extendedColors.textPointBlue
+                                else MaterialTheme.extendedColors.textGhost
+                            ),
+                            color = if (isPromptSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            onClick = onOpenPromptSheet,
+                        )
+
+                    }
 
 
                     // 🔹 바텀시트
                     if (uiState.showBottomSheet) {
+                        BottomSheetContainerRightTopConfirm(
+                            onDismiss = onCloseSheet,
+                            onConfirm = onConfirmPrompt,
+                            titleText = setSheetTitle,
+                            titleTextStyle = MaterialTheme.appTypography.subtitleSemiBold18,
+                            lockDrag = true,
+                            heightFraction = 0.6f,
+                            hasScrollbar = true,
+                            content = {
+                                RequestPromptOptionList(
+                                    modifier = Modifier.fillMaxSize(),
+                                    options = uiState.promptOptions,
+                                    selectedId = uiState.selectedPromptId,
+                                    onSelect = viewModel::onPromptSelected,
+                                    scrollbarThumbColor = MaterialTheme.extendedColors.viewBackgroundGray500,
+                                    scrollbarTrackColor = MaterialTheme.extendedColors.viewBackgroundGray200,
+                                )
+                            },
+                            onCompleteEnable = true,
+                        )
+                        /*
                         BottomSheetContainer(
                             titleText = "난이도를 선택해주세요",
                             onDismiss = {
@@ -212,7 +219,7 @@ fun OptimizeDataScreen(
                             }
                         ) {
 
-                        }
+                        }*/
                     }
                 }
             )

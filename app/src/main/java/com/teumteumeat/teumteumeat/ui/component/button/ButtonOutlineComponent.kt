@@ -17,8 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +56,7 @@ fun BaseOutlineButton(
     btnHeight: Int = 50,
     maxLine: Int = 1,
     overFlowSetting: TextOverflow = TextOverflow.Clip,
+    showTrailingArrow: Boolean = false,
 ) {
     val contentColor =
         if (isEnabled) color else MaterialTheme.colorScheme.onSurfaceVariant
@@ -94,6 +98,28 @@ fun BaseOutlineButton(
                         style = subTextStyle,
                         maxLines = maxLine,
                         overflow = overFlowSetting,
+                    )
+                }
+            } else if (showTrailingArrow) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = contentAligment,
+                    ) {
+                        Text(
+                            text = text,
+                            style = textStyle,
+                            maxLines = maxLine,
+                            overflow = overFlowSetting,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = contentColor,
                     )
                 }
             } else {

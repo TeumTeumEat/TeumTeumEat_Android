@@ -6,6 +6,7 @@ import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
@@ -30,7 +31,8 @@ fun OnBoardingNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = OnBoardingScreens.WelcomeScreen.route
+        startDestination = if (BuildConfig.DEBUG) OnBoardingScreens.WelcomeScreen.route
+            else OnBoardingScreens.WelcomeScreen.route
     ) {
 
         // 1. 웰컴화면
@@ -66,7 +68,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // 3️⃣ 학습 방법 지정 화면
+        // 2. 학습 방법 지정 화면
         composable(
             route = OnBoardingScreens.SelectLearningMethodScreen.route
         ) {
@@ -89,7 +91,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // ✅ 6-1 카테고리 선택 화면
+        // 2-1. 카테고리 선택 화면
         composable(
             route = OnBoardingScreens.SelectCategoryScreen.route
         ) { backStackEntry ->
@@ -109,7 +111,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
             )
         }
 
-        // ✅ 6-2 파일 업로드 입력 화면
+        // 2-2. 파일 업로드 입력 화면
         composable(
             route = OnBoardingScreens.UploadFileScreen.route
         ) {
@@ -134,6 +136,8 @@ fun OnBoardingNavHost(navController: NavHostController) {
         ) {
             OptimizeDataScreen(
                 name = OnBoardingScreens.OptimizeDataScreen.route,
+                viewModel = viewModel,
+                uiState = uiState,
                 onNext = {
                     viewModel.navigateTo(OnBoardingScreens.EighthSetStudyRangeScreen)
                     navController.navigate(OnBoardingScreens.EighthSetStudyRangeScreen.route)
@@ -145,8 +149,10 @@ fun OnBoardingNavHost(navController: NavHostController) {
                     if (prev != null) viewModel.navigateTo(prev)
                     navController.popBackStack()
                 },
-                viewModel = viewModel,
-                uiState = uiState,
+                onCloseSheet = viewModel::closeBottomSheet,
+                onConfirmPrompt = viewModel::onConfirmPromptOption,
+                setSheetTitle = "요청 프롬프트 선택",
+                onOpenPromptSheet = { viewModel.openBottomSheet(BottomSheetType.PROMPT) },
             )
         }
 
@@ -233,6 +239,7 @@ sealed class OnBoardingScreens(val route: String) {
                 CheckSetMyInfoScreen, CompleteScreen,
             )
         }
+
         fun fromRoute(route: String?): OnBoardingScreens? {
             if (route == null) return null
             return all.firstOrNull { it.route == route }
