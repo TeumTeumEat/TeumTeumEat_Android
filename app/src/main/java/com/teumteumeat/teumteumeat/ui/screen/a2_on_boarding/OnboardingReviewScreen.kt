@@ -69,8 +69,7 @@ fun ReviewScreen(
                         .padding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SpeechBubble(text = "‘다음으로' 버튼을 눌러\n" +
-                            "틈틈잇을 시작해보세요!")
+                    SpeechBubble(text = "모든 설정이 끝났어요.\n지금 바로 시작해 볼까요?")
                     Spacer(modifier = Modifier.height(12.dp))
                     Image(
                         painter = painterResource(R.drawable.char_onboarding_five_five),
@@ -167,7 +166,6 @@ fun ReviewScreen(
                         val subjectText = when (uiState.goalTypeUiState) {
                             GoalTypeUiState.DOCUMENT -> uiState.selectedFileName.ifEmpty { "선택된 파일 없음" }
                             GoalTypeUiState.CATEGORY -> {
-                                // 앱개발 > ios > swift 형식으로 결합
                                 listOfNotNull(
                                     uiState.categorySelection.depth1?.name,
                                     uiState.categorySelection.depth2?.name,

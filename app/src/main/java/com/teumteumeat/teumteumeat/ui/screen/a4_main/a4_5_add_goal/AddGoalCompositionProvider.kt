@@ -21,7 +21,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -65,11 +67,9 @@ fun AddCategoryGoalCompositionProvider(
         }
     }
 
-    val visibleStates = remember(mainState) {
-        mutableStateListOf(false, false, false)
-    }
+    val visibleStates = remember { mutableStateListOf(false, false, false) }
+    var isAnimationComplete by remember { mutableStateOf(false) }
 
-    val progress by viewModel.progress.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(
         LocalActivityContext provides activity,
@@ -77,10 +77,11 @@ fun AddCategoryGoalCompositionProvider(
         LocalViewModelContext provides viewModel,
     ) {
 
-        // ✅ Loading 상태일 때 물리 뒤로가기 차단
-        BackHandler(
-            enabled = mainState is UiStateAddGoalScreenState.Loading
-        ) {
+        val isInLoadingPhase = mainState is UiStateAddGoalScreenState.Loading ||
+                (mainState is UiStateAddGoalScreenState.Success && !isAnimationComplete)
+
+        // ✅ 로딩 또는 최소 대기 중 물리 뒤로가기 차단
+        BackHandler(enabled = isInLoadingPhase) {
             // 아무것도 하지 않음 = 뒤로가기 무시
         }
 
@@ -93,10 +94,8 @@ fun AddCategoryGoalCompositionProvider(
             isPrimaryBtnFillSecondary = true,
         )
 
-        when (mainState) {
-
-            UiStateAddGoalScreenState.Loading -> {
-
+        when {
+            isInLoadingPhase -> {
                 LaunchedEffect(Unit) {
                     visibleStates.forEachIndexed { index, _ ->
                         delay(300)
@@ -104,15 +103,13 @@ fun AddCategoryGoalCompositionProvider(
                     }
                 }
                 OnBoardingLoadingScreen(
-                    title = "틈틈잇을 생성하는 중\n" +
-                            "잠시만 기다려주세요",
-                    progress = progress,
                     visibleStates = visibleStates,
-                    isCompletedLoading = true
+                    isCompletedLoading = mainState is UiStateAddGoalScreenState.Success,
+                    onAnimationComplete = { isAnimationComplete = true },
                 )
             }
 
-            UiStateAddGoalScreenState.Success -> {
+            mainState is UiStateAddGoalScreenState.Success -> {
 
                 AddGoalSuccessScreen(
                     onStartClick = {
@@ -126,7 +123,7 @@ fun AddCategoryGoalCompositionProvider(
                 )
             }
 
-            is UiStateAddGoalScreenState.Error -> {
+            mainState is UiStateAddGoalScreenState.Error -> {
                 val error = mainState as UiStateAddGoalScreenState.Error
 
                 FullScreenErrorModal(
@@ -143,7 +140,7 @@ fun AddCategoryGoalCompositionProvider(
                 )
             }
 
-            UiStateAddGoalScreenState.Idle -> {
+            else -> {
 
                 DefaultMonoBg(
                     modifier = Modifier.fillMaxSize(),

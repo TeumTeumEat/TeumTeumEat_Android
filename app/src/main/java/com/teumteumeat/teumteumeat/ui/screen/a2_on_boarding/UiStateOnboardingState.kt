@@ -44,6 +44,7 @@ data class UiStateOnboardingState(
 
     // 이름 설정
     val charName: String = "",
+    val serverNickname: String = "",
     val errorMessage: String = "",
     val isNameValid: Boolean = false,
     val violation: NameViolation = NameViolation.None,

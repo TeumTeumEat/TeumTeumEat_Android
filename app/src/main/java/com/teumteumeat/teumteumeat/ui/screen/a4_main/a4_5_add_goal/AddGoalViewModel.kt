@@ -59,9 +59,6 @@ class AddGoalViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateAddGoalState>(UiStateAddGoalState())
     val uiState = _uiState.asStateFlow()
 
-    private val _progress = MutableStateFlow(0f)
-    val progress: StateFlow<Float> = _progress
-
     // 2️⃣ 플로우 상태 (Idle / Loading / Success / Error)
     private val _mainState =
         MutableStateFlow<UiStateAddGoalScreenState>(
@@ -512,25 +509,6 @@ class AddGoalViewModel @Inject constructor(
 
         viewModelScope.launch {
             _mainState.value = UiStateAddGoalScreenState.Loading
-
-            // ⭐ progress 애니메이션 시작 (1.8초)
-            launch {
-                val duration = 1800L
-                val startTime = System.currentTimeMillis()
-
-                while (true) {
-                    val elapsed = System.currentTimeMillis() - startTime
-                    val progress = (elapsed / duration.toFloat()).coerceIn(0f, 1f)
-
-                    _progress.value = progress
-
-                    if (progress >= 1f) break
-
-                    delay(16L) // 약 60fps
-                }
-
-                _progress.value = 1f
-            }
 
             val state = _uiState.value
 

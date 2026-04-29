@@ -23,6 +23,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetUserNameUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -54,6 +55,7 @@ sealed interface UiEffect {
 class OnBoardingViewModel @Inject constructor(
     val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     val registerUserNameUseCase: RegisterUserNameUseCase,
+    private val getUserNameUseCase: GetUserNameUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val issuePresignedUrlUseCase: IssuePresignedUrlUseCase,
     private val createGoalUseCase: CreateGoalUseCase,
@@ -90,9 +92,6 @@ class OnBoardingViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<UiEffect>(extraBufferCapacity = 1)
     val effect: SharedFlow<UiEffect> = _effect
 
-    private val _progress = MutableStateFlow(0f)
-    val progress: StateFlow<Float> = _progress
-
     init {
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
     }
@@ -103,25 +102,6 @@ class OnBoardingViewModel @Inject constructor(
 
         viewModelScope.launch {
             _mainState.value = UiStateOnboardingScreenState.Loading
-
-            // ⭐ progress 애니메이션 시작 (1.8초)
-            launch {
-                val duration = 1800L
-                val startTime = System.currentTimeMillis()
-
-                while (true) {
-                    val elapsed = System.currentTimeMillis() - startTime
-                    val progress = (elapsed / duration.toFloat()).coerceIn(0f, 1f)
-
-                    _progress.value = progress
-
-                    if (progress >= 1f) break
-
-                    delay(16L) // 약 60fps
-                }
-
-                _progress.value = 1f
-            }
 
             val state = _uiState.value
 
@@ -209,6 +189,12 @@ class OnBoardingViewModel @Inject constructor(
                 }
 
                 GoalTypeUiState.NONE -> {}
+            }
+
+            // 서버에서 닉네임 조회 (실패해도 온보딩 완료를 막지 않음)
+            when (val nameResult = getUserNameUseCase()) {
+                is ApiResultV2.Success -> _uiState.update { it.copy(serverNickname = nameResult.data.name) }
+                else -> Unit
             }
 
             // 🔹 최소 로딩 1.8초 보장

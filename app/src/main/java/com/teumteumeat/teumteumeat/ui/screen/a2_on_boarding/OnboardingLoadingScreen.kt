@@ -1,6 +1,9 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
@@ -13,10 +16,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.tooling.preview.Preview
+import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.component.GoalProgress
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -26,18 +35,32 @@ fun OnBoardingLoadingScreen(
     modifier: Modifier = Modifier,
     title: String = "",
     message: String = "",
-    progress: Float? = null, // ⭐ 추가
+    minDurationMs: Long = 1800L,
     visibleStates: SnapshotStateList<Boolean>,
     isCompletedLoading: Boolean,
+    onAnimationComplete: () -> Unit = {},
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
+
+    val progressAnimatable = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        progressAnimatable.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = minDurationMs.toInt(),
+                easing = LinearEasing
+            )
+        )
+        onAnimationComplete()
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(extendedColors.backgroundW100)
-            .windowInsetsPadding(WindowInsets.systemBars) // ✅ SafeArea
+            .windowInsetsPadding(WindowInsets.systemBars)
     ) {
 
         Column(
@@ -48,65 +71,39 @@ fun OnBoardingLoadingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            // ⭐ PROCESSING일 때만 커스텀 프로그레스 바 표시
-            if (progress != null) {
-                Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-                GoalProgress(
-                    progress = progress,
-                    isCompletedLoading = isCompletedLoading
-                )
-            }
-            /*// 🔵 원형 컨테이너 (체크박스 UI 감성)
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(
-                        color = extendedColors.primaryContainer,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    strokeWidth = 3.dp,
-                    color = extendedColors.primary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }*/
+            GoalProgress(
+                progress = progressAnimatable.value,
+                isCompletedLoading = isCompletedLoading
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 🔤 타이틀
             Text(
-                text = "틈틈잇을 생성하는 중",
-                style = typography.titleBold20,
+                text = "틈틈잇을 생성하는 중\n잠시만 기다려주세요",
+                style = typography.subtitleSemiBold18.copy(
+                    lineHeight = 24.sp,
+                ),
                 color = extendedColors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            // 🔤 서브 타이틀
-            Text(
-                text = "잠시만 기다려주세요",
-                style = typography.bodyMedium14Reg,
-                color = extendedColors.textGhost
-            )
-
         }
 
         // ✅ 체크 리스트
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .wrapContentSize()
                 .align(Alignment.BottomCenter),
-            verticalArrangement = Arrangement.Bottom
+            verticalArrangement = Arrangement.Bottom,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 80.dp),     // ⬆️ 하단에서 100dp
+                modifier = modifier
+                    .wrapContentSize()
+                    .padding(bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.Start,
             ) {
                 AnimatedVisibility(
                     visible = visibleStates[0],
@@ -130,11 +127,22 @@ fun OnBoardingLoadingScreen(
                 }
             }
         }
-
     }
-
 }
 
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 800)
+@Composable
+private fun OnBoardingLoadingScreenPreview() {
+    TeumTeumEatTheme {
+        val visibleStates = remember { mutableStateListOf(true, true, true) }
+        OnBoardingLoadingScreen(
+            minDurationMs = 1800L,
+            visibleStates = visibleStates,
+            isCompletedLoading = false,
+        )
+    }
+}
 
 @Composable
 private fun LoadingCheckItem(
@@ -167,7 +175,7 @@ private fun LoadingCheckItem(
 
         Text(
             text = text,
-            style = typography.bodyMedium16,
+            style = typography.captionRegular14,
             color = colors.textPrimary
         )
     }
