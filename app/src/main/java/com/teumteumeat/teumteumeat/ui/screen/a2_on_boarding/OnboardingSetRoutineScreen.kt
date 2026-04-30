@@ -1,7 +1,12 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.os.Build
+import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,52 +17,47 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.onesignal.OneSignal
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
-import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
-import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
-import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
-import com.teumteumeat.teumteumeat.ui.theme.Typography
-import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.onesignal.OneSignal
+import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
+import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
+import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
+import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.radio_group.QuestionCountRadioGroup
+import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.areAppNotificationsEnabled
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.isPostNotificationsGranted
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -123,7 +123,7 @@ fun OnBoardingSetRoutineScreen(
         onOpenNotificationSetting = { viewModel.openNotificationSetting() },
         onCloseNotificationGuide = { viewModel.closeNotificationSettingGuide() },
         onNext = onNext,
-        onMinuteSelected = { questionCount -> viewModel.onMinuteSelected(questionCount) },
+        onMinuteSelected = { questionCount -> viewModel.onQuestionCntSelected(questionCount) },
     )
 }
 
@@ -261,7 +261,7 @@ private fun OnBoardingSetRoutineScreenContent(
                             interactionSource = remember { MutableInteractionSource() }
                         ) {}
                         .onSizeChanged { size ->
-                            bottomCardHeightDp = with(density) { size.height.toDp() + 62.dp}
+                            bottomCardHeightDp = with(density) { size.height.toDp() + 62.dp }
                         }
                         .padding(top = 10.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.Bottom,

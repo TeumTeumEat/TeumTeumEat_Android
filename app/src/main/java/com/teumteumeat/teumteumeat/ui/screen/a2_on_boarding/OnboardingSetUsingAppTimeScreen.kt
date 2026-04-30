@@ -81,7 +81,7 @@ fun OnBoardingSetUsingApptimeScreen(
                     MinuteRadioGroup(
                         options = listOf(5, 7, 10, 15),
                         selectedMinute = uiState.selectedQuestionCnt,
-                        onSelect = { viewModel.onMinuteSelected(it) }
+                        onSelect = { viewModel.onQuestionCntSelected(it) }
                     )
 
                     Spacer(Modifier.height(100.dp))
