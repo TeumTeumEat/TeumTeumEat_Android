@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.radio_group.MinuteRadioGroup
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.radio_group.MinuteRadioGroup
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
@@ -65,8 +65,10 @@ fun OnBoardingSetUsingApptimeScreen(
                     horizontalAlignment = Alignment.Companion.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.Companion.height(4.dp))
-                    SpeechBubble(text = "틈틈잇 하루 목표 시간을\n" +
-                            "알려주세요!")
+                    SpeechBubble(
+                        text = "틈틈잇 하루 목표 시간을\n" +
+                                "알려주세요!"
+                    )
                     Spacer(modifier = Modifier.Companion.height(20.dp))
                     Image(
                         painter = painterResource(R.drawable.char_onboarding_three),
@@ -131,7 +133,7 @@ fun OnBoardingSetUsingApptimeScreen(
 @Composable
 fun OnBoardingSetUsingApptimeScreen() {
 
-    val fakeViewModel : OnBoardingViewModel = hiltViewModel()
+    val fakeViewModel: OnBoardingViewModel = hiltViewModel()
     TeumTeumEatTheme {
         /*OnBoardingSetUsingApptimeScreen(
             name = "Android",
