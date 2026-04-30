@@ -174,7 +174,7 @@ fun AddGoalNavHost(
                 onPrevPage = { viewModel.prevPage() },
             )
 
-            SetStudyPeriodScreen(
+            SetStudyAmountScreen(
                 name = AddGoalScreens.EighthSetStudyRangeScreen.route,
                 onNext = {
                     viewModel.nextPage()

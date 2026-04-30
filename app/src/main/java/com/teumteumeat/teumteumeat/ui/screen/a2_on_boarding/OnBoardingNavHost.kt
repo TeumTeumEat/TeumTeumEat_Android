@@ -2,7 +2,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,9 +9,9 @@ import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
+import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import kotlinx.coroutines.flow.collectLatest
-import kotlin.jvm.java
 
 
 @Composable
@@ -160,7 +159,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
         composable(
             route = OnBoardingScreens.SetStudyPeriodScreen.route
         ) {
-            SetStudyPeriodScreen(
+            SetStudyAmountScreen(
                 name = OnBoardingScreens.SetStudyPeriodScreen.route,
                 onNext = {
                     viewModel.navigateTo(OnBoardingScreens.ReviewScreen)

@@ -2,18 +2,18 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.teumteumeat.teumteumeat.ui.component.StudyPeriodContent
+import com.teumteumeat.teumteumeat.ui.component.StudyAmountContent
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 @Composable
-fun SetStudyPeriodScreen(
+fun SetStudyAmountScreen(
     name: String,
     viewModel: OnBoardingViewModel,
     uiState: UiStateOnboardingState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {
-    StudyPeriodContent(
+    StudyAmountContent(
         speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
         studyPeriod = uiState.studyPeriod,
         onStudyWeekSelected = { viewModel.onStudyWeekSelected(it) },
@@ -27,7 +27,7 @@ fun SetStudyPeriodScreen(
 @Composable
 private fun SetStudyPeriodScreen_NonePreview() {
     TeumTeumEatTheme {
-        StudyPeriodContent(
+        StudyAmountContent(
             speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
             studyPeriod = null,
             onStudyWeekSelected = {},
@@ -40,7 +40,7 @@ private fun SetStudyPeriodScreen_NonePreview() {
 @Composable
 private fun SetStudyPeriodScreen_1WeekPreview() {
     TeumTeumEatTheme {
-        StudyPeriodContent(
+        StudyAmountContent(
             speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
             studyPeriod = 1,
             onStudyWeekSelected = {},
@@ -53,7 +53,7 @@ private fun SetStudyPeriodScreen_1WeekPreview() {
 @Composable
 private fun SetStudyPeriodScreen_4WeekPreview() {
     TeumTeumEatTheme {
-        StudyPeriodContent(
+        StudyAmountContent(
             speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
             studyPeriod = 4,
             onStudyWeekSelected = {},
