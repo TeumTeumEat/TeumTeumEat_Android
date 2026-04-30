@@ -98,7 +98,7 @@ fun ReviewContent(
                             text = difficultyText,
                         )
                         ReviewInfoItem(
-                            label = "프롬프트",
+                            label = "요청 프롬프트",
                             text = promptText,
                             maxLines = 2,
                         )
