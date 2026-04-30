@@ -203,7 +203,7 @@ fun AddGoalNavHost(
                 onPrevPage = { viewModel.prevPage() },
             )
 
-            AddGoalCheckSetMyInfoScreen(
+            ReviewScreen(
                 onNext = {
                     viewModel.nextPage()
                     navController.navigate(AddGoalScreens.CompleteScreen.route) {
