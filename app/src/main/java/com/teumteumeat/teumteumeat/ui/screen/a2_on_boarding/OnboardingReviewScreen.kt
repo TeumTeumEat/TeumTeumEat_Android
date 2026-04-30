@@ -1,42 +1,26 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.data.mapper.toLable
-import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
-import com.teumteumeat.teumteumeat.ui.theme.Typography
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.ui.component.ReviewContent
+import com.teumteumeat.teumteumeat.ui.component.ReviewInfoItem
+import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
+import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
-
 
 @Composable
 fun ReviewScreen(
@@ -45,297 +29,157 @@ fun ReviewScreen(
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {
+    val subjectLabel = if (uiState.goalTypeUiState == GoalTypeUiState.CATEGORY) "관심분야" else "문서이름"
+    val subjectText = when (uiState.goalTypeUiState) {
+        GoalTypeUiState.DOCUMENT -> uiState.selectedFileName.ifEmpty { "선택된 파일 없음" }
+        GoalTypeUiState.CATEGORY -> listOfNotNull(
+            uiState.categorySelection.depth1?.name,
+            uiState.categorySelection.depth2?.name,
+            uiState.categorySelection.depth3?.name,
+            uiState.categorySelection.depth4?.name,
+        ).joinToString(" > ").ifEmpty { "선택된 카테고리 없음" }
 
-    val currentPage = uiState.currentPage
-    val totalPages = uiState.totalPage
+        else -> "선택 안함"
+    }
+    val promptText = if (uiState.promptInput.isBlank()) "미선택" else uiState.promptInput
+    val studyPeriodText = uiState.studyPeriod?.let { "${it}주" } ?: "기간 설정 안함"
 
-    val bottomFixedHeight = 170.dp // ✅ 그라데이션 + 버튼 영역
-    val theme = MaterialTheme.extendedColors
-    val typo = MaterialTheme.appTypography
-
-    DefaultMonoBg(
-        extensionHeight = 0.dp,
-        color = MaterialTheme.colorScheme.surface,
-        content = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp),
-            ) {
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    SpeechBubble(text = "모든 설정이 끝났어요.\n지금 바로 시작해 볼까요?")
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Image(
-                        painter = painterResource(R.drawable.char_onboarding_five_five),
-                        contentDescription = "앞을 보는 케릭터",
-                        contentScale = ContentScale.Fit,
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                            .padding(bottom = bottomFixedHeight), // ✅ 핵심,
-                    ) {
-                        // ===== 학습분량 =====
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "학습 분량",
-                                style = typo.subtitleSemiBold16
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        BaseOutlineButton(
-                            text = uiState.selectedQuestionCnt.toString() + "문제",
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                color = theme.textSecondary,
-                            ),
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        // ===== 학습분량 =====
-
-                        // ===== 알림 시간 =====
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "알림 시간",
-                                style = typo.subtitleSemiBold16
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        BaseOutlineButton(
-                            text = "1번째 알림",
-                            textStyle = MaterialTheme.appTypography.captionRegular12.copy(
-                                color = MaterialTheme.extendedColors.textSecondary
-                            ),
-                            subText = uiState.workInTime.toDisplayText(isSelected = true),
-                            subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
-                                color = theme.textSecondary
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            isEnabled = false,
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        BaseOutlineButton(
-                            text = "2번째 알림",
-                            textStyle = MaterialTheme.appTypography.captionRegular12.copy(
-                                color = MaterialTheme.extendedColors.textSecondary
-                            ),
-                            subText = uiState.workOutTime.toDisplayText(isSelected = true),
-                            subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
-                                color = theme.textSecondary
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            isEnabled = false,
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        // ===== 알림 시간 =====
-
-
-// ===== 5. 정보입력 주제 지정 =====
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp, bottom = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                text = if(uiState.goalTypeUiState == GoalTypeUiState.CATEGORY) "관심분야"
-                                    else "문서이름",
-                                style = Typography.bodyLarge.copy(fontSize = 18.sp)
-                            )
-                        }
-
-// GoalType에 따라 표시 내용 분기 처리
-                        val subjectText = when (uiState.goalTypeUiState) {
-                            GoalTypeUiState.DOCUMENT -> uiState.selectedFileName.ifEmpty { "선택된 파일 없음" }
-                            GoalTypeUiState.CATEGORY -> {
-                                listOfNotNull(
-                                    uiState.categorySelection.depth1?.name,
-                                    uiState.categorySelection.depth2?.name,
-                                    uiState.categorySelection.depth3?.name,
-                                    uiState.categorySelection.depth4?.name,
-                                ).joinToString(" > ").ifEmpty { "선택된 카테고리 없음" }
-                            }
-
-                            else -> "선택 안함"
-                        }
-                        BaseOutlineButton(
-                            text = subjectText,
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { /* 클릭 시직 정의 필요 시 추가 */ },
-                            maxLine = 2,
-                            overFlowSetting = TextOverflow.Ellipsis
-                            // todo. 라인이 넘치면 > 기준으로 줄바꿈 설정
-                        )
-
-// ===== 6. 난이도 =====
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp, bottom = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                text = "난이도",
-                                style = Typography.bodyLarge.copy(fontSize = 18.sp)
-                            )
-                        }
-
-// Difficulty Enum 값을 한글 표기 등으로 변환 필요 (여기서는 name 사용하거나 별도 매핑)
-                        BaseOutlineButton(
-                            text = uiState.difficulty.toLable(), // 필요하다면 별도 mapper 함수 사용 (ex: Difficulty.MIDDLE -> "중")
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { /* 클릭 로직 */ }
-                        )
-
-
-// ===== 7. 프롬프트 =====
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp, bottom = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                text = "프롬프트",
-                                style = Typography.bodyLarge.copy(fontSize = 18.sp)
-                            )
-                        }
-
-                        val promptText =
-                            if (uiState.promptInput.isBlank()) "미선택" else uiState.promptInput
-
-                        BaseOutlineButton(
-                            text = promptText,
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            btnHeight = 50,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLine = 2,
-                            overFlowSetting = TextOverflow.Ellipsis
-                        )
-
-// === 8.공부기간 ====
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp, bottom = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                "공부기간",
-                                style = Typography.bodyLarge.copy(
-                                    fontSize = 18.sp,
-                                )
-                            )
-                        }
-
-                        val studyWeekText = uiState.studyPeriod?.let { "${it}주" } ?: "기간 설정 안함"
-
-                        BaseOutlineButton(
-                            text = studyWeekText,
-                            contentAligment = Alignment.Center,
-                            isEnabled = false,
-                            textStyle = MaterialTheme.appTypography.btnSemiBold18_h24.copy(
-                                fontSize = 18.sp,
-                                lineHeight = 24.sp,
-                                color = MaterialTheme.extendedColors.unableContent,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            btnHeight = 50,
-                            onClick = {}
-                        )
-
-
-                    }
-                }
-
-                // 2️⃣ 하단 그라데이션 (페이드 효과)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(170.dp)
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    MaterialTheme.colorScheme.surface,
-                                )
-                            )
-                        )
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 32.dp),
-                    verticalArrangement = Arrangement.Bottom,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        "입력한 정보는 마이페이지에서 수정할 수 있어요",
-                        style = MaterialTheme.appTypography.captionRegular14.copy(
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.extendedColors.textOnUnselected,
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    BaseFillButton(
-                        text = "다음으로",
-                        textStyle = Typography.labelMedium.copy(
-                            lineHeight = 24.sp
-                        ),
-                        isEnabled = true,
-                        onClick = {
-                            // 0.5±1(로딩시간 커스텀 가능하게)초 로딩페이지 표시 하는 뷰모델 함수 구현
-                            // 각 usecase 진행하면서 에러가 발생하면 뷰에 에러화면 표시
-                            viewModel.submitOnBoarding()
-                        },
-                        conerRadius = 16.dp
-                    )
-                }
-
-            }
+    ReviewContent(
+        speechBubbleText = "모든 설정이 끝났어요.\n지금 바로 시작해 볼까요?",
+        hintText = "입력한 정보는 마이페이지에서 수정할 수 있어요",
+        subjectLabel = subjectLabel,
+        subjectText = subjectText,
+        difficultyText = uiState.difficulty.toLable(),
+        promptText = promptText,
+        studyPeriodText = studyPeriodText,
+        onNext = { viewModel.submitOnBoarding() },
+        leadingInfoContent = {
+            ReviewInfoItem(
+                label = "학습 분량",
+                text = "${uiState.selectedQuestionCnt}문제",
+            )
+            OnboardingAlarmSection(
+                firstAlarmText = uiState.workInTime.toDisplayText(isSelected = true),
+                secondAlarmText = uiState.workOutTime.toDisplayText(isSelected = true),
+            )
         },
     )
 }
 
+@Composable
+private fun OnboardingAlarmSection(
+    firstAlarmText: String,
+    secondAlarmText: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        Text(
+            text = "알림 시간",
+            style = MaterialTheme.appTypography.subtitleSemiBold16,
+        )
+    }
+    BaseOutlineButton(
+        text = "1번째 알림",
+        textStyle = MaterialTheme.appTypography.captionRegular12.copy(
+            color = MaterialTheme.extendedColors.textSecondary
+        ),
+        subText = firstAlarmText,
+        subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
+            color = MaterialTheme.extendedColors.textSecondary
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        isEnabled = false,
+    )
+    Spacer(modifier = Modifier.height(12.dp))
+    BaseOutlineButton(
+        text = "2번째 알림",
+        textStyle = MaterialTheme.appTypography.captionRegular12.copy(
+            color = MaterialTheme.extendedColors.textSecondary
+        ),
+        subText = secondAlarmText,
+        subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
+            color = MaterialTheme.extendedColors.textSecondary
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        isEnabled = false,
+    )
+    Spacer(modifier = Modifier.height(24.dp))
+}
+
+// ─── Previews ────────────────────────────────────────────────────────────────
+
+@Preview(showBackground = true, name = "온보딩 - 카테고리 선택 / 프롬프트 선택", group = "Onboarding")
+@Composable
+private fun ReviewScreen_CategoryPromptPreview() {
+    TeumTeumEatTheme {
+        ReviewContent(
+            speechBubbleText = "모든 설정이 끝났어요.\n지금 바로 시작해 볼까요?",
+            hintText = "입력한 정보는 마이페이지에서 수정할 수 있어요",
+            subjectLabel = "관심분야",
+            subjectText = "IT > 앱개발 > Android",
+            difficultyText = "중",
+            promptText = "출퇴근길에 가볍게 풀 수 있게 만들어주세요.",
+            studyPeriodText = "2주",
+            onNext = {},
+            leadingInfoContent = {
+                ReviewInfoItem(label = "학습 분량", text = "5문제")
+                OnboardingAlarmSection(
+                    firstAlarmText = "오전 08시 30분",
+                    secondAlarmText = "오후 06시 00분",
+                )
+            },
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "온보딩 - 문서 / 프롬프트 미선택", group = "Onboarding")
+@Composable
+private fun ReviewScreen_DocumentNoPromptPreview() {
+    TeumTeumEatTheme {
+        ReviewContent(
+            speechBubbleText = "모든 설정이 끝났어요.\n지금 바로 시작해 볼까요?",
+            hintText = "입력한 정보는 마이페이지에서 수정할 수 있어요",
+            subjectLabel = "문서이름",
+            subjectText = "학습자료_2024.pdf",
+            difficultyText = "하",
+            promptText = "미선택",
+            studyPeriodText = "4주",
+            onNext = {},
+            leadingInfoContent = {
+                ReviewInfoItem(label = "학습 분량", text = "5문제")
+                OnboardingAlarmSection(
+                    firstAlarmText = "오전 07시 00분",
+                    secondAlarmText = "오후 07시 00분",
+                )
+            },
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "온보딩 - 난이도 상 / 4주", group = "Onboarding")
+@Composable
+private fun ReviewScreen_HardLong_Preview() {
+    TeumTeumEatTheme {
+        ReviewContent(
+            speechBubbleText = "모든 설정이 끝났어요.\n지금 바로 시작해 볼까요?",
+            hintText = "입력한 정보는 마이페이지에서 수정할 수 있어요",
+            subjectLabel = "관심분야",
+            subjectText = "IT > 앱개발 > iOS > Swift",
+            difficultyText = Difficulty.HARD.toLable(),
+            promptText = "심화 개념까지 깊이 있게 다뤄주세요.",
+            studyPeriodText = "4주",
+            onNext = {},
+            leadingInfoContent = {
+                ReviewInfoItem(label = "학습 분량", text = "10문제")
+                OnboardingAlarmSection(
+                    firstAlarmText = "오전 09시 00분",
+                    secondAlarmText = "오후 09시 00분",
+                )
+            },
+        )
+    }
+}
