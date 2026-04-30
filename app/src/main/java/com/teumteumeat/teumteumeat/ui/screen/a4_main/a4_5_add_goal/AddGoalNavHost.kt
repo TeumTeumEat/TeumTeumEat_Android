@@ -147,7 +147,7 @@ fun AddGoalNavHost(
                 onNext = {
                     viewModel.nextPage()
                     navController.navigate(
-                        AddGoalScreens.EighthSetStudyRangeScreen.route
+                        AddGoalScreens.SetStudyAmountScreen.route
                     )
                 },
                 onPrev = {
@@ -164,7 +164,7 @@ fun AddGoalNavHost(
 
         // ✅ 3. 학습 기간 설정 화면
         composable(
-            route = AddGoalScreens.EighthSetStudyRangeScreen.route
+            route = AddGoalScreens.SetStudyAmountScreen.route
         ) {
 
             AddGoalBackHandler(
@@ -175,11 +175,11 @@ fun AddGoalNavHost(
             )
 
             SetStudyAmountScreen(
-                name = AddGoalScreens.EighthSetStudyRangeScreen.route,
+                name = AddGoalScreens.SetStudyAmountScreen.route,
                 onNext = {
                     viewModel.nextPage()
                     navController.navigate(
-                        AddGoalScreens.CheckSetMyInfoScreen.route
+                        AddGoalScreens.ReviewScreen.route
                     )
                 },
                 onPrev = {
@@ -193,7 +193,7 @@ fun AddGoalNavHost(
 
         // ✅ 4. 내 정보 확인 화면
         composable(
-            route = AddGoalScreens.CheckSetMyInfoScreen.route
+            route = AddGoalScreens.ReviewScreen.route
         ) {
 
             AddGoalBackHandler(
@@ -206,12 +206,7 @@ fun AddGoalNavHost(
             ReviewScreen(
                 onNext = {
                     viewModel.nextPage()
-                    navController.navigate(AddGoalScreens.CompleteScreen.route) {
-                        // 🔑 온보딩 스택 정리 (뒤로가기 방지)
-//                        popUpTo(OnBoardingScreens.FirstScreen.route) {
-//                            inclusive = true
-//                        }
-                    }
+                    navController.navigate(AddGoalScreens.CompleteScreen.route) {}
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -240,10 +235,10 @@ sealed class AddGoalScreens(val route: String) {
     data object OptimizeDataScreen :
         AddGoalScreens("optimizer_data")
 
-    data object EighthSetStudyRangeScreen :
+    data object SetStudyAmountScreen :
         AddGoalScreens("set_study_range")
 
-    data object CheckSetMyInfoScreen :
+    data object ReviewScreen :
         AddGoalScreens("check_set_my_info")
 
     data object CompleteScreen :
@@ -258,8 +253,8 @@ object AddGoalFlow {
         AddGoalScreens.CategorySelectScreen,
         AddGoalScreens.FileUploadScreen,
         AddGoalScreens.OptimizeDataScreen,
-        AddGoalScreens.EighthSetStudyRangeScreen,
-        AddGoalScreens.CheckSetMyInfoScreen,
+        AddGoalScreens.SetStudyAmountScreen,
+        AddGoalScreens.ReviewScreen,
     )
 
     /** 전체 페이지 수 */
@@ -276,8 +271,8 @@ object AddGoalFlow {
             AddGoalScreens.CategorySelectScreen,
             AddGoalScreens.FileUploadScreen -> if (goalType == GoalTypeUiState.NONE) 2 else 1
             AddGoalScreens.OptimizeDataScreen -> if (goalType == GoalTypeUiState.NONE) 3 else 2
-            AddGoalScreens.EighthSetStudyRangeScreen -> if (goalType == GoalTypeUiState.NONE) 4 else 3
-            AddGoalScreens.CheckSetMyInfoScreen -> if (goalType == GoalTypeUiState.NONE) 5 else 4
+            AddGoalScreens.SetStudyAmountScreen -> if (goalType == GoalTypeUiState.NONE) 4 else 3
+            AddGoalScreens.ReviewScreen -> if (goalType == GoalTypeUiState.NONE) 5 else 4
             else -> 0
         }
     }
@@ -293,8 +288,8 @@ object AddGoalFlow {
                 if (goalType == GoalTypeUiState.CATEGORY) AddGoalScreens.CategorySelectScreen
                 else AddGoalScreens.FileUploadScreen
             }
-            AddGoalScreens.EighthSetStudyRangeScreen -> AddGoalScreens.OptimizeDataScreen
-            AddGoalScreens.CheckSetMyInfoScreen -> AddGoalScreens.EighthSetStudyRangeScreen
+            AddGoalScreens.SetStudyAmountScreen -> AddGoalScreens.OptimizeDataScreen
+            AddGoalScreens.ReviewScreen -> AddGoalScreens.SetStudyAmountScreen
             else -> null
         }
     }
@@ -311,8 +306,8 @@ object AddGoalFlow {
             }
             AddGoalScreens.CategorySelectScreen,
             AddGoalScreens.FileUploadScreen -> AddGoalScreens.OptimizeDataScreen
-            AddGoalScreens.OptimizeDataScreen -> AddGoalScreens.EighthSetStudyRangeScreen
-            AddGoalScreens.EighthSetStudyRangeScreen -> AddGoalScreens.CheckSetMyInfoScreen
+            AddGoalScreens.OptimizeDataScreen -> AddGoalScreens.SetStudyAmountScreen
+            AddGoalScreens.SetStudyAmountScreen -> AddGoalScreens.ReviewScreen
             else -> null
         }
     }
