@@ -16,20 +16,20 @@ import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
-import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetUserNameUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetUserNameUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
@@ -39,7 +39,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -304,13 +303,12 @@ class OnBoardingViewModel @Inject constructor(
         val current = _uiState.value
 
         val usageTime = current.selectedQuestionCnt
-            ?: return ApiResultV2.UnknownError("사용 시간을 선택해주세요.")
 
         Log.d("퇴근시간 디버깅", "출근시간: ${current.workInTime}, 퇴근시간: ${current.workOutTime}")
         return updateCommuteTimeUseCase(
             startTime = current.workInTime.toServerTime(),
             endTime = current.workOutTime.toServerTime(),
-            usageTime = usageTime
+            usageTime = questionCntToMinutes(usageTime)
         )
     }
 
@@ -1055,10 +1053,19 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun onMinuteSelected(minute: Int) {
+    fun onQuestionCntSelected(questionCnt: Int) {
         _uiState.update {
-            it.copy(selectedQuestionCnt = minute)
+            it.copy(selectedQuestionCnt = questionCnt)
         }
+    }
+
+    // 문제 수(3,5,7,10) → 서버 전송용 분(5,7,10,15) 임시 변환 함수
+    private fun questionCntToMinutes(cnt: Int): Int = when (cnt) {
+        3 -> 5
+        5 -> 7
+        7 -> 10
+        10 -> 15
+        else -> cnt
     }
 
     fun saveCommuteInfo() {
@@ -1078,7 +1085,7 @@ class OnBoardingViewModel @Inject constructor(
             val result = updateCommuteTimeUseCase(
                 startTime = current.workInTime.toServerTime(),
                 endTime = current.workOutTime.toServerTime(),
-                usageTime = usageTime
+                usageTime = questionCntToMinutes(usageTime)
             )
 
             _uiState.update {
