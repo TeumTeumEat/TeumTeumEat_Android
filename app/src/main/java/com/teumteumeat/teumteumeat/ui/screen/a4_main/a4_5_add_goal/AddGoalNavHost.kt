@@ -3,7 +3,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,6 +10,7 @@ import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAddGoalUiState
+import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 
 
 @Composable
@@ -162,7 +162,7 @@ fun AddGoalNavHost(
             )
         }
 
-        // ✅ 3. 학습 범위 설정 화면
+        // ✅ 3. 학습 기간 설정 화면
         composable(
             route = AddGoalScreens.EighthSetStudyRangeScreen.route
         ) {
@@ -174,7 +174,7 @@ fun AddGoalNavHost(
                 onPrevPage = { viewModel.prevPage() },
             )
 
-            AddGoalSetStudyRangeScreen(
+            SetStudyPeriodScreen(
                 name = AddGoalScreens.EighthSetStudyRangeScreen.route,
                 onNext = {
                     viewModel.nextPage()

@@ -1,4 +1,4 @@
-package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
+package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
@@ -8,13 +8,13 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 @Composable
 fun SetStudyPeriodScreen(
     name: String,
-    viewModel: OnBoardingViewModel,
-    uiState: UiStateOnboardingState,
+    viewModel: AddGoalViewModel,
+    uiState: UiStateAddGoalState,
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {
     StudyPeriodContent(
-        speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
+        speechBubbleText = "선택한 주제에 대해\n공부할 기간을 선택해주세요!",
         studyPeriod = uiState.studyPeriod,
         onStudyWeekSelected = { viewModel.onStudyWeekSelected(it) },
         onNext = onNext,
@@ -23,12 +23,12 @@ fun SetStudyPeriodScreen(
 
 // ─── Previews ────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, name = "온보딩 - 학습 기간 미선택", group = "Onboarding")
+@Preview(showBackground = true, name = "목표 추가 - 학습 기간 미선택", group = "AddGoal")
 @Composable
 private fun SetStudyPeriodScreen_NonePreview() {
     TeumTeumEatTheme {
         StudyPeriodContent(
-            speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
+            speechBubbleText = "선택한 주제에 대해\n공부할 기간을 선택해주세요!",
             studyPeriod = null,
             onStudyWeekSelected = {},
             onNext = {},
@@ -36,12 +36,12 @@ private fun SetStudyPeriodScreen_NonePreview() {
     }
 }
 
-@Preview(showBackground = true, name = "온보딩 - 1주 선택", group = "Onboarding")
+@Preview(showBackground = true, name = "목표 추가 - 1주 선택", group = "AddGoal")
 @Composable
 private fun SetStudyPeriodScreen_1WeekPreview() {
     TeumTeumEatTheme {
         StudyPeriodContent(
-            speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
+            speechBubbleText = "선택한 주제에 대해\n공부할 기간을 선택해주세요!",
             studyPeriod = 1,
             onStudyWeekSelected = {},
             onNext = {},
@@ -49,12 +49,25 @@ private fun SetStudyPeriodScreen_1WeekPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "온보딩 - 4주 선택", group = "Onboarding")
+@Preview(showBackground = true, name = "목표 추가 - 2주 선택", group = "AddGoal")
+@Composable
+private fun SetStudyPeriodScreen_2WeekPreview() {
+    TeumTeumEatTheme {
+        StudyPeriodContent(
+            speechBubbleText = "선택한 주제에 대해\n공부할 기간을 선택해주세요!",
+            studyPeriod = 2,
+            onStudyWeekSelected = {},
+            onNext = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "목표 추가 - 4주 선택", group = "AddGoal")
 @Composable
 private fun SetStudyPeriodScreen_4WeekPreview() {
     TeumTeumEatTheme {
         StudyPeriodContent(
-            speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
+            speechBubbleText = "선택한 주제에 대해\n공부할 기간을 선택해주세요!",
             studyPeriod = 4,
             onStudyWeekSelected = {},
             onNext = {},
