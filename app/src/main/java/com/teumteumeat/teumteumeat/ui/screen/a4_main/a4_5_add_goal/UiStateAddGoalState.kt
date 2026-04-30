@@ -1,6 +1,8 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import android.net.Uri
+import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
+import com.teumteumeat.teumteumeat.domain.model.defaultRequestPromptOptions
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
@@ -95,6 +97,9 @@ data class UiStateAddGoalState(
     val isPromptVaild: Boolean = true,
     val promptInput: String = "",
     val promptInputErrMsg: String? = null,
+
+    val promptOptions: List<RequestPromptOption> = defaultRequestPromptOptions,
+    val selectedPromptId: String? = null,
 
     val studyPeriod: Int? = null,
     val endDate: String = "",

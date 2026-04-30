@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAddGoalUiState
 
@@ -129,7 +130,7 @@ fun AddGoalNavHost(
             )
         }
 
-        // ✅ 2. 옵티마이저 데이터 입력 화면
+        // ✅ 2. 퀴즈 난이도 및 학습 프롬프트 설정 화면
         composable(
             route = AddGoalScreens.OptimizeDataScreen.route
         ) {
@@ -155,6 +156,9 @@ fun AddGoalNavHost(
                 },
                 viewModel = viewModel,
                 uiState = uiState,
+                onCloseSheet = viewModel::closeBottomSheet,
+                onConfirmPrompt = viewModel::onConfirmPromptOption,
+                onOpenPromptSheet = { viewModel.openBottomSheet(BottomSheetType.PROMPT) },
             )
         }
 

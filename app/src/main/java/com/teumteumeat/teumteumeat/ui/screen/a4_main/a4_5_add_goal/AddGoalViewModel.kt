@@ -12,6 +12,7 @@ import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
+import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
@@ -146,10 +147,16 @@ class AddGoalViewModel @Inject constructor(
     }
 
     fun openBottomSheet(type: BottomSheetType) {
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            val syncedPromptId = if (type == BottomSheetType.PROMPT) {
+                state.promptOptions.find { it.label == state.promptInput }?.id
+            } else {
+                state.selectedPromptId
+            }
+            state.copy(
                 bottomSheetType = type,
                 showBottomSheet = true,
+                selectedPromptId = syncedPromptId,
             )
         }
     }
@@ -239,6 +246,21 @@ class AddGoalViewModel @Inject constructor(
                 bottomSheetType = BottomSheetType.NONE,
             )
         }
+    }
+
+    fun onPromptSelected(option: RequestPromptOption) {
+        _uiState.update { state ->
+            val newId = if (state.selectedPromptId == option.id) null else option.id
+            state.copy(selectedPromptId = newId)
+        }
+    }
+
+    /** 확인 버튼 → 현재 selectedPromptId를 그대로 확정 (null이면 선택 해제) */
+    fun onConfirmPromptOption() {
+        val state = _uiState.value
+        val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
+        _uiState.update { it.copy(promptInput = label) }
+        closeBottomSheet()
     }
 
     fun toggleDepth2(category: Category) {

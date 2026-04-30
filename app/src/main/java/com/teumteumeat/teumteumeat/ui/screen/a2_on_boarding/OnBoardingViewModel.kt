@@ -594,10 +594,16 @@ class OnBoardingViewModel @Inject constructor(
 
 
     fun openBottomSheet(type: BottomSheetType) {
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            val syncedPromptId = if (type == BottomSheetType.PROMPT) {
+                state.promptOptions.find { it.label == state.promptInput }?.id
+            } else {
+                state.selectedPromptId
+            }
+            state.copy(
                 bottomSheetType = type,
                 showBottomSheet = true,
+                selectedPromptId = syncedPromptId,
             )
         }
     }
@@ -1550,23 +1556,19 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    // ViewModel 내부
     fun onPromptSelected(option: RequestPromptOption) {
-        _uiState.update { it.copy(selectedPromptId = option.id) }
+        _uiState.update { state ->
+            val newId = if (state.selectedPromptId == option.id) null else option.id
+            state.copy(selectedPromptId = newId)
+        }
     }
 
-    /** 확인 버튼 → 선택된 옵션의 label을 서버 전송용 promptInput으로 확정 */
+    /** 확인 버튼 → 현재 selectedPromptId를 그대로 확정 (null이면 선택 해제) */
     fun onConfirmPromptOption() {
         val state = _uiState.value
-        val label = state.promptOptions
-            .find { it.id == state.selectedPromptId }
-            ?.label ?: return
+        val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
         _uiState.update { it.copy(promptInput = label) }
         closeBottomSheet()
-    }
-
-    fun clearPromptInput() {
-        _uiState.update { it.copy(promptInput = "", selectedPromptId = null) }
     }
 
 }
