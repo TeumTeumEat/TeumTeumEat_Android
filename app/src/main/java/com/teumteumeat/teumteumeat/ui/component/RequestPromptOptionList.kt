@@ -55,6 +55,18 @@ fun RequestPromptOptionList(
     scrollbarTrackColor: Color = Color(0xFFEEEEEE),
     scrollbarThumbColor: Color = Color(0xFFBDBDBD),
 ) {
+    // 모달이 처음 표시될 때의 selectedId 기준으로 선택 항목을 상단 고정.
+    // 탭 중에 목록이 흔들리지 않도록 options가 바뀌지 않는 한 재정렬하지 않음.
+    val initialSelectedId = remember { selectedId }
+    val sortedOptions = remember(options) {
+        if (initialSelectedId == null) options
+        else {
+            val selected = options.filter { it.id == initialSelectedId }
+            val rest = options.filter { it.id != initialSelectedId }
+            selected + rest
+        }
+    }
+
     val listState = rememberLazyListState()
 
     val rawScrollFraction by remember {
@@ -108,7 +120,7 @@ fun RequestPromptOptionList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(
-            items = options,
+            items = sortedOptions,
             key = { it.id },
         ) { option ->
             RequestPromptOptionItem(
