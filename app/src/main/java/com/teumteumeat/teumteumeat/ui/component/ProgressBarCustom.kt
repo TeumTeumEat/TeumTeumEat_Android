@@ -192,34 +192,8 @@ fun CircularProgressCanvas(
     val fillPrimaryColor = MaterialTheme.extendedColors.primary
     val fillSecondaryColor = MaterialTheme.extendedColors.btnFillSecondary
 
-    val animatable = remember { Animatable(0f) }
-
-    LaunchedEffect(progress) {
-
-        val target = progress.coerceIn(0f, 1f)
-
-        // 🔥 줄어드는 값은 무시
-        if (target > animatable.value) {
-            animatable.animateTo(
-                targetValue = target,
-                animationSpec = tween(
-                    durationMillis = 10000,
-                    easing = LinearEasing
-                )
-            )
-        }
-    }
-
-/*
-    // 🎯 10초 동안 일정 속도 증가
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(
-            durationMillis = 10_000,
-            easing = LinearEasing
-        ),
-        label = "progressAnimation"
-    )*/
+    // 애니메이션은 호출부에서 관리 — 여기서는 전달받은 progress 그대로 그림
+    val clampedProgress = progress.coerceIn(0f, 1f)
 
     Canvas(
         modifier = modifier.size(260.dp)
@@ -253,7 +227,7 @@ fun CircularProgressCanvas(
         drawArc(
             brush = gradientBrush,
             startAngle = -90f,
-            sweepAngle = 360f * animatable.value,
+            sweepAngle = 360f * clampedProgress,
             useCenter = false,
             size = arcSize,
             style = Stroke(

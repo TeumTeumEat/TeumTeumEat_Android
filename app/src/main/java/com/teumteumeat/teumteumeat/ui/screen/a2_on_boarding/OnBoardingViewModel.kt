@@ -15,19 +15,21 @@ import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
-import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
-import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetUserNameUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.RegisterUserNameUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeUseCase
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
@@ -37,7 +39,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -53,6 +54,7 @@ sealed interface UiEffect {
 class OnBoardingViewModel @Inject constructor(
     val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     val registerUserNameUseCase: RegisterUserNameUseCase,
+    private val getUserNameUseCase: GetUserNameUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val issuePresignedUrlUseCase: IssuePresignedUrlUseCase,
     private val createGoalUseCase: CreateGoalUseCase,
@@ -89,9 +91,6 @@ class OnBoardingViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<UiEffect>(extraBufferCapacity = 1)
     val effect: SharedFlow<UiEffect> = _effect
 
-    private val _progress = MutableStateFlow(0f)
-    val progress: StateFlow<Float> = _progress
-
     init {
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
     }
@@ -103,35 +102,16 @@ class OnBoardingViewModel @Inject constructor(
         viewModelScope.launch {
             _mainState.value = UiStateOnboardingScreenState.Loading
 
-            // ⭐ progress 애니메이션 시작 (1.8초)
-            launch {
-                val duration = 1800L
-                val startTime = System.currentTimeMillis()
-
-                while (true) {
-                    val elapsed = System.currentTimeMillis() - startTime
-                    val progress = (elapsed / duration.toFloat()).coerceIn(0f, 1f)
-
-                    _progress.value = progress
-
-                    if (progress >= 1f) break
-
-                    delay(16L) // 약 60fps
-                }
-
-                _progress.value = 1f
-            }
-
             val state = _uiState.value
 
             val startTime = System.currentTimeMillis()
 
             // 1️⃣ 이름 등록
-            val nameResult = setUserNameInternal()
+            /*val nameResult = setUserNameInternal()
             if (nameResult !is ApiResultV2.Success) {
                 moveToError(nameResult)
                 return@launch
-            }
+            }*/
 
             // 2️⃣ 출퇴근 정보 저장
             val commuteResult = saveCommuteInfoInternal()
@@ -210,6 +190,12 @@ class OnBoardingViewModel @Inject constructor(
                 GoalTypeUiState.NONE -> {}
             }
 
+            // 서버에서 닉네임 조회 (실패해도 온보딩 완료를 막지 않음)
+            when (val nameResult = getUserNameUseCase()) {
+                is ApiResultV2.Success -> _uiState.update { it.copy(serverNickname = nameResult.data.name) }
+                else -> Unit
+            }
+
             // 🔹 최소 로딩 1.8초 보장
             val elapsed = System.currentTimeMillis() - startTime
             val remain = 1800L - elapsed
@@ -239,7 +225,6 @@ class OnBoardingViewModel @Inject constructor(
                 )
             }
         }
-
     }
 
     private suspend fun updateUserPushSettingInternal(): ApiResultV2<Unit> {
@@ -317,14 +302,13 @@ class OnBoardingViewModel @Inject constructor(
     private suspend fun saveCommuteInfoInternal(): ApiResultV2<Unit> {
         val current = _uiState.value
 
-        val usageTime = current.selectedMinute
-            ?: return ApiResultV2.UnknownError("사용 시간을 선택해주세요.")
+        val usageTime = current.selectedQuestionCnt
 
         Log.d("퇴근시간 디버깅", "출근시간: ${current.workInTime}, 퇴근시간: ${current.workOutTime}")
         return updateCommuteTimeUseCase(
             startTime = current.workInTime.toServerTime(),
             endTime = current.workOutTime.toServerTime(),
-            usageTime = usageTime
+            usageTime = questionCntToMinutes(usageTime)
         )
     }
 
@@ -608,10 +592,16 @@ class OnBoardingViewModel @Inject constructor(
 
 
     fun openBottomSheet(type: BottomSheetType) {
-        _uiState.update {
-            it.copy(
+        _uiState.update { state ->
+            val syncedPromptId = if (type == BottomSheetType.PROMPT) {
+                state.promptOptions.find { it.label == state.promptInput }?.id
+            } else {
+                state.selectedPromptId
+            }
+            state.copy(
                 bottomSheetType = type,
                 showBottomSheet = true,
+                selectedPromptId = syncedPromptId,
             )
         }
     }
@@ -653,7 +643,7 @@ class OnBoardingViewModel @Inject constructor(
 
     fun loadCategories() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, pageErrorMessage = null) }
 
             when (val result = getCategoriesUseCase()) {
 
@@ -669,9 +659,11 @@ class OnBoardingViewModel @Inject constructor(
                     logLeafCategories(result.data)
                 }
 
+
                 is ApiResult.SessionExpired -> {
                     sessionManager.expireSession()
                 }
+
 
                 is ApiResult.ServerError -> {
                     _uiState.update {
@@ -709,7 +701,8 @@ class OnBoardingViewModel @Inject constructor(
         return when {
             selection.depth1 == null -> 0
             selection.depth2 == null -> 1
-            else -> 2
+            selection.depth3 == null -> 2
+            else -> 3
         }
     }
 
@@ -758,9 +751,9 @@ class OnBoardingViewModel @Inject constructor(
 
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    state.targetCategoryPage // ❗ 페이지 유지
+                    0 // 1뎁스 페이지로 복귀
                 } else {
-                    1 // 3뎁스 페이지
+                    2 // 3뎁스 페이지
                 }
             )
         }
@@ -789,9 +782,9 @@ class OnBoardingViewModel @Inject constructor(
                 selectedCategoryId = null,
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    0 // 2뎁스 페이지
+                    1 // 2뎁스 페이지로 복귀
                 } else {
-                    2 // 4뎁스 페이지
+                    3 // 4뎁스 페이지
                 }
             )
         }
@@ -816,7 +809,7 @@ class OnBoardingViewModel @Inject constructor(
 
                 // ⭐ 핵심 규칙
                 targetCategoryPage = if (isUnselecting) {
-                    1 // 3뎁스 페이지
+                    2 // 3뎁스 페이지로 복귀
                 } else {
                     state.targetCategoryPage // ❗ 페이지 유지
                 }
@@ -842,10 +835,19 @@ class OnBoardingViewModel @Inject constructor(
     }
 
 
+    fun navigateBackInCategoryDepth() {
+        _uiState.update { state ->
+            if (state.targetCategoryPage > 0)
+                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
+            else state
+        }
+    }
+
     fun clearDepth1() {
         _uiState.update {
             it.copy(
                 categorySelection = CategorySelectionState(),
+                selectedCategoryId = null,
                 targetCategoryPage = 0
             )
         }
@@ -853,14 +855,14 @@ class OnBoardingViewModel @Inject constructor(
 
     fun clearDepth2() {
         _uiState.update { state ->
-            val newSelection =
-                state.categorySelection.copy(
-                    depth2 = null,
-                    depth3 = null
-                )
-
+            val newSelection = state.categorySelection.copy(
+                depth2 = null,
+                depth3 = null,
+                depth4 = null,
+            )
             state.copy(
                 categorySelection = newSelection,
+                selectedCategoryId = null,
                 targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
             )
         }
@@ -868,11 +870,13 @@ class OnBoardingViewModel @Inject constructor(
 
     fun clearDepth3() {
         _uiState.update { state ->
-            val newSelection =
-                state.categorySelection.copy(depth3 = null)
-
+            val newSelection = state.categorySelection.copy(
+                depth3 = null,
+                depth4 = null,
+            )
             state.copy(
                 categorySelection = newSelection,
+                selectedCategoryId = null,
                 targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
             )
         }
@@ -1005,7 +1009,7 @@ class OnBoardingViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        presignedUrl = result.data.presignedUrl,
+                        preSignedUrl = result.data.presignedUrl,
                         fileKey = result.data.key
                     )
                 }
@@ -1049,10 +1053,19 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun onMinuteSelected(minute: Int) {
+    fun onQuestionCntSelected(questionCnt: Int) {
         _uiState.update {
-            it.copy(selectedMinute = minute)
+            it.copy(selectedQuestionCnt = questionCnt)
         }
+    }
+
+    // 문제 수(3,5,7,10) → 서버 전송용 분(5,7,10,15) 임시 변환 함수
+    private fun questionCntToMinutes(cnt: Int): Int = when (cnt) {
+        3 -> 5
+        5 -> 7
+        7 -> 10
+        10 -> 15
+        else -> cnt
     }
 
     fun saveCommuteInfo() {
@@ -1061,7 +1074,7 @@ class OnBoardingViewModel @Inject constructor(
             val current = uiState.value
 
             // 🔐 방어 로직 (null / invalid 상태 차단)
-            val usageTime = current.selectedMinute
+            val usageTime = current.selectedQuestionCnt
                 ?: run {
                     _uiState.update {
                         it.copy(pageErrorMessage = "사용 시간을 선택해주세요.")
@@ -1072,7 +1085,7 @@ class OnBoardingViewModel @Inject constructor(
             val result = updateCommuteTimeUseCase(
                 startTime = current.workInTime.toServerTime(),
                 endTime = current.workOutTime.toServerTime(),
-                usageTime = usageTime
+                usageTime = questionCntToMinutes(usageTime)
             )
 
             _uiState.update {
@@ -1235,18 +1248,18 @@ class OnBoardingViewModel @Inject constructor(
             // ✅ 1. 어떤 시간을 보여줄지 결정
             val initialTime = when (type) {
                 TimeType.IN -> {
-                    if (state.isSetWorkInTime) {
+                    if (state.isSetFirstAlarmTime) {
                         state.workInTime       // 🔵 이미 선택한 값
                     } else {
-                        TimeState.amTime()     // 🟡 초기 기본값
+                        TimeState.firstTime()     // 🟡 초기 기본값
                     }
                 }
 
                 TimeType.OUT -> {
-                    if (state.isSetWorkOutTime) {
+                    if (state.isSetSecondAlarmTime) {
                         state.workOutTime
                     } else {
-                        TimeState.pmTime()
+                        TimeState.secondTime()
                     }
                 }
 
@@ -1268,7 +1281,7 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun closeTimeSheet() {
+    fun closeSheet() {
         _uiState.update {
             it.copy(
                 showBottomSheet = false,
@@ -1306,7 +1319,7 @@ class OnBoardingViewModel @Inject constructor(
                     println("🟢 [confirmTime] BRANCH = TimeType.IN")
                     state.copy(
                         workInTime = state.tempTime,
-                        isSetWorkInTime = true,
+                        isSetFirstAlarmTime = true,
                         currentTimeType = TimeType.NOTTING
                     )
                 }
@@ -1315,7 +1328,7 @@ class OnBoardingViewModel @Inject constructor(
                     println("🟢 [confirmTime] BRANCH = TimeType.OUT")
                     state.copy(
                         workOutTime = state.tempTime,
-                        isSetWorkOutTime = true,
+                        isSetSecondAlarmTime = true,
                         currentTimeType = TimeType.NOTTING
                     )
                 }
@@ -1370,7 +1383,7 @@ class OnBoardingViewModel @Inject constructor(
         return when (uiState.value.currentTimeType) {
             TimeType.OUT -> uiState.value.workOutTime
             TimeType.IN -> uiState.value.workInTime
-            TimeType.NOTTING -> TimeState.amTime()
+            TimeType.NOTTING -> TimeState.firstTime()
         }
     }
 
@@ -1502,6 +1515,12 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
+    fun navigateTo(screen: OnBoardingScreens) {
+        val before = _uiState.value.currentScreen
+        Log.d("OnBoardingNav", "navigateTo: ${before::class.simpleName}(page=${OnBoardingFlow.currentPage(before)}) → ${screen::class.simpleName}(page=${OnBoardingFlow.currentPage(screen)})")
+        _uiState.update { it.copy(currentScreen = screen) }
+    }
+
     fun nextPage() {
         _uiState.update { currentState ->
             val nextScreen = OnBoardingFlow.next(currentState.currentScreen)
@@ -1542,6 +1561,21 @@ class OnBoardingViewModel @Inject constructor(
         viewModelScope.launch {
             PrefsUtil.setOnboardingCompleted(context, true)
         }
+    }
+
+    fun onPromptSelected(option: RequestPromptOption) {
+        _uiState.update { state ->
+            val newId = if (state.selectedPromptId == option.id) null else option.id
+            state.copy(selectedPromptId = newId)
+        }
+    }
+
+    /** 확인 버튼 → 현재 selectedPromptId를 그대로 확정 (null이면 선택 해제) */
+    fun onConfirmPromptOption() {
+        val state = _uiState.value
+        val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
+        _uiState.update { it.copy(promptInput = label) }
+        closeBottomSheet()
     }
 
 }

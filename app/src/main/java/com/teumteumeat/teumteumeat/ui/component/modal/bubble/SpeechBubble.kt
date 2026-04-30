@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -29,6 +30,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 fun SpeechBubble(
     modifier: Modifier = Modifier,
     text: String,
+    textStyle: TextStyle = MaterialTheme.appTypography.btnMedium18_h22,
     backgroundColor: Color = MaterialTheme.extendedColors.btnFillSecondary,
     cornerRadius: Dp = 16.dp,
     tailWidth: Dp = 19.dp,
@@ -51,9 +53,7 @@ fun SpeechBubble(
             ) {
                 Text(
                     text = text,
-                    style = MaterialTheme.appTypography.btnSemiBold20_h24.copy(
-                        lineHeight = 28.sp
-                    ),
+                    style = textStyle,
                     color = Color(0xFF333333),
                     textAlign = TextAlign.Center
                 )
