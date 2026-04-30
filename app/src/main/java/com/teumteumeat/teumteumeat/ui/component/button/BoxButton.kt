@@ -249,6 +249,13 @@ fun ContentSelectableBoxButton(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
+                        Icon(
+                            painter = painterResource(id = iconRes),
+                            contentDescription = null,
+                            tint = MaterialTheme.extendedColors.btnGray400,
+                            modifier = Modifier.size(iconSize)
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
                         Text(
                             text = contentFileName,
                             textAlign = TextAlign.Center,

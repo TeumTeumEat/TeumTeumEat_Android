@@ -30,7 +30,6 @@ import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -70,8 +69,8 @@ class AddGoalViewModel @Inject constructor(
     fun initGoalType(type: DomainGoalType) {
         if (_uiState.value.goalTypeUiState == GoalTypeUiState.NONE) {
             val startScreen = when (type) {
-                DomainGoalType.CATEGORY -> AddGoalScreens.SixthCategorySelectScreen
-                DomainGoalType.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen
+                DomainGoalType.CATEGORY -> AddGoalScreens.CategorySelectScreen
+                DomainGoalType.DOCUMENT -> AddGoalScreens.FileUploadScreen
                 else -> AddGoalScreens.SelectInputMethodScreen
             }
             _uiState.update{

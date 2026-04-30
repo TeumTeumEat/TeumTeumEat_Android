@@ -23,8 +23,8 @@ fun AddGoalNavHost(
 
 
     val startRoute = when (startDestination) {
-        GoalTypeUiState.CATEGORY ->  AddGoalScreens.SixthCategorySelectScreen.route
-        GoalTypeUiState.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen.route
+        GoalTypeUiState.CATEGORY ->  AddGoalScreens.CategorySelectScreen.route
+        GoalTypeUiState.DOCUMENT -> AddGoalScreens.FileUploadScreen.route
         GoalTypeUiState.NONE -> AddGoalScreens.SelectInputMethodScreen.route
     }
 
@@ -41,7 +41,7 @@ fun AddGoalNavHost(
         startDestination = startRoute
     ) {
 
-        // ✅ 1-0. 목표 타입 선택 화면
+        // ✅ 0. 목표 타입 선택 화면
         composable(
             route = AddGoalScreens.SelectInputMethodScreen.route
         ) {
@@ -63,19 +63,19 @@ fun AddGoalNavHost(
 
                 onNextFileUpload = {
                     viewModel.nextPage()
-                    navController.navigate(AddGoalScreens.SixthFileUploadScreen.route)
+                    navController.navigate(AddGoalScreens.FileUploadScreen.route)
                 },
                 // 요청하신 구현 부분: 선택된 타입에 따라 분기 처리
                 onNextCateGorySelect = {
                     viewModel.nextPage() // 페이지 번호 증가
-                    navController.navigate(AddGoalScreens.SixthCategorySelectScreen.route)
+                    navController.navigate(AddGoalScreens.CategorySelectScreen.route)
                 }
             )
         }
 
         // ✅ 1-1 카테고리 선택 화면
         composable(
-            route = AddGoalScreens.SixthCategorySelectScreen.route
+            route = AddGoalScreens.CategorySelectScreen.route
         ) { backStackEntry ->
 
             AddGoalBackHandler(
@@ -86,10 +86,10 @@ fun AddGoalNavHost(
             )
 
             AddGoalCategorySelectScreen(
-                name = AddGoalScreens.SixthCategorySelectScreen.route,
+                name = AddGoalScreens.CategorySelectScreen.route,
                 onNext = {
                     viewModel.nextPage()
-                    navController.navigate(AddGoalScreens.SeventhOptimizerDataScreen.route)
+                    navController.navigate(AddGoalScreens.OptimizeDataScreen.route)
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -104,7 +104,7 @@ fun AddGoalNavHost(
 
         // ✅ 1-2 파일 업로드 입력 화면
         composable(
-            route = AddGoalScreens.SixthFileUploadScreen.route
+            route = AddGoalScreens.FileUploadScreen.route
         ) {
 
             AddGoalBackHandler(
@@ -115,10 +115,10 @@ fun AddGoalNavHost(
             )
 
             AddGoalFileUploadScreen(
-                name = AddGoalScreens.SixthFileUploadScreen.route,
+                name = AddGoalScreens.FileUploadScreen.route,
                 onNext = {
                     viewModel.nextPage()
-                    navController.navigate(AddGoalScreens.SeventhOptimizerDataScreen.route)
+                    navController.navigate(AddGoalScreens.OptimizeDataScreen.route)
                 },
                 onPrev = {
                     viewModel.prevPage()
@@ -131,7 +131,7 @@ fun AddGoalNavHost(
 
         // ✅ 2. 옵티마이저 데이터 입력 화면
         composable(
-            route = AddGoalScreens.SeventhOptimizerDataScreen.route
+            route = AddGoalScreens.OptimizeDataScreen.route
         ) {
 
             AddGoalBackHandler(
@@ -142,7 +142,7 @@ fun AddGoalNavHost(
             )
 
             AddGoalOptimizerDataScreen(
-                name = AddGoalScreens.SeventhOptimizerDataScreen.route,
+                name = AddGoalScreens.OptimizeDataScreen.route,
                 onNext = {
                     viewModel.nextPage()
                     navController.navigate(
@@ -227,13 +227,13 @@ sealed class AddGoalScreens(val route: String) {
     data object SelectInputMethodScreen :
         AddGoalScreens("select_input_method")
 
-    data object SixthCategorySelectScreen :
+    data object CategorySelectScreen :
         AddGoalScreens("select_category")
 
-    data object SixthFileUploadScreen :
+    data object FileUploadScreen :
         AddGoalScreens("file_upload")
 
-    data object SeventhOptimizerDataScreen :
+    data object OptimizeDataScreen :
         AddGoalScreens("optimizer_data")
 
     data object EighthSetStudyRangeScreen :
@@ -251,9 +251,9 @@ object AddGoalFlow {
     /** 목표 추가 순서 */
     val screens: List<AddGoalScreens> = listOf(
         AddGoalScreens.SelectInputMethodScreen,
-        AddGoalScreens.SixthCategorySelectScreen,
-        AddGoalScreens.SixthFileUploadScreen,
-        AddGoalScreens.SeventhOptimizerDataScreen,
+        AddGoalScreens.CategorySelectScreen,
+        AddGoalScreens.FileUploadScreen,
+        AddGoalScreens.OptimizeDataScreen,
         AddGoalScreens.EighthSetStudyRangeScreen,
         AddGoalScreens.CheckSetMyInfoScreen,
     )
@@ -269,9 +269,9 @@ object AddGoalFlow {
     fun currentPage(screen: AddGoalScreens, goalType: GoalTypeUiState): Int {
         return when (screen) {
             AddGoalScreens.SelectInputMethodScreen -> 1
-            AddGoalScreens.SixthCategorySelectScreen,
-            AddGoalScreens.SixthFileUploadScreen -> if (goalType == GoalTypeUiState.NONE) 2 else 1
-            AddGoalScreens.SeventhOptimizerDataScreen -> if (goalType == GoalTypeUiState.NONE) 3 else 2
+            AddGoalScreens.CategorySelectScreen,
+            AddGoalScreens.FileUploadScreen -> if (goalType == GoalTypeUiState.NONE) 2 else 1
+            AddGoalScreens.OptimizeDataScreen -> if (goalType == GoalTypeUiState.NONE) 3 else 2
             AddGoalScreens.EighthSetStudyRangeScreen -> if (goalType == GoalTypeUiState.NONE) 4 else 3
             AddGoalScreens.CheckSetMyInfoScreen -> if (goalType == GoalTypeUiState.NONE) 5 else 4
             else -> 0
@@ -281,15 +281,15 @@ object AddGoalFlow {
     /** 이전 화면 */
     fun prev(screen: AddGoalScreens, goalType: GoalTypeUiState): AddGoalScreens? {
         return when (screen) {
-            AddGoalScreens.SixthCategorySelectScreen,
-            AddGoalScreens.SixthFileUploadScreen -> {
+            AddGoalScreens.CategorySelectScreen,
+            AddGoalScreens.FileUploadScreen -> {
                 if (goalType == GoalTypeUiState.NONE) AddGoalScreens.SelectInputMethodScreen else null
             }
-            AddGoalScreens.SeventhOptimizerDataScreen -> {
-                if (goalType == GoalTypeUiState.CATEGORY) AddGoalScreens.SixthCategorySelectScreen
-                else AddGoalScreens.SixthFileUploadScreen
+            AddGoalScreens.OptimizeDataScreen -> {
+                if (goalType == GoalTypeUiState.CATEGORY) AddGoalScreens.CategorySelectScreen
+                else AddGoalScreens.FileUploadScreen
             }
-            AddGoalScreens.EighthSetStudyRangeScreen -> AddGoalScreens.SeventhOptimizerDataScreen
+            AddGoalScreens.EighthSetStudyRangeScreen -> AddGoalScreens.OptimizeDataScreen
             AddGoalScreens.CheckSetMyInfoScreen -> AddGoalScreens.EighthSetStudyRangeScreen
             else -> null
         }
@@ -300,14 +300,14 @@ object AddGoalFlow {
         return when (screen) {
             AddGoalScreens.SelectInputMethodScreen -> {
                 when (goalType) {
-                    GoalTypeUiState.CATEGORY -> AddGoalScreens.SixthCategorySelectScreen
-                    GoalTypeUiState.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen
+                    GoalTypeUiState.CATEGORY -> AddGoalScreens.CategorySelectScreen
+                    GoalTypeUiState.DOCUMENT -> AddGoalScreens.FileUploadScreen
                     else -> null
                 }
             }
-            AddGoalScreens.SixthCategorySelectScreen,
-            AddGoalScreens.SixthFileUploadScreen -> AddGoalScreens.SeventhOptimizerDataScreen
-            AddGoalScreens.SeventhOptimizerDataScreen -> AddGoalScreens.EighthSetStudyRangeScreen
+            AddGoalScreens.CategorySelectScreen,
+            AddGoalScreens.FileUploadScreen -> AddGoalScreens.OptimizeDataScreen
+            AddGoalScreens.OptimizeDataScreen -> AddGoalScreens.EighthSetStudyRangeScreen
             AddGoalScreens.EighthSetStudyRangeScreen -> AddGoalScreens.CheckSetMyInfoScreen
             else -> null
         }
