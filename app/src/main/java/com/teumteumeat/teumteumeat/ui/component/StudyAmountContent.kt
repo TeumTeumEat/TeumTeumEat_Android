@@ -46,7 +46,7 @@ private val defaultStudyWeekOptions = listOf(
  * @param onNext 다음으로 버튼 클릭 콜백
  */
 @Composable
-fun StudyPeriodContent(
+fun StudyAmountContent(
     speechBubbleText: String,
     studyPeriod: Int?,
     onStudyWeekSelected: (Int) -> Unit,
@@ -124,7 +124,7 @@ fun StudyPeriodContent(
 @Composable
 private fun StudyPeriodContent_NonePreview() {
     TeumTeumEatTheme {
-        StudyPeriodContent(
+        StudyAmountContent(
             speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
             studyPeriod = null,
             onStudyWeekSelected = {},
@@ -137,7 +137,7 @@ private fun StudyPeriodContent_NonePreview() {
 @Composable
 private fun StudyPeriodContent_1WeekPreview() {
     TeumTeumEatTheme {
-        StudyPeriodContent(
+        StudyAmountContent(
             speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
             studyPeriod = 1,
             onStudyWeekSelected = {},
@@ -150,7 +150,7 @@ private fun StudyPeriodContent_1WeekPreview() {
 @Composable
 private fun StudyPeriodContent_4WeekPreview() {
     TeumTeumEatTheme {
-        StudyPeriodContent(
+        StudyAmountContent(
             speechBubbleText = "얼마 동안 공부해 볼까요?\n내 속도에 맞는 학습 기간을 정해보세요",
             studyPeriod = 4,
             onStudyWeekSelected = {},
