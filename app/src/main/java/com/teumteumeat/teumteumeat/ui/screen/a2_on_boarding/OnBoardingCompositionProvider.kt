@@ -5,22 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
-import androidx.compose.ui.res.painterResource
-import com.teumteumeat.teumteumeat.R
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -29,17 +17,14 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.FlowTopProgressBar
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
-import com.teumteumeat.teumteumeat.ui.component.SizeAnimationInvisible
 import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -49,7 +34,6 @@ import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
-import com.teumteumeat.teumteumeat.utils.appTypography
 import kotlinx.coroutines.delay
 
 private fun openNotificationSetting(activity: Activity) {
@@ -183,51 +167,17 @@ fun OnBoardingCompositionProvider(
                             .systemBarsPadding()
                     ) {
 
-                        if (uiState.currentPage > 0) {
-                            Row(
-                                modifier = Modifier.padding(
-                                    vertical = 16.dp, horizontal = 20.dp,
-                                ),
-                                horizontalArrangement = Arrangement.SpaceAround,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-
-                                SizeAnimationInvisible(
-                                    isVisible = uiState.currentPage > 0,
-                                    clickEnabled = uiState.currentPage > 0
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.icon_keboard_arrow_left),
-                                        contentDescription = "previous page",
-                                        modifier = Modifier.clickable(
-                                            interactionSource = Utils.UiUtils.noRipple(),
-                                        ) {
-                                            val prev = OnBoardingScreens.fromRoute(
-                                                navHostController.previousBackStackEntry?.destination?.route
-                                            )
-                                            if (prev != null) viewModel.navigateTo(prev)
-                                            navHostController.popBackStack()
-                                        }
-                                    )
-                                }
-
-                                CustomProgressBar(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 16.dp),
-                                    currentStep = uiState.currentPage,
-                                    totalSteps = uiState.totalPage,
+                        FlowTopProgressBar(
+                            currentPage = uiState.currentPage,
+                            totalPage = uiState.totalPage,
+                            onBack = {
+                                val prev = OnBoardingScreens.fromRoute(
+                                    navHostController.previousBackStackEntry?.destination?.route
                                 )
-
-
-                                Text(
-                                    "${uiState.currentPage}/${uiState.totalPage}",
-                                    style = MaterialTheme.appTypography.captionRegular14,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
+                                if (prev != null) viewModel.navigateTo(prev)
+                                navHostController.popBackStack()
+                            },
+                        )
 
                         OnBoardingNavHost(
                             navController = navHostController,
@@ -266,29 +216,11 @@ private fun OnBoardingCompositionProviderIdlePreview() {
                     .fillMaxSize()
                     .systemBarsPadding(),
             ) {
-                Row(
-                    modifier = Modifier.padding(vertical = 16.dp, horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.icon_keboard_arrow_left),
-                        contentDescription = "previous page",
-                    )
-                    CustomProgressBar(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 16.dp),
-                        currentStep = fakeState.currentPage,
-                        totalSteps = fakeState.totalPage,
-                    )
-                    Text(
-                        "${fakeState.currentPage}/${fakeState.totalPage}",
-                        style = MaterialTheme.appTypography.captionRegular14,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                }
+                FlowTopProgressBar(
+                    currentPage = fakeState.currentPage,
+                    totalPage = fakeState.totalPage,
+                    onBack = {},
+                )
             }
         }
     }
