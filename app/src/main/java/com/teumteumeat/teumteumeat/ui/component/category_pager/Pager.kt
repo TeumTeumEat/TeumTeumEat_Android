@@ -4,11 +4,8 @@ import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -16,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
@@ -38,8 +34,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.SelectableBaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.button.getDepth1CategoryIconRes
-import com.teumteumeat.teumteumeat.ui.component.button.getDepth2CategoryIconRes
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import com.teumteumeat.teumteumeat.utils.appTypography
 
@@ -222,80 +216,41 @@ fun CategoryGrid(
     bottomPadding: Dp = 170.dp, // ✅ 하단 버튼 + 여백
     currentPage: Int = 0,
     verticalColumns: Int = 1,
-    labelMapper: ((Category) -> String)? = null,
-    wrapContentWidth: Boolean = false,           // ✅ 추가 파라미터
 ) {
-    if (wrapContentWidth) {
-        // ── wrap_content 너비 모드 ──────────────────────────────────
-        Column(modifier = modifier.verticalScroll(rememberScrollState()).padding(bottom = bottomPadding)) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                categories.forEach { category ->
-                    val label = labelMapper?.invoke(category) ?: category.name
-                    SelectableBaseOutlineButton(
-                        modifier = Modifier
-                            .wrapContentWidth()          // ✅ 핵심: 콘텐츠 너비에 맞춤
-                            .defaultMinSize(minHeight = 60.dp),
-                        text = label,
-                        textStyle = if (currentPage == 0)
-                            MaterialTheme.appTypography.btnSemiBold20_h24
-                        else
-                            MaterialTheme.appTypography.btnSemiBold18_h24,
-                        isSelected = category.id == selectedId,
-                        onClick = { onItemClick(category) },
-                        contentAligment = Arrangement.Start,
-                        iconRes = when (currentPage) {
-                            0 -> getDepth1CategoryIconRes(category.name)
-                            1 -> getDepth2CategoryIconRes(category.name)
-                            else -> null
-                        },
-                    )
-                }
-            }
-        }
-    } else {
-        LazyVerticalStaggeredGrid(
-            modifier = modifier,
-            columns = StaggeredGridCells.Fixed(verticalColumns),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalItemSpacing = 12.dp,
-            contentPadding = PaddingValues(
-                top = 0.dp, bottom = bottomPadding
-            )
-        ) {
-            itemsIndexed(
-                items = categories,
-                key = { _, item -> item.id }
-            ) { _, category ->
-                val label = labelMapper?.invoke(category) ?: category.name
-                SelectableBaseOutlineButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 60.dp),
-                    text = label,
-                    textStyle = if (currentPage == 0) MaterialTheme.appTypography.btnSemiBold20_h24
+    LazyVerticalStaggeredGrid(
+        modifier = modifier,
+        columns = StaggeredGridCells.Fixed(verticalColumns),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalItemSpacing = 12.dp,
+        contentPadding = PaddingValues(
+            top = 0.dp, bottom = bottomPadding
+        )
+    ) {
+        itemsIndexed(
+            items = categories,
+            key = { _, item -> item.id }
+        ) { _, category ->
+            SelectableBaseOutlineButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 52.dp),
+                text = category.name,
+
+                textStyle = if (currentPage == 0) MaterialTheme.appTypography.btnSemiBold20_h24
                     else MaterialTheme.appTypography.btnSemiBold18_h24,
-                    isSelected = category.id == selectedId,
-                    onClick = {
-                        Log.d(
-                            "CategoryClick",
-                            "CLICK name=${category.name}, " +
-                                    "id=${category.id}, " +
-                                    "serverId=${category.serverCategoryId}, " +
-                                    "children=${category.children.size}"
-                        )
-                        onItemClick(category)
-                    },
-                    contentAligment = Arrangement.Start,
-                    iconRes = when (currentPage) {
-                        0 -> getDepth1CategoryIconRes(category.name)
-                        1 -> getDepth2CategoryIconRes(category.name)
-                        else -> null
-                    },
-                )
-            }
+                isSelected = category.id == selectedId,
+                onClick = {
+                    Log.d(
+                        "CategoryClick",
+                        "CLICK name=${category.name}, " +
+                                "id=${category.id}, " +
+                                "serverId=${category.serverCategoryId}, " +
+                                "children=${category.children.size}"
+                    )
+                    onItemClick(category)
+                },
+                contentAligment = Arrangement.Start
+            )
         }
     }
 }

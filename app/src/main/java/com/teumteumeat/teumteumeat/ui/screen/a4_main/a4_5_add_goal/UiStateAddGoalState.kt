@@ -1,8 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal
 
 import android.net.Uri
-import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
-import com.teumteumeat.teumteumeat.domain.model.defaultRequestPromptOptions
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
@@ -50,11 +48,11 @@ data class UiStateAddGoalState(
     val isSetWorkOutTime: Boolean = false,
 
     // 🔹 출/퇴근 시간 설정
-    val workInTime: TimeState = TimeState.firstTime(),  // 집에서 나오는 시간
-    val workOutTime: TimeState = TimeState.secondTime(), // 집으로 가는 시간
+    val workInTime: TimeState = TimeState.amTime(),  // 집에서 나오는 시간
+    val workOutTime: TimeState = TimeState.pmTime(), // 집으로 가는 시간
 
     // ✅ 바텀시트에서 조작 중인 임시 시간
-    val tempTime: TimeState = TimeState.firstTime(),
+    val tempTime: TimeState = TimeState.amTime(),
 
     // 🔹 BottomSheet 상태
     val showBottomSheet: Boolean = false,
@@ -97,9 +95,6 @@ data class UiStateAddGoalState(
     val isPromptVaild: Boolean = true,
     val promptInput: String = "",
     val promptInputErrMsg: String? = null,
-
-    val promptOptions: List<RequestPromptOption> = defaultRequestPromptOptions,
-    val selectedPromptId: String? = null,
 
     val studyPeriod: Int? = null,
     val endDate: String = "",

@@ -20,6 +20,4 @@
     <string name="fullscreen_ad_test_id">"ca-app-pub-3940256099942544/1033173712"</string>
     <string name="rewarded_ad_test_id">ca-app-pub-3940256099942544/5224354917</string>
     <string name="rewarded_ad_id">ca-app-pub-6258792179933715/4589941378</string>
-    <string name="link_terms_of_use_notion">https://resolute-flier-02d.notion.site/2d8151abb62e80cbaefde6ddcef603cc?pvs=74</string>
-    <string name="link_google_form">https://forms.gle/jmrRbST7XwLsfhoE7</string>
 </resources>

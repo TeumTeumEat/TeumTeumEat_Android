@@ -30,14 +30,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.radio_group.MinuteRadioGroup
+import com.teumteumeat.teumteumeat.ui.component.MinuteRadioGroup
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
 import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
-import com.teumteumeat.teumteumeat.ui.component.radio_group.QuestionCountRadioGroup
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.toDisplayText
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -234,61 +232,45 @@ fun EditUserInfoScreen(
                     Spacer(modifier = Modifier.height(30.dp))
                 }
 
-                // 학습 분량
+                // 집에서 나오는 시간
                 TimeSettingRow(
-                    title = "학습 분량",
-                    timeText = "${uiState.useMinutes}문제",
+                    title = "집에서 나오는 시간",
+                    timeText = uiState.workInTime.toDisplayText(isSelected = true),
                     onClick = {
-                        viewModel.openBottomSheet(BottomSheetType.UsingTime)
+                        viewModel.openBottomSheet(BottomSheetType.WorkInTime)
                     }
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // 알림 시간 그룹
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "알림 시간",
-                        style = MaterialTheme.appTypography.subtitleSemiBold16.copy(
-                            color = MaterialTheme.extendedColors.textSecondary
-                        ),
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    BaseOutlineButton(
-                        text = "1번째 알림",
-                        textStyle = MaterialTheme.appTypography.captionRegular12.copy(
-                            color = MaterialTheme.extendedColors.textSecondary
-                        ),
-                        subText = uiState.workInTime.toDisplayText(isSelected = true),
-                        subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
-                            color = MaterialTheme.extendedColors.textSecondary
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = { viewModel.openBottomSheet(BottomSheetType.WorkInTime) }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    BaseOutlineButton(
-                        text = "2번째 알림",
-                        textStyle = MaterialTheme.appTypography.captionRegular12.copy(
-                            color = MaterialTheme.extendedColors.textSecondary
-                        ),
-                        subText = uiState.workOutTime.toDisplayText(isSelected = true),
-                        subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
-                            color = MaterialTheme.extendedColors.textSecondary
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = { viewModel.openBottomSheet(BottomSheetType.WorkOutTime) }
-                    )
-                }
+                // 집에 돌아가는 시간
+                TimeSettingRow(
+                    title = "집에 돌아가는 시간",
+                    timeText = uiState.workOutTime.toDisplayText(isSelected = true),
+                    onClick = {
+                        viewModel.openBottomSheet(BottomSheetType.WorkOutTime)
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 이용 시간
+                TimeSettingRow(
+                    title = "이용 시간",
+                    timeText = "${uiState.useMinutes}분",
+
+                    onClick = {
+                        viewModel.openBottomSheet(BottomSheetType.UsingTime)
+                    }
+                )
 
 
                 if (uiState.showBottomSheet) {
                     BottomSheetContainerRightTopConfirm(
-                        wrapContentHeight = true,
                         titleText = when (uiState.currentBottomSheetType) {
-                            BottomSheetType.WorkInTime -> "1번째 알림 시간"
-                            BottomSheetType.WorkOutTime -> "2번째 알림 시간"
-                            BottomSheetType.UsingTime -> "학습 분량"
+                            BottomSheetType.WorkInTime -> "집을 나오는 시간"
+                            BottomSheetType.WorkOutTime -> "집으로 가는 시간"
+                            BottomSheetType.UsingTime -> "이용 시간"
                             null -> ""
                         },
                         onDismiss = {
@@ -312,12 +294,12 @@ fun EditUserInfoScreen(
                                 }
 
                                 BottomSheetType.UsingTime -> {
-                                    QuestionCountRadioGroup(
-                                        options = listOf(3, 5, 7, 10),
-                                        selectedQuestionCnt = uiState.tempUseMinutes,
-                                        singleColumn = true,
-                                        onSelect = { questionCount ->
-                                            viewModel.updateTempUseMinutes(questionCount)
+                                    MinuteRadioGroup(
+                                        modifier = Modifier.padding(top = 20.dp),
+                                        options = listOf(5, 7, 10, 15),
+                                        selectedMinute = uiState.tempUseMinutes,
+                                        onSelect = { minute ->
+                                            viewModel.updateTempUseMinutes(minute)
                                         }
                                     )
                                 }

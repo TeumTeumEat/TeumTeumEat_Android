@@ -60,13 +60,6 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
     return root.values.map { it.toImmutable() }
 }
 
-fun String.toDepth1CategoryLabel(): String = when (this) {
-    "생활 법률 및 제도" -> "생활 법률\n및 제도"
-    else -> this
-}
-
-fun String.toDepth2CategoryLabel(): String = this
-
 /**
  * 내부 전용 Mutable 모델
  */

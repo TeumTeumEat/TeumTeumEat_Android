@@ -111,7 +111,7 @@ class MyPageActivity : BaseActivity() {
                         },
                         onTermsClick = { },
                         onCustomerCenterClick = { },
-                        onWithdrawClick = { viewModel.withdrawUser() },
+                        onWithdroawClick = { viewModel.withdrawUser() },
                         onNotificationGuideConfirm = {
                             openNotificationSetting(activity)
                             viewModel.onOpenedSettings()

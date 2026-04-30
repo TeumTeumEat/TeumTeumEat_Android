@@ -12,7 +12,6 @@ import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
-import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
@@ -31,6 +30,7 @@ import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -59,6 +59,9 @@ class AddGoalViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateAddGoalState>(UiStateAddGoalState())
     val uiState = _uiState.asStateFlow()
 
+    private val _progress = MutableStateFlow(0f)
+    val progress: StateFlow<Float> = _progress
+
     // 2️⃣ 플로우 상태 (Idle / Loading / Success / Error)
     private val _mainState =
         MutableStateFlow<UiStateAddGoalScreenState>(
@@ -70,8 +73,8 @@ class AddGoalViewModel @Inject constructor(
     fun initGoalType(type: DomainGoalType) {
         if (_uiState.value.goalTypeUiState == GoalTypeUiState.NONE) {
             val startScreen = when (type) {
-                DomainGoalType.CATEGORY -> AddGoalScreens.CategorySelectScreen
-                DomainGoalType.DOCUMENT -> AddGoalScreens.FileUploadScreen
+                DomainGoalType.CATEGORY -> AddGoalScreens.SixthCategorySelectScreen
+                DomainGoalType.DOCUMENT -> AddGoalScreens.SixthFileUploadScreen
                 else -> AddGoalScreens.SelectInputMethodScreen
             }
             _uiState.update{
@@ -99,40 +102,7 @@ class AddGoalViewModel @Inject constructor(
             it.copy(
                 categorySelection = CategorySelectionState(),
                 isCategorySelectionComplete = false,
-                targetCategoryPage = 0,
             )
-        }
-    }
-
-    private fun calculateTargetPageForItemUnChecked(selection: CategorySelectionState): Int =
-        when {
-            selection.depth1 == null -> 0
-            selection.depth2 == null -> 1
-            selection.depth3 == null -> 2
-            else -> 3
-        }
-
-    fun toggleDepth1(category: Category) {
-        _uiState.update { state ->
-            val newSelection =
-                if (state.categorySelection.depth1?.id == category.id) {
-                    CategorySelectionState()
-                } else {
-                    CategorySelectionState(depth1 = category)
-                }
-            state.copy(
-                categorySelection = newSelection,
-                isCategorySelectionComplete = false,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
-            )
-        }
-    }
-
-    fun navigateBackInCategoryDepth() {
-        _uiState.update { state ->
-            if (state.targetCategoryPage > 0)
-                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
-            else state
         }
     }
 
@@ -147,16 +117,10 @@ class AddGoalViewModel @Inject constructor(
     }
 
     fun openBottomSheet(type: BottomSheetType) {
-        _uiState.update { state ->
-            val syncedPromptId = if (type == BottomSheetType.PROMPT) {
-                state.promptOptions.find { it.label == state.promptInput }?.id
-            } else {
-                state.selectedPromptId
-            }
-            state.copy(
+        _uiState.update {
+            it.copy(
                 bottomSheetType = type,
                 showBottomSheet = true,
-                selectedPromptId = syncedPromptId,
             )
         }
     }
@@ -248,42 +212,51 @@ class AddGoalViewModel @Inject constructor(
         }
     }
 
-    fun onPromptSelected(option: RequestPromptOption) {
-        _uiState.update { state ->
-            val newId = if (state.selectedPromptId == option.id) null else option.id
-            state.copy(selectedPromptId = newId)
-        }
-    }
-
-    /** 확인 버튼 → 현재 selectedPromptId를 그대로 확정 (null이면 선택 해제) */
-    fun onConfirmPromptOption() {
-        val state = _uiState.value
-        val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
-        _uiState.update { it.copy(promptInput = label) }
-        closeBottomSheet()
-    }
-
     fun toggleDepth2(category: Category) {
         _uiState.update { state ->
             val currentDepth2 = state.categorySelection.depth2
             val isUnselecting = currentDepth2?.id == category.id
 
             val newSelection = if (isUnselecting) {
-                state.categorySelection.copy(depth2 = null, depth3 = null, depth4 = null)
+                // 🔁 2뎁스 해제 → 하위 전부 해제
+                state.categorySelection.copy(
+                    depth2 = null,
+                    depth3 = null,
+                    depth4 = null
+                )
             } else {
-                state.categorySelection.copy(depth2 = category, depth3 = null, depth4 = null)
+                // ✅ 2뎁스 선택 → 하위 초기화
+                state.categorySelection.copy(
+                    depth2 = category,
+                    depth3 = null,
+                    depth4 = null
+                )
             }
 
             state.copy(
                 categorySelection = newSelection,
                 selectedCategoryId = null,
                 isCategorySelectionComplete = false,
-                targetCategoryPage = if (isUnselecting) 0 else 2
+
+                // ⭐ 핵심 규칙
+                targetCategoryPage = if (isUnselecting) {
+                    state.targetCategoryPage // ❗ 페이지 유지
+                } else {
+                    1 // 3뎁스 페이지
+                }
             )
         }
     }
 
     fun toggleDepth3(category: Category) {
+        Log.d(
+            "OnBoardingVM",
+            "toggleDepth3 input → " +
+                    "name=${category.name}, " +
+                    "serverId=${category.serverCategoryId}, " +
+                    "children=${category.children.size}"
+        )
+
         _uiState.update { state ->
             val currentDepth3 = state.categorySelection.depth3
             val isUnselecting = currentDepth3?.id == category.id
@@ -291,10 +264,18 @@ class AddGoalViewModel @Inject constructor(
             val newDepth3 = if (isUnselecting) null else category
 
             state.copy(
-                categorySelection = state.categorySelection.copy(depth3 = newDepth3, depth4 = null),
+                categorySelection = state.categorySelection.copy(
+                    depth3 = newDepth3,
+                    depth4 = null // ⭐ 3뎁스 변경 시 4뎁스 초기화
+                ),
                 selectedCategoryId = null,
                 isCategorySelectionComplete = false,
-                targetCategoryPage = if (isUnselecting) 1 else 3
+                // ⭐ 핵심 규칙
+                targetCategoryPage = if (isUnselecting) {
+                    0 // 2뎁스 페이지
+                } else {
+                    2 // 4뎁스 페이지
+                }
             )
         }
     }
@@ -309,15 +290,22 @@ class AddGoalViewModel @Inject constructor(
 
             val newDepth4 = if (isUnselecting) null else category
 
-            val newTargetCategoryPage = if (isUnselecting) 2 else state.targetCategoryPage
+            val newTargetCategoryPage = if (isUnselecting) {
+                1 // 3뎁스 페이지
+            } else {
+                state.targetCategoryPage // ❗ 페이지 유지
+            }
 
-            val isComplete = !isUnselecting
-                    && newDepth4?.serverCategoryId != null
-                    && newTargetCategoryPage == 3
+            val isComplete = !isUnselecting && newDepth4 != null && newDepth4.serverCategoryId != null && newTargetCategoryPage == 2
 
             state.copy(
-                categorySelection = state.categorySelection.copy(depth4 = newDepth4),
+                categorySelection = state.categorySelection.copy(
+                    depth4 = newDepth4
+                ),
+
                 selectedCategoryId = newDepth4?.serverCategoryId,
+
+                // ⭐ 핵심 규칙
                 targetCategoryPage = newTargetCategoryPage,
                 isCategorySelectionComplete = isComplete
             )
@@ -524,6 +512,25 @@ class AddGoalViewModel @Inject constructor(
 
         viewModelScope.launch {
             _mainState.value = UiStateAddGoalScreenState.Loading
+
+            // ⭐ progress 애니메이션 시작 (1.8초)
+            launch {
+                val duration = 1800L
+                val startTime = System.currentTimeMillis()
+
+                while (true) {
+                    val elapsed = System.currentTimeMillis() - startTime
+                    val progress = (elapsed / duration.toFloat()).coerceIn(0f, 1f)
+
+                    _progress.value = progress
+
+                    if (progress >= 1f) break
+
+                    delay(16L) // 약 60fps
+                }
+
+                _progress.value = 1f
+            }
 
             val state = _uiState.value
 

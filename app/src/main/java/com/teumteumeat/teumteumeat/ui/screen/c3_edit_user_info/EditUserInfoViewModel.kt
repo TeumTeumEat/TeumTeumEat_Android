@@ -112,28 +112,10 @@ class EditUserInfoViewModel @Inject constructor(
     }
 
 
-    // 서버 전송용: 문제 수(3,5,7,10) → 분(5,7,10,15)
-    private fun questionCntToMinutes(cnt: Int): Int = when (cnt) {
-        3 -> 5
-        5 -> 7
-        7 -> 10
-        10 -> 15
-        else -> cnt
-    }
-
-    // 서버 응답용: 분(5,7,10,15) → 문제 수(3,5,7,10)
-    private fun minutesToQuestionCnt(minutes: Int): Int = when (minutes) {
-        5 -> 3
-        7 -> 5
-        10 -> 7
-        15 -> 10
-        else -> minutes
-    }
-
     private suspend fun saveCommuteInfoInternal(): ApiResultV2<Unit> {
         val current = _uiState.value
 
-        val usageTime = questionCntToMinutes(current.useMinutes)
+        val usageTime = current.useMinutes
 
         return updateCommuteTimeUseCase(
             startTime = current.workInTime.toServerTime(),
@@ -216,7 +198,6 @@ class EditUserInfoViewModel @Inject constructor(
                         "EditUserInfoViewModel",
                         "workInTime: ${workIn}, workWoutTime: ${workOut}"
                     )
-                    val questionCnt = minutesToQuestionCnt(data.usageTime)
                     _uiState.update { prev ->
                         val next = prev.copy(
                             isLoading = false,
@@ -224,9 +205,9 @@ class EditUserInfoViewModel @Inject constructor(
                             workOutTime = workOut,
                             originalWorkInTime = workIn,
                             originalWorkOutTime = workOut,
-                            useMinutes = questionCnt,
-                            originalUseMinutes = questionCnt,
-                            tempUseMinutes = questionCnt,
+                            useMinutes = data.usageTime,
+                            originalUseMinutes = data.usageTime,
+                            tempUseMinutes = data.usageTime,
                             isSetWorkInTime = true,
                             isSetWorkOutTime = true,
                             isChanged = false
@@ -315,7 +296,7 @@ class EditUserInfoViewModel @Inject constructor(
                     showBottomSheet = true,
                     currentBottomSheetType = type,
                     tempUseMinutes = state.useMinutes,
-                    tempTime = TimeState.firstTime()
+                    tempTime = TimeState.amTime()
                 )
             }
         }
@@ -343,7 +324,7 @@ class EditUserInfoViewModel @Inject constructor(
                         workInTime = state.tempTime,
                         isChanged = true,
                         showBottomSheet = false,
-                        tempTime = TimeState.firstTime()
+                        tempTime = TimeState.amTime()
                     )
                 }
 
@@ -353,7 +334,7 @@ class EditUserInfoViewModel @Inject constructor(
                         workOutTime = state.tempTime,
                         isChanged = true,
                         showBottomSheet = false,
-                        tempTime = TimeState.firstTime()
+                        tempTime = TimeState.amTime()
                     )
                 }
 
@@ -386,7 +367,7 @@ class EditUserInfoViewModel @Inject constructor(
             it.copy(
                 showBottomSheet = false,
                 currentBottomSheetType = null,
-                tempTime = TimeState.firstTime(),
+                tempTime = TimeState.amTime(),
                 tempUseMinutes = 0
             )
         }

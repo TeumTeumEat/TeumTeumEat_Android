@@ -1,18 +1,21 @@
 package com.teumteumeat.teumteumeat.ui.component
 
+import android.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
@@ -33,8 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -115,60 +116,44 @@ fun BottomSheetContainerRightTopConfirm(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     titleText: String = "타이틀",
-    titleTextStyle: TextStyle = MaterialTheme.typography.titleMedium,
     content: @Composable () -> Unit,
     tittleBottomPadding: Int = 24,
     onCompleteEnable: Boolean = false,
-    lockDrag: Boolean = false,
-    heightFraction: Float = 0.4f,
-    hasScrollbar: Boolean = false,
-    wrapContentHeight: Boolean = false,
 ) {
+    // ✅ [변경 1] 항상 Expanded로 시작하는 SheetState
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
         confirmValueChange = { newValue ->
-            if (lockDrag) newValue == SheetValue.Expanded
-            else newValue != SheetValue.PartiallyExpanded
+            // ⭐ 핵심: Partial 상태 차단
+            newValue != SheetValue.PartiallyExpanded
         }
     )
 
-    val sheetHeight = (LocalConfiguration.current.screenHeightDp * heightFraction).dp
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
+        sheetState = sheetState, // ✅ 직접 전달
         dragHandle = null,
-        sheetGesturesEnabled = !lockDrag,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = modifier
-                .then(
-                    if (wrapContentHeight) Modifier.wrapContentHeight()
-                    else Modifier.height(sheetHeight)
-                )
                 .fillMaxWidth()
-                .padding(
-                    start = 32.dp,
-                    end = if (hasScrollbar) 0.dp else 32.dp,
-                    top = 15.dp,
-                    bottom = 40.dp,
-                )
+                .padding(horizontal = 32.dp)
+                .padding(vertical = 15.dp)
         ) {
 
             // 🔹 헤더 영역
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (hasScrollbar) Modifier.padding(end = 32.dp) else Modifier),
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     modifier = Modifier.weight(1f),
                     text = titleText,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.extendedColors.textPrimary,
+                    color = MaterialTheme.colorScheme.tertiary,
                 )
 
                 BaseFillSmallButton(
@@ -180,13 +165,9 @@ fun BottomSheetContainerRightTopConfirm(
 
             Spacer(modifier = Modifier.height(tittleBottomPadding.dp))
 
-            if (wrapContentHeight) {
-                content()
-            } else {
-                Box(modifier = Modifier.weight(1f)) {
-                    content()
-                }
-            }
+            content()
+            // 🔹 시간 선택 영역 (추후 교체 예정)
+            // TimeSliderPlaceholder()
         }
     }
 }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -99,6 +98,7 @@ fun SelectableBoxButton(
     isSelected: Boolean,
     titleText: String,
     labelText: String,
+    iconSize: Dp = 60.dp,
     iconRes: Int,
     onClick: () -> Unit,
 ) {
@@ -106,8 +106,11 @@ fun SelectableBoxButton(
     val materialTheme = MaterialTheme.colorScheme
     val theme = MaterialTheme.extendedColors
 
-    val contentColor = if (isSelected) { theme.primary } else { theme.textGhost }
-    val borderColor = if (isSelected) { theme.primary } else { theme.btnLineDisable }
+    val selectedColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        theme.btnLineDisable
+    }
 
     TeumTeumEatTheme {
         Card(
@@ -118,7 +121,7 @@ fun SelectableBoxButton(
                 disabledContainerColor = materialTheme.onSurfaceVariant,
                 disabledContentColor = materialTheme.onSurfaceVariant
             ),
-            border = BorderStroke(2.dp, borderColor),
+            border = BorderStroke(2.dp, selectedColor),
             onClick = onClick
         ) {
             Column(
@@ -129,16 +132,16 @@ fun SelectableBoxButton(
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = if(isSelected) MaterialTheme.extendedColors.primary
-                        else MaterialTheme.extendedColors.btnGray200,
+                    tint = if(isSelected) MaterialTheme.extendedColors.primary else MaterialTheme.extendedColors.btnLineDisable,
+                    modifier = Modifier.size(iconSize)
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = titleText,
                     style = MaterialTheme.appTypography.subtitleSemiBold20.copy(
-                        color = contentColor
+                        color = selectedColor
                     ),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -147,7 +150,7 @@ fun SelectableBoxButton(
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
                     style = MaterialTheme.appTypography.bodyMedium14.copy(
-                        color = contentColor
+                        color = selectedColor
                     )
                 )
             }
@@ -165,12 +168,11 @@ fun ContentSelectableBoxButton(
     contentFileName: String = "",
     onDelContentClick: () -> Unit,
     onClick: () -> Unit,
-    iconRes: Int = R.drawable.icon_file_fill,
+    iconRes: Int = R.drawable.icon_files,
     iconSize: Dp = 60.dp,
 
     ) {
     val materialTheme = MaterialTheme.colorScheme
-    val theme = MaterialTheme.extendedColors
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
@@ -179,7 +181,7 @@ fun ContentSelectableBoxButton(
             disabledContainerColor = materialTheme.onSurfaceVariant,
             disabledContentColor = materialTheme.onSurfaceVariant
         ),
-        border = BorderStroke(2.dp, theme.btnLineDisable),
+        border = BorderStroke(2.dp, Color(0xFFDDDDDD)),
         onClick = onClick
     ) {
         if (!isSelectableContent) {
@@ -191,7 +193,7 @@ fun ContentSelectableBoxButton(
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    tint = MaterialTheme.extendedColors.btnGray200,
+                    tint = MaterialTheme.extendedColors.btnLineDisable,
                     modifier = Modifier.size(iconSize)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -216,17 +218,18 @@ fun ContentSelectableBoxButton(
 
             }
         } else {
-            Box() {
+            Column(
+                modifier = modifier,
+            ) {
+
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 13.dp, end = 19.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.End,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "파일 삭제 아이콘",
+                        contentDescription = null,
                         tint = materialTheme.onTertiary,
                         modifier = Modifier
                             .size(24.dp)
@@ -241,30 +244,20 @@ fun ContentSelectableBoxButton(
                             }
                     )
                 }
+
                 Column(
-                    modifier = modifier,
+                    modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Column(
-                        modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = null,
-                            tint = MaterialTheme.extendedColors.btnGray400,
-                            modifier = Modifier.size(iconSize)
+                    Text(
+                        text = contentFileName,
+                        textAlign = TextAlign.Center,
+                        fontSize = 20.sp,
+                        style = Typography.labelMedium.copy(
+                            color = materialTheme.surfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(
-                            text = contentFileName,
-                            textAlign = TextAlign.Center,
-                            fontSize = 20.sp,
-                            style = MaterialTheme.appTypography.subtitleSemiBold20.copy(
-                                color = MaterialTheme.extendedColors.textGraySelcted
-                            )
-                        )
-                    }
+                    )
                 }
             }
         }
@@ -279,27 +272,24 @@ fun ContentSelectableBoxButton(
 )
 @Composable
 fun BoxButtonPreview() {
-    TeumTeumEatTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
-                .padding(all = 20.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            ContentSelectableBoxButton(
-                isSelectableContent = true,
-                contentFileName = "test file name.pdf",
-                onClick = {},
-                titleText = "Test",
-                lableText = "test",
-                onDelContentClick = {},
-            )
-            Spacer(modifier = Modifier.height(100.dp))
-            BoxOutlineButton(
-                onClick = {},
-            )
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(all = 50.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        ContentSelectableBoxButton(
+            isSelectableContent = true,
+            contentFileName = "test file name.pdf",
+            onClick = {},
+            titleText = "Test",
+            lableText = "test",
+            onDelContentClick = {},
+        )
+        Spacer(modifier = Modifier.height(100.dp))
+        BoxOutlineButton(
+            onClick = {},
+        )
     }
 }

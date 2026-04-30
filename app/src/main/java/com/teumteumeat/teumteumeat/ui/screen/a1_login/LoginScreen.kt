@@ -264,7 +264,6 @@ fun LoginScreen(
                 uiState.bottomSheetType == LoginBottomSheetType.TERMS_AGREEMENT
             ) {
                 BottomSheetContainerRightTopConfirm(
-                    wrapContentHeight = true,
                     titleText = "이용약관",
                     onConfirm = {
                         viewModel.closeBottomSheet()
@@ -299,6 +298,7 @@ fun LoginScreen(
                             }
                         )
                     },
+                    tittleBottomPadding = 24
                 )
             }
 

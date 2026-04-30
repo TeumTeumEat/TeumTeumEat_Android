@@ -47,12 +47,7 @@ data class ExtendedColors(
     val btnFillDisabled: Color,
     val btnGray400: Color,
     val btnGray200: Color,
-
-    val viewBackgroundGray200: Color,
-    val viewBackgroundGray500: Color,
-    val textGraySelcted: Color,
-
-    )
+)
 
 val LightExtendedColors = ExtendedColors(
 
@@ -91,9 +86,8 @@ val LightExtendedColors = ExtendedColors(
     iconBlack = Black100,
 
     // text 관련 색상
-    textTeritory = GrayBlue30,
-    textSecondary = GrayBlue80,
-    textGraySelcted = Gray50,
+    textTeritory=GrayBlue30,
+    textSecondary= GrayBlue80,
     // text 관련 색상
 
     // 배경 관련 색상
@@ -101,8 +95,6 @@ val LightExtendedColors = ExtendedColors(
     backgroundDefault = BtnGray10,
     background = White10,
     backgroundW100 = White100,
-    viewBackgroundGray200 = backgorundGray200,
-    viewBackgroundGray500 = backgorundGray500,
 )
 
 
