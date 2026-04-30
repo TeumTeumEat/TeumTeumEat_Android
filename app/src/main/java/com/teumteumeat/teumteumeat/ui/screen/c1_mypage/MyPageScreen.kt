@@ -3,8 +3,17 @@ package com.teumteumeat.teumteumeat.ui.screen.c1_mypage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,14 +23,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
+import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageAccountSection
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageArrowRow
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageNavigateBox
@@ -30,19 +44,16 @@ import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageToggleRow
 import com.teumteumeat.teumteumeat.ui.component.mypage.SelectedTopicSection
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info.EditUserInfoActivity
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.tooling.preview.Preview
-import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 
 @Composable
 fun MyPageScreen(
@@ -53,13 +64,14 @@ fun MyPageScreen(
     onAlarmToggle: (Boolean) -> Unit,
     onTermsClick: () -> Unit,
     onCustomerCenterClick: () -> Unit,
-    onWithdroawClick: () -> Unit,
+    onWithdrawClick: () -> Unit,
     onNotificationGuideConfirm: () -> Unit,
     onNotificationGuideDismiss: () -> Unit,
     onRetryClick: () -> Unit,
 ) {
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
+    val appContext = LocalAppContext.current
     val context = LocalContext.current
     val screenState = LocalScreenState.current
 
@@ -185,7 +197,8 @@ fun MyPageScreen(
                                     Icon(
                                         painter = painterResource(uiState.socialProvider.toIconImg()),
                                         contentDescription = null,
-                                        tint = Color.Unspecified
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(20.dp)
                                     )
 
                                 }
@@ -203,7 +216,7 @@ fun MyPageScreen(
                                 onClick = {
                                     UxUtils.openExternalBrowser(
                                         context,
-                                        "https://resolute-flier-02d.notion.site/2d8151abb62e80cbaefde6ddcef603cc?pvs=74"
+                                        appContext.getString(R.string.link_terms_of_use_notion)
                                     )
                                 }
                             )
@@ -212,7 +225,7 @@ fun MyPageScreen(
                                 onClick = {
                                     UxUtils.openExternalBrowser(
                                         context,
-                                        "https://forms.gle/jmrRbST7XwLsfhoE7"
+                                        appContext.getString(R.string.link_google_form)
                                     )
                                 }
                             )
@@ -247,7 +260,7 @@ fun MyPageScreen(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(
                                     modifier = Modifier.clickable(
-                                        onClick = onWithdroawClick
+                                        onClick = onWithdrawClick
                                     ),
                                     text = "탈퇴하기",
                                     style = typo.captionRegular12.copy(
@@ -301,7 +314,7 @@ fun PreviewMyPageScreenSuccess() {
                 onAlarmToggle = {},
                 onTermsClick = {},
                 onCustomerCenterClick = {},
-                onWithdroawClick = {},
+                onWithdrawClick = {},
                 onNotificationGuideConfirm = {},
                 onNotificationGuideDismiss = {},
                 onRetryClick = {}
