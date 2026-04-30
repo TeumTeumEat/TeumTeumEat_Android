@@ -22,7 +22,7 @@ import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FlowTopProgressBar
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
-import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingLoadingScreen
+import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.SubmitLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.PopupOverlay
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -88,9 +88,9 @@ fun AddCategoryGoalCompositionProvider(
                         visibleStates[index] = true
                     }
                 }
-                OnBoardingLoadingScreen(
+                SubmitLoadingScreen(
                     visibleStates = visibleStates,
-                    isCompletedLoading = mainState is UiStateAddGoalScreenState.Success,
+                    isCompletedLoading = true,
                     onAnimationComplete = { isAnimationComplete = true },
                 )
             }
