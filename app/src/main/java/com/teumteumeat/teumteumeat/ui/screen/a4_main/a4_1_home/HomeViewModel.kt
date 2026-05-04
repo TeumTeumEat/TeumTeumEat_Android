@@ -14,22 +14,22 @@ import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.teumteumeat.teumteumeat.BuildConfig
+import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.data.network.model_response.CategoryDocument
+import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
-import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.CategoryDocument
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.*
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.Error
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
 import com.teumteumeat.teumteumeat.utils.manager.ad.RewardedAdManager
 import com.teumteumeat.teumteumeat.utils.monitor.NetworkConnection
@@ -81,6 +81,9 @@ class HomeViewModel @Inject constructor(
 
     // 서버에서 받은 goal 캐싱 (SnackState 계산용)
     private var cachedGoal: UserGoal? = null
+
+    // 음식 이미지 변경 시점 추적: 목표 변경 또는 일일 지식 교체 시에만 setRandomFood() 호출
+    private var lastKnownGoalId: Long = Long.MIN_VALUE
 
     private var processingJob: Job? = null
 
@@ -514,7 +517,7 @@ class HomeViewModel @Inject constructor(
         loadHomeState()
     }
 
-    fun setRandomFood() {
+    private fun setRandomFood() {
         _uiState.update { currentState ->
             currentState.copy(
                 selectedFoodRes = currentState.foodList.random()
@@ -597,6 +600,12 @@ class HomeViewModel @Inject constructor(
                                     isShowGoalExpiredDialog = quizStatus.isCompleted, // ✅ 퀴즈 상태의 isCompleted 기반으로 모달 노출 여부 결정
                                     hasRunningGoal = hasRunningGoal
                                 )
+                            }
+
+                            // 목표가 변경되었을 때 음식 이미지 교체
+                            if (goal.goalId != lastKnownGoalId) {
+                                lastKnownGoalId = goal.goalId
+                                setRandomFood()
                             }
 
                             // 시작시 성공 화면에서 가운데 음식 부분에 로딩을 표시한다.
