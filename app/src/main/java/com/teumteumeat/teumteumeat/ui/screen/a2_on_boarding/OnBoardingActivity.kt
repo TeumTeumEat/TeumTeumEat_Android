@@ -34,7 +34,6 @@ class OnBoardingActivity : BaseActivity() {
         }
     }
 
-
 }
 
 

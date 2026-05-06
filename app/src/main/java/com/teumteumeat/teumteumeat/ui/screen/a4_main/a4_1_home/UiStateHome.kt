@@ -60,6 +60,9 @@ data class UiStateHome(
     val processingState: com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState? = null,
     val loadingTitle: String = "새로운 퀴즈를 만들고 있어요!",
     val loadingMessage: String = "잠시만 기다려주세요...",
+
+    /** 유저가 진행중인 목표를 가지고 있는 여부 */
+    val hasRunningGoal: Boolean = false,
 ){
     /**
      * 현재 상태에 따른 최종 이미지 리소스를 반환하는 헬퍼 함수

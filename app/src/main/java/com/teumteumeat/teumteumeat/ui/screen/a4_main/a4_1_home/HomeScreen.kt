@@ -10,11 +10,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,10 +57,9 @@ import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.GoalRegisterArgs
-import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
+import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
@@ -69,7 +71,6 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlin.jvm.java
 
 
 @Composable
@@ -248,7 +249,19 @@ fun HomeScreen(
 
             UiScreenState.Success -> {
 
-                Box {
+                BoxWithConstraints {
+                    // Lottie 컴포지션: w=360, h=572 (home_eat_*.json)
+                    // card 레이어: rect=[303.234, 442.253], transform scale=[98.257%, 98.837%]
+                    // card 중심 (composition 좌표): x=180(수평 중앙), y=286+21.512=307.512
+                    val lottieRenderScale = minOf(
+                        maxWidth.value / 360f,
+                        (maxHeight - bottomPadding).value / 572f
+                    )
+                    val cardRenderedW = (303.234f * 0.98257f * lottieRenderScale).dp
+                    val cardRenderedH = (442.253f * 0.98837f * lottieRenderScale).dp
+                    // 카드 중심이 컴포지션 수직 중심(286)에서 21.512 아래에 위치하므로
+                    // BoxWithConstraints 중심 기준 오프셋 = 21.512×scale - bottomPadding/2
+                    val cardOffsetY = (21.512f * lottieRenderScale).dp - bottomPadding / 2
                     // 상태별 이미지 표시 부분
                     Column(
                         modifier = modifier
@@ -267,13 +280,19 @@ fun HomeScreen(
                         )
                     }
 
-                    Column(
+                    Box(
                         modifier = Modifier
+                            .width(cardRenderedW)
+                            .height(cardRenderedH)
                             .align(Alignment.Center)
-                            .padding(bottom = 30.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .offset(y = cardOffsetY)
                     ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
                         // 🌟 요약글 생성 중(processingState 존재)일 때는 로딩 UI를 표시합니다.
                         if (uiState.processingState != null) {
                             GoalLoadingScreen(
@@ -283,120 +302,71 @@ fun HomeScreen(
                                 backgroundColor = Color.Transparent,
                                 progressPadding = 30.dp
                             )
-                        } else {
+                        }
+                        else {
                             // 🌟 기존 음식 이미지 및 말풍선 Box 로직
                             Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.70f)
+                                    .aspectRatio(1f),
                                 contentAlignment = Alignment.Center
                             ) {
-                                // 1. 하단 레이어 (공간을 차지하는 메인 콘텐츠)
+
                                 BouncingImage(foodRes) {
-                                    val latestQuery = currentUiState.summaryQuery
-                                    when (uiState.snackState) {
-                                        SnackState.Available -> {
-                                            val intent = Intent(
-                                                activity,
-                                                SummaryActivity::class.java
-                                            ).apply {
-                                                putExtra(
-                                                    SummaryArgs.KEY_GOAL_ID,
-                                                    latestQuery.goalId
-                                                )
-                                                putExtra(
-                                                    SummaryArgs.KEY_GOAL_TYPE,
-                                                    latestQuery.goalType.name
-                                                )
-                                                putExtra(
-                                                    SummaryArgs.KEY_DOCUMENT_ID,
-                                                    latestQuery.documentId
-                                                )
-                                                putExtra(
-                                                    SummaryArgs.KEY_CATEGORY_ID,
-                                                    latestQuery.categoryId
-                                                )
+                                        val latestQuery = currentUiState.summaryQuery
+                                        when (uiState.snackState) {
+                                            SnackState.Available -> {
+                                                val intent = Intent(
+                                                    activity,
+                                                    SummaryActivity::class.java
+                                                ).apply {
+                                                    putExtra(
+                                                        SummaryArgs.KEY_GOAL_ID,
+                                                        latestQuery.goalId
+                                                    )
+                                                    putExtra(
+                                                        SummaryArgs.KEY_GOAL_TYPE,
+                                                        latestQuery.goalType.name
+                                                    )
+                                                    putExtra(
+                                                        SummaryArgs.KEY_DOCUMENT_ID,
+                                                        latestQuery.documentId
+                                                    )
+                                                    putExtra(
+                                                        SummaryArgs.KEY_CATEGORY_ID,
+                                                        latestQuery.categoryId
+                                                    )
+                                                }
+                                                activity.startActivity(intent)
                                             }
-                                            activity.startActivity(intent)
-                                        }
 
-                                        is SnackState.Consumed -> {
-                                            if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
-                                                viewModel.openAdModal()
-                                            }
-                                        }
-
-                                        SnackState.Expired -> {
-                                            Toast.makeText(
-                                                activity,
-                                                "학습 기간이 만료된 목표입니다.",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-
-                                        SnackState.Completed -> {
-                                            Toast.makeText(
-                                                activity,
-                                                "학습을 완료한 목표입니다.",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-
-                                    }
-                                }
-
-                                // 🌟 수정된 말풍선 로직
-                                if (isConsumedTodayGoal && bubbleScale > 0f) {
-                                    // 퀴즈를 더 풀 수 있는 상태인지 확인
-                                    val canPlayMore = uiState.canIssueCoupon || uiState.cupponCount > 0
-
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopCenter)
-                                            .offset(x = 0.dp, y = (-70).dp)
-                                            .zIndex(1f)
-                                            .graphicsLayer {
-                                                scaleX = bubbleScale
-                                                scaleY = bubbleScale
-                                                transformOrigin = TransformOrigin(0.8f, 0f)
-                                                alpha = if (bubbleScale > 0.3f) 1f else 0f
-                                            }
-                                    ) {
-                                        GlowingSpeechBubble(
-                                            // 상태에 따른 텍스트 분기
-                                            text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
-                                            onClick = {
-                                                if (canPlayMore) {
+                                            is SnackState.Consumed -> {
+                                                if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
                                                     viewModel.openAdModal()
-                                                } else {
-                                                    // 더 이상 못 푸는 경우 토스트 알림
-                                                    Toast.makeText(activity, "오늘 준비된 퀴즈를 모두 완료했어요!", Toast.LENGTH_SHORT).show()
                                                 }
                                             }
-                                        )
-                                    }
-                                }
 
-                                // 2. 최상단 오버레이 레이어 (말풍선)
-                                if (isConsumedTodayGoal && bubbleScale > 0f) {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopCenter)
-                                            .offset(x = 0.dp, y = (-70).dp)
-                                            .zIndex(1f)
-                                            .graphicsLayer {
-                                                scaleX = bubbleScale
-                                                scaleY = bubbleScale
-                                                transformOrigin = TransformOrigin(0.8f, 0f)
-                                                alpha = if (bubbleScale > 0.3f) 1f else 0f
+                                            SnackState.Expired -> {
+                                                Toast.makeText(
+                                                    activity,
+                                                    "학습 기간이 만료된 목표입니다.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
                                             }
-                                    ) {
-                                        GlowingSpeechBubble(
-                                            text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
-                                            onClick = { viewModel.openAdModal() }
-                                        )
+
+                                            SnackState.Completed -> {
+                                                Toast.makeText(
+                                                    activity,
+                                                    "학습을 완료한 목표입니다.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+
+                                        }
                                     }
-                                }
                             }
 
-                            Spacer(modifier = Modifier.height(50.dp))
+                            Spacer(modifier = Modifier.height(40.dp))
 
                             // 안내 문구
                             when (snackState) {
@@ -439,109 +409,34 @@ fun HomeScreen(
                                 }
                             }
                         }
-                    }
+                        } // Column
 
-                    /*Column(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(bottom = 30.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-
-                        // 🌟 레이아웃 밀림 방지: Box를 사용하여 메인 이미지와 말풍선을 겹치게 만듭니다.
-                        Box(
-                            contentAlignment = Alignment.Center // 내부 요소를 기본적으로 중앙 정렬
-                        ) {
-
-                            // 1. 하단 레이어 (공간을 차지하는 메인 콘텐츠)
-                            BouncingImage(foodRes) {
-                                val latestQuery = currentUiState.summaryQuery
-                                Log.d("Debug_Summary", "Current uiState Query: $latestQuery")
-                                when(uiState.snackState){
-                                    SnackState.Available -> {
-                                        val intent = Intent(
-                                            activity,
-                                            SummaryActivity::class.java
-                                        ).apply {
-                                            putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
-                                            putExtra(SummaryArgs.KEY_GOAL_TYPE, latestQuery.goalType.name)
-                                            putExtra(SummaryArgs.KEY_DOCUMENT_ID, latestQuery.documentId)
-                                            putExtra(SummaryArgs.KEY_CATEGORY_ID, latestQuery.categoryId)
-                                        }
-                                        activity.startActivity(intent)
-                                    }
-                                    is SnackState.Consumed -> {
+                        if (isConsumedTodayGoal && bubbleScale > 0f) {
+                            val canPlayMore = uiState.canIssueCoupon || uiState.cupponCount > 0
+                            GlowingSpeechBubble(
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .fillMaxWidth()
+                                    .offset(y = 17.dp)
+                                    .padding(horizontal = 30.dp)
+                                    .zIndex(1f)
+                                    .graphicsLayer {
+                                        scaleX = bubbleScale
+                                        scaleY = bubbleScale
+                                        transformOrigin = TransformOrigin(0.8f, 0f)
+                                        alpha = if (bubbleScale > 0.3f) 1f else 0f
+                                    },
+                                text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
+                                onClick = {
+                                    if (canPlayMore) {
                                         viewModel.openAdModal()
-                                    }
-                                    SnackState.Expired -> {
-                                        Toast.makeText(activity, "기간이 만료된 목표입니다.", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(activity, "오늘 준비된 퀴즈를 모두 완료했어요!", Toast.LENGTH_SHORT).show()
                                     }
                                 }
-                            }
-
-                            // 2. 최상단 오버레이 레이어 (레이아웃에 영향을 주지 않고 떠 있는 말풍선)
-                            if (isConsumedTodayGoal && bubbleScale > 0f) {
-                                Box(
-                                    modifier = Modifier
-                                        // BouncingImage의 상단을 기준으로 배치
-                                        .align(Alignment.TopCenter)
-
-                                        // 💡 핵심: 공간을 밀어내지 않고 위치만 이동시킵니다!
-                                        // y를 마이너스로 주면 위로 올라갑니다.
-                                        // (말풍선 본체 높이 + 상단 20dp 여백을 고려하여 수치를 적절히 조절하세요. 예: -80.dp)
-                                        // 우측으로 약간 치우치게 하려면 x축 값을 양수로 주면 됩니다. (예: 50.dp)
-                                        .offset(x = 0.dp, y = (-70).dp)
-
-                                        // 무조건 최상단에 그려지도록 보장
-                                        .zIndex(1f)
-
-                                        .graphicsLayer {
-                                            scaleX = bubbleScale
-                                            scaleY = bubbleScale
-                                            // 기준점: 꼬리가 우상단을 향하므로 TransformOrigin(0.8f, 0f) 유지
-                                            transformOrigin = TransformOrigin(0.8f, 0f)
-                                            alpha = if (bubbleScale > 0.3f) 1f else 0f
-                                        }
-                                ) {
-                                    GlowingSpeechBubble(
-                                        text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
-                                        onClick = {
-                                            viewModel.openAdModal()
-                                        }
-                                    )
-                                }
-                            }
+                            )
                         }
-
-                        Spacer(modifier = Modifier.height(50.dp))
-
-                        // 안내 문구 (기존 로직 동일)
-                        when (snackState) {
-                            is SnackState.Available -> {
-                                Text(
-                                    "오늘의 냠냠지식이 \n도착했어요!",
-                                    style = MaterialTheme.appTypography.titleBold22,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                            is SnackState.Consumed -> {
-                                Text(
-                                    "오늘의 지식을\n다 먹었어요!",
-                                    style = MaterialTheme.appTypography.titleBold22,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-
-                            is SnackState.Expired -> {
-                                Text(
-                                    "목표 기간이 종료되었어요",
-                                    style = MaterialTheme.appTypography.titleBold22,
-                                    textAlign = TextAlign.Center,
-                                )
-                            }
-                        }
-                    }*/
+                    } // Box
 
                     // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
                     AdCouponDialog(
@@ -642,6 +537,7 @@ fun HomeScreen(
                                     title = "풀고 있는 틈틈잇이 없어요",
                                     body = "먹을 간식이 없어요!\n새로운 지식을 먹여줄래요?",
                                     primaryButtonText = "진행중인 틈틈잇 선택하기",
+                                    isPrimaryBtnEnabled = uiState.hasRunningGoal,
                                     secondaryButtonText = "새로운 틈틈잇 시작하기",
                                     isVerticalButtons = true,
                                     onPrimaryClick = {

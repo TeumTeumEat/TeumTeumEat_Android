@@ -52,7 +52,7 @@ class QuizViewModel @Inject constructor(
     }
 
     /**
-     * 퀴즈 완료를 눌렀을 때 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가 API 호출
+     * 퀴즈 완료를 API 호출 시 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가 API 호출됨
      */
     private fun completeCurrentQuizSet() {
         viewModelScope.launch {

@@ -37,6 +37,7 @@ data class AppTypography(
 
     // body
     val bodyMedium16: TextStyle,
+    val bodyMedium16_h22: TextStyle,
     val bodyMedium14: TextStyle,
     val bodyMedium14_20: TextStyle,
 
@@ -65,6 +66,7 @@ data class AppTypography(
 
     val titleSemiBold32: TextStyle,
     val btnMedium18_h24: TextStyle,
+    val btnMedium18_h22: TextStyle,
     val rodies_body_40: TextStyle,
 )
 
@@ -135,6 +137,11 @@ val DefaultAppTypography = AppTypography(
     bodyMedium16 = BaseTextStyle.copy(
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
+    ),
+    bodyMedium16_h22 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Medium,
+        fontSize = 16.sp,
+        lineHeight = 22.sp,
     ),
     bodyMedium14 = BaseTextStyle.copy(
         fontWeight = FontWeight.Medium,
@@ -221,6 +228,11 @@ val DefaultAppTypography = AppTypography(
         fontWeight = FontWeight.Medium,
         fontSize = 18.sp,
         lineHeight = 24.sp,
+    ),
+    btnMedium18_h22 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Medium,
+        fontSize = 18.sp,
+        lineHeight = 22.sp,
     ),
 
     rodies_body_40 = RodiesTextStyle.copy(

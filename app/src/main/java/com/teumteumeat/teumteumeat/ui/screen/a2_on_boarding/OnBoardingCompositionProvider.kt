@@ -3,38 +3,32 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.teumteumeat.teumteumeat.ui.component.CustomProgressBar
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.teumteumeat.teumteumeat.ui.component.FlowTopProgressBar
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
-import com.teumteumeat.teumteumeat.ui.component.SizeAnimationInvisible
 import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalOnBoardingMainUiState
@@ -50,14 +44,6 @@ private fun openNotificationSetting(activity: Activity) {
     activity.startActivity(intent)
 }
 
-private val disablePrevPageRoutes = setOf(
-    OnBoardingScreens.SixthCategorySelectScreen.route,
-    OnBoardingScreens.SixthFileUploadScreen.route,
-    OnBoardingScreens.EighthSetStudyRangeScreen.route,
-    OnBoardingScreens.CheckSetMyInfoScreen.route,
-    // 필요하면 추가
-)
-
 @Composable
 fun OnBoardingCompositionProvider(
     viewModel: OnBoardingViewModel,
@@ -72,9 +58,8 @@ fun OnBoardingCompositionProvider(
     val backStackEntry by navHostController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    val visibleStates = remember(mainState) {
-        mutableStateListOf(false, false, false)
-    }
+    val visibleStates = remember { mutableStateListOf(false, false, false) }
+    var isAnimationComplete by remember { mutableStateOf(false) }
 
     CompositionLocalProvider(
         LocalAppContext provides context,
@@ -83,20 +68,34 @@ fun OnBoardingCompositionProvider(
         LocalViewModelContext provides viewModel,
     ) {
 
-        // ✅ Loading 상태일 때 물리 뒤로가기 차단
-        BackHandler(
-            enabled = mainState is UiStateOnboardingScreenState.Loading
-        ) {
-            // 아무것도 하지 않음 = 뒤로가기 무시
+        val isInLoadingPhase = mainState is UiStateOnboardingScreenState.Loading ||
+                (mainState is UiStateOnboardingScreenState.Success && !isAnimationComplete)
+
+        // ✅ 로딩 또는 최소 대기 중 물리 뒤로가기 차단
+        BackHandler(enabled = isInLoadingPhase) {
+            Log.d("OnBoardingNav", "back 차단 – Loading 중")
         }
 
-        val progress by viewModel.progress.collectAsStateWithLifecycle()
+        // ✅ NavHost 내부 BackHandler가 popBackStack()을 먼저 처리하므로,
+        // currentRoute 변경을 관찰해 currentScreen(→ currentPage)을 동기화한다.
+        // 기존 BackHandler에서 navigateTo를 호출하던 방식은 NavHost BackHandler보다
+        // 낮은 우선순위로 인해 실행되지 않았음.
+        LaunchedEffect(currentRoute) {
+            val screen = OnBoardingScreens.fromRoute(currentRoute) ?: return@LaunchedEffect
+            Log.d(
+                "OnBoardingNav",
+                "route 변경: $currentRoute → ${screen::class.simpleName}, page=${
+                    OnBoardingFlow.currentPage(
+                        screen
+                    )
+                }"
+            )
+            viewModel.navigateTo(screen)
+        }
 
 
-        when (mainState) {
-
-            UiStateOnboardingScreenState.Loading -> {
-
+        when {
+            isInLoadingPhase -> {
                 LaunchedEffect(Unit) {
                     visibleStates.forEachIndexed { index, _ ->
                         delay(300)
@@ -105,20 +104,18 @@ fun OnBoardingCompositionProvider(
                 }
 
                 OnBoardingLoadingScreen(
-                    title = "틈틈잇을 생성하는 중\n" +
-                            "잠시만 기다려주세요",
-                    progress = progress,
                     visibleStates = visibleStates,
-                    isCompletedLoading = true,
+                    isCompletedLoading = mainState is UiStateOnboardingScreenState.Success,
+                    onAnimationComplete = { isAnimationComplete = true },
                 )
             }
 
-            UiStateOnboardingScreenState.Success -> {
+            mainState is UiStateOnboardingScreenState.Success -> {
                 // 온보딩 완료하면 오프라인 플래그값도 변경
                 viewModel.updateOfflineFlag()
 
                 OnBoardingSuccessScreen(
-                    nickname = uiState.charName,
+                    nickname = uiState.serverNickname.ifEmpty { uiState.charName },
                     onStartClick = {
                         Utils.UxUtils.moveActivity(
                             activity,
@@ -129,7 +126,7 @@ fun OnBoardingCompositionProvider(
                 )
             }
 
-            is UiStateOnboardingScreenState.Error -> {
+            mainState is UiStateOnboardingScreenState.Error -> {
                 val error = mainState as UiStateOnboardingScreenState.Error
 
                 FullScreenErrorModal(
@@ -146,28 +143,14 @@ fun OnBoardingCompositionProvider(
                 )
             }
 
-            UiStateOnboardingScreenState.Idle -> {
+            else -> {
                 DefaultMonoBg(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
-                    // 🔔 설정 안내 오버레이
+                    // 🔔 알림 설정 안내 Overlay
                     NotificationSettingGuideOverlay(
                         onConfirm = {
-                            viewModel.openNotificationSetting()
-                        },
-                        onDismiss = {
-                            viewModel.closeNotificationDisableGuide()
-                        },
-                        notificationGuideType = uiState.notificationGuideType,
-                    )
-
-                    /* ------------------------------
-                 * 2️⃣ 알림 설정 안내 Overlay (최상단)
-                 * ------------------------------ */
-                    NotificationSettingGuideOverlay(
-                        onConfirm = {
-                            // 설정으로 이동
                             openNotificationSetting(activity)
                             viewModel.closeNotificationSettingGuide()
                         },
@@ -175,7 +158,6 @@ fun OnBoardingCompositionProvider(
                             viewModel.closeNotificationSettingGuide()
                         },
                         notificationGuideType = uiState.notificationGuideType,
-
                     )
 
 
@@ -185,60 +167,27 @@ fun OnBoardingCompositionProvider(
                             .systemBarsPadding()
                     ) {
 
-                        if (uiState.currentPage > 0) {
-                            Row(
-                                modifier = Modifier.padding(
-                                    horizontal = 24.dp,
-                                ),
-                                horizontalArrangement = Arrangement.SpaceAround,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-
-                                SizeAnimationInvisible(
-                                    isVisible = uiState.currentPage > 0
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            // ✅ 특정 화면에서는 prevPage 비활성화
-                                            if (currentRoute !in disablePrevPageRoutes) {
-                                                viewModel.prevPage()
-                                            }
-
-                                            navHostController.popBackStack()
-                                        },
-
-                                        ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                                            contentDescription = "previous page",
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .padding(0.dp),
-                                        )
-                                    }
-                                }
-
-
-                                CustomProgressBar(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 16.dp),
-                                    currentStep = uiState.currentPage,
-                                    totalSteps = uiState.totalPage,
+                        FlowTopProgressBar(
+                            currentPage = uiState.currentPage,
+                            totalPage = uiState.totalPage,
+                            onBack = {
+                                val prev = OnBoardingScreens.fromRoute(
+                                    navHostController.previousBackStackEntry?.destination?.route
                                 )
-
-
-                                Text(
-                                    "${uiState.currentPage}/${uiState.totalPage}",
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
+                                if (prev != null) viewModel.navigateTo(prev)
+                                navHostController.popBackStack()
+                            },
+                        )
 
                         OnBoardingNavHost(
                             navController = navHostController,
                         )
+
+                        // ✅ NavHost보다 늦게 등록 → 더 높은 우선순위
+                        // 특정 화면에서는 물리 뒤로가기를 차단한다.
+                        /*BackHandler() {
+                            Log.d("OnBoardingNav", "back 차단 – disablePrevPageRoute: $currentRoute")
+                        }*/
                     }
                 }
             }
@@ -247,4 +196,60 @@ fun OnBoardingCompositionProvider(
 
     }
 
+}
+
+// ────────── Previews ──────────
+
+@Preview(showBackground = true, name = "OnBoarding – Idle (진행 중)")
+@Composable
+private fun OnBoardingCompositionProviderIdlePreview() {
+    val fakeState = UiStateOnboardingState(
+        currentScreen = OnBoardingScreens.SelectLearningMethodScreen,
+    )
+    TeumTeumEatTheme {
+        DefaultMonoBg(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding(),
+            ) {
+                FlowTopProgressBar(
+                    currentPage = fakeState.currentPage,
+                    totalPage = fakeState.totalPage,
+                    onBack = {},
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "OnBoarding – Loading")
+@Composable
+private fun OnBoardingCompositionProviderLoadingPreview() {
+    val visibleStates = remember { mutableStateListOf(true, true, false) }
+    TeumTeumEatTheme {
+        OnBoardingLoadingScreen(
+            visibleStates = visibleStates,
+            isCompletedLoading = false,
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "OnBoarding – Error")
+@Composable
+private fun OnBoardingCompositionProviderErrorPreview() {
+    TeumTeumEatTheme {
+        FullScreenErrorModal(
+            errorState = ErrorState(
+                title = "문제가 발생했어요",
+                description = "네트워크 상태를 확인한 후\n다시 시도해주세요.",
+                retryLabel = "다시 시도",
+                onRetry = {},
+            ),
+            onBack = {},
+        )
+    }
 }

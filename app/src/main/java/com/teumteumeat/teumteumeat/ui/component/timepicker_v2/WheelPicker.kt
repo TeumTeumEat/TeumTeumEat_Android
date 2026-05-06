@@ -77,6 +77,7 @@ fun WheelPicker(
     modifier: Modifier = Modifier,
     items: List<String>,
     initialItem: String,
+    cycleSize: Int = items.size,
     pickerHeight: Dp = 150.dp,
     selectedRowShape: Shape = RoundedCornerShape(0.dp),
     onItemSelected: (Int, String) -> Unit = { _, _ -> },
@@ -96,19 +97,6 @@ fun WheelPicker(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(pickerHeight),
-                /*.drawWithContent {
-                    drawContent()
-                    val centerY = size.height / 2f
-                    val rectTop = centerY - (itemHeightPx / 2f)
-                    val rectHeight = itemHeightPx
-                    drawRoundRect(
-                        color = Blue10,
-                        cornerRadius = CornerRadius(8.dp.toPx()),
-                        blendMode = BlendMode.Multiply,
-                        topLeft = Offset(0f, rectTop),
-                        size = Size(size.width, rectHeight)
-                    )
-                },*/
             contentAlignment = Alignment.Center
         ) {
             val availableHeight = this.constraints.maxHeight.toFloat()
@@ -119,11 +107,31 @@ fun WheelPicker(
             }
 
             LaunchedEffect(currentPickerHeightPx) {
-                val targetIndex = items.indexOf(initialItem)
-                val safeTargetIndex = if (targetIndex >= 0) targetIndex else 0
+                // 1. 실제 아이템의 한 주기(Cycle) 크기 계산
+                // 예: meridiemItems는 2개, hourItems는 12개
+                val cycleSize = if (items.size > 50) { // 무한 리스트인 경우 (예: 시, 분)
+                    if (items == infiniteHourItems) 12 else cycleSize
+                } else {
+                    items.size
+                }
 
-                lastSelectedIndex = safeTargetIndex
-                scrollState.scrollToItem(safeTargetIndex)
+                // 2. 리스트의 중간 지점 근처에서 initialItem과 일치하는 인덱스 찾기
+                val baseIndex = items.indexOf(initialItem)
+                if (baseIndex != -1) {
+                    val halfWay = (items.size / 2)
+                    // 중간 지점에서 가장 가까운 주기의 시작점으로 맞춤
+                    val offsetToCenter = halfWay - (halfWay % cycleSize)
+                    val targetIndex = offsetToCenter + (baseIndex % cycleSize)
+
+                    lastSelectedIndex = targetIndex
+                    scrollState.scrollToItem(targetIndex)
+                }
+
+//                val targetIndex = items.indexOf(initialItem)
+//                val safeTargetIndex = if (targetIndex >= 0) targetIndex else 0
+//
+//                lastSelectedIndex = safeTargetIndex
+//                scrollState.scrollToItem(safeTargetIndex)
             }
 
             val pickerHeightDp = with(density) { currentPickerHeightPx.toDp() }

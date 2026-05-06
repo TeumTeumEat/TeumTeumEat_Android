@@ -1,9 +1,11 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
 import android.net.Uri
+import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.AmPm
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.defaultRequestPromptOptions
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 
 sealed class UiStateOnboardingScreenState {
@@ -27,32 +29,35 @@ data class UiStateOnboardingState(
 //    val currentPage: Int = 0,
 //    val totalPage: Int = 5,
 
+    /** 요청 프롬프트 선택지 목록 */
+    val promptOptions: List<RequestPromptOption> = defaultRequestPromptOptions,
+
+    /** 현재 선택된 프롬프트 Id (null = 미선택) */
+    val selectedPromptId: String? = null,
+
     // ⭐ 서버에 보낼 실제 categoryId
     val selectedCategoryId: Int? = null,
 
     val documentId: Int = 0,
     val goalId: Int = 0,
-    val currentScreen: OnBoardingScreens = OnBoardingScreens.FirstScreen,
+    val currentScreen: OnBoardingScreens = OnBoardingScreens.WelcomeScreen,
 
     // 이름 설정
     val charName: String = "",
+    val serverNickname: String = "",
     val errorMessage: String = "",
     val isNameValid: Boolean = false,
     val violation: NameViolation = NameViolation.None,
 
-    val isSetWorkInTime: Boolean = false,
-    val isSetWorkOutTime: Boolean = false,
+    val isSetFirstAlarmTime: Boolean = true,
+    val isSetSecondAlarmTime: Boolean = true,
 
-    // 🔹 출/퇴근 시간 설정
-    val workInTime: TimeState = TimeState.initial(
-        isSelected = isSetWorkInTime
-    ),  // 집에서 나오는 시간
-    val workOutTime: TimeState = TimeState.initial(
-        isSelected = isSetWorkOutTime
-    ), // 집으로 가는 시간
+    // 🔹 알림 시간
+    val workInTime: TimeState = TimeState.firstTime(),  // 1번째 알림 시간
+    val workOutTime: TimeState = TimeState.secondTime(), // 2번째 알림 시간
 
     // ✅ 바텀시트에서 조작 중인 임시 시간
-    val tempTime: TimeState = TimeState.amTime(),
+    val tempTime: TimeState = TimeState.firstTime(),
 
     // 🔹 BottomSheet 상태
     val showBottomSheet: Boolean = false,
@@ -82,13 +87,13 @@ data class UiStateOnboardingState(
     /**
      * 앱 이용시간
      */
-    val selectedMinute: Int? = null,
+    val selectedQuestionCnt: Int = 5,
 
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
 
     // 학습 방법 선택 여부
-    val goalTypeUiState: GoalTypeUiState = GoalTypeUiState.NONE,
+    val goalTypeUiState: GoalTypeUiState = GoalTypeUiState.CATEGORY,
 
     // pdf 학습시 필요한 자료
     val selectedFileUri: Uri? = null,
@@ -96,7 +101,7 @@ data class UiStateOnboardingState(
     val selectedFileMimeType: String = "",
     val selectedFileSize: Long = 0L,
 
-    val presignedUrl: String? = null,
+    val preSignedUrl: String? = null,
     val fileKey: String? = null,
 
     // 카테고리 명 리스트
@@ -113,7 +118,7 @@ data class UiStateOnboardingState(
     val pageErrorMessage: String? = null,
     val isSessionExpired: Boolean = false,
 
-    val difficulty: Difficulty = Difficulty.NONE,
+    val difficulty: Difficulty = Difficulty.MEDIUM,
 
     val bottomSheetType: BottomSheetType = BottomSheetType.NONE,
 
@@ -121,20 +126,20 @@ data class UiStateOnboardingState(
     val promptInput: String = "",
     val promptInputErrMsg: String? = null,
 
-    val studyPeriod: Int? = null,
+    val studyPeriod: Int? = 1,
     val endDate: String = "",
 ){
     val currentPage: Int
         get() = OnBoardingFlow.currentPage(currentScreen)
 
     val totalPage: Int
-        get() = OnBoardingFlow.totalCount
+        get() = OnBoardingFlow.MAX_PAGE_INDEX
 
     val canGoBack: Boolean
         get() = currentPage > 1
 
     val isCategorySelectionComplete: Boolean
-        get() = targetCategoryPage == 2
+        get() = targetCategoryPage == 3
                 && categorySelection.depth4 != null
                 && selectedCategoryId != null
 }
@@ -161,6 +166,7 @@ sealed interface BottomSheetType {
     data object NONE : BottomSheetType
     data object DIFFICULTY : BottomSheetType
     data object TIME : BottomSheetType
+    data object PROMPT: BottomSheetType
 }
 
 data class CategorySelectionState(

@@ -28,6 +28,7 @@ fun BouncingImage(
         painter = painterResource(id = foodRes),
         contentDescription = "음식 이미지",
         modifier = Modifier
+            .fillMaxSize()
             // 2. 현재 애니메이션 값 적용
             .scale(scale.value)
             // 3. 터치 이벤트 처리

@@ -29,6 +29,7 @@ fun BaseModal(
     primaryButtonText: String,
     secondaryButtonText: String? = null,
     onPrimaryClick: () -> Unit,
+    isPrimaryBtnEnabled: Boolean = true,
     onSecondaryClick: (() -> Unit)? = null,
     isPrimaryBtnFillSecondary: Boolean = false,
     isVerticalButtons: Boolean = false, // ✅ 버튼 상하 정렬 옵션 추가
@@ -93,6 +94,7 @@ fun BaseModal(
                         BaseFillButton(
                             text = primaryButtonText,
                             modifier = Modifier.fillMaxWidth(),
+                            isEnabled = isPrimaryBtnEnabled,
                             conerRadius = 16.dp,
                             onClick = onPrimaryClick,
                         )
@@ -113,6 +115,7 @@ fun BaseModal(
                         BaseFillButton(
                             text = primaryButtonText,
                             modifier = Modifier.weight(1f),
+                            isEnabled = isPrimaryBtnEnabled,
                             conerRadius = 16.dp,
                             onClick = onPrimaryClick,
                         )
