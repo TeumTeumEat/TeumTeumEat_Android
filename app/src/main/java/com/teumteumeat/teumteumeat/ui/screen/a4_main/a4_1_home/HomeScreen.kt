@@ -125,7 +125,7 @@ fun HomeScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    viewModel.loadHomeState()
+                    viewModel.checkDateChangeOnResume()
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
