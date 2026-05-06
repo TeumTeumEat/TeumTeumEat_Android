@@ -103,9 +103,9 @@ fun OnBoardingCompositionProvider(
                     }
                 }
 
-                OnBoardingLoadingScreen(
+                SubmitLoadingScreen(
                     visibleStates = visibleStates,
-                    isCompletedLoading = mainState is UiStateOnboardingScreenState.Success,
+                    isCompletedLoading = true,
                     onAnimationComplete = { isAnimationComplete = true },
                 )
             }
@@ -231,7 +231,7 @@ private fun OnBoardingCompositionProviderIdlePreview() {
 private fun OnBoardingCompositionProviderLoadingPreview() {
     val visibleStates = remember { mutableStateListOf(true, true, false) }
     TeumTeumEatTheme {
-        OnBoardingLoadingScreen(
+        SubmitLoadingScreen(
             visibleStates = visibleStates,
             isCompletedLoading = false,
         )
