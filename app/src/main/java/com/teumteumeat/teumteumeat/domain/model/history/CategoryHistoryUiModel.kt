@@ -15,4 +15,5 @@ data class LearningHistoryUiModel(
     val date: LocalDateTime,
     val dateText: String,
     val domainGoalTypeV1: DomainGoalType_v1,
+    val isCompleted: Boolean,
 )
