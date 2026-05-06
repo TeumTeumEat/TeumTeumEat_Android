@@ -419,29 +419,19 @@ class HomeViewModel @Inject constructor(
                 )
             }
 
-            // 로딩 애니메이션 시작 (10초 동안 차올랐다가 다시 빠지는 무한 루프)
+            // 로딩 애니메이션 시작 (0 → 100% 후 0으로 리셋하여 반복)
             processingJob?.cancel()
             processingJob = launch {
                 var currentProgress = 0f
-                var isIncreasing = true
-                val interval = 50L           // 0.05초마다 부드럽게 업데이트
-                val stepChange = 0.01f        // 업데이트 당 변화량 (약 5초에 100% 도달)
+                val totalDurationMs = 5000f // 한 사이클(0→100%) 소요 시간
+                val interval = 16L          // 프레임 간격 (~60fps)
+                val stepChange = interval / totalDurationMs // 프레임당 증가량
 
                 while (isActive) {
-                    if (isIncreasing) {
-                        currentProgress += stepChange
-                        if (currentProgress >= 1f) {
-                            currentProgress = 1f
-                            isIncreasing = false // 다 차면 감소 모드로 전환
-                        }
-                    } else {
-                        currentProgress -= stepChange
-                        if (currentProgress <= 0f) {
-                            currentProgress = 0f
-                            isIncreasing = true // 다 빠지면 다시 증가 모드로 전환
-                        }
+                    currentProgress += stepChange
+                    if (currentProgress >= 1f) {
+                        currentProgress = 0f // 다 차면 처음부터 다시 시작
                     }
-
                     _uiState.update {
                         it.copy(processingState = ProcessingUiState(progress = currentProgress))
                     }
