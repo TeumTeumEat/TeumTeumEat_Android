@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,7 +66,6 @@ import kotlinx.coroutines.flow.collectLatest
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import kotlin.jvm.java
 
 @Composable
 fun LibraryScreen(
@@ -224,8 +222,8 @@ fun LibraryScreen(
                         ) {
                             CheckBoxCircle(
                                 modifier = Modifier.size(24.dp),
-                                checked = true,
-                                onCheckedChange = {},
+                                checked = uiState.showOnlyInProgress,
+                                onCheckedChange = { viewModel.onToggleInProgressFilter() },
                             )
 
                             Text(
@@ -592,7 +590,8 @@ private fun previewUiStateLibraryTopic() = UiStateLibrary(
                     description = "Kotlin 개요 Kotlin은 안드로이드 개발에 최적화된 언어입니다.",
                     date = java.time.LocalDateTime.now().minusDays(3),
                     dateText = "04.15",
-                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY
+                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY,
+                    isCompleted = false,
                 ),
                 LearningHistoryUiModel(
                     id = 2,
@@ -600,7 +599,8 @@ private fun previewUiStateLibraryTopic() = UiStateLibrary(
                     description = "Kotlin 기초 개념 및 최신 트렌드를 정리합니다.",
                     date = java.time.LocalDateTime.now().minusDays(6),
                     dateText = "04.12",
-                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY
+                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY,
+                    isCompleted = false,
                 ),
             )
         ),
@@ -613,7 +613,8 @@ private fun previewUiStateLibraryTopic() = UiStateLibrary(
                     description = "사용성 평가의 대표 기법인 휴리스틱 평가를 알아봅니다.",
                     date = java.time.LocalDateTime.now().minusDays(10),
                     dateText = "04.08",
-                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY
+                    domainGoalTypeV1 = DomainGoalType_v1.CATEGORY,
+                    isCompleted = true,
                 )
             )
         ),

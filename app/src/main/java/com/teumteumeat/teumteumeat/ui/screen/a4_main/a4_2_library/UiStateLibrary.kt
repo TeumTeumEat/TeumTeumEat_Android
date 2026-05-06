@@ -28,4 +28,6 @@ data class UiStateLibrary(
     val errorMessage: String = "",
 
     val isSolvedToday: Boolean = false,
+
+    val showOnlyInProgress: Boolean = false,
 )

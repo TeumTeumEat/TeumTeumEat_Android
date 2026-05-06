@@ -27,6 +27,9 @@ class LibraryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiStateLibrary>(UiStateLibrary())
     val uiState = _uiState.asStateFlow()
 
+    private var allCategoryHistories: List<com.teumteumeat.teumteumeat.domain.model.history.CategoryHistoryUiModel> =
+        emptyList()
+
 
     init {
         viewModelScope.launch {
@@ -192,8 +195,15 @@ class LibraryViewModel @Inject constructor(
             when (val result = historyRepository.getCategoryHistories()) {
 
                 is ApiResultV2.Success -> {
-                    _uiState.update {
-                        it.copy(categoryHistories = result.data)
+                    allCategoryHistories = result.data
+                    _uiState.update { state ->
+                        state.copy(
+                            categoryHistories = if (state.showOnlyInProgress) {
+                                result.data.filter { category -> category.histories.none { it.isCompleted } }
+                            } else {
+                                result.data
+                            }
+                        )
                     }
                 }
 
@@ -213,6 +223,21 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+
+    fun onToggleInProgressFilter() {
+        val newValue = !_uiState.value.showOnlyInProgress
+        _uiState.update { state ->
+            state.copy(
+                showOnlyInProgress = newValue,
+                categoryHistories = if (newValue) {
+                    allCategoryHistories.filter { category -> category.histories.none { it.isCompleted } }
+                } else {
+                    allCategoryHistories
+                },
+                selectedCategoryName = null,
+            )
+        }
+    }
 
     fun onClickCategory(categoryName: String) {
         _uiState.update { state ->
