@@ -41,7 +41,8 @@ class HistoryRepositoryImpl @Inject constructor(
                                     description = history.summarySnippet,
                                     date = LocalDateTime.parse(history.lastStudiedAt),
                                     dateText = history.lastStudiedAt.toMMdd(),
-                                    domainGoalTypeV1 = DomainGoalType_v1.valueOf(history.type.toString())
+                                    domainGoalTypeV1 = DomainGoalType_v1.valueOf(history.type.toString()),
+                                    isCompleted = history.isCompleted,
                                 )
                             }
                         )
