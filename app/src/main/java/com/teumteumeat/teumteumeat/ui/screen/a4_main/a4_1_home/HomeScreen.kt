@@ -12,15 +12,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -125,7 +125,7 @@ fun HomeScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    viewModel.loadHomeState()
+                    viewModel.checkDateChangeOnResume()
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
@@ -233,6 +233,7 @@ fun HomeScreen(
             UiScreenState.Idle, UiScreenState.Loading -> {
                 if (uiState.processingState != null) {
                     GoalLoadingScreen(
+                        modifier = Modifier.padding(bottom = bottomPadding),
                         title = uiState.loadingTitle,
                         message = uiState.loadingMessage,
                         progress = uiState.processingState.progress
@@ -240,6 +241,7 @@ fun HomeScreen(
 
                 } else {
                     LoadingScreen(
+                        modifier = Modifier.padding(bottom = bottomPadding),
                         title = "홈화면 로딩중",
                         backgroundColor = theme.backSurface,
                         message = uiState.loadingMessage,
@@ -293,17 +295,7 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
 
-                        // 🌟 요약글 생성 중(processingState 존재)일 때는 로딩 UI를 표시합니다.
-                        if (uiState.processingState != null) {
-                            GoalLoadingScreen(
-                                title = uiState.loadingTitle,
-                                message = uiState.loadingMessage,
-                                progress = uiState.processingState.progress,
-                                backgroundColor = Color.Transparent,
-                                progressPadding = 30.dp
-                            )
-                        }
-                        else {
+                            if (uiState.processingState == null) {
                             // 🌟 기존 음식 이미지 및 말풍선 Box 로직
                             Box(
                                 modifier = Modifier
@@ -313,57 +305,57 @@ fun HomeScreen(
                             ) {
 
                                 BouncingImage(foodRes) {
-                                        val latestQuery = currentUiState.summaryQuery
-                                        when (uiState.snackState) {
-                                            SnackState.Available -> {
-                                                val intent = Intent(
-                                                    activity,
-                                                    SummaryActivity::class.java
-                                                ).apply {
-                                                    putExtra(
-                                                        SummaryArgs.KEY_GOAL_ID,
-                                                        latestQuery.goalId
-                                                    )
-                                                    putExtra(
-                                                        SummaryArgs.KEY_GOAL_TYPE,
-                                                        latestQuery.goalType.name
-                                                    )
-                                                    putExtra(
-                                                        SummaryArgs.KEY_DOCUMENT_ID,
-                                                        latestQuery.documentId
-                                                    )
-                                                    putExtra(
-                                                        SummaryArgs.KEY_CATEGORY_ID,
-                                                        latestQuery.categoryId
-                                                    )
-                                                }
-                                                activity.startActivity(intent)
+                                    val latestQuery = currentUiState.summaryQuery
+                                    when (uiState.snackState) {
+                                        SnackState.Available -> {
+                                            val intent = Intent(
+                                                activity,
+                                                SummaryActivity::class.java
+                                            ).apply {
+                                                putExtra(
+                                                    SummaryArgs.KEY_GOAL_ID,
+                                                    latestQuery.goalId
+                                                )
+                                                putExtra(
+                                                    SummaryArgs.KEY_GOAL_TYPE,
+                                                    latestQuery.goalType.name
+                                                )
+                                                putExtra(
+                                                    SummaryArgs.KEY_DOCUMENT_ID,
+                                                    latestQuery.documentId
+                                                )
+                                                putExtra(
+                                                    SummaryArgs.KEY_CATEGORY_ID,
+                                                    latestQuery.categoryId
+                                                )
                                             }
-
-                                            is SnackState.Consumed -> {
-                                                if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
-                                                    viewModel.openAdModal()
-                                                }
-                                            }
-
-                                            SnackState.Expired -> {
-                                                Toast.makeText(
-                                                    activity,
-                                                    "학습 기간이 만료된 목표입니다.",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-
-                                            SnackState.Completed -> {
-                                                Toast.makeText(
-                                                    activity,
-                                                    "학습을 완료한 목표입니다.",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-
+                                            activity.startActivity(intent)
                                         }
+
+                                        is SnackState.Consumed -> {
+                                            if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
+                                                viewModel.openAdModal()
+                                            }
+                                        }
+
+                                        SnackState.Expired -> {
+                                            Toast.makeText(
+                                                activity,
+                                                "학습 기간이 만료된 목표입니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+
+                                        SnackState.Completed -> {
+                                            Toast.makeText(
+                                                activity,
+                                                "학습을 완료한 목표입니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+
                                     }
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(40.dp))
@@ -411,7 +403,7 @@ fun HomeScreen(
                         }
                         } // Column
 
-                        if (isConsumedTodayGoal && bubbleScale > 0f) {
+                        if (isConsumedTodayGoal && bubbleScale > 0f && uiState.processingState == null) {
                             val canPlayMore = uiState.canIssueCoupon || uiState.cupponCount > 0
                             GlowingSpeechBubble(
                                 modifier = Modifier
@@ -437,6 +429,20 @@ fun HomeScreen(
                             )
                         }
                     } // Box
+
+                    // 🌟 요약글 생성 중 전체화면 오버레이 (카드 Box 밖 BoxWithConstraints 레벨)
+                    // windowInsetsPadding(systemBars) 가 전체화면 컨텍스트에서 올바르게 동작하도록 이동
+                    if (uiState.processingState != null) {
+                        GoalLoadingScreen(
+                            modifier = Modifier
+                                .align(Alignment.Center),
+                            title = uiState.loadingTitle,
+                            message = uiState.loadingMessage,
+                            progress = uiState.processingState.progress,
+                            backgroundColor = Color.Transparent,
+                            progressPadding = 30.dp
+                        )
+                    }
 
                     // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
                     AdCouponDialog(
