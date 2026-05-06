@@ -182,7 +182,8 @@ class QuizResultViewModel @Inject constructor(
     }
 
     private suspend fun setDocumentSummaryId(goalId: Long, documentId: Long) {
-        when (val result = pdfDocumentRepository.getPdfDocumentSummaryId(goalId.toInt(), documentId.toInt())) {
+        when (val result =
+            pdfDocumentRepository.getPdfDocumentSummaryId(goalId.toInt(), documentId.toInt())) {
             is ApiResultV2.Success -> {
                 val data = result.data
 

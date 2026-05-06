@@ -2,7 +2,7 @@ name: PR Auto Summary
 
 on:
   pull_request:
-    types: [opened, labeled]
+    types: [labeled]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -17,7 +17,7 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event.action == 'labeled' && github.event.label.name == 'ai-generated') ||
-      (github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'ai-generated'))
+      (github.event.label.name == 'ai-generated')
     permissions:
       pull-requests: write
       contents: read

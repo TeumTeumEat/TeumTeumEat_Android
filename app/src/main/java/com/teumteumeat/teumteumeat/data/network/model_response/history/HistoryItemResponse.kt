@@ -11,4 +11,5 @@ data class HistoryItemResponse(
     val title: String,
     val summarySnippet: String,
     val lastStudiedAt: String,
+    val isCompleted: Boolean,
 )
