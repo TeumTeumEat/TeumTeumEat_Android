@@ -24,8 +24,14 @@ import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.ui.component.AmPm
 import dagger.hilt.android.EntryPointAccessors
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import java.io.FileInputStream
 import java.time.LocalDate
@@ -149,7 +155,14 @@ class Utils {
 
     object UiUtils{
 
+        private class NoRippleInteractionSource : MutableInteractionSource {
+            override val interactions: Flow<Interaction> = emptyFlow()
+            override suspend fun emit(interaction: Interaction) {}
+            override fun tryEmit(interaction: Interaction) = true
+        }
 
+        @Composable
+        fun noRipple(): MutableInteractionSource = remember { NoRippleInteractionSource() }
 
         fun formatTestTime(timeTaken: Int, examDuration: Int = 0): String {
             val showedTimeSecond = if( examDuration == 0) timeTaken else examDuration - timeTaken
