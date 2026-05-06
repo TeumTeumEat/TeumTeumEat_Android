@@ -14,22 +14,22 @@ import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.teumteumeat.teumteumeat.BuildConfig
+import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.data.network.model_response.CategoryDocument
+import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
-import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
+import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.CategoryDocument
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.*
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.Error
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
 import com.teumteumeat.teumteumeat.utils.manager.ad.RewardedAdManager
 import com.teumteumeat.teumteumeat.utils.monitor.NetworkConnection
@@ -82,11 +82,13 @@ class HomeViewModel @Inject constructor(
     // 서버에서 받은 goal 캐싱 (SnackState 계산용)
     private var cachedGoal: UserGoal? = null
 
+    // 음식 이미지 변경 시점 추적: 목표 변경 또는 일일 지식 교체 시에만 setRandomFood() 호출
+    private var lastKnownGoalId: Long = Long.MIN_VALUE
+
     private var processingJob: Job? = null
 
     init {
         // 실제 앱 구동 시에만 리시버 등록
-        // 만료된 목표일 때 만
         setupDateChangeReceiver()
 
         // ✅ 1. 네트워크 상태 감지 시작
@@ -96,6 +98,10 @@ class HomeViewModel @Inject constructor(
         observeAdStatus()
 
         loadHomeState()
+        // init에서 loadHomeState()를 실행했으므로 오늘 날짜를 기록해 둡니다.
+        // ON_RESUME이 이어서 발생해도 같은 날이면 checkDateChangeOnResume()이 건너뜁니다.
+        lastDate = LocalDate.now().toString()
+
         // 2. 목표 변경 리프래시 시그널 감지
         viewModelScope.launch {
             // 목표를 완료하고 돌아왔을 때도 loadHomeState() 호출 되는지 확인
@@ -329,9 +335,10 @@ class HomeViewModel @Inject constructor(
     internal fun setupDateChangeReceiver() {
 
         dateChangeReceiver.setOnDateChangedListener {
-            // 💡 자정이 되면 서버에 현재 상태(쿠폰, 생성 여부 등)를 다시 물어봅니다.
-            // 서버가 날짜 변경을 판단하여 hasCreatedToday = false를 줄 것입니다.
-            loadHomeState() // 날짜 변경 시 실행할 비즈니스 로직
+            // 날짜가 바뀌었으므로 lastDate를 갱신합니다.
+            // 앱이 포그라운드로 돌아올 때 ON_RESUME이 발생해도 날짜가 같으면 중복 호출되지 않습니다.
+            lastDate = LocalDate.now().toString()
+            loadHomeState()
         }
 
         val filter = IntentFilter().apply {
@@ -407,34 +414,24 @@ class HomeViewModel @Inject constructor(
             _screenState.value = UiScreenState.Loading
             _uiState.update {
                 it.copy(
-                    loadingTitle = "새로운 퀴즈를 만들고 있어요!",
+                    loadingTitle = "새로운 요약글을 만들고 있어요!",
                     loadingMessage = "잠시만 기다려주세요."
                 )
             }
 
-            // 로딩 애니메이션 시작 (10초 동안 차올랐다가 다시 빠지는 무한 루프)
+            // 로딩 애니메이션 시작 (0 → 100% 후 0으로 리셋하여 반복)
             processingJob?.cancel()
             processingJob = launch {
                 var currentProgress = 0f
-                var isIncreasing = true
-                val interval = 50L           // 0.05초마다 부드럽게 업데이트
-                val stepChange = 0.01f        // 업데이트 당 변화량 (약 5초에 100% 도달)
+                val totalDurationMs = 5000f // 한 사이클(0→100%) 소요 시간
+                val interval = 16L          // 프레임 간격 (~60fps)
+                val stepChange = interval / totalDurationMs // 프레임당 증가량
 
                 while (isActive) {
-                    if (isIncreasing) {
-                        currentProgress += stepChange
-                        if (currentProgress >= 1f) {
-                            currentProgress = 1f
-                            isIncreasing = false // 다 차면 감소 모드로 전환
-                        }
-                    } else {
-                        currentProgress -= stepChange
-                        if (currentProgress <= 0f) {
-                            currentProgress = 0f
-                            isIncreasing = true // 다 빠지면 다시 증가 모드로 전환
-                        }
+                    currentProgress += stepChange
+                    if (currentProgress >= 1f) {
+                        currentProgress = 0f // 다 차면 처음부터 다시 시작
                     }
-
                     _uiState.update {
                         it.copy(processingState = ProcessingUiState(progress = currentProgress))
                     }
@@ -468,40 +465,37 @@ class HomeViewModel @Inject constructor(
                     // 4. API 응답으로 받은 새로운 문서 ID(documentId)를 Query 객체에 업데이트합니다.
                     //    이를 통해 SummaryActivity 진입 시 올바른 요약글을 조회할 수 있게 합니다.
                     val updatedQuery = when (val data = result.data) {
-                        is CategoryDocument -> {
-                            query.copy(documentId = data.documentId)
-                        }
-
-                        is DocumentSummaryResponse -> {
-                            query.copy(documentId = data.documentId.toLong())
-                        }
-
+                        is CategoryDocument -> query.copy(documentId = data.documentId)
+                        is DocumentSummaryResponse -> query.copy(documentId = data.documentId.toLong())
                         else -> query
                     }
-
                     _uiState.update { it.copy(processingState = null) }
+                    _screenState.value = UiScreenState.Success
                     // 5. 업데이트된 정보를 UI 레이어(HomeScreen)로 전달하여 화면 이동을 수행합니다.
                     onSuccess(updatedQuery)
                 }
 
                 is ApiResultV2.ServerError -> {
-                    if(result.code == "QUIZ-003"){
-                        _uiState.update { it.copy(processingState = null) }
+                    _uiState.update { it.copy(processingState = null) }
+                    _screenState.value = UiScreenState.Success
+                    if (result.code == "QUIZ-003") {
                         onError(result.uiMessage)
                         // 바로 요약글 화면으로 이동하기
                         onSuccess(query)
+                    } else {
+                        onError(result.uiMessage)
                     }
                 }
 
                 is ApiResultV2.SessionExpired -> {
-                    _screenState.value = UiScreenState.Idle
                     _uiState.update { it.copy(processingState = null) }
+                    _screenState.value = UiScreenState.Idle
                     sessionManager.expireSession()
                 }
 
                 else -> {
-                    _screenState.value = UiScreenState.Success
                     _uiState.update { it.copy(processingState = null) }
+                    _screenState.value = UiScreenState.Success
                     // API 호출 실패 시 에러 메시지 전달
                     onError(result.uiMessage)
                 }
@@ -514,7 +508,21 @@ class HomeViewModel @Inject constructor(
         loadHomeState()
     }
 
-    fun setRandomFood() {
+    /**
+     * ON_RESUME 시 호출됩니다.
+     * 날짜가 바뀐 경우에만 loadHomeState()를 실행하여 중복 호출을 방지합니다.
+     * - 같은 날 다른 화면에서 돌아온 경우: refreshSignal이 처리하므로 여기서는 건너뜁니다.
+     * - 자정 이후 앱을 다시 열었는데 DateChangeReceiver가 동작하지 못한 경우(프로세스 종료 등): 여기서 처리합니다.
+     */
+    fun checkDateChangeOnResume() {
+        val today = LocalDate.now().toString()
+        if (lastDate != today) {
+            lastDate = today
+            loadHomeState()
+        }
+    }
+
+    private fun setRandomFood() {
         _uiState.update { currentState ->
             currentState.copy(
                 selectedFoodRes = currentState.foodList.random()
@@ -540,20 +548,11 @@ class HomeViewModel @Inject constructor(
                     cachedGoal = goal
                     Log.d("user's current goal", "${goal}")
 
-                    val goalResult = goalRepository.getUserGoal()
-
-                    if (goalResult is ApiResultV2.Success) {
-                        val goal = goalResult.data
-
-                        // 💡 목표가 만료되었거나 없을 경우 다이얼로그 상태를 true로 유지
-                        if (goal.isExpired || goal.goalId == -1L) {
-                            _uiState.update { it.copy(isShowGoalExpiredDialog = true) }
-                        } else {
-                            _uiState.update { it.copy(isShowGoalExpiredDialog = false) }
-                        }
-                    } else {
-                        // 목표가 아예 없는 에러 상황(404 등)에서도 팝업을 띄워야 함
+                    // 💡 목표가 만료되었거나 없을 경우 다이얼로그 상태를 true로 유지
+                    if (goal.isExpired || goal.goalId == -1L) {
                         _uiState.update { it.copy(isShowGoalExpiredDialog = true) }
+                    } else {
+                        _uiState.update { it.copy(isShowGoalExpiredDialog = false) }
                     }
 
                     // 2️⃣ 오늘 퀴즈 상태 조회
@@ -599,38 +598,17 @@ class HomeViewModel @Inject constructor(
                                 )
                             }
 
+                            // 목표가 변경되었을 때 음식 이미지 교체
+                            if (goal.goalId != lastKnownGoalId) {
+                                lastKnownGoalId = goal.goalId
+                                setRandomFood()
+                            }
+
                             // 시작시 성공 화면에서 가운데 음식 부분에 로딩을 표시한다.
                             _screenState.value = UiScreenState.Success
 
-                            // 리소스 찾을 수 없으면 요약글 다시 생성
-                            // 모든 로딩이 끝난 후 (Success 상태 전환 후)
-                            // 3. 요약글 존재 여부 확인 (조회 API 호출)
+                            // 요약글 조회 후 없으면 자동 생성 (단일 경로)
                             checkSummaryAndHandleMissing(buildSummaryQuery(goal))
-
-                            // 💡 요약글 자동생성 조건
-                            // 오늘 풀지 않았고, 오늘 생성하지 않았고
-                            // 목표가 완료되거나, 만료되지 않았고
-                            // 목표에 생성되어 있는 퀴즈가 0개 일때
-                            val shouldAutoGenerate = !quizStatus.hasCreatedToday &&
-                                    !quizStatus.hasSolvedToday &&
-                                    !goal.isExpired && !goal.isCompleted &&
-                                    quizStatus.availableQuizCount == 0
-
-
-                            if (shouldAutoGenerate) {
-
-                                // 자동 생성 시에도 로딩 화면에 진행 바를 표시하기 위해 loadingTitle 등을 설정
-                                _uiState.update {
-                                    it.copy(
-                                        loadingTitle = "새로운 퀴즈를 만들고 있어요!",
-                                        loadingMessage = "새로운 하루가 시작되어 퀴즈를 준비하고 있어요."
-                                    )
-                                }
-
-                                autoGenerateDailySummary(buildSummaryQuery(goal))
-                            } else {                                // 자동 생성이 필요 없는 경우에만 즉시 Success로 전환
-                                _screenState.value = UiScreenState.Success
-                            }
                         }
 
 

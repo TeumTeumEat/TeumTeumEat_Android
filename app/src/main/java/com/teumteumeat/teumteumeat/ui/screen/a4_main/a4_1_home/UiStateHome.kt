@@ -58,7 +58,7 @@ data class UiStateHome(
 
     // ================= 로딩 상태 관련 =================
     val processingState: com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState? = null,
-    val loadingTitle: String = "새로운 퀴즈를 만들고 있어요!",
+    val loadingTitle: String = "새로운 요약글을 만들고 있어요!",
     val loadingMessage: String = "잠시만 기다려주세요...",
 
     /** 유저가 진행중인 목표를 가지고 있는 여부 */
