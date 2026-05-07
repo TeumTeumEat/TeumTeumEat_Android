@@ -16,8 +16,16 @@ interface PdfDocumentRepository {
      * - 성공 시 presigned 정보 반환
      */
     suspend fun issuePresignedUrl(
-        fileName: String
+        fileName: String,
+        fileSize: Long
     ): ApiResultV2<PresignedResponse>
+
+    /**
+     * 1.5️⃣ URI → ByteArray 읽기
+     * - ContentProvider에서 파일 바이트를 한 번만 읽어 반환
+     * - presigned URL 발급 전 호출하여 fileSize 확정에 사용
+     */
+    suspend fun readFileBytes(uri: Uri): Result<ByteArray>
 
     /**
      * 2️⃣ S3 presigned PUT 업로드
@@ -26,7 +34,7 @@ interface PdfDocumentRepository {
      */
     suspend fun uploadFileToS3(
         presignedUrl: String,
-        uri: Uri,
+        bytes: ByteArray,
         mimeType: String
     ): Result<Unit>
 

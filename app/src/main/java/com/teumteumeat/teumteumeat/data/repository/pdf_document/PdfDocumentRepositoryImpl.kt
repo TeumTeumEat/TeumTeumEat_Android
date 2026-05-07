@@ -2,6 +2,8 @@ package com.teumteumeat.teumteumeat.data.repository.pdf_document
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.document.DocumentApiService
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2 // safeApiVer2가 반환하는 타입
@@ -187,35 +189,50 @@ class PdfDocumentRepositoryImpl @Inject constructor(
     }
 
     override suspend fun issuePresignedUrl(
-        fileName: String
+        fileName: String,
+        fileSize: Long
     ): ApiResultV2<PresignedResponse> {
 
         return safeApiVer2<PresignedResponse, PresignedResponse>(
             apiCall = {
                 documentApiService.issuePresignedUrl(
-                    PresignedRequest(fileName = fileName)
+                    PresignedRequest(fileName = fileName, fileSize = fileSize)
                 )
             },
             // 🔹 수정된 부분: 데이터가 null이면 예외를 던져서 safeApiVer2가 에러로 처리하게 함
             mapper = { it ?: error("서버로부터 Presigned 정보를 받지 못했습니다.") }
-
         )
     }
 
+    override suspend fun readFileBytes(uri: Uri): Result<ByteArray> = withContext(Dispatchers.IO) {
+        runCatching {
+            context.contentResolver.openInputStream(uri)
+                ?.readBytes()
+                ?: throw IllegalStateException("파일을 열 수 없습니다.")
+        }
+    }
 
     override suspend fun uploadFileToS3(
         presignedUrl: String,
-        uri: Uri,
+        bytes: ByteArray,
         mimeType: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
 
-            val inputStream = context.contentResolver.openInputStream(uri)
-                ?: throw IllegalStateException("파일을 열 수 없습니다.")
+            if (BuildConfig.DEBUG) {
+                Log.d("FileSizeDiag", "━━━ [업로드 시점] S3 PUT 요청 ━━━")
+                Log.d("FileSizeDiag", "bytes 크기      : ${bytes.size} bytes (${bytes.size / 1024} KB)")
+            }
 
-            val requestBody = inputStream
-                .readBytes()
-                .toRequestBody(mimeType.toMediaType())
+            val requestBody = bytes.toRequestBody(mimeType.toMediaType())
+
+            if (BuildConfig.DEBUG) {
+                Log.d("FileSizeDiag", "contentLength() : ${requestBody.contentLength()} bytes")
+                if (requestBody.contentLength() == -1L) {
+                    Log.w("FileSizeDiag", "⚠️ contentLength = -1 → Chunked 전송 발생 가능")
+                }
+                Log.d("FileSizeDiag", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            }
 
             val request = Request.Builder()
                 .url(presignedUrl)
@@ -223,6 +240,10 @@ class PdfDocumentRepositoryImpl @Inject constructor(
                 .build()
 
             okHttpClient.newCall(request).execute().use { response ->
+                if (BuildConfig.DEBUG) {
+                    Log.d("FileSizeDiag", "S3 응답 코드: ${response.code}")
+                    Log.d("FileSizeDiag", "S3 응답 메시지: ${response.message}")
+                }
                 if (!response.isSuccessful) {
                     throw IllegalStateException("S3 업로드 실패")
                 }
