@@ -10,12 +10,14 @@ class IssuePresignedUrlUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(
-        fileName: String
+        fileName: String,
+        fileSize: Long
     ): ApiResultV2<PresignedResponse> {
 
         // 🔹 서버에 presigned URL 발급 요청
         return pdfDocumentRepository.issuePresignedUrl(
-            fileName = fileName
+            fileName = fileName,
+            fileSize = fileSize
         )
     }
 }

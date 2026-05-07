@@ -984,6 +984,7 @@ class OnBoardingViewModel @Inject constructor(
 
     fun issuePresignedUrl() {
         val fileName = _uiState.value.selectedFileName
+        val fileSize = _uiState.value.selectedFileSize
         if (fileName.isBlank()) return
 
         viewModelScope.launch {
@@ -994,7 +995,7 @@ class OnBoardingViewModel @Inject constructor(
                 )
             }
 
-            val result = issuePresignedUrlUseCase(fileName)
+            val result = issuePresignedUrlUseCase(fileName, fileSize)
 
             handlePresignedResult(result)
         }

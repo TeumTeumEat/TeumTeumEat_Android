@@ -6,7 +6,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
+import android.util.Log
 import android.widget.Toast
+import com.teumteumeat.teumteumeat.BuildConfig
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -83,6 +85,14 @@ fun FileUploadContent(
         val fileName = context.extractFileName(uri)
         val mimeType = contentResolver.getType(uri) ?: "application/pdf"
         val size = contentResolver.openFileDescriptor(uri, "r")?.statSize ?: 0L
+        if (BuildConfig.DEBUG) {
+            Log.d("FileSizeDiag", "━━━ [선택 시점] 파일 크기 측정 ━━━")
+            Log.d("FileSizeDiag", "URI scheme   : ${uri.scheme}")
+            Log.d("FileSizeDiag", "URI authority: ${uri.authority}")
+            Log.d("FileSizeDiag", "fileName     : $fileName")
+            Log.d("FileSizeDiag", "mimeType     : $mimeType")
+            Log.d("FileSizeDiag", "statSize     : $size bytes (${size / 1024} KB)")
+        }
         onFileSelected(uri, fileName, mimeType, size)
     }
 
