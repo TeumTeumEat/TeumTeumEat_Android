@@ -33,6 +33,8 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
+import androidx.lifecycle.SavedStateHandle
+import com.teumteumeat.teumteumeat.ui.component.AmPm
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
@@ -52,6 +54,7 @@ sealed interface UiEffect {
 
 @HiltViewModel
 class OnBoardingViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     val registerUserNameUseCase: RegisterUserNameUseCase,
     private val getUserNameUseCase: GetUserNameUseCase,
@@ -67,11 +70,30 @@ class OnBoardingViewModel @Inject constructor(
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
-    // 이름 입력 제약조건 부분
+    /**
+     * Process Death 복원용 SavedStateHandle 키.
+     * 저장 대상: 사용자가 직접 입력·선택한 값만 (대용량·임시 데이터 제외).
+     */
     companion object {
         private const val MIN_LENGTH = 1
         private const val MAX_LENGTH = 10
         private val ALLOWED_REGEX = Regex("^[가-힣a-zA-Z0-9]*$")
+
+        private const val KEY_SCREEN         = "ssh_screen_route"
+        private const val KEY_NAME           = "ssh_char_name"
+        private const val KEY_WORK_IN_H      = "ssh_work_in_hour"
+        private const val KEY_WORK_IN_M      = "ssh_work_in_min"
+        private const val KEY_WORK_IN_AP     = "ssh_work_in_ampm"
+        private const val KEY_WORK_OUT_H     = "ssh_work_out_hour"
+        private const val KEY_WORK_OUT_M     = "ssh_work_out_min"
+        private const val KEY_WORK_OUT_AP    = "ssh_work_out_ampm"
+        private const val KEY_QUESTION_CNT   = "ssh_question_cnt"
+        private const val KEY_GOAL_TYPE      = "ssh_goal_type"
+        private const val KEY_DIFFICULTY     = "ssh_difficulty"
+        private const val KEY_STUDY_PERIOD   = "ssh_study_period"   // -1 = null
+        private const val KEY_CATEGORY_ID   = "ssh_category_id"    // -1 = null
+        private const val KEY_PROMPT_INPUT   = "ssh_prompt_input"
+        private const val KEY_AGREEMENT      = "ssh_agreement"
     }
 
     // Flow 값으로 currentPage 읽기
@@ -92,7 +114,57 @@ class OnBoardingViewModel @Inject constructor(
     val effect: SharedFlow<UiEffect> = _effect
 
     init {
+        restoreFromSavedState()
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
+    }
+
+    /**
+     * Process Death 후 SavedStateHandle에서 사용자 입력값을 복원한다.
+     * NavController backstack은 Activity Bundle로 자동 복원되므로 여기서는 ViewModel 데이터만 처리.
+     */
+    private fun restoreFromSavedState() {
+        val route = savedStateHandle.get<String>(KEY_SCREEN) ?: return
+
+        val restoredScreen = OnBoardingScreens.fromRoute(route) ?: return
+
+        val workInTime = TimeState(
+            hour   = savedStateHandle.get<Int>(KEY_WORK_IN_H)  ?: 8,
+            minute = savedStateHandle.get<Int>(KEY_WORK_IN_M)  ?: 0,
+            amPm   = savedStateHandle.get<String>(KEY_WORK_IN_AP)
+                ?.let { runCatching { AmPm.valueOf(it) }.getOrNull() }
+                ?: AmPm.AM
+        )
+        val workOutTime = TimeState(
+            hour   = savedStateHandle.get<Int>(KEY_WORK_OUT_H)  ?: 6,
+            minute = savedStateHandle.get<Int>(KEY_WORK_OUT_M)  ?: 0,
+            amPm   = savedStateHandle.get<String>(KEY_WORK_OUT_AP)
+                ?.let { runCatching { AmPm.valueOf(it) }.getOrNull() }
+                ?: AmPm.PM
+        )
+
+        _uiState.update {
+            it.copy(
+                currentScreen      = restoredScreen,
+                charName           = savedStateHandle.get<String>(KEY_NAME)          ?: it.charName,
+                workInTime         = workInTime,
+                workOutTime        = workOutTime,
+                selectedQuestionCnt = savedStateHandle.get<Int>(KEY_QUESTION_CNT)    ?: it.selectedQuestionCnt,
+                goalTypeUiState    = savedStateHandle.get<String>(KEY_GOAL_TYPE)
+                    ?.let { s -> runCatching { GoalTypeUiState.valueOf(s) }.getOrNull() }
+                    ?: it.goalTypeUiState,
+                difficulty         = savedStateHandle.get<String>(KEY_DIFFICULTY)
+                    ?.let { s -> runCatching { Difficulty.valueOf(s) }.getOrNull() }
+                    ?: it.difficulty,
+                studyPeriod        = savedStateHandle.get<Int>(KEY_STUDY_PERIOD)
+                    ?.takeIf { v -> v != -1 },
+                selectedCategoryId = savedStateHandle.get<Int>(KEY_CATEGORY_ID)
+                    ?.takeIf { v -> v != -1 },
+                promptInput        = savedStateHandle.get<String>(KEY_PROMPT_INPUT)  ?: it.promptInput,
+                isCheckedAgreement = savedStateHandle.get<Boolean>(KEY_AGREEMENT)    ?: it.isCheckedAgreement,
+            )
+        }
+
+        Log.d("OnBoardingVM", "♻️ Process Death 복원 완료 → screen=${restoredScreen.route}")
     }
 
     fun submitOnBoarding() {
@@ -535,6 +607,7 @@ class OnBoardingViewModel @Inject constructor(
         val formattedEndDate = endDate.format(formatter)
 
         // 🔹 4. UI 상태 업데이트
+        savedStateHandle[KEY_STUDY_PERIOD] = week
         _uiState.update {
             it.copy(
                 studyPeriod = week,
@@ -617,6 +690,7 @@ class OnBoardingViewModel @Inject constructor(
 
 
     fun onDifficultySelected(difficulty: Difficulty) {
+        savedStateHandle[KEY_DIFFICULTY] = difficulty.name
         _uiState.update {
             it.copy(
                 difficulty = difficulty,
@@ -815,6 +889,9 @@ class OnBoardingViewModel @Inject constructor(
                 }
             )
         }
+
+        // 선택된 카테고리 ID를 SavedStateHandle에 영속화
+        savedStateHandle[KEY_CATEGORY_ID] = _uiState.value.selectedCategoryId ?: -1
 
         Log.d(
             "OnBoardingVM",
@@ -1049,12 +1126,14 @@ class OnBoardingViewModel @Inject constructor(
 
 
     fun selectLearningMethod(type: GoalTypeUiState) {
+        savedStateHandle[KEY_GOAL_TYPE] = type.name
         _uiState.update {
             it.copy(goalTypeUiState = type)
         }
     }
 
     fun onQuestionCntSelected(questionCnt: Int) {
+        savedStateHandle[KEY_QUESTION_CNT] = questionCnt
         _uiState.update {
             it.copy(selectedQuestionCnt = questionCnt)
         }
@@ -1228,6 +1307,7 @@ class OnBoardingViewModel @Inject constructor(
      * ----------------------------- */
 
     fun onAgreementCheckedChange(checked: Boolean) {
+        savedStateHandle[KEY_AGREEMENT] = checked
         _uiState.update {
             it.copy(isCheckedAgreement = checked)
         }
@@ -1341,7 +1421,15 @@ class OnBoardingViewModel @Inject constructor(
             }
         }
 
+        // 확정된 시간을 SavedStateHandle에 영속화 (Process Death 복원용)
         val after = uiState.value
+        savedStateHandle[KEY_WORK_IN_H]  = after.workInTime.hour
+        savedStateHandle[KEY_WORK_IN_M]  = after.workInTime.minute
+        savedStateHandle[KEY_WORK_IN_AP] = after.workInTime.amPm.name
+        savedStateHandle[KEY_WORK_OUT_H]  = after.workOutTime.hour
+        savedStateHandle[KEY_WORK_OUT_M]  = after.workOutTime.minute
+        savedStateHandle[KEY_WORK_OUT_AP] = after.workOutTime.amPm.name
+
         println("🟡 [confirmTime] END")
         println("🟡 workInTime(after) = ${after.workInTime}")
         println("🟡 workOutTime(after) = ${after.workOutTime}")
@@ -1426,6 +1514,7 @@ class OnBoardingViewModel @Inject constructor(
             }
 
 
+            savedStateHandle[KEY_NAME] = input  // 키 입력 즉시 영속화
             _uiState.update {
                 it.copy(
                     charName = input,
@@ -1517,6 +1606,7 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     fun navigateTo(screen: OnBoardingScreens) {
+        savedStateHandle[KEY_SCREEN] = screen.route  // Process Death 대응: 화면 위치 영속화
         val before = _uiState.value.currentScreen
         Log.d("OnBoardingNav", "navigateTo: ${before::class.simpleName}(page=${OnBoardingFlow.currentPage(before)}) → ${screen::class.simpleName}(page=${OnBoardingFlow.currentPage(screen)})")
         _uiState.update { it.copy(currentScreen = screen) }
@@ -1575,6 +1665,7 @@ class OnBoardingViewModel @Inject constructor(
     fun onConfirmPromptOption() {
         val state = _uiState.value
         val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
+        savedStateHandle[KEY_PROMPT_INPUT] = label
         _uiState.update { it.copy(promptInput = label) }
         closeBottomSheet()
     }
