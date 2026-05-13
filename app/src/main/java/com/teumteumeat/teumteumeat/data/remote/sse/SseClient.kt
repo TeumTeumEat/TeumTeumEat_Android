@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.data.remote.sse
 
+import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -85,7 +86,8 @@ class SseClient @Inject constructor(
             // Flow 취소 시 EventSource 정리
             awaitClose { source.cancel() }
         }.retryWhen { cause, attempt ->
-            val shouldRetry = attempt < MAX_RETRY_COUNT
+            // SseHttpException(4xx/5xx)은 재시도해도 동일한 오류가 반환되므로 즉시 전파.
+            val shouldRetry = attempt < MAX_RETRY_COUNT && cause !is SseHttpException
             if (shouldRetry) {
                 // 지수 백오프: 1000 * 2^attempt ms
                 delay(BASE_DELAY_MS * (1L shl attempt.toInt()))
