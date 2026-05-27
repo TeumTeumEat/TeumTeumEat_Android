@@ -46,7 +46,8 @@ object TeumAnalyticsEvent {
     object LoginFail {
         const val NAME = "login_fail"
         const val PARAM_METHOD = "method"               // "kakao" | "google"
-        const val PARAM_ERROR_CODE = "error_code"       // 서버 코드 or "NETWORK_ERROR" / "UNKNOWN_ERROR"
+        const val PARAM_ERROR_CODE =
+            "error_code"       // 서버 코드 or "NETWORK_ERROR" / "UNKNOWN_ERROR"
         const val PARAM_ERROR_MESSAGE = "error_message" // 서버 메시지 or 예외 메시지 (max 100자)
         const val PARAM_THROWABLE_CLASS = "throwable_class" // UnknownError 전용: 예외 클래스명
 
@@ -87,31 +88,27 @@ object TeumAnalyticsEvent {
     }
 
     /**
-     * Firebase Analytics User Property 키 상수
+     * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
-     * User Property는 이벤트 파라미터와 달리 세션 전반에 유지되어
-     * GA4 Audience · Exploration 보고서에서 **사용자 기준 세분화**에 활용됩니다.
+     * | 파라미터      | 타입   | 예시    | 목적                          |
+     * |--------------|--------|---------|-------------------------------|
+     * | version_code | String | "17"    | 설치/업데이트된 버전 코드 식별 |
+     * | version_name | String | "1.0.17"| 사람이 읽기 쉬운 릴리즈 식별자 |
      *
-     * 규칙:
-     * - 키 최대 24자 (snake_case)
-     * - 값 최대 36자
-     * - 프로젝트당 최대 25개 등록 가능
+     * ## 발생 조건
+     * SharedPreferences에 저장된 마지막 발송 versionCode와 현재 versionCode가
+     * 다를 때만 1회 발송합니다.
+     * - 최초 설치 후 첫 실행 → 이벤트 발송
+     * - 앱 업데이트 후 첫 실행 → 이벤트 발송
+     * - 동일 버전 재시작 → 발송 안 함
+     * - 재설치·데이터 초기화 → 플래그 리셋으로 재발송
      *
-     * ## GA4 필터링 방법
-     * GA4 콘솔 → Audience 빌더 → 조건: `app_version_code` >= 17
-     * Exploration → 사용자 속성 필터: `app_version_code`
-     *
-     * ## 버전코드 정책
-     * - `app_version_code`: versionCode (Long → String 변환하여 저장)
-     *   예) "17", "18", "100"
-     * - `app_version_name`: versionName (예: "1.0.17", "2.0.0")
-     * - 앱 시작 시 [TeumAnalyticsLogger] init 블록에서 자동 설정됨
+     * ## 발생 시점
+     * [TeumAnalyticsLogger] 초기화 시 [TeumAnalyticsLogger.logAppInstallOrUpdateIfNeeded] 호출
      */
-    object UserProperty {
-        /** 버전코드 (Long → String) — GA4 필터링 기준 값 */
-        const val APP_VERSION_CODE = "app_version_code"  // 예: "17"
-
-        /** 버전명 — 사람이 읽기 쉬운 릴리즈 식별자 */
-        const val APP_VERSION_NAME = "app_version_name"  // 예: "1.0.17"
+    object AppInstallOrUpdate {
+        const val NAME = "app_install_or_update"
+        const val PARAM_VERSION_CODE = "version_code"  // 예: "17"
+        const val PARAM_VERSION_NAME = "version_name"  // 예: "1.0.17"
     }
 }
