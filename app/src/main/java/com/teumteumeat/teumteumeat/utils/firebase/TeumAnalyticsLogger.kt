@@ -1,9 +1,11 @@
 package com.teumteumeat.teumteumeat.utils.firebase
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.core.content.edit
 import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -15,11 +17,11 @@ import javax.inject.Singleton
  * - 이벤트 이름/파라미터 키는 [TeumAnalyticsEvent]에서 중앙 관리
  * - ViewModel이 FirebaseAnalytics를 직접 참조하지 않도록 래핑
  * - Android 프레임워크 의존성을 이 계층에서 격리하여 ViewModel 테스트 용이성 확보
- * - 생성 시점에 앱 버전 정보를 User Property로 자동 등록
- *   → GA4 Audience / Exploration에서 버전코드 기준 필터링 가능
+ * - 생성 시점에 설치/업데이트 여부를 확인하여 최초 1회 이벤트 발송
+ *   → 동일 버전 재시작 시에는 이벤트를 발송하지 않음
  *
  * @param analytics Firebase Analytics 인스턴스 (Hilt를 통해 주입)
- * @param context   앱 버전 정보 조회용 ApplicationContext
+ * @param context   앱 버전 정보 조회 및 발송 플래그 저장용 ApplicationContext
  */
 @Singleton
 class TeumAnalyticsLogger @Inject constructor(
@@ -27,48 +29,65 @@ class TeumAnalyticsLogger @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
 
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+
     init {
-        setAppVersionProperties()
+        logAppInstallOrUpdateIfNeeded()
     }
 
     companion object {
         private const val TAG = "TeumAnalytics"
+        private const val PREF_NAME = "analytics_prefs"
+
+        /**
+         * 마지막으로 [TeumAnalyticsEvent.AppInstallOrUpdate] 이벤트를 발송한 versionCode.
+         * 저장된 값과 현재 versionCode가 다를 때만 이벤트를 발송합니다.
+         * - 기본값 -1L: 한 번도 발송한 적 없음 (최초 설치)
+         */
+        private const val KEY_LAST_SENT_VERSION_CODE = "last_sent_version_code"
     }
 
     /**
-     * 앱 버전 정보를 Firebase Analytics User Property로 등록합니다.
+     * 앱 설치 또는 업데이트 후 첫 실행 시 [TeumAnalyticsEvent.AppInstallOrUpdate] 이벤트를 1회 로깅합니다.
      *
-     * | User Property       | 예시    | 목적                            |
-     * |---------------------|---------|----------------------------------|
-     * | app_version_code    | "17"    | 버전코드 기준 Audience 필터링   |
-     * | app_version_name    | "1.0.17"| 릴리즈 식별 (사람이 읽기 쉬운 값)|
+     * ## 발송 조건
+     * SharedPreferences에 저장된 마지막 발송 versionCode와 현재 versionCode가 다를 때만 발송합니다.
      *
-     * - [TeumAnalyticsEvent.UserProperty] 상수로 키 관리
+     * | 시나리오              | 동작         |
+     * |----------------------|--------------|
+     * | 최초 설치 후 첫 실행  | 이벤트 발송  |
+     * | 업데이트 후 첫 실행   | 이벤트 발송  |
+     * | 동일 버전 재실행      | 발송 안 함   |
+     * | 재설치·데이터 초기화  | 이벤트 발송  |
+     *
      * - PackageManager 예외 발생 시 조용히 무시 (Analytics 실패가 앱 크래시 유발 방지)
      * - API 28+ 에서는 [android.content.pm.PackageInfo.getLongVersionCode] 사용
      */
-    private fun setAppVersionProperties() {
+    private fun logAppInstallOrUpdateIfNeeded() {
         try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
 
             @Suppress("DEPRECATION")
-            val versionCode: Long = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val currentVersionCode: Long = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 packageInfo.longVersionCode
             } else {
                 packageInfo.versionCode.toLong()
             }
 
-            analytics.setUserProperty(
-                TeumAnalyticsEvent.UserProperty.APP_VERSION_CODE,
-                versionCode.toString(),
-            )
-            analytics.setUserProperty(
-                TeumAnalyticsEvent.UserProperty.APP_VERSION_NAME,
-                packageInfo.versionName,
-            )
+            val lastSentVersionCode = prefs.getLong(KEY_LAST_SENT_VERSION_CODE, -1L)
+            if (currentVersionCode == lastSentVersionCode) return
+
+            val params = Bundle().apply {
+                putString(TeumAnalyticsEvent.AppInstallOrUpdate.PARAM_VERSION_CODE, currentVersionCode.toString())
+                putString(TeumAnalyticsEvent.AppInstallOrUpdate.PARAM_VERSION_NAME, packageInfo.versionName)
+            }
+            analytics.logEvent(TeumAnalyticsEvent.AppInstallOrUpdate.NAME, params)
+
+            prefs.edit { putLong(KEY_LAST_SENT_VERSION_CODE, currentVersionCode) }
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ setAppVersionProperties 예외 발생 — ${e::class.simpleName}: ${e.message}", e)
+            Log.e(TAG, "❌ logAppInstallOrUpdateIfNeeded 예외 발생 — ${e::class.simpleName}: ${e.message}", e)
         }
     }
 
