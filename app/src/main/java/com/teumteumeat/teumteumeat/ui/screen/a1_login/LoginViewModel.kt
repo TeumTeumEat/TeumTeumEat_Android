@@ -17,7 +17,6 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
-import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -169,6 +168,8 @@ class LoginViewModel @Inject constructor(
 
 
     fun agreeTermsAndRegister() {
+        // 📊 ONB-001: 약관 전체 동의 완료 — 재로그인 요청 직전 전송
+        analyticsLogger.logTermsAgreeComplete()
         // ✅ 어떤 소셜 로그인인지 ViewModel이 이미 알고 있음
         requestSocialLogin(termsAgreed = true)
     }
@@ -210,7 +211,10 @@ class LoginViewModel @Inject constructor(
                 }
 
                 // 📊 login_complete: 소셜 로그인 성공
-                analyticsLogger.logLoginComplete(method = method)
+                // isFirstLogin: 플래그가 아직 저장되지 않은 경우가 첫 번째 로그인
+                val isFirstLogin = !PrefsUtil.isFirstLoginCompleted(context)
+                analyticsLogger.logLoginComplete(method = method, isFirstLogin = isFirstLogin)
+                if (isFirstLogin) PrefsUtil.markFirstLoginCompleted(context)
 
                 saveAuthToken(data)
 
@@ -285,7 +289,7 @@ class LoginViewModel @Inject constructor(
 
             is ApiResultV2.Success -> {
                 if (result.data.completed) {
-                    PrefsUtil.setOnboardingCompleted(getApplication(context), true)
+                    PrefsUtil.setOnboardingCompleted(context, true)
                     _uiEvent.emit(LoginUiEvent.NavigateToMain)
                 } else {
                     _uiEvent.emit(LoginUiEvent.NavigateToOnboarding)
