@@ -33,6 +33,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import androidx.lifecycle.SavedStateHandle
 import com.teumteumeat.teumteumeat.ui.component.AmPm
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -68,6 +69,7 @@ class OnBoardingViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     application: Application,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
 
     /**
@@ -114,7 +116,13 @@ class OnBoardingViewModel @Inject constructor(
     val effect: SharedFlow<UiEffect> = _effect
 
     init {
+        // 📊 ONB-002: 온보딩 첫 화면 진입
+        // KEY_SCREEN이 없는 경우 = 최초 진입 (Process Death 복원 시 이미 값이 저장되어 있음)
+        val isProcessDeathRestore = savedStateHandle.contains(KEY_SCREEN)
         restoreFromSavedState()
+        if (!isProcessDeathRestore) {
+            analyticsLogger.logOnboardingStart()
+        }
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
     }
 

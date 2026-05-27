@@ -10,11 +10,25 @@ import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenSyncUtil
 import com.teumteumeat.teumteumeat.utils.firebase.FcmTokenInitializer
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 
 @HiltAndroidApp
-class MyApplication : Application(){
+class MyApplication : Application() {
+
+    /**
+     * 앱 시작 직후 [TeumAnalyticsLogger] @Singleton 인스턴스를 강제 생성합니다.
+     *
+     * Hilt가 Application.onCreate() 이후 field injection을 수행하면
+     * [TeumAnalyticsLogger.init] 블록이 즉시 실행되어
+     * `app_version_code` / `app_version_name` User Property가
+     * 첫 번째 이벤트 전송 전에 GA4에 등록됩니다.
+     */
+    @Inject
+    lateinit var analyticsLogger: TeumAnalyticsLogger
+
     override fun onCreate() {
         super.onCreate()
         // Enable verbose logging for debugging (remove in production)
