@@ -110,6 +110,25 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * ONB-004 — 출퇴근 시간 설정 완료 이벤트 로깅 ([TeumAnalyticsEvent.CommuteTimeSet])
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_FIRST],
+     * [TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_SECOND])도 등록합니다.
+     *
+     * @param firstTime  집에서 나오는 시간 — "HH:mm" 24시간 형식 (예: "08:00")
+     * @param secondTime 집에 돌아가는 시간 — "HH:mm" 24시간 형식 (예: "18:00")
+     */
+    fun logCommuteTimeSet(firstTime: String, secondTime: String) {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_FIRST, firstTime)
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_SECOND, secondTime)
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.CommuteTimeSet.PARAM_COMMUTE_TIME_FIRST, firstTime)
+            putString(TeumAnalyticsEvent.CommuteTimeSet.PARAM_COMMUTE_TIME_SECOND, secondTime)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.CommuteTimeSet.NAME, params)
+    }
+
+    /**
      * ONB-003 — 하루 퀴즈 수 설정 완료 이벤트 로깅 ([TeumAnalyticsEvent.QuizCountSet])
      *
      * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.QUIZ_COUNT])도 등록합니다.
