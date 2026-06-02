@@ -110,6 +110,23 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * ONB-003 — 하루 퀴즈 수 설정 완료 이벤트 로깅 ([TeumAnalyticsEvent.QuizCountSet])
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.QUIZ_COUNT])도 등록합니다.
+     * User Property는 세션이 종료되어도 유지되므로, 추후 세그먼트별 리텐션 분석에 활용됩니다.
+     *
+     * @param quizCount 선택한 하루 퀴즈 수 — 3 | 5 | 7 | 10
+     */
+    fun logQuizCountSet(quizCount: Int) {
+        val quizCountStr = quizCount.toString()
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.QUIZ_COUNT, quizCountStr)
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.QuizCountSet.PARAM_QUIZ_COUNT, quizCountStr)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.QuizCountSet.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 성공 이벤트 로깅 ([TeumAnalyticsEvent.LoginComplete])
      *
      * @param method       로그인 방식 — "kakao" 또는 "google"
