@@ -108,6 +108,30 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-004 · 온보딩 4단계 — 출퇴근 시간 설정 완료
+     *
+     * | 파라미터              | 타입   | 예시    | 목적                          |
+     * |--------------------|--------|---------|-------------------------------|
+     * | commute_time_first  | String | "08:00" | 집에서 나오는 시간 (출근)      |
+     * | commute_time_second | String | "18:00" | 집에 돌아가는 시간 (퇴근)      |
+     *
+     * ## 측정 목적
+     * - 이용자 출퇴근 시간 분포도 파악 (GA Explore → User Property 세그먼트 분석)
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.onSetRoutineCompleted] 호출 시
+     *   (SetRoutineScreen "다음으로" 버튼 → 두 알림 시간 모두 설정 완료 후)
+     *
+     * ## 포맷
+     * - "HH:mm" 24시간 형식 (toServerTime() 에서 초(:ss) 제거)
+     */
+    object CommuteTimeSet {
+        const val NAME = "commute_time_set"
+        const val PARAM_COMMUTE_TIME_FIRST = "commute_time_first"    // "08:00"
+        const val PARAM_COMMUTE_TIME_SECOND = "commute_time_second"  // "18:00"
+    }
+
+    /**
      * Firebase Analytics User Property 키 목록
      *
      * User Property는 최대 25개, 키 최대 24자, 값 최대 36자 제한.
@@ -115,6 +139,12 @@ object TeumAnalyticsEvent {
     object UserProperties {
         /** 선호 하루 퀴즈 수 — 온보딩 SetRoutineScreen에서 설정 */
         const val QUIZ_COUNT = "quiz_count"  // "3" | "5" | "7" | "10"
+
+        /** 집에서 나오는 시간 — 온보딩 SetRoutineScreen에서 설정, 포맷: "HH:mm" */
+        const val COMMUTE_TIME_FIRST = "commute_time_first"   // "08:00"
+
+        /** 집에 돌아가는 시간 — 온보딩 SetRoutineScreen에서 설정, 포맷: "HH:mm" */
+        const val COMMUTE_TIME_SECOND = "commute_time_second" // "18:00"
     }
 
     /**

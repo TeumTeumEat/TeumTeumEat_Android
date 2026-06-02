@@ -1148,14 +1148,20 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     /**
-     * ONB-003 — SetRoutineScreen "다음으로" 버튼 처리
+     * ONB-003 + ONB-004 — SetRoutineScreen "다음으로" 버튼 처리
      *
-     * 퀴즈 수 선택 완료 이벤트를 로깅하고, 다음 화면으로 네비게이션 상태를 전환합니다.
+     * 출퇴근 시간(ONB-004)과 퀴즈 수(ONB-003) 이벤트를 로깅하고,
+     * 다음 화면으로 네비게이션 상태를 전환합니다.
      * 실제 NavController 이동은 [OnBoardingNavHost]에서 담당합니다.
      */
     fun onSetRoutineCompleted() {
+        val state = _uiState.value
+        // 📊 ONB-004: 출퇴근 시간 이벤트 + User Property 등록 ("HH:mm" 포맷)
+        val firstTime = state.workInTime.toServerTime().removeSuffix(":00")
+        val secondTime = state.workOutTime.toServerTime().removeSuffix(":00")
+        analyticsLogger.logCommuteTimeSet(firstTime, secondTime)
         // 📊 ONB-003: 선택한 퀴즈 수 이벤트 + User Property 등록
-        analyticsLogger.logQuizCountSet(_uiState.value.selectedQuestionCnt)
+        analyticsLogger.logQuizCountSet(state.selectedQuestionCnt)
         navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
     }
 
