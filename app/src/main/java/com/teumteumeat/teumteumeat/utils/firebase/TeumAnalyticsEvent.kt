@@ -88,6 +88,36 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-003 · 온보딩 3단계 — 하루 퀴즈 수 설정 완료
+     *
+     * | 파라미터   | 타입   | 예시 | 목적                        |
+     * |-----------|--------|------|----------------------------|
+     * | quiz_count | String | "5"  | 선택한 하루 퀴즈 수         |
+     *
+     * ## 측정 목적
+     * - 전체 사용자의 선호 퀴즈 수 분포도 파악
+     * - User Property로도 등록하여 세그먼트별 리텐션 분석에 활용
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.onSetRoutineCompleted] 호출 시
+     *   (SetRoutineScreen "다음으로" 버튼 → 퀴즈 수 + 알림 시간 모두 설정 완료 후)
+     */
+    object QuizCountSet {
+        const val NAME = "quiz_count_set"
+        const val PARAM_QUIZ_COUNT = "quiz_count"  // "3" | "5" | "7" | "10"
+    }
+
+    /**
+     * Firebase Analytics User Property 키 목록
+     *
+     * User Property는 최대 25개, 키 최대 24자, 값 최대 36자 제한.
+     */
+    object UserProperties {
+        /** 선호 하루 퀴즈 수 — 온보딩 SetRoutineScreen에서 설정 */
+        const val QUIZ_COUNT = "quiz_count"  // "3" | "5" | "7" | "10"
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |

@@ -1147,6 +1147,18 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
+    /**
+     * ONB-003 — SetRoutineScreen "다음으로" 버튼 처리
+     *
+     * 퀴즈 수 선택 완료 이벤트를 로깅하고, 다음 화면으로 네비게이션 상태를 전환합니다.
+     * 실제 NavController 이동은 [OnBoardingNavHost]에서 담당합니다.
+     */
+    fun onSetRoutineCompleted() {
+        // 📊 ONB-003: 선택한 퀴즈 수 이벤트 + User Property 등록
+        analyticsLogger.logQuizCountSet(_uiState.value.selectedQuestionCnt)
+        navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
+    }
+
     // 문제 수(3,5,7,10) → 서버 전송용 분(5,7,10,15) 임시 변환 함수
     private fun questionCntToMinutes(cnt: Int): Int = when (cnt) {
         3 -> 5
