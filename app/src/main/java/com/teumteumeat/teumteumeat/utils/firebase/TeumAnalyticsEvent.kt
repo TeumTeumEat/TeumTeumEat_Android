@@ -132,6 +132,22 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-005 · 온보딩 5단계 — 디바이스 알림 권한 허용 후 다음 버튼 클릭
+     *
+     * 파라미터 없음 — 권한 허용 + 진행 자체가 이벤트
+     *
+     * ## 측정 목적
+     * - 알림 권한 허용 후 온보딩을 계속 진행하는 사용자 비율 파악
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.onSetRoutineCompleted] 호출 시
+     *   isNotificationGranted == true 인 경우에만 전송
+     */
+    object EnableNotifyPermission {
+        const val NAME = "enable_notify_permission"
+    }
+
+    /**
      * Firebase Analytics User Property 키 목록
      *
      * User Property는 최대 25개, 키 최대 24자, 값 최대 36자 제한.
@@ -145,6 +161,9 @@ object TeumAnalyticsEvent {
 
         /** 집에 돌아가는 시간 — 온보딩 SetRoutineScreen에서 설정, 포맷: "HH:mm" */
         const val COMMUTE_TIME_SECOND = "commute_time_second" // "18:00"
+
+        /** 디바이스 종류 — 온보딩 알림 권한 허용 시 설정 */
+        const val DEVICE_TYPE = "device_type"  // "Android" | "iOS"
     }
 
     /**

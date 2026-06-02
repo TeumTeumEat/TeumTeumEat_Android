@@ -1162,6 +1162,10 @@ class OnBoardingViewModel @Inject constructor(
         analyticsLogger.logCommuteTimeSet(firstTime, secondTime)
         // 📊 ONB-003: 선택한 퀴즈 수 이벤트 + User Property 등록
         analyticsLogger.logQuizCountSet(state.selectedQuestionCnt)
+        // 📊 ONB-005: 디바이스 알림 권한 허용 상태에서만 이벤트 + User Property 등록
+        if (state.isNotificationGranted) {
+            analyticsLogger.logEnableNotifyPermission()
+        }
         navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
     }
 

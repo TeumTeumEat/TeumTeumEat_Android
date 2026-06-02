@@ -146,6 +146,17 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * ONB-005 — 디바이스 알림 권한 허용 후 다음 버튼 클릭 이벤트 로깅 ([TeumAnalyticsEvent.EnableNotifyPermission])
+     *
+     * User Property([TeumAnalyticsEvent.UserProperties.DEVICE_TYPE])도 함께 등록합니다.
+     * Android 앱에서는 항상 "Android" 고정.
+     */
+    fun logEnableNotifyPermission() {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.DEVICE_TYPE, "Android")
+        analytics.logEvent(TeumAnalyticsEvent.EnableNotifyPermission.NAME, null)
+    }
+
+    /**
      * 소셜 로그인 성공 이벤트 로깅 ([TeumAnalyticsEvent.LoginComplete])
      *
      * @param method       로그인 방식 — "kakao" 또는 "google"
