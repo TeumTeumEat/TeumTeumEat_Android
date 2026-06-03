@@ -164,6 +164,9 @@ object TeumAnalyticsEvent {
 
         /** 디바이스 종류 — 온보딩 알림 권한 허용 시 설정 */
         const val DEVICE_TYPE = "device_type"  // "Android" | "iOS"
+
+        /** 알림 활성 상태 — 온보딩 알림 권한 허용 후 설정 */
+        const val NOTIFY_ENABLED = "notify_enabled"  // "true" | "false"
     }
 
     /**
