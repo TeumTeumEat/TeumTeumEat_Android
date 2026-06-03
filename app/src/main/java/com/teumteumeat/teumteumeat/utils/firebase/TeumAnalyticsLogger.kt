@@ -147,6 +147,27 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * ONB-007 — 카테고리 3뎁스 선택 완료 이벤트 로깅 ([TeumAnalyticsEvent.CategorySelect])
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.CATEGORY_DEPTH1/2/3])도 등록합니다.
+     *
+     * @param depth1 1뎁스 카테고리명 (예: "앱개발자")
+     * @param depth2 2뎁스 카테고리명 (예: "React Native")
+     * @param depth3 3뎁스 카테고리명 (예: "SwiftUI")
+     */
+    fun logCategorySelect(depth1: String, depth2: String, depth3: String) {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.CATEGORY_DEPTH1, depth1)
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.CATEGORY_DEPTH2, depth2)
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.CATEGORY_DEPTH3, depth3)
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.CategorySelect.PARAM_DEPTH1, depth1)
+            putString(TeumAnalyticsEvent.CategorySelect.PARAM_DEPTH2, depth2)
+            putString(TeumAnalyticsEvent.CategorySelect.PARAM_DEPTH3, depth3)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.CategorySelect.NAME, params)
+    }
+
+    /**
      * ONB-006 — 학습 방식 선택 완료 이벤트 로깅 ([TeumAnalyticsEvent.LearningTypeSelect])
      *
      * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.LEARNING_TYPE])도 등록합니다.

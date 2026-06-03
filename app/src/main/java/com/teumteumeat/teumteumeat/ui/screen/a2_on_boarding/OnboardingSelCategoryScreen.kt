@@ -28,6 +28,9 @@ fun CategorySelectScreen(
         onToggleDepth2 = viewModel::toggleDepth2,
         onToggleDepth3 = viewModel::toggleDepth3,
         onToggleDepth4 = viewModel::toggleDepth4,
-        onNext = onNext,
+        onNext = {
+            viewModel.onCategoryNextClicked()
+            onNext()
+        },
     )
 }

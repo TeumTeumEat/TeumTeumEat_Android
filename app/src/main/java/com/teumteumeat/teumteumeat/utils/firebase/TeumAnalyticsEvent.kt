@@ -168,6 +168,30 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-007 · 온보딩 카테고리 1단계 — 카테고리 3뎁스 선택 완료 후 다음 버튼 클릭
+     *
+     * | 파라미터 | 타입   | 예시        | 목적                      |
+     * |--------|--------|-------------|--------------------------|
+     * | depth1 | String | "앱개발자"   | 1뎁스 카테고리명           |
+     * | depth2 | String | "React Native" | 2뎁스 카테고리명        |
+     * | depth3 | String | "SwiftUI"   | 3뎁스 카테고리명           |
+     *
+     * ## 측정 목적
+     * - 인기 카테고리 분포 파악 및 콘텐츠 수요 데이터 확보
+     * - User Property로도 등록하여 카테고리별 리텐션 세그먼트 분석에 활용
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.onCategoryNextClicked] 호출 시
+     *   (CategorySelectScreen "다음으로" 버튼, depth1·depth2·depth3 모두 선택 완료 후)
+     */
+    object CategorySelect {
+        const val NAME = "category_select"
+        const val PARAM_DEPTH1 = "depth1"  // 1뎁스 카테고리명
+        const val PARAM_DEPTH2 = "depth2"  // 2뎁스 카테고리명
+        const val PARAM_DEPTH3 = "depth3"  // 3뎁스 카테고리명
+    }
+
+    /**
      * Firebase Analytics User Property 키 목록
      *
      * User Property는 최대 25개, 키 최대 24자, 값 최대 36자 제한.
@@ -190,6 +214,15 @@ object TeumAnalyticsEvent {
 
         /** 학습 방식 선호도 — 온보딩 SelectLearningMethodScreen에서 설정 */
         const val LEARNING_TYPE = "learning_type"  // "category" | "pdf"
+
+        /** 선택한 1뎁스 카테고리명 — 온보딩 CategorySelectScreen에서 설정 */
+        const val CATEGORY_DEPTH1 = "depth1"
+
+        /** 선택한 2뎁스 카테고리명 — 온보딩 CategorySelectScreen에서 설정 */
+        const val CATEGORY_DEPTH2 = "depth2"
+
+        /** 선택한 3뎁스 카테고리명 — 온보딩 CategorySelectScreen에서 설정 */
+        const val CATEGORY_DEPTH3 = "depth3"
     }
 
     /**
