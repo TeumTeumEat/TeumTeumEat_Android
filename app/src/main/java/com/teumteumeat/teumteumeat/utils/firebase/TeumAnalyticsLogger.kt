@@ -148,11 +148,11 @@ class TeumAnalyticsLogger @Inject constructor(
     /**
      * ONB-005 — 디바이스 알림 권한 허용 후 다음 버튼 클릭 이벤트 로깅 ([TeumAnalyticsEvent.EnableNotifyPermission])
      *
-     * User Property([TeumAnalyticsEvent.UserProperties.DEVICE_TYPE])도 함께 등록합니다.
-     * Android 앱에서는 항상 "Android" 고정.
+     * User Property([TeumAnalyticsEvent.UserProperties.NOTIFY_ENABLED])도 함께 등록합니다.
+     * 이 함수는 알림 권한을 허용한 경우에만 호출되므로 항상 "true"로 설정됩니다.
      */
     fun logEnableNotifyPermission() {
-        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.DEVICE_TYPE, "Android")
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.NOTIFY_ENABLED, "true")
         analytics.logEvent(TeumAnalyticsEvent.EnableNotifyPermission.NAME, null)
     }
 
