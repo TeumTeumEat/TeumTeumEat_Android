@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.core.content.edit
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -143,6 +144,26 @@ class TeumAnalyticsLogger @Inject constructor(
             putString(TeumAnalyticsEvent.QuizCountSet.PARAM_QUIZ_COUNT, quizCountStr)
         }
         analytics.logEvent(TeumAnalyticsEvent.QuizCountSet.NAME, params)
+    }
+
+    /**
+     * ONB-006 — 학습 방식 선택 완료 이벤트 로깅 ([TeumAnalyticsEvent.LearningTypeSelect])
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.LEARNING_TYPE])도 등록합니다.
+     *
+     * @param goalType 선택한 학습 방식 — [GoalTypeUiState.CATEGORY] 또는 [GoalTypeUiState.DOCUMENT]
+     */
+    fun logLearningTypeSelect(goalType: GoalTypeUiState) {
+        val value = when (goalType) {
+            GoalTypeUiState.CATEGORY -> "category"
+            GoalTypeUiState.DOCUMENT -> "pdf"
+            GoalTypeUiState.NONE -> return
+        }
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.LEARNING_TYPE, value)
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.LearningTypeSelect.PARAM_LEARNING_TYPE, value)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.LearningTypeSelect.NAME, params)
     }
 
     /**

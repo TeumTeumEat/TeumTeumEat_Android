@@ -1140,6 +1140,16 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
+    /**
+     * ONB-006 — SelectLearningMethodScreen "다음으로" 버튼 처리
+     *
+     * 학습 방식 선택 완료 이벤트와 User Property를 로깅합니다.
+     * 실제 NavController 이동은 [SelectLearningMethodScreen]에서 담당합니다.
+     */
+    fun onLearningMethodNextClicked() {
+        analyticsLogger.logLearningTypeSelect(_uiState.value.goalTypeUiState)
+    }
+
     fun onQuestionCntSelected(questionCnt: Int) {
         savedStateHandle[KEY_QUESTION_CNT] = questionCnt
         _uiState.update {

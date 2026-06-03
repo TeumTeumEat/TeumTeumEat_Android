@@ -148,6 +148,26 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-006 · 온보딩 6단계 — 학습 방식 선택 완료
+     *
+     * | 파라미터      | 타입   | 예시       | 목적                        |
+     * |-------------|--------|------------|----------------------------|
+     * | learning_type | String | "category" | 선택한 학습 방식             |
+     *
+     * ## 측정 목적
+     * - 카테고리 vs PDF 학습 방식 선호도 분포 파악
+     * - User Property로도 등록하여 세그먼트별 리텐션 분석에 활용
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.onLearningMethodNextClicked] 호출 시
+     *   (SelectLearningMethodScreen "다음으로" 버튼, NONE 제외)
+     */
+    object LearningTypeSelect {
+        const val NAME = "learning_type_select"
+        const val PARAM_LEARNING_TYPE = "learning_type"  // "category" | "pdf"
+    }
+
+    /**
      * Firebase Analytics User Property 키 목록
      *
      * User Property는 최대 25개, 키 최대 24자, 값 최대 36자 제한.
@@ -167,6 +187,9 @@ object TeumAnalyticsEvent {
 
         /** 알림 활성 상태 — 온보딩 알림 권한 허용 후 설정 */
         const val NOTIFY_ENABLED = "notify_enabled"  // "true" | "false"
+
+        /** 학습 방식 선호도 — 온보딩 SelectLearningMethodScreen에서 설정 */
+        const val LEARNING_TYPE = "learning_type"  // "category" | "pdf"
     }
 
     /**
