@@ -22,6 +22,7 @@ import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetPdfPageCountUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
@@ -64,6 +65,7 @@ class OnBoardingViewModel @Inject constructor(
     private val createGoalUseCase: CreateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val getPdfPageCountUseCase: GetPdfPageCountUseCase,
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
     @ApplicationContext private val context: Context,
@@ -438,7 +440,13 @@ class OnBoardingViewModel @Inject constructor(
         mimeType: String
     ): ApiResultV2<Unit> {
 
-        val goalId = _uiState.value.goalId
+        val state = _uiState.value
+        val goalId = state.goalId
+
+        // 📊 ONB-PDF-1: pdf_upload_start 이벤트 + pdf_upload_attempt_count User Property
+        val fileSizeKb = state.selectedFileSize / 1024
+        val pageCount = getPdfPageCountUseCase(uri).getOrDefault(0)
+        analyticsLogger.logPdfUploadStart(fileSizeKb = fileSizeKb, pageCount = pageCount)
 
         return when (
             val result = uploadDocumentUseCase(

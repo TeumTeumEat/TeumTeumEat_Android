@@ -47,6 +47,9 @@ class TeumAnalyticsLogger @Inject constructor(
          * - 기본값 -1L: 한 번도 발송한 적 없음 (최초 설치)
          */
         private const val KEY_LAST_SENT_VERSION_CODE = "last_sent_version_code"
+
+        /** PDF 업로드 시도 횟수 누적값 — 0부터 시작, [logPdfUploadStart] 호출 시마다 +1 */
+        private const val KEY_PDF_UPLOAD_ATTEMPT_COUNT = "pdf_upload_attempt_count"
     }
 
     /**
@@ -196,6 +199,31 @@ class TeumAnalyticsLogger @Inject constructor(
     fun logEnableNotifyPermission() {
         analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.NOTIFY_ENABLED, "true")
         analytics.logEvent(TeumAnalyticsEvent.EnableNotifyPermission.NAME, null)
+    }
+
+    /**
+     * ONB-PDF-1 — PDF 업로드 시작 이벤트 로깅 ([TeumAnalyticsEvent.PdfUploadStart])
+     *
+     * 호출 시마다 SharedPreferences에 저장된 시도 횟수를 1 증가시키고,
+     * 증가된 값을 User Property([TeumAnalyticsEvent.UserProperties.PDF_UPLOAD_ATTEMPT_COUNT])로 등록합니다.
+     *
+     * @param fileSizeKb  업로드할 파일 크기 (KB 단위)
+     * @param pageCount   PDF 페이지 수
+     */
+    fun logPdfUploadStart(fileSizeKb: Long, pageCount: Int) {
+        val newCount = prefs.getInt(KEY_PDF_UPLOAD_ATTEMPT_COUNT, 0) + 1
+        prefs.edit { putInt(KEY_PDF_UPLOAD_ATTEMPT_COUNT, newCount) }
+
+        analytics.setUserProperty(
+            TeumAnalyticsEvent.UserProperties.PDF_UPLOAD_ATTEMPT_COUNT,
+            newCount.toString()
+        )
+
+        val params = Bundle().apply {
+            putLong(TeumAnalyticsEvent.PdfUploadStart.PARAM_FILE_SIZE_KB, fileSizeKb)
+            putInt(TeumAnalyticsEvent.PdfUploadStart.PARAM_PAGE_COUNT, pageCount)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.PdfUploadStart.NAME, params)
     }
 
     /**
