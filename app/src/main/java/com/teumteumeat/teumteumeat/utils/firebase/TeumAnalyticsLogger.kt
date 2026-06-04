@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.core.content.edit
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -199,6 +200,28 @@ class TeumAnalyticsLogger @Inject constructor(
     fun logEnableNotifyPermission() {
         analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.NOTIFY_ENABLED, "true")
         analytics.logEvent(TeumAnalyticsEvent.EnableNotifyPermission.NAME, null)
+    }
+
+    /**
+     * ONB-010 — 난이도 선택 완료 이벤트 로깅 ([TeumAnalyticsEvent.DifficultySelect])
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.DIFFICULTY])도 등록합니다.
+     *
+     * @param difficulty 선택한 난이도 — [Difficulty.HARD] | [Difficulty.MEDIUM] | [Difficulty.EASY]
+     *   [Difficulty.NONE]이 전달되면 조기 반환합니다.
+     */
+    fun logDifficultySelect(difficulty: Difficulty) {
+        val value = when (difficulty) {
+            Difficulty.HARD -> "high"
+            Difficulty.MEDIUM -> "mid"
+            Difficulty.EASY -> "low"
+            Difficulty.NONE -> return
+        }
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.DIFFICULTY, value)
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.DifficultySelect.PARAM_DIFFICULTY, value)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.DifficultySelect.NAME, params)
     }
 
     /**

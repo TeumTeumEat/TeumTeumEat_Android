@@ -1159,6 +1159,16 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     /**
+     * ONB-010 — OptimizeDataScreen "다음으로" 버튼 처리
+     *
+     * 난이도 선택 완료 이벤트와 User Property를 로깅합니다.
+     * 실제 NavController 이동은 [OptimizeDataScreen]에서 담당합니다.
+     */
+    fun onDifficultyNextClicked() {
+        analyticsLogger.logDifficultySelect(_uiState.value.difficulty)
+    }
+
+    /**
      * ONB-007 — CategorySelectScreen "다음으로" 버튼 처리
      *
      * depth1·depth2·depth3가 모두 선택된 상태에서만 이벤트와 User Property를 로깅합니다.

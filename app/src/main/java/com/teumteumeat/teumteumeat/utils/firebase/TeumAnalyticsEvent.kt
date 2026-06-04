@@ -192,6 +192,26 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-010 · 온보딩 7단계 — 난이도 선택 완료
+     *
+     * | 파라미터   | 타입   | 예시   | 목적                        |
+     * |-----------|--------|--------|----------------------------|
+     * | difficulty | String | "high" | 선택한 난이도               |
+     *
+     * ## 측정 목적
+     * - 전체 사용자의 난이도 선호도 분포 파악
+     * - User Property로도 등록하여 세그먼트별 리텐션 분석에 활용
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.onDifficultyNextClicked] 호출 시
+     *   (OptimizeDataScreen "다음으로" 버튼, NONE 제외)
+     */
+    object DifficultySelect {
+        const val NAME = "difficulty_select"
+        const val PARAM_DIFFICULTY = "difficulty"  // "high" | "mid" | "low"
+    }
+
+    /**
      * ONB-PDF-1 · PDF 업로드 시작 이벤트
      *
      * | 파라미터      | 타입 | 예시   | 목적                      |
@@ -245,6 +265,9 @@ object TeumAnalyticsEvent {
 
         /** 선택한 3뎁스 카테고리명 — 온보딩 CategorySelectScreen에서 설정 */
         const val CATEGORY_DEPTH3 = "depth3"
+
+        /** 선택한 난이도 — 온보딩 OptimizeDataScreen에서 설정 */
+        const val DIFFICULTY = "difficulty"  // "high" | "mid" | "low"
 
         /** PDF 업로드 시도 횟수 — [TeumAnalyticsLogger.logPdfUploadStart] 호출 시 누적 증가 */
         const val PDF_UPLOAD_ATTEMPT_COUNT = "pdf_upload_attempt_count"  // "1", "2", ...
