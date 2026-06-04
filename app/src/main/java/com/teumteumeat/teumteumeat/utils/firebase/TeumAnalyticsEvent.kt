@@ -212,6 +212,23 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-011 · 온보딩 최종 완료 이벤트
+     *
+     * 파라미터 없음 — 완료 자체가 이벤트
+     *
+     * ## 측정 목적
+     * - 온보딩 완료율: `onboarding_complete / onboarding_start`
+     * - 핵심 설정값 분포 분석 (User Property 세그먼트 활용)
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.submitOnBoarding] 내 모든 API 호출 성공 후
+     *   [UiStateOnboardingScreenState.Success] 전환 직전 (로딩 완료)
+     */
+    object OnboardingComplete {
+        const val NAME = "onboarding_complete"
+    }
+
+    /**
      * ONB-PDF-1 · PDF 업로드 시작 이벤트
      *
      * | 파라미터      | 타입 | 예시   | 목적                      |
@@ -271,6 +288,9 @@ object TeumAnalyticsEvent {
 
         /** PDF 업로드 시도 횟수 — [TeumAnalyticsLogger.logPdfUploadStart] 호출 시 누적 증가 */
         const val PDF_UPLOAD_ATTEMPT_COUNT = "pdf_upload_attempt_count"  // "1", "2", ...
+
+        /** 온보딩 완료 여부 — 온보딩 최종 완료 시 "complete"로 설정 */
+        const val ONBOARDING_COMPLETE = "onboarding_complete"  // "not_yet" | "complete"
     }
 
     /**
