@@ -60,6 +60,7 @@ Lint:     ./gradlew lintDebug
 | 코드 리뷰 · 컨벤션 검증 | `teum-code-reviewer` |
 | Room 스키마 변경 | `teum-room-migration` |
 | ViewModel 테스트 작성 | `teum-viewmodel-test` |
+| Pull Request 생성 | `teum-pr-creator` |
 
 ## 민감 파일 (읽기·수정 금지)
 `google-services.json` · `local.properties` · `*.keystore` · `*.jks`
