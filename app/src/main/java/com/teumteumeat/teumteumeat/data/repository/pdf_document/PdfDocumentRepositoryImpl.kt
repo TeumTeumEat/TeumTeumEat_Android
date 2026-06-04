@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.data.repository.pdf_document
 
 import android.content.Context
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.util.Log
 import com.teumteumeat.teumteumeat.BuildConfig
@@ -209,6 +210,14 @@ class PdfDocumentRepositoryImpl @Inject constructor(
             context.contentResolver.openInputStream(uri)
                 ?.readBytes()
                 ?: throw IllegalStateException("파일을 열 수 없습니다.")
+        }
+    }
+
+    override suspend fun getPdfPageCount(uri: Uri): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+                ?: throw IllegalStateException("PDF 파일을 열 수 없습니다.")
+            PdfRenderer(pfd).use { renderer -> renderer.pageCount }
         }
     }
 

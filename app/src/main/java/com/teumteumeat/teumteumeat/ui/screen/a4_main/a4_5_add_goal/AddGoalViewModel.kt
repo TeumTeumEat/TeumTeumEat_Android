@@ -18,10 +18,12 @@ import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetPdfPageCountUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.UpdateGoalUseCase
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
@@ -46,9 +48,11 @@ class AddGoalViewModel @Inject constructor(
     private val updateGoalUseCase: UpdateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val getPdfPageCountUseCase: GetPdfPageCountUseCase,
     application: Application,
     val sessionManager: SessionManager,
     val goalRepository: GoalRepository,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -704,6 +708,11 @@ class AddGoalViewModel @Inject constructor(
         fileName: String,
         mimeType: String
     ): ApiResultV2<Unit> {
+
+        // 📊 ONB-PDF-1: pdf_upload_start 이벤트 + pdf_upload_attempt_count User Property
+        val fileSizeKb = _uiState.value.selectedFileSize / 1024
+        val pageCount = getPdfPageCountUseCase(uri).getOrDefault(0)
+        analyticsLogger.logPdfUploadStart(fileSizeKb = fileSizeKb, pageCount = pageCount)
 
         return when (
             val result = uploadDocumentUseCase(

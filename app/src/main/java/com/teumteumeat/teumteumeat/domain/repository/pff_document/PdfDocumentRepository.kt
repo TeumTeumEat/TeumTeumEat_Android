@@ -67,5 +67,10 @@ interface PdfDocumentRepository {
         documentId: Int,
     ): ApiResultV2<DocumentSummaryResponse>
 
+    /**
+     * URI로부터 PDF 페이지 수를 반환합니다.
+     * - IO 스레드에서 실행되며, 실패 시 [Result.failure]를 반환합니다.
+     */
+    suspend fun getPdfPageCount(uri: Uri): Result<Int>
 
 }

@@ -192,6 +192,28 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * ONB-PDF-1 · PDF 업로드 시작 이벤트
+     *
+     * | 파라미터      | 타입 | 예시   | 목적                      |
+     * |-------------|------|--------|--------------------------|
+     * | file_size_kb | Long | 2048   | 업로드 파일 크기 (KB)      |
+     * | page_count   | Int  | 30     | PDF 페이지 수             |
+     *
+     * ## 측정 목적
+     * - PDF 업로드 시도 횟수 누적 (User Property로도 등록)
+     * - 업로드 파일 크기·페이지 수 분포 파악
+     *
+     * ## 발생 시점
+     * - [OnBoardingViewModel.uploadDocumentInternal] / [AddGoalViewModel.uploadDocumentInternal]
+     *   에서 [UploadDocumentUseCase] 호출 직전 (서버 presigned URL 요청 트리거 시점)
+     */
+    object PdfUploadStart {
+        const val NAME = "pdf_upload_start"
+        const val PARAM_FILE_SIZE_KB = "file_size_kb"  // KB 단위 정수
+        const val PARAM_PAGE_COUNT = "page_count"      // PDF 페이지 수
+    }
+
+    /**
      * Firebase Analytics User Property 키 목록
      *
      * User Property는 최대 25개, 키 최대 24자, 값 최대 36자 제한.
@@ -223,6 +245,9 @@ object TeumAnalyticsEvent {
 
         /** 선택한 3뎁스 카테고리명 — 온보딩 CategorySelectScreen에서 설정 */
         const val CATEGORY_DEPTH3 = "depth3"
+
+        /** PDF 업로드 시도 횟수 — [TeumAnalyticsLogger.logPdfUploadStart] 호출 시 누적 증가 */
+        const val PDF_UPLOAD_ATTEMPT_COUNT = "pdf_upload_attempt_count"  // "1", "2", ...
     }
 
     /**
