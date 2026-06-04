@@ -225,6 +225,18 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * ONB-011 — 온보딩 최종 완료 이벤트 로깅 ([TeumAnalyticsEvent.OnboardingComplete])
+     *
+     * 파라미터 없음. User Property([TeumAnalyticsEvent.UserProperties.ONBOARDING_COMPLETE])를
+     * "complete"로 설정합니다.
+     * [OnBoardingViewModel.submitOnBoarding] 내 모든 API 성공 후 호출합니다.
+     */
+    fun logOnboardingComplete() {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.ONBOARDING_COMPLETE, "complete")
+        analytics.logEvent(TeumAnalyticsEvent.OnboardingComplete.NAME, null)
+    }
+
+    /**
      * ONB-PDF-1 — PDF 업로드 시작 이벤트 로깅 ([TeumAnalyticsEvent.PdfUploadStart])
      *
      * 호출 시마다 SharedPreferences에 저장된 시도 횟수를 1 증가시키고,

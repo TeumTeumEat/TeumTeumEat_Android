@@ -283,6 +283,8 @@ class OnBoardingViewModel @Inject constructor(
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
+            // 📊 ONB-011: 온보딩 최종 완료 이벤트 + User Property 등록
+            analyticsLogger.logOnboardingComplete()
             _mainState.value = UiStateOnboardingScreenState.Success
         }
     }
