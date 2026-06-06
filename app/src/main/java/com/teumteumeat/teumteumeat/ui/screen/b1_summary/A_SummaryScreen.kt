@@ -174,8 +174,8 @@ fun SummaryScreen(
                                     .padding(20.dp)
                                     .fillMaxWidth(),
                                 onClick = onQuizClick,
-                                isEnabled = screenState !is UiScreenState.Loading,
-                                text = if ((screenState is UiScreenState.Loading)) {
+                                isEnabled = screenState !is UiScreenState.Loading && !uiState.isStreaming,
+                                text = if (screenState is UiScreenState.Loading || uiState.isStreaming) {
                                     "잠시만 기다려주세요"
                                 } else "퀴즈 풀러가기"
                             )

@@ -14,20 +14,14 @@ import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.teumteumeat.teumteumeat.BuildConfig
-import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.network.model_response.CategoryDocument
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
-import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
-import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.goal.UserGoal
-import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.Error
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
@@ -35,15 +29,12 @@ import com.teumteumeat.teumteumeat.utils.manager.ad.RewardedAdManager
 import com.teumteumeat.teumteumeat.utils.monitor.NetworkConnection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import java.time.LocalDate
@@ -55,8 +46,6 @@ class HomeViewModel @Inject constructor(
     private val goalRepository: GoalRepository,
     private val getGoalListUseCase: GetGoalListUseCase,
     private val quizRepository: QuizRepository,
-    private val pdfDocumentRepository: PdfDocumentRepository,
-    private val categoryRepository: CategoryRepository,
     val sessionManager: SessionManager,
     private val dateChangeReceiver: DateChangeReceiver,
     @ApplicationContext private val context: Context, // Context 주입 필요
@@ -82,10 +71,16 @@ class HomeViewModel @Inject constructor(
     // 서버에서 받은 goal 캐싱 (SnackState 계산용)
     private var cachedGoal: UserGoal? = null
 
+    /**
+     * 오늘 쿠폰 SSE 스트리밍이 한 번 이상 시작됐으면 true.
+     * SavedStateHandle로 유지하여 프로세스 종료 후 복귀 시에도 재스트리밍을 방지한다.
+     */
+    private var couponSummaryCreated: Boolean
+        get() = savedStateHandle["coupon_summary_created"] ?: false
+        set(value) { savedStateHandle["coupon_summary_created"] = value }
+
     // 음식 이미지 변경 시점 추적: 목표 변경 또는 일일 지식 교체 시에만 setRandomFood() 호출
     private var lastKnownGoalId: Long = Long.MIN_VALUE
-
-    private var processingJob: Job? = null
 
     init {
         // 실제 앱 구동 시에만 리시버 등록
@@ -381,126 +376,19 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * [쿠폰 사용] 버튼 클릭 시 호출되는 비즈니스 로직입니다.
+     * [쿠폰 사용] 버튼 클릭 시 호출됩니다.
      *
-     * 동작 순서:
-     * 1. 현재 사용자의 목표 타입(CATEGORY 또는 DOCUMENT)을 확인합니다.
-     * 2. 해당 타입에 맞는 '오늘의 요약글 생성' API(POST)를 호출합니다.
-     * 3. 성공 시:
-     *    - 서버의 쿠폰 개수 및 퀴즈 상태를 최신화하기 위해 [updateUserQuizStatus]를 호출합니다.
-     *    - 생성된 요약글의 ID를 포함하여 [SummaryQuery]를 업데이트한 후 [onSuccess] 콜백을 통해 화면 전환을 트리거합니다.
-     * 4. 실패 시: [onError] 콜백을 통해 에러 메시지를 전달합니다.
+     * - 첫 번째 호출: `forceStream = true` → SummaryActivity에서 SSE 스트리밍으로 요약글 생성
+     * - 이후 호출 (홈 복귀 후 재진입): `forceStream = false` → GET으로 기존 요약글 조회
      */
     fun useCoupon(
-        onSuccess: (SummaryQuery) -> Unit,
+        onSuccess: (SummaryQuery, Boolean) -> Unit,
         onError: (String) -> Unit
     ) {
-        viewModelScope.launch {
-            // 1. 현재 홈 화면에 설정된 요약 정보를 가져옵니다.
-            val currentState = _uiState.value
-            val query = _uiState.value.summaryQuery
-
-            // ✅ [추가] 이미 오늘 요약글을 생성했다면 (쿠폰을 이미 소모한 상태)
-            // 로딩 애니메이션이나 API 호출 없이 바로 조회 화면으로 이동합니다.
-            /*            if (currentState.hasCreatedToday) {
-                            onSuccess(query)
-                            return@launch
-                            // 만약 hasCreatedToday는 true인데 documentId가 없다면 아래 생성 로직을 타게 하거나
-                            // 별도의 조회를 먼저 수행하도록 안전장치를 둘 수 있습니다.
-                        }*/
-
-
-            // 로딩 상태 시작
-            _screenState.value = UiScreenState.Loading
-            _uiState.update {
-                it.copy(
-                    loadingTitle = "새로운 요약글을 만들고 있어요!",
-                    loadingMessage = "잠시만 기다려주세요."
-                )
-            }
-
-            // 로딩 애니메이션 시작 (0 → 100% 후 0으로 리셋하여 반복)
-            processingJob?.cancel()
-            processingJob = launch {
-                var currentProgress = 0f
-                val totalDurationMs = 5000f // 한 사이클(0→100%) 소요 시간
-                val interval = 16L          // 프레임 간격 (~60fps)
-                val stepChange = interval / totalDurationMs // 프레임당 증가량
-
-                while (isActive) {
-                    currentProgress += stepChange
-                    if (currentProgress >= 1f) {
-                        currentProgress = 0f // 다 차면 처음부터 다시 시작
-                    }
-                    _uiState.update {
-                        it.copy(processingState = ProcessingUiState(progress = currentProgress))
-                    }
-                    delay(interval)
-                }
-            }
-
-            // 2. 목표 타입에 따라 카테고리 기반 또는 문서(PDF) 기반 요약글 생성 API를 분기 호출합니다.
-            val result = when (query.goalType) {
-                DomainGoalType.CATEGORY -> {
-                    categoryRepository.createDailyCategoryDocument(query.categoryId ?: -1L)
-                }
-
-                DomainGoalType.DOCUMENT -> {
-                    pdfDocumentRepository.createDocumentSummary(
-                        query.goalId.toInt(),
-                        query.documentId?.toInt() ?: -1
-                    )
-                }
-            }
-
-            // API 응답 도착 시 애니메이션 중단 및 100% 처리
-            processingJob?.cancel()
-            _uiState.update { it.copy(processingState = ProcessingUiState(progress = 1f)) }
-
-            when (result) {
-                is ApiResultV2.Success -> {
-                    // 3. 성공 시: 사용한 쿠폰 반영을 위해 유저의 퀴즈 상태(쿠폰 개수 등)를 서버로부터 다시 조회합니다.
-                    updateUserQuizStatus()
-
-                    // 4. API 응답으로 받은 새로운 문서 ID(documentId)를 Query 객체에 업데이트합니다.
-                    //    이를 통해 SummaryActivity 진입 시 올바른 요약글을 조회할 수 있게 합니다.
-                    val updatedQuery = when (val data = result.data) {
-                        is CategoryDocument -> query.copy(documentId = data.documentId)
-                        is DocumentSummaryResponse -> query.copy(documentId = data.documentId.toLong())
-                        else -> query
-                    }
-                    _uiState.update { it.copy(processingState = null) }
-                    _screenState.value = UiScreenState.Success
-                    // 5. 업데이트된 정보를 UI 레이어(HomeScreen)로 전달하여 화면 이동을 수행합니다.
-                    onSuccess(updatedQuery)
-                }
-
-                is ApiResultV2.ServerError -> {
-                    _uiState.update { it.copy(processingState = null) }
-                    _screenState.value = UiScreenState.Success
-                    if (result.code == "QUIZ-003") {
-                        onError(result.uiMessage)
-                        // 바로 요약글 화면으로 이동하기
-                        onSuccess(query)
-                    } else {
-                        onError(result.uiMessage)
-                    }
-                }
-
-                is ApiResultV2.SessionExpired -> {
-                    _uiState.update { it.copy(processingState = null) }
-                    _screenState.value = UiScreenState.Idle
-                    sessionManager.expireSession()
-                }
-
-                else -> {
-                    _uiState.update { it.copy(processingState = null) }
-                    _screenState.value = UiScreenState.Success
-                    // API 호출 실패 시 에러 메시지 전달
-                    onError(result.uiMessage)
-                }
-            }
-        }
+        val query = _uiState.value.summaryQuery
+        val forceStream = !couponSummaryCreated
+        couponSummaryCreated = true
+        onSuccess(query, forceStream)
     }
 
     // 테스트에서 감시(Spy)하기 위해 open 또는 internal로 선언
@@ -561,10 +449,7 @@ class HomeViewModel @Inject constructor(
                         is ApiResultV2.Success -> {
                             val quizStatus = quizResult.data
 
-                            // 현재 날짜 가져오기 (예: "2023-10-27")
                             val today = LocalDate.now().toString()
-                            val currentState = _uiState.value
-
 
                             val hasRunningGoal = if (quizStatus.isCompleted) {
                                 when (val listResult = getGoalListUseCase()) {
@@ -604,11 +489,7 @@ class HomeViewModel @Inject constructor(
                                 setRandomFood()
                             }
 
-                            // 시작시 성공 화면에서 가운데 음식 부분에 로딩을 표시한다.
                             _screenState.value = UiScreenState.Success
-
-                            // 요약글 조회 후 없으면 자동 생성 (단일 경로)
-                            checkSummaryAndHandleMissing(buildSummaryQuery(goal))
                         }
 
 
@@ -636,137 +517,6 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    /**
-     * 요약글을 조회하고, 현재 생성된 요약글이 없다면(=COMMON-005(데이터 없음) 에러가 발생 시)
-     * 자동으로 생성 로직(autoGenerateDailySummary)을 호출합니다.
-     */
-    private suspend fun checkSummaryAndHandleMissing(query: SummaryQuery) {
-        val currentState = _uiState.value
-        val summaryResult = when (query.goalType) {
-            DomainGoalType.DOCUMENT -> pdfDocumentRepository.getPdfDocumentSummary(
-                currentState.summaryQuery.goalId.toInt(),
-                query.documentId!!.toInt()
-            )
-
-            DomainGoalType.CATEGORY -> categoryRepository.getDailyCategoryDocument(
-                query.categoryId!!
-            )
-        }
-
-        when (summaryResult) {
-            is ApiResultV2.Success -> {
-                // 요약글이 이미 존재함
-            }
-
-            is ApiResultV2.ServerError -> {
-                when (summaryResult.code) {
-                    "COMMON-005" -> {
-                        // ✅ 요약글이 아예 없음 -> 자동 생성 로직 호출
-                        Log.d("HomeViewModel", "COMMON-005 감지: 요약글 자동 생성 시작")
-                        autoGenerateDailySummary(query)
-                    }
-
-                    "DOCUMENT-002" -> {
-                        // ✅ pdf 목표 생성 중 -> 로딩 UI 표시 후 2초 뒤 재시도
-                        Log.d("HomeViewModel", "DOCUMENT-002 감지: 2초 후 재시도")
-
-                        _uiState.update {
-                            it.copy(
-                                loadingTitle = "pdf 목표를 등록하고 있어요",
-                                loadingMessage = "잠시만 기다려주세요...",
-                                processingState = ProcessingUiState(progress = 0f)
-                            )
-                        }
-
-                        delay(2000L) // 2초 대기
-                        checkSummaryAndHandleMissing(query) // 재귀 호출을 통한 재시도
-                    }
-
-                    else -> {
-                        _uiState.update { it.copy(processingState = null) }
-                        moveToError(summaryResult)
-                    }
-                }
-            }
-
-
-            else -> {
-                moveToError(summaryResult)
-            }
-        }
-    }
-
-
-    /**
-     * 자정이 지났을 때 백그라운드에서 요약글을 자동으로 생성합니다.
-     * * @param isExplicitEntry 목표 추가/온보딩을 통해 직접 진입했는지 여부
-     */
-    fun autoGenerateDailySummary(query: SummaryQuery) {
-        viewModelScope.launch {
-            // 1️⃣ 로딩 상태 활성화 (이 순간 HomeScreen의 GoalLoadingScreen이 나타남)
-            _uiState.update {
-                it.copy(
-                    loadingTitle = "새로운 요약글 생성 중",
-                    loadingMessage = "새로운 요약글을 준비하고 있어요.",
-                    processingState = ProcessingUiState(progress = 0f) // null이 아니게 설정
-                )
-            }
-
-            // 1-1. 10초 반복 애니매이션 시작
-            startProcessingAnimation()
-
-            // 2️⃣ 실제 API 호출
-            val result = when (query.goalType) {
-                DomainGoalType.CATEGORY -> {
-                    categoryRepository.createDailyCategoryDocument(query.categoryId ?: -1L)
-                }
-
-                DomainGoalType.DOCUMENT -> {
-                    pdfDocumentRepository.createDocumentSummary(
-                        query.goalId.toInt(),
-                        query.documentId?.toInt() ?: -1
-                    )
-                }
-            }
-
-
-            // 3️⃣ 로딩 애니메이션 중지
-            stopProcessingAnimation()
-
-
-            // 4️⃣ 결과 처리 및 로딩 상태 해제 (processingState = null)
-            if (result is ApiResultV2.Success) {
-                _uiState.update {
-                    it.copy(
-                        processingState = null // 로딩 해제 -> 다시 음식 이미지 노출
-                    )
-                }
-                updateUserQuizStatus()
-                setRandomFood()
-            } else {
-                // 실패 시에도 로딩은 꺼줘야 합니다.
-                _uiState.update { it.copy(processingState = null) }
-                Log.e("HomeViewModel", "자동 생성 실패: ${result.uiMessage}")
-            }
-        }
-    }
-
-    private fun startProcessingAnimation() {
-        processingJob?.cancel()
-        processingJob = viewModelScope.launch {
-            var progress = 0f
-            while (isActive) {
-                progress = (progress + 0.01f) % 1f
-                _uiState.update { it.copy(processingState = ProcessingUiState(progress = progress)) }
-                delay(50L)
-            }
-        }
-    }
-
-    private fun stopProcessingAnimation() {
-        processingJob?.cancel()
     }
 
     // ================= 홈 비즈니스 로직 =================

@@ -1,8 +1,9 @@
 package com.teumteumeat.teumteumeat.data.remote.sse
 
+import com.teumteumeat.teumteumeat.di.IoDispatcher
 import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.shareIn
 import okhttp3.Request
@@ -52,10 +54,11 @@ private const val BASE_DELAY_MS = 1_000L
  */
 @Singleton
 class SseClient @Inject constructor(
-    private val eventSourceFactory: EventSource.Factory
+    private val eventSourceFactory: EventSource.Factory,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
     // Singleton 생명주기와 동일. shareIn의 업스트림 수집 컨텍스트.
-    private val clientScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val clientScope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
     // URL → SharedFlow 캐시. computeIfAbsent는 원자적으로 단일 SharedFlow 생성을 보장한다.
     private val connections = ConcurrentHashMap<String, SharedFlow<SseEvent>>()
@@ -69,14 +72,18 @@ class SseClient @Inject constructor(
      * @param request OkHttp [Request]. [EventSources.createFactory]가 내부적으로
      *                `Accept: text/event-stream` 헤더를 자동 추가하므로 별도 설정 불필요.
      */
-    fun connect(request: Request): Flow<SseEvent> =
-        connections.computeIfAbsent(request.url.toString()) {
-            rawFlow(request).shareIn(
-                scope = clientScope,
-                started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 0L),
-                replay = 0
-            )
+    fun connect(request: Request): Flow<SseEvent> {
+        val url = request.url.toString()
+        return connections.computeIfAbsent(url) {
+            rawFlow(request)
+                .onCompletion { connections.remove(url) }
+                .shareIn(
+                    scope = clientScope,
+                    started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 0L),
+                    replay = 0
+                )
         }
+    }
 
     private fun rawFlow(request: Request): Flow<SseEvent> =
         callbackFlow {
