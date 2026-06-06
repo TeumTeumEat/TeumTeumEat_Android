@@ -36,7 +36,7 @@ class StreamDailySummaryUseCase @Inject constructor(
 private fun SseEvent.StreamError.toUserFacingError(): SseEvent.StreamError {
     val message = when (val cause = throwable) {
         is SseHttpException -> when (cause.code) {
-            400 -> "잘못된 요청입니다."
+            400 -> "목표 학습 횟수를 완료하였습니다."
             401 -> "인증이 필요합니다."
             403 -> "접근 권한이 없습니다."
             404 -> "카테고리를 찾을 수 없습니다."

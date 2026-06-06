@@ -4,10 +4,10 @@ import com.teumteumeat.teumteumeat.data.network.retrofit.NetworkConfig
 import com.teumteumeat.teumteumeat.data.remote.sse.SseClient
 import com.teumteumeat.teumteumeat.data.remote.sse.SseEvent as DataSseEvent
 import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
+import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
 import com.teumteumeat.teumteumeat.domain.repository.summary.SummaryStreamRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.transformWhile
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -27,13 +27,15 @@ import javax.inject.Singleton
  * | `Message(type = "CONNECT")`      | [SseEvent.Connected]     |
  * | `Message(type = "message")`      | [SseEvent.Chunk]         |
  * | `Message(type = "title")`        | [SseEvent.TitleReceived] |
- * | `Opened` / `Closed`              | 무시 (수명 주기 이벤트)     |
+ * | `Opened`                         | 무시 (수명 주기 이벤트)     |
+ * | `Closed` (title 미수신)           | [SseEvent.StreamError]   |
+ * | `Closed` (title 수신 후)          | Flow 정상 완료             |
+ * | `Failure` (HTTP 4xx/5xx)         | [SseEvent.StreamError]   |
  * | `Failure` (재시도 진행 중)         | 무시 ([SseClient] 재연결)  |
- * | `Failure` (재시도 3회 소진)        | [SseEvent.StreamError]   |
  *
  * ### 종료 조건
- * [SseEvent.TitleReceived] 방출 후 Flow가 정상 완료된다.
- * 재연결 소진 시 [SseEvent.StreamError]를 방출 후 완료된다.
+ * [SseEvent.TitleReceived] 방출 후 또는 [DataSseEvent.Closed] 수신 후 Flow가 완료된다.
+ * HTTP 오류/재연결 소진 시 [SseEvent.StreamError]를 방출 후 완료된다.
  */
 @Singleton
 class SummaryStreamRepositoryImpl @Inject constructor(
@@ -48,12 +50,39 @@ class SummaryStreamRepositoryImpl @Inject constructor(
             .header("Cache-Control", "no-cache")
             .build()
 
+        var titleReceived = false
+
         return sseClient.connect(request)
-            .mapNotNull { it.toDomainEvent() }
-            .transformWhile { event ->
-                emit(event)
-                // TitleReceived 방출 후 upstream 수집 중단 → Flow 정상 완료
-                event !is SseEvent.TitleReceived
+            .transformWhile { rawEvent ->
+                when (rawEvent) {
+                    is DataSseEvent.Closed -> {
+                        // 서버가 title 이벤트 없이 연결을 종료한 경우 — 비정상 종료
+                        if (!titleReceived) {
+                            emit(SseEvent.StreamError(Exception("서버가 요약 스트리밍을 완료하지 않고 연결을 종료했습니다.")))
+                        }
+                        false
+                    }
+                    is DataSseEvent.Failure -> {
+                        if (rawEvent.httpCode != null && rawEvent.httpCode >= 400) {
+                            emit(SseEvent.StreamError(SseHttpException(rawEvent.httpCode)))
+                            false
+                        } else {
+                            // 재연결 진행 중인 일시적 실패 — SseClient가 retry 처리
+                            true
+                        }
+                    }
+                    else -> {
+                        val domainEvent = rawEvent.toDomainEvent()
+                        if (domainEvent != null) {
+                            if (domainEvent is SseEvent.TitleReceived) titleReceived = true
+                            emit(domainEvent)
+                            // TitleReceived 방출 후 upstream 수집 중단 → Flow 정상 완료
+                            domainEvent !is SseEvent.TitleReceived
+                        } else {
+                            true
+                        }
+                    }
+                }
             }
             .catch { throwable ->
                 // SseClient 재연결 소진 후 전파된 예외를 StreamError로 래핑
@@ -61,14 +90,6 @@ class SummaryStreamRepositoryImpl @Inject constructor(
             }
     }
 
-    /**
-     * [DataSseEvent]를 [SseEvent]로 변환한다.
-     *
-     * [DataSseEvent.Opened], [DataSseEvent.Closed], [DataSseEvent.Failure]는
-     * null을 반환하여 [mapNotNull]에서 필터링된다.
-     * - `Opened`·`Closed`는 OkHttp 수명 주기 이벤트이며 도메인 관심사가 아니다.
-     * - `Failure`는 재시도 중 방출되며, 최종 실패는 예외로 전파되어 [catch]에서 처리된다.
-     */
     private fun DataSseEvent.toDomainEvent(): SseEvent? = when (this) {
         is DataSseEvent.Message -> when (type) {
             EVENT_TYPE_CONNECT -> SseEvent.Connected
@@ -76,9 +97,7 @@ class SummaryStreamRepositoryImpl @Inject constructor(
             EVENT_TYPE_TITLE   -> SseEvent.TitleReceived(data)
             else               -> null
         }
-        is DataSseEvent.Opened,
-        is DataSseEvent.Closed,
-        is DataSseEvent.Failure -> null
+        else -> null
     }
 
     companion object {

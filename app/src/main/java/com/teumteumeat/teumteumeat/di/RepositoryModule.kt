@@ -18,7 +18,9 @@ import com.teumteumeat.teumteumeat.data.repository.user.UserRepository
 import com.teumteumeat.teumteumeat.data.repository.user.UserRepositoryImpl
 import com.teumteumeat.teumteumeat.domain.repository.date.DateChangeRepository
 import com.teumteumeat.teumteumeat.data.repository.date.DateChangeRepositoryImpl
+import com.teumteumeat.teumteumeat.data.repository.document.DocumentProcessingStreamRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.summary.SummaryStreamRepositoryImpl
+import com.teumteumeat.teumteumeat.domain.repository.document.DocumentProcessingStreamRepository
 import com.teumteumeat.teumteumeat.domain.repository.summary.SummaryStreamRepository
 import dagger.Binds
 import dagger.Module
@@ -69,6 +71,10 @@ abstract class RepositoryModule {
     @Binds @Singleton abstract fun bindSummaryStreamRepository(
         impl: SummaryStreamRepositoryImpl
     ): SummaryStreamRepository
+
+    @Binds @Singleton abstract fun bindDocumentProcessingStreamRepository(
+        impl: DocumentProcessingStreamRepositoryImpl
+    ): DocumentProcessingStreamRepository
 
 }
 

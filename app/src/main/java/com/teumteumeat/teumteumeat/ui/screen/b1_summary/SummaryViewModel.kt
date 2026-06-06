@@ -6,20 +6,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
-import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
-import com.teumteumeat.teumteumeat.data.network.model_response.DocumentStatus
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
-import com.teumteumeat.teumteumeat.domain.quiz.UserQuizStatus
+import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
+import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.summary.StreamDailySummaryUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +41,8 @@ class SummaryViewModel @Inject constructor(
     private val pdfDocumentRepository: PdfDocumentRepository,
     private val categoryRepository: CategoryRepository,
     private val quizRepository: QuizRepository,
+    private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
+    private val streamDailySummaryUseCase: StreamDailySummaryUseCase,
     val application: Application,
     val sessionManager: SessionManager,
 ) : ViewModel() {
@@ -62,40 +64,26 @@ class SummaryViewModel @Inject constructor(
     private val _event = MutableSharedFlow<UiEvent>()
     val event: SharedFlow<UiEvent> = _event
 
+    /** SSE 스트리밍으로 요약글을 생성해야 하는 경우 true. initSummary 호출 시 설정된다. */
+    private var shouldForceStream = false
+
     fun loadInitialData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             _screenState.value = UiScreenState.Loading
 
-            // 각 작업의 Job을 저장
             val job1 = launch { loadUserQuizStatus() }
             val job2 = launch { loadSummaryByGoalType() }
 
-            // 두 작업이 모두 끝날 때까지 '대기'
             job1.join()
             job2.join()
 
-            // 모든 작업 종료 후 상태 변경
-            _screenState.value = UiScreenState.Success
+            // SSE 스트리밍 경로는 startCategorySummaryStream / loadDocumentSummary 가 자체 관리한다.
+            // GET 경로(forceStream=false)에서만 여기서 Success로 전환한다.
+            if (!shouldForceStream && _screenState.value !is UiScreenState.Error) {
+                _screenState.value = UiScreenState.Success
+            }
             _uiState.update { it.copy(isLoading = false) }
-        }
-    }
-
-    private suspend fun handleQuizStatusResult(
-        result: ApiResultV2<UserQuizStatus>
-    ) {
-        when (result) {
-            is ApiResultV2.Success -> {
-                _uiState.update {
-                    it.copy(isQuizGuideSeen = result.data.isQuizGuideSeen)
-                }
-            }
-
-            else -> {
-                _event.emit(
-                    UiEvent.ShowError(result.uiMessage)
-                )
-            }
         }
     }
 
@@ -121,10 +109,7 @@ class SummaryViewModel @Inject constructor(
             }
 
             else -> {
-                // 공통 에러 메시지 처리
-                _event.emit(
-                    UiEvent.ShowError(result.uiMessage)
-                )
+                _event.emit(UiEvent.ShowError(result.uiMessage))
             }
         }
     }
@@ -165,17 +150,33 @@ class SummaryViewModel @Inject constructor(
         viewModelScope.launch {
             val currentState = _uiState.value
             try {
-                // goalType에 따른 분기 로직을 여기서 실행
                 when (currentState.goalType) {
-                    DomainGoalType.CATEGORY -> { loadCategorySummary(currentState.categoryDocumentId.toInt())}
-                    DomainGoalType.DOCUMENT -> { loadDocumentSummary(currentState.goalId.toInt(), currentState.documentId.toInt()) }
+                    DomainGoalType.CATEGORY -> {
+                        val cId = currentState.categoryId ?: run {
+                            handleInvalidParam("categoryId 가 등록되지 않았습니다.")
+                            return@launch
+                        }
+                        if (shouldForceStream) {
+                            startCategorySummaryStream(cId)
+                        } else {
+                            loadCategorySummary(cId.toInt())
+                        }
+                    }
+                    DomainGoalType.DOCUMENT -> {
+                        if (shouldForceStream) {
+                            // 문서 처리 대기 중 → SSE로 처리 완료 감지 후 요약글 로드
+                            loadDocumentSummary(currentState.goalId.toInt(), currentState.documentId.toInt())
+                        } else {
+                            // 문서 처리 완료, 기존 요약글 직접 조회
+                            _screenState.value = UiScreenState.Loading
+                            fetchDocumentSummary(currentState.goalId.toInt(), currentState.documentId.toInt())
+                        }
+                    }
                     else -> {}
                 }
-
             } catch (e: Exception) {
                 Log.d("SummaryViewModel", "요약 로딩 실패: ${e.message}")
-                _screenState.value = UiScreenState.Error(message = "요약 로딩 실패") // 에러 상태 처리
-            } finally {
+                _screenState.value = UiScreenState.Error(message = "요약 로딩 실패")
             }
         }
     }
@@ -195,11 +196,12 @@ class SummaryViewModel @Inject constructor(
         goalId: Long,
         goalType: DomainGoalType,
         documentId: Long,
-        categoryId: Long?
+        categoryId: Long?,
+        forceStream: Boolean = false
     ) {
-        // initSummary 의 파라미터의 값을 로그로 찍어서 확인하기
-        Log.d("SummaryViewModel", "goalId: $goalId, goalType: $goalType, documentId: $documentId, categoryId: $categoryId")
+        Log.d("SummaryViewModel", "goalId: $goalId, goalType: $goalType, documentId: $documentId, categoryId: $categoryId, forceStream: $forceStream")
 
+        shouldForceStream = forceStream
         _uiState.update {
             it.copy(
                 goalId = goalId,
@@ -214,307 +216,140 @@ class SummaryViewModel @Inject constructor(
     }
 
     /**
-     * 오늘의 남남지식 요약 조회
+     * 카테고리 요약글을 SSE 스트리밍으로 생성하고, 완료 후 GET으로 전체 데이터를 로드한다.
+     *
+     * ### 이벤트 처리
+     * - [SseEvent.Connected]     : 연결 수립 — 로딩 상태 유지
+     * - [SseEvent.Chunk]         : 청크 수신 → 로그 + 실시간 화면 표시
+     * - [SseEvent.TitleReceived] : 스트리밍 완료 → GET으로 최종 데이터 로드
+     * - [SseEvent.StreamError]   : 오류 → 에러 화면 표시
      */
-    fun loadDocumentSummary(goalId: Int, documentId: Int) {
+    private fun startCategorySummaryStream(categoryId: Long) {
         viewModelScope.launch {
             _screenState.value = UiScreenState.Loading
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, summary = "") }
 
-            if (goalId == -1 || documentId == -1){
-                _screenState.value = UiScreenState.Error("goalId 나 documentId 가 등록되지 않았습니다.")
-            }
+            val buffer = StringBuilder()
 
-/*
-
-            // todo.
-            //  0. status 의 상태에 따라서 분기 처리
-            //      #0"PENDING" - 대기 중
-            //          - 3초 후 재요청
-            //      #1"PROCESSING"
-            //          - estimateTime(ms단위) 이 끝나면 재요청
-            //          - 아래 result 값의 문서 배열의 documentId 아이템의 estimateTime 에 따라 로딩바 표시
-            //          - 0 이라면 1초 뒤 재요청
-            //      #2"COMPLETED" - 재요청 하여 결과 document 표시
-            //      #3"FAILED" - 처리 실패 상태
-            //          - 문서 재등록 안내, 적절한 실패 사유 안내 띄워주기
-            //          - 문서(요약글, 퀴즈) 재생성 api 요청(백앤드 API 구현시 구현 예정)
-            // 1️⃣ 문서 상태 조회
-            val isCompleted = when (
-                val result = documentRepository.getDocuments(goalId)
-            ) {
-                is ApiResultV2.Success -> {
-                    handleDocumentsResult(
-                        goalId = goalId,
-                        documentId = documentId,
-                        documents = result.data
-                    )
-                }
-
-                else -> {
-                    _screenState.value =
-                        UiScreenState.Error("문서 조회에 실패하였습니다.")
-                    false
-                }
-            }
-            if (!isCompleted) return@launch
-*/
-
-// 🔥 기존 애니메이션 중단
-            processingJob?.cancel()
-
-            // 1️⃣ 로딩 애니메이션 시작 (무한 반복)
-            processingJob = launch {
-
-                val totalSteps = 10
-
-                while (isActive) {
-
-                    for (step in 0..totalSteps) {
-
-                        val progress =
-                            (step.toFloat() / totalSteps.toFloat())
-                                .coerceIn(0f, 1f)
-
-                        _processingState.value =
-                            ProcessingUiState(progress = progress)
-
-                        delay(1_000L)
+            streamDailySummaryUseCase(categoryId).collect { event ->
+                when (event) {
+                    is SseEvent.Connected -> {
+                        // SSE 연결 수립 — 로딩 상태 유지
                     }
-
-                    // ⭐ 100% 후 자동으로 0%로 돌아감 (loop 재시작)
-                }
-            }
-
-            // 2️⃣ Summary API 호출
-            val result = async {
-                pdfDocumentRepository.getPdfDocumentSummary(goalId, documentId)
-            }.await()
-
-            // 3️⃣ 응답 도착 → 애니메이션 중단
-            processingJob?.cancel()
-
-            // ⭐ UX 보정: 완료 시 100% 유지
-            _processingState.value =
-                ProcessingUiState(progress = 1f)
-
-            // 4️⃣ 결과 처리
-            when (result) {
-
-                is ApiResultV2.Success -> {
-                    val summary = result.data
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            title = summary.fileName,
-                            dateText = toMonthDay(summary.updatedAt),
-                            summary = summary.summary,
-                            errorMessage = null
+                    is SseEvent.Chunk -> {
+                        Log.d("SummaryStream", "chunk: ${event.text}")
+                        buffer.append(event.text)
+                        _uiState.update { it.copy(summary = buffer.toString(), isStreaming = true) }
+                        _screenState.value = UiScreenState.Success
+                    }
+                    is SseEvent.TitleReceived -> {
+                        // 스트리밍 완료 → GET으로 title·documentId 등 최종 데이터 로드
+                        _uiState.update { it.copy(isStreaming = false) }
+                        loadCategorySummary(categoryId.toInt())
+                    }
+                    is SseEvent.StreamError -> {
+                        _uiState.update { it.copy(isLoading = false, isStreaming = false) }
+                        _screenState.value = UiScreenState.Error(
+                            event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
                         )
                     }
-
-                    _screenState.value = UiScreenState.Success
                 }
-
-                is ApiResultV2.SessionExpired -> {
-                    sessionManager.expireSession()
-                }
-
-                else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
-
-                    _screenState.value =
-                        UiScreenState.Error("문서 조회에 실패하였습니다.")
-                }
-            }
-            /*when (val result = documentRepository.getDocumentSummary(goalId, documentId)) {
-
-                is ApiResultV2.Success -> {
-                    val summary = result.data
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            title = summary.fileName,          // 화면 타이틀용
-                            dateText = toMonthDay(summary.updatedAt),
-                            summary = summary.summary,          // 요약 본문
-                            hasSolvedToday = summary.hasSolvedToday,
-                            isFirstTime = summary.isFirstTime,
-                            errorMessage = null
-                        )
-                    }
-                    _screenState.value = UiScreenState.Success
-                }
-
-                else -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = result.uiMessage
-                        )
-                    }
-                    _screenState.value = UiScreenState.Error("문서 조회에 실패하였습니다.")
-                }
-            }*/
-        }
-    }
-
-    private fun handleDocumentsResult(
-        goalId: Int,
-        documentId: Int,
-        documents: List<DocumentResponse>
-    ): Boolean {
-        val targetDocument = documents
-            .firstOrNull { it.documentId == documentId }
-            ?: run {
-                _screenState.value =
-                    UiScreenState.Error("조회한 문서를 찾을 수 없습니다.")
-                return false
-            }
-        Log.d("$this", "targetDocument.status: ${targetDocument.status}, ${targetDocument}")
-
-        return when (targetDocument.status) {
-            DocumentStatus.PENDING -> {
-                handlePending(goalId, documentId)
-                false
-            }
-
-            DocumentStatus.PROCESSING -> {
-                handleProcessing(goalId, documentId, documents)
-                false
-            }
-
-            DocumentStatus.COMPLETED -> {
-                true // ⭐ 여기서만 다음 단계 진행
-            }
-
-            DocumentStatus.FAILED -> {
-                _screenState.value =
-                    UiScreenState.Error("문서 처리에 실패했습니다. 문서를 다시 등록해주세요.")
-                false
             }
         }
     }
 
-
-    private fun handlePending(
-        goalId: Int,
-        documentId: Int
-    ) {
-        _uiState.update {
-            it.copy(
-                isLoading = true
-            )
-        }
-
-        viewModelScope.launch {
-            delay(3_000L)
-            loadDocumentSummary(goalId, documentId)
-        }
-    }
-
-
-    private fun handleProcessing(
-        goalId: Int,
-        documentId: Int,
-        documents: List<DocumentResponse>
-    ) {
-        val targetDocument = documents
-            .firstOrNull { it.documentId == documentId }
-            ?: return
-
-
-        // 🔹 기존 sealed class에 영향 주지 않기 위해 Loading 재사용
-        _screenState.value = UiScreenState.Loading
-
+    /**
+     * 문서 처리 상태를 SSE 로 스트리밍하여 요약글을 로드한다.
+     *
+     * PENDING/PROCESSING → 로딩 바 표시 → COMPLETED → 요약글 API 호출
+     * FAILED / StreamError → 에러 화면
+     */
+    fun loadDocumentSummary(goalId: Int, documentId: Int) {
         processingJob?.cancel()
 
-        processingJob = viewModelScope.launch {
+        viewModelScope.launch {
+            _screenState.value = UiScreenState.Loading
+            _processingState.value = null
 
-            val totalDuration = 10_000L   // 10초
-            val pollingInterval = 1_000L  // 1초
-            val totalSteps = (totalDuration / pollingInterval).toInt()
+            if (goalId == -1 || documentId == -1) {
+                _screenState.value = UiScreenState.Error("goalId 나 documentId 가 등록되지 않았습니다.")
+                return@launch
+            }
 
-            for (step in 0..totalSteps) {
+            streamDocumentProcessingUseCase(goalId.toLong(), documentId.toLong())
+                .collect { event ->
+                    when (event) {
+                        is DocumentProcessingEvent.Connected,
+                        is DocumentProcessingEvent.Pending -> {
+                            _processingState.value = null
+                        }
 
-                // 1️⃣ progress 계산 (10초 기준)
-                val progress =
-                    (step.toFloat() / totalSteps.toFloat())
-                        .coerceIn(0f, 1f)
+                        is DocumentProcessingEvent.Processing -> {
+                            startProgressAnimation(event.remainMs)
+                        }
 
-                _processingState.value =
-                    ProcessingUiState(progress = progress)
+                        is DocumentProcessingEvent.Completed -> {
+                            processingJob?.cancel()
+                            _processingState.value = ProcessingUiState(progress = 1f)
+                            fetchDocumentSummary(goalId, documentId)
+                        }
 
-                // 2️⃣ 1초마다 서버 재요청
-                val result = pdfDocumentRepository.getDocuments(goalId)
+                        is DocumentProcessingEvent.Failed -> {
+                            processingJob?.cancel()
+                            _screenState.value = UiScreenState.Error(event.reason.toUiMessage())
+                        }
 
-                if (result is ApiResultV2.Success) {
-
-                    val target = result.data
-                        .firstOrNull { it.documentId == documentId }
-
-                    if (target?.status == DocumentStatus.COMPLETED) {
-                        // 🔥 즉시 종료
-                        loadDocumentSummary(goalId, documentId)
-                        return@launch
-                    }
-
-                    if (target?.status == DocumentStatus.FAILED) {
-                        _screenState.value =
-                            UiScreenState.Error("문서 처리에 실패했습니다.")
-                        return@launch
+                        is DocumentProcessingEvent.StreamError -> {
+                            processingJob?.cancel()
+                            _screenState.value = UiScreenState.Error(
+                                event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
+                            )
+                        }
                     }
                 }
-
-                delay(pollingInterval)
-            }
-
-            // 🔁 10초 지나도 완료 안 되면 다시 summary 요청
-            loadDocumentSummary(goalId, documentId)
         }
+    }
 
-        /*val estimateTime = targetDocument.estimateTime ?: 10_000L
-
-        // 1️⃣ estimateTime == 0 → 1초 뒤 재요청
-        if (estimateTime == 0L) {
-            _processingState.value =
-                ProcessingUiState(progress = 0f)
-
-            viewModelScope.launch {
-                delay(1_000L)
-                loadDocumentSummary(goalId, documentId)
-            }
-            return
-        }*/
-
-        /*// 2️⃣ estimateTime 기반 로딩바 처리
+    /** remain_ms 기반으로 0f → 0.99f 진행 애니메이션을 별도 Job 으로 구동한다. */
+    private fun startProgressAnimation(remainMs: Long) {
+        processingJob?.cancel()
         val startTime = System.currentTimeMillis()
+        val duration = remainMs.coerceAtLeast(1_000L)
 
-        viewModelScope.launch {
-            while (true) {
-                val elapsed =
-                    System.currentTimeMillis() - startTime
+        processingJob = viewModelScope.launch {
+            while (isActive) {
+                val elapsed = System.currentTimeMillis() - startTime
+                val progress = (elapsed.toFloat() / duration).coerceIn(0f, 0.99f)
+                _processingState.value = ProcessingUiState(progress = progress)
+                if (elapsed >= duration) break
+                delay(100L)
+            }
+        }
+    }
 
-                val progress =
-                    (elapsed.toFloat() / estimateTime)
-                        .coerceIn(0f, 1f)
-
-                _processingState.value =
-                    ProcessingUiState(progress = progress)
-
-                if (elapsed >= estimateTime) break
-
-                delay(100L) // UI 업데이트 주기 (부하 방지)
+    private suspend fun fetchDocumentSummary(goalId: Int, documentId: Int) {
+        when (val result = pdfDocumentRepository.getPdfDocumentSummary(goalId, documentId)) {
+            is ApiResultV2.Success -> {
+                val summary = result.data
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        title = summary.fileName,
+                        dateText = toMonthDay(summary.updatedAt),
+                        summary = summary.summary,
+                        errorMessage = null
+                    )
+                }
+                _screenState.value = UiScreenState.Success
             }
 
-            // 3️⃣ estimateTime 종료 후 재요청
-            loadDocumentSummary(goalId, documentId)
-        }*/
+            is ApiResultV2.SessionExpired -> sessionManager.expireSession()
+
+            else -> {
+                _uiState.update { it.copy(isLoading = false, errorMessage = result.uiMessage) }
+                _screenState.value = UiScreenState.Error("문서 조회에 실패하였습니다.")
+            }
+        }
     }
 
 
@@ -525,8 +360,7 @@ class SummaryViewModel @Inject constructor(
     fun loadCategorySummary(categoryId: Int) {
         viewModelScope.launch {
 
-
-            _uiState.update{
+            _uiState.update {
                 it.copy(
                     categoryId = categoryId.toLong(),
                     isLoading = true,
@@ -534,7 +368,7 @@ class SummaryViewModel @Inject constructor(
                 )
             }
 
-            if (categoryId == -1){
+            if (categoryId == -1) {
                 _uiState.update {
                     _screenState.value =
                         UiScreenState.Error("categoryId 가 등록되지 않았습니다.")
@@ -543,9 +377,9 @@ class SummaryViewModel @Inject constructor(
                         errorMessage = "categoryId 가 등록되지 않았습니다."
                     )
                 }
+                return@launch
             }
 
-            // 2️⃣ 레포 호출
             when (
                 val result =
                     categoryRepository.getDailyCategoryDocument(categoryId.toLong())
@@ -587,11 +421,17 @@ class SummaryViewModel @Inject constructor(
                         )
                     }
 
-                    _screenState.value =
-                        UiScreenState.Error(message)
+                    _screenState.value = UiScreenState.Error(message)
                 }
             }
         }
     }
 
+}
+
+private fun DocumentProcessingEvent.FailureReason.toUiMessage(): String = when (this) {
+    DocumentProcessingEvent.FailureReason.TIMEOUT        -> "문서 처리 시간이 초과되었습니다. 문서를 다시 등록해주세요."
+    DocumentProcessingEvent.FailureReason.SERVER_ERROR   -> "서버 오류로 문서 처리에 실패했습니다. 잠시 후 다시 시도해주세요."
+    DocumentProcessingEvent.FailureReason.ENCRYPTED_FILE -> "암호화된 파일은 처리할 수 없습니다. 다른 파일을 등록해주세요."
+    DocumentProcessingEvent.FailureReason.UNKNOWN        -> "문서 처리에 실패했습니다. 문서를 다시 등록해주세요."
 }

@@ -29,6 +29,8 @@ object SummaryArgs {
     const val KEY_GOAL_TYPE = "key_goal_type"
     const val KEY_DOCUMENT_ID = "key_document_id"
     const val KEY_CATEGORY_ID = "key_category_id"
+    /** true: SSE 스트리밍으로 요약글 생성 / false: GET으로 기존 요약글 조회 */
+    const val KEY_FORCE_STREAM = "key_force_stream"
 }
 
 @AndroidEntryPoint
@@ -59,6 +61,8 @@ class SummaryActivity : ComponentActivity() {
             SummaryArgs.KEY_CATEGORY_ID,
             -1L
         ).takeIf { it != -1L }
+
+        val forceStream = intent.getBooleanExtra(SummaryArgs.KEY_FORCE_STREAM, false)
 
         // 🔥 여기서 goalType 으로 분기
         when (goalType) {
@@ -152,7 +156,8 @@ class SummaryActivity : ComponentActivity() {
                                 goalId = goalId,
                                 goalType = goalType,
                                 documentId = documentId,
-                                categoryId = categoryId
+                                categoryId = categoryId,
+                                forceStream = forceStream
                             )
                             // viewModel.loadInitialData()
                         } else {
