@@ -92,7 +92,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_DOMAIN",
-                "\"https://api.teumteumeat.co.kr/\"",
+                "\"https://api-dev.teumteumeat.co.kr/\"",
             )
             buildConfigField(
                 "String",
