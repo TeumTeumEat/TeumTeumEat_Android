@@ -41,16 +41,20 @@ fun BaseFillButton(
     isLoading: Boolean = false,
     btnContainerColor: Color = MaterialTheme.colorScheme.primary,
     btnContentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    // 비활성(클릭 불가) 상태의 색상 커스텀. null 이면 기본 disabled 색을 사용한다.
+    // 로딩 중인데 '비활성'이 아닌 '진행 중'으로 인지시키고 싶을 때 흐려진 프라이머리 등을 전달한다.
+    disabledBtnContainerColor: Color? = null,
+    disabledBtnContentColor: Color? = null,
 ) {
     val primaryColor = btnContainerColor
     val onPrimaryColor = btnContentColor
 
-    val disableContainerColor =
-        if (isModalBtn) MaterialTheme.extendedColors.btnGray200
+    val disableContainerColor = disabledBtnContainerColor
+        ?: if (isModalBtn) MaterialTheme.extendedColors.btnGray200
         else MaterialTheme.colorScheme.surfaceVariant
 
-    val disableContentColor =
-        if (isModalBtn) MaterialTheme.extendedColors.textGhost else Color.White
+    val disableContentColor = disabledBtnContentColor
+        ?: if (isModalBtn) MaterialTheme.extendedColors.textGhost else Color.White
 
     val contentColor = if (isEnabled) onPrimaryColor else disableContentColor
 
