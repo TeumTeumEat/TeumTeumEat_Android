@@ -14,8 +14,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
@@ -126,6 +128,14 @@ class SummaryActivity : ComponentActivity() {
                                     null -> {}
                                 }
 
+                            }
+
+                            is UiEvent.MoveToHome -> {
+                                // 목표 완료/기간 종료 → 홈 이동. 홈 진입 시 새 목표 안내 다이얼로그가 표시된다.
+                                Utils.UxUtils.moveActivity(
+                                    this@SummaryActivity,
+                                    MainActivity::class.java
+                                )
                             }
 
                             is UiEvent.ShowError -> {

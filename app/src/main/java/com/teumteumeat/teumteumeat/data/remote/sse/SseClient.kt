@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.data.remote.sse
 
+import android.util.Log
 import com.teumteumeat.teumteumeat.di.IoDispatcher
 import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.shareIn
@@ -76,6 +78,20 @@ class SseClient @Inject constructor(
         val url = request.url.toString()
         return connections.computeIfAbsent(url) {
             rawFlow(request)
+                // [크래시 차단] SharedFlow는 업스트림 예외를 수집자에게 전달하지 못하고
+                // sharing scope에서 uncaught로 터져 앱이 죽는다. 종단 예외를 종단
+                // SseEvent.Failure 이벤트로 변환하여 수집자가 정상적으로 처리하도록 한다.
+                .catch { cause ->
+                    val httpCause = cause as? SseHttpException
+                    Log.e("SSE_ERROR", "SSE 종단 예외 → Failure 이벤트 변환: ${cause.javaClass.simpleName}(${cause.message}), httpCode=${httpCause?.code}, errorCode=${httpCause?.errorCode}")
+                    emit(
+                        SseEvent.Failure(
+                            cause = cause,
+                            httpCode = httpCause?.code,
+                            httpMessage = httpCause?.errorMessage
+                        )
+                    )
+                }
                 .onCompletion { connections.remove(url) }
                 .shareIn(
                     scope = clientScope,

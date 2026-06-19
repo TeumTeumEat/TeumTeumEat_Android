@@ -478,7 +478,8 @@ class HomeViewModel @Inject constructor(
                                     ),
                                     currentGoalCompleted = goal.isCompleted,
                                     summaryQuery = buildSummaryQuery(goal),
-                                    isShowGoalExpiredDialog = quizStatus.isCompleted, // ✅ 퀴즈 상태의 isCompleted 기반으로 모달 노출 여부 결정
+                                    // ✅ 퀴즈 완료 또는 목표 기간 종료/목표 없음일 때 새 목표 안내 모달 노출
+                                    isShowGoalExpiredDialog = quizStatus.isCompleted || goal.isExpired || goal.goalId == -1L,
                                     hasRunningGoal = hasRunningGoal
                                 )
                             }

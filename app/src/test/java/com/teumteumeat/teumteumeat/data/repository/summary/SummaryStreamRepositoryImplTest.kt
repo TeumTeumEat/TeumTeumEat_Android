@@ -2,7 +2,9 @@ package com.teumteumeat.teumteumeat.data.repository.summary
 
 import com.teumteumeat.teumteumeat.data.remote.sse.SseClient
 import com.teumteumeat.teumteumeat.data.remote.sse.SseEvent as DataSseEvent
+import com.teumteumeat.teumteumeat.domain.model.sse.SseBusinessException
 import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
+import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flow
@@ -89,33 +91,72 @@ class SummaryStreamRepositoryImplTest {
     }
 
     @Test
-    fun `Opened 와 Closed 이벤트는 무시됨`() = runTest {
+    fun `Opened 는 무시되고 title 수신 시 정상 완료`() = runTest {
         givenSseEvents(
             DataSseEvent.Opened,
+            DataSseEvent.Message(id = null, type = "message", data = "청크"),
+            DataSseEvent.Message(id = null, type = "title",   data = "제목"),
+            DataSseEvent.Closed // title 이후 → transformWhile 종료로 미수집
+        )
+
+        val results = repository.streamDailySummary(1L).toList()
+
+        assertEquals(
+            listOf(SseEvent.Chunk("청크"), SseEvent.TitleReceived("제목")),
+            results
+        )
+    }
+
+    @Test
+    fun `title 없이 Closed 수신 시 StreamError 방출`() = runTest {
+        givenSseEvents(
             DataSseEvent.Message(id = null, type = "message", data = "청크"),
             DataSseEvent.Closed
         )
 
         val results = repository.streamDailySummary(1L).toList()
 
-        assertEquals(listOf(SseEvent.Chunk("청크")), results)
+        assertEquals(2, results.size)
+        assertEquals(SseEvent.Chunk("청크"), results[0])
+        assertTrue(results[1] is SseEvent.StreamError)
     }
 
     @Test
-    fun `Failure 이벤트는 재시도 중 무시됨 — 최종 실패는 catch로 처리`() = runTest {
+    fun `Failure 이벤트 수신 시 StreamError 방출 후 Flow 완료`() = runTest {
+        // SseClient가 재시도 소진 후 방출하는 종단 Failure → 즉시 StreamError로 종료
         givenSseEvents(
             DataSseEvent.Message(id = null, type = "CONNECT", data = ""),
-            DataSseEvent.Failure(cause = null, httpCode = 503, httpMessage = "Service Unavailable"),
-            DataSseEvent.Message(id = null, type = "title", data = "제목")
+            DataSseEvent.Failure(
+                cause = SseHttpException(503),
+                httpCode = 503,
+                httpMessage = "Service Unavailable"
+            ),
+            DataSseEvent.Message(id = null, type = "title", data = "방출되면 안 됨")
         )
 
         val results = repository.streamDailySummary(1L).toList()
 
-        // Failure는 필터링되고 이후 이벤트는 정상 방출
-        assertEquals(
-            listOf(SseEvent.Connected, SseEvent.TitleReceived("제목")),
-            results
+        assertEquals(2, results.size)
+        assertEquals(SseEvent.Connected, results[0])
+        assertTrue(results[1] is SseEvent.StreamError)
+    }
+
+    @Test
+    fun `Failure 에 비즈니스 코드가 있으면 SseBusinessException 으로 방출`() = runTest {
+        givenSseEvents(
+            DataSseEvent.Failure(
+                cause = SseHttpException(400, "GOAL-003", "목표 학습 횟수를 완료하였습니다."),
+                httpCode = 400,
+                httpMessage = "목표 학습 횟수를 완료하였습니다."
+            )
         )
+
+        val results = repository.streamDailySummary(1L).toList()
+
+        val error = results.single() as SseEvent.StreamError
+        val business = error.throwable as SseBusinessException
+        assertEquals("GOAL-003", business.errorCode)
+        assertEquals("목표 학습 횟수를 완료하였습니다.", business.message)
     }
 
     // ── 3. 오류 처리 ──────────────────────────────────────────────────────────
