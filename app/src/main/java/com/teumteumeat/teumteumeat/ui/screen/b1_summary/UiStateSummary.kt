@@ -30,5 +30,10 @@ data class UiStateSummary(
     /* 퀴즈 안내씬 클라이언트에서 보낼 분기 값 */
     val isSkipQuizGuideChecked: Boolean = false,
 
+    /** true: SSE 청크 수신 중 — 퀴즈 버튼 비활성화 */
+    val isStreaming: Boolean = false,
+
+    /** true: 요약글 완료 후 퀴즈 프리페치 진행 중 — 하단 버튼에 "퀴즈를 불러오는 중..." 표시 */
+    val isQuizLoading: Boolean = false,
 )
 

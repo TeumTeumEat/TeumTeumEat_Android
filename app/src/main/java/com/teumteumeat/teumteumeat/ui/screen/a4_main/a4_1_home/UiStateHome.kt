@@ -87,7 +87,7 @@ data class SummaryQuery(
 
 sealed class SnackState {
 
-    /** ✅ 지금 간식 사용 가능 → 퀴즈 가능 */
+    /** ✅ 지금 간식 사용 가능 → 요약글 생성 or 조회 가능 */
     data object Available : SnackState()
 
     /** ❌ 오늘 이미 사용함 */

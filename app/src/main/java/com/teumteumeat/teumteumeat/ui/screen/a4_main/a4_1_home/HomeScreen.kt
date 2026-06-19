@@ -57,6 +57,7 @@ import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
+import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
@@ -328,6 +329,8 @@ fun HomeScreen(
                                                     SummaryArgs.KEY_CATEGORY_ID,
                                                     latestQuery.categoryId
                                                 )
+                                                // 오늘 요약글이 없으면 SSE 스트리밍으로 생성, 이미 있으면 GET 조회.
+                                                putExtra(SummaryArgs.KEY_FORCE_STREAM, !uiState.hasCreatedToday)
                                             }
                                             activity.startActivity(intent)
                                         }
@@ -465,10 +468,7 @@ fun HomeScreen(
                              * 2. ViewModel의 useCoupon을 호출하여 서버에 오늘의 요약글 생성을 요청합니다.
                              */
                             viewModel.useCoupon(
-                                onSuccess = { latestQuery ->
-                                    /*
-                                     * 3. 성공 시: 생성된 최신 요약글 정보(latestQuery)를 Intent에 담아 요약글 화면(SummaryActivity)으로 이동합니다.
-                                     */
+                                onSuccess = { latestQuery, forceStream ->
                                     val intent = Intent(
                                         activity,
                                         SummaryActivity::class.java
@@ -486,6 +486,8 @@ fun HomeScreen(
                                             SummaryArgs.KEY_CATEGORY_ID,
                                             latestQuery.categoryId
                                         )
+                                        // 첫 진입: SSE 스트리밍 생성 / 재진입: GET 조회
+                                        putExtra(SummaryArgs.KEY_FORCE_STREAM, forceStream)
                                     }
                                     activity.startActivity(intent)
 
