@@ -56,9 +56,12 @@ class DocumentProcessingStreamRepositoryImpl @Inject constructor(
             .mapNotNull { it.toDomainEvent() }
             .transformWhile { event ->
                 emit(event)
-                event !is DocumentProcessingEvent.Completed && event !is DocumentProcessingEvent.Failed
+                event !is DocumentProcessingEvent.Completed &&
+                    event !is DocumentProcessingEvent.Failed &&
+                    event !is DocumentProcessingEvent.StreamError
             }
             .catch { throwable ->
+                // 예상치 못한 예외에 대한 안전망 (HTTP/네트워크 오류는 Failure 이벤트로 전달됨)
                 emit(DocumentProcessingEvent.StreamError(throwable))
             }
     }
@@ -70,8 +73,11 @@ class DocumentProcessingStreamRepositoryImpl @Inject constructor(
             else           -> null
         }
         is DataSseEvent.Opened,
-        is DataSseEvent.Closed,
-        is DataSseEvent.Failure -> null
+        is DataSseEvent.Closed -> null
+        // SseClient가 재시도를 소진한 뒤 방출하는 종단 실패 이벤트 → StreamError로 전달.
+        is DataSseEvent.Failure -> DocumentProcessingEvent.StreamError(
+            cause ?: Exception(httpMessage ?: "문서 처리 스트리밍 연결에 실패했습니다.")
+        )
     }
 
     private fun parseStatusEvent(data: String): DocumentProcessingEvent? =

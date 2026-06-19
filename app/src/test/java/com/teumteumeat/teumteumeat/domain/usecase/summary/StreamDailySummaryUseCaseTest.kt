@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.domain.usecase.summary
 
+import com.teumteumeat.teumteumeat.domain.model.sse.SseBusinessException
 import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
 import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
 import com.teumteumeat.teumteumeat.domain.repository.summary.SummaryStreamRepository
@@ -45,7 +46,8 @@ class StreamDailySummaryUseCaseTest {
     // ── 2. HTTP 상태 코드 매핑 ─────────────────────────────────────────────────
 
     @Test
-    fun `StreamError(SseHttpException 400) → 잘못된 요청입니다`() = runTest {
+    fun `StreamError(SseHttpException 400, 비즈니스 코드 없음) → 알 수 없는 오류가 발생했습니다`() = runTest {
+        // 400 이지만 비즈니스 코드가 없는 경우 일반 메시지로 변환 (코드 분기는 ViewModel 책임)
         every { mockRepository.streamDailySummary(1L) } returns flowOf(
             SseEvent.StreamError(SseHttpException(400))
         )
@@ -53,7 +55,22 @@ class StreamDailySummaryUseCaseTest {
         val results = useCase(1L).toList()
 
         val error = results.single() as SseEvent.StreamError
-        assertEquals("잘못된 요청입니다.", error.throwable.message)
+        assertEquals("알 수 없는 오류가 발생했습니다.", error.throwable.message)
+    }
+
+    @Test
+    fun `SseBusinessException 은 변환 없이 그대로 보존됨`() = runTest {
+        // 비즈니스 에러는 ViewModel이 코드 기준으로 분기하므로 UseCase가 메시지를 덮어쓰지 않는다.
+        val business = SseBusinessException("GOAL-003", "목표 학습 횟수를 완료하였습니다.")
+        every { mockRepository.streamDailySummary(1L) } returns flowOf(
+            SseEvent.StreamError(business)
+        )
+
+        val results = useCase(1L).toList()
+
+        val error = results.single() as SseEvent.StreamError
+        assertEquals(business, error.throwable)
+        assertEquals("GOAL-003", (error.throwable as SseBusinessException).errorCode)
     }
 
     @Test

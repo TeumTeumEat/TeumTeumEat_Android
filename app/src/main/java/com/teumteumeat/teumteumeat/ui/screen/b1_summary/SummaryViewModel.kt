@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import android.app.Application
 import android.util.Log
+import com.teumteumeat.teumteumeat.BuildConfig
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
@@ -9,8 +10,10 @@ import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
 import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
+import com.teumteumeat.teumteumeat.domain.model.sse.SseBusinessException
 import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
@@ -32,8 +35,16 @@ import javax.inject.Inject
 
 sealed interface UiEvent {
     data object MoveToQuiz : UiEvent
+    /** 홈으로 이동 — 목표 완료/기간 종료(GOAL-002/003) 시 새 목표 안내 다이얼로그를 띄우기 위함. */
+    data object MoveToHome : UiEvent
     data class ShowError(val message: String) : UiEvent
 }
+
+/** 목표 학습 횟수 완료 — 홈 이동 후 새 목표 안내. */
+private const val ERROR_CODE_GOAL_COMPLETED = "GOAL-003"
+
+/** 목표 학습 기간 종료 — 홈 이동 후 새 목표 안내. */
+private const val ERROR_CODE_GOAL_EXPIRED = "GOAL-002"
 
 
 @dagger.hilt.android.lifecycle.HiltViewModel
@@ -156,11 +167,8 @@ class SummaryViewModel @Inject constructor(
                             handleInvalidParam("categoryId 가 등록되지 않았습니다.")
                             return@launch
                         }
-                        if (shouldForceStream) {
-                            startCategorySummaryStream(cId)
-                        } else {
-                            loadCategorySummary(cId.toInt())
-                        }
+                        // 항상 SSE로 생성 시도. 에러 발생 시 handleSummaryStreamError 에서 GET 폴백.
+                        startCategorySummaryStream(cId)
                     }
                     DomainGoalType.DOCUMENT -> {
                         if (shouldForceStream) {
@@ -201,7 +209,8 @@ class SummaryViewModel @Inject constructor(
     ) {
         Log.d("SummaryViewModel", "goalId: $goalId, goalType: $goalType, documentId: $documentId, categoryId: $categoryId, forceStream: $forceStream")
 
-        shouldForceStream = forceStream
+        // CATEGORY는 항상 SSE로 생성 시도. DOCUMENT는 caller가 전달한 forceStream 값 사용.
+        shouldForceStream = if (goalType == DomainGoalType.CATEGORY) true else forceStream
         _uiState.update {
             it.copy(
                 goalId = goalId,
@@ -237,23 +246,59 @@ class SummaryViewModel @Inject constructor(
                         // SSE 연결 수립 — 로딩 상태 유지
                     }
                     is SseEvent.Chunk -> {
-                        Log.d("SummaryStream", "chunk: ${event.text}")
+                        if (BuildConfig.DEBUG) Log.d("SummaryStream", "chunk: ${event.text}")
                         buffer.append(event.text)
+                        // 전체 버퍼를 그대로 MarkdownText에 전달 → 스트리밍 중에도 마크다운 라이브 렌더링.
+                        // 미완성 마커(**, `, ```)는 MarkdownText 내부에서 노출하지 않는다.
                         _uiState.update { it.copy(summary = buffer.toString(), isStreaming = true) }
                         _screenState.value = UiScreenState.Success
                     }
                     is SseEvent.TitleReceived -> {
-                        // 스트리밍 완료 → GET으로 title·documentId 등 최종 데이터 로드
-                        _uiState.update { it.copy(isStreaming = false) }
-                        loadCategorySummary(categoryId.toInt())
+                        // 스트리밍 완료 → 요약글 GET + 퀴즈 프리페치 순차 실행
+                        _uiState.update { it.copy(isStreaming = false, isQuizLoading = true) }
+                        viewModelScope.launch {
+                            // 요약 GET·퀴즈 프리페치가 중단되어도 버튼이 "퀴즈를 불러오는 중..."에
+                            // 고정되지 않도록 finally 에서 isQuizLoading 을 반드시 내린다.
+                            try {
+                                loadCategorySummaryInternal(categoryId.toInt())
+                                val documentId = _uiState.value.categoryDocumentId
+                                if (documentId != -1) prefetchCategoryQuiz(documentId)
+                            } finally {
+                                _uiState.update { it.copy(isQuizLoading = false) }
+                            }
+                        }
                     }
                     is SseEvent.StreamError -> {
-                        _uiState.update { it.copy(isLoading = false, isStreaming = false) }
-                        _screenState.value = UiScreenState.Error(
-                            event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
-                        )
+                        handleSummaryStreamError(event.throwable, categoryId)
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * 요약 스트리밍 에러를 비즈니스 코드별로 분기 처리한다.
+     *
+     * - `GOAL-002`/`GOAL-003` : 홈으로 이동 → 새 목표 안내 다이얼로그
+     * - `QUIZ-002`            : 기존 요약글 GET 조회 (재생성 불가)
+     * - 그 외                  : 에러 화면 표시
+     */
+    private suspend fun handleSummaryStreamError(throwable: Throwable, categoryId: Long) {
+        val errorCode = (throwable as? SseBusinessException)?.errorCode
+        Log.e("SSE_ERROR", "SSE 요약 에러 수신: errorCode=$errorCode, message=${throwable.message}")
+        _uiState.update { it.copy(isLoading = false, isStreaming = false) }
+
+        when (errorCode) {
+            ERROR_CODE_GOAL_COMPLETED,
+            ERROR_CODE_GOAL_EXPIRED -> {
+                Log.d("SSE_ERROR", "목표 완료/기간 종료 → 홈 이동")
+                _event.emit(UiEvent.MoveToHome)
+            }
+
+            else -> {
+                // QUIZ-002, 네트워크 오류, 그 외 모든 에러 → GET으로 기존 요약글 조회 (폴백)
+                Log.d("SSE_ERROR", "SSE 오류 → GET 폴백: categoryId=$categoryId")
+                loadCategorySummary(categoryId.toInt())
             }
         }
     }
@@ -358,72 +403,59 @@ class SummaryViewModel @Inject constructor(
     }
 
     fun loadCategorySummary(categoryId: Int) {
-        viewModelScope.launch {
+        viewModelScope.launch { loadCategorySummaryInternal(categoryId) }
+    }
 
-            _uiState.update {
-                it.copy(
-                    categoryId = categoryId.toLong(),
-                    isLoading = true,
-                    errorMessage = null,
-                )
-            }
+    private suspend fun loadCategorySummaryInternal(categoryId: Int) {
+        _uiState.update {
+            it.copy(
+                categoryId = categoryId.toLong(),
+                isLoading = true,
+                errorMessage = null,
+            )
+        }
 
-            if (categoryId == -1) {
+        if (categoryId == -1) {
+            _screenState.value = UiScreenState.Error("categoryId 가 등록되지 않았습니다.")
+            _uiState.update { it.copy(isLoading = false, errorMessage = "categoryId 가 등록되지 않았습니다.") }
+            return
+        }
+
+        when (val result = categoryRepository.getDailyCategoryDocument(categoryId.toLong())) {
+            is ApiResultV2.Success -> {
+                val data = result.data
                 _uiState.update {
-                    _screenState.value =
-                        UiScreenState.Error("categoryId 가 등록되지 않았습니다.")
                     it.copy(
                         isLoading = false,
-                        errorMessage = "categoryId 가 등록되지 않았습니다."
+                        title = data.title,
+                        summary = data.content,
+                        hasSolvedToday = data.hasSolvedToday,
+                        isFirstTime = data.isFirstTime,
+                        dateText = toMonthDay(data.createdAt),
+                        errorMessage = null,
+                        categoryDocumentId = data.documentId.toInt(),
                     )
                 }
-                return@launch
+                Utils.PrefsUtil.saveDocumentId(appContext, data.documentId.toInt())
+                _screenState.value = UiScreenState.Success
             }
-
-            when (
-                val result =
-                    categoryRepository.getDailyCategoryDocument(categoryId.toLong())
-            ) {
-
-                is ApiResultV2.Success -> {
-                    val data = result.data
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            title = data.title,
-                            summary = data.content,
-                            hasSolvedToday = data.hasSolvedToday,
-                            isFirstTime = data.isFirstTime,
-                            dateText = toMonthDay(data.createdAt),
-                            errorMessage = null,
-                            categoryDocumentId = data.documentId.toInt(),
-                        )
-                    }
-
-                    Utils.PrefsUtil.saveDocumentId(appContext, data.documentId.toInt())
-                    _screenState.value = UiScreenState.Success
-                }
-
-                is ApiResultV2.SessionExpired -> {
-                    sessionManager.expireSession()
-                }
-
-                is ApiResultV2.ServerError,
-                is ApiResultV2.NetworkError,
-                is ApiResultV2.UnknownError -> {
-                    val message = result.uiMessage
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = message
-                        )
-                    }
-
-                    _screenState.value = UiScreenState.Error(message)
-                }
+            is ApiResultV2.SessionExpired -> sessionManager.expireSession()
+            is ApiResultV2.ServerError,
+            is ApiResultV2.NetworkError,
+            is ApiResultV2.UnknownError -> {
+                val message = result.uiMessage
+                _uiState.update { it.copy(isLoading = false, errorMessage = message) }
+                _screenState.value = UiScreenState.Error(message)
             }
+        }
+    }
+
+    /** SSE TitleReceived 후 퀴즈를 미리 생성 요청한다. (isQuizLoading 토글은 호출부 finally 가 담당) */
+    private suspend fun prefetchCategoryQuiz(documentId: Int) {
+        Log.d("SummaryViewModel", "퀴즈 생성 요청: documentId=$documentId")
+        when (quizRepository.getUserQuizzes(documentId, GoalTypeUiState.CATEGORY)) {
+            is ApiResultV2.Success -> Log.d("SummaryViewModel", "퀴즈 생성 완료: documentId=$documentId")
+            else -> Log.w("SummaryViewModel", "퀴즈 생성 실패: documentId=$documentId (QuizActivity에서 재요청)")
         }
     }
 

@@ -28,7 +28,6 @@ import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.appTypography
-import com.teumteumeat.teumteumeat.utils.extendedColors
 import androidx.compose.runtime.getValue
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
@@ -45,8 +44,6 @@ fun SummaryScreen(
     onRetryApi: () -> Unit
 ) {
 
-    val theme = MaterialTheme.extendedColors
-    val typography = MaterialTheme.appTypography
     val viewModel = LocalViewModelContext.current as SummaryViewModel
     val context = LocalActivityContext.current as SummaryActivity
     val processingState by viewModel.processingState.collectAsStateWithLifecycle()
@@ -131,9 +128,10 @@ fun SummaryScreen(
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                     } else {
+                                        // 스트리밍 중에도 전체 텍스트를 마크다운으로 라이브 렌더링
                                         MarkdownText(
                                             markdown = uiState.summary,
-                                            modifier = Modifier.fillMaxSize()
+                                            modifier = Modifier.fillMaxWidth()
                                         )
                                     }
 
@@ -168,16 +166,26 @@ fun SummaryScreen(
                             )
 
                             // 하단 퀴즈 버튼
+                            // 로딩(요약 생성/퀴즈 로드) 중에는 '흐려진 프라이머리' 배경으로 진행 중임을 보여주고
+                            // isEnabled=false 로 실제 클릭은 막는다. (비활성 회색이 아닌 로딩 색으로 인지)
+                            val isBtnLoading = screenState is UiScreenState.Loading
+                                    || uiState.isStreaming
+                                    || uiState.isQuizLoading
                             BaseFillButton(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
                                     .padding(20.dp)
                                     .fillMaxWidth(),
                                 onClick = onQuizClick,
-                                isEnabled = screenState !is UiScreenState.Loading && !uiState.isStreaming,
-                                text = if (screenState is UiScreenState.Loading || uiState.isStreaming) {
-                                    "잠시만 기다려주세요"
-                                } else "퀴즈 풀러가기"
+                                isEnabled = !isBtnLoading,
+                                disabledBtnContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                disabledBtnContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                                text = when {
+                                    screenState is UiScreenState.Loading || uiState.isStreaming ->
+                                        "요약글을 생성하는 중..."
+                                    uiState.isQuizLoading -> "퀴즈를 불러오는 중..."
+                                    else -> "퀴즈 풀러가기"
+                                }
                             )
                         }
                     }

@@ -1,8 +1,10 @@
 package com.teumteumeat.teumteumeat.data.repository.summary
 
+import android.util.Log
 import com.teumteumeat.teumteumeat.data.network.retrofit.NetworkConfig
 import com.teumteumeat.teumteumeat.data.remote.sse.SseClient
 import com.teumteumeat.teumteumeat.data.remote.sse.SseEvent as DataSseEvent
+import com.teumteumeat.teumteumeat.domain.model.sse.SseBusinessException
 import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
 import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
 import com.teumteumeat.teumteumeat.domain.repository.summary.SummaryStreamRepository
@@ -63,13 +65,9 @@ class SummaryStreamRepositoryImpl @Inject constructor(
                         false
                     }
                     is DataSseEvent.Failure -> {
-                        if (rawEvent.httpCode != null && rawEvent.httpCode >= 400) {
-                            emit(SseEvent.StreamError(SseHttpException(rawEvent.httpCode)))
-                            false
-                        } else {
-                            // 재연결 진행 중인 일시적 실패 — SseClient가 retry 처리
-                            true
-                        }
+                        // SseClient가 재시도를 소진한 뒤 방출하는 종단 실패 이벤트.
+                        emit(SseEvent.StreamError(rawEvent.toStreamThrowable()))
+                        false
                     }
                     else -> {
                         val domainEvent = rawEvent.toDomainEvent()
@@ -98,6 +96,27 @@ class SummaryStreamRepositoryImpl @Inject constructor(
             else               -> null
         }
         else -> null
+    }
+
+    /**
+     * 종단 [DataSseEvent.Failure]를 도메인 예외로 변환한다.
+     *
+     * - 비즈니스 코드(`GOAL-002` 등)가 있으면 [SseBusinessException]으로 보존하여
+     *   Presentation 레이어가 코드별 분기를 수행하도록 한다.
+     * - 그 외 HTTP 오류는 [SseHttpException], 네트워크 오류는 원인 예외를 그대로 전달한다.
+     */
+    private fun DataSseEvent.Failure.toStreamThrowable(): Throwable {
+        val httpCause = cause as? SseHttpException
+        val result = when {
+            httpCause?.errorCode != null ->
+                SseBusinessException(httpCause.errorCode, httpCause.errorMessage ?: httpMessage)
+            httpCode != null ->
+                SseHttpException(httpCode)
+            else ->
+                cause ?: Exception("요약 스트리밍 연결에 실패했습니다.")
+        }
+        Log.e("SSE_ERROR", "SummaryStream Failure → 도메인 예외: ${result.javaClass.simpleName}(${result.message}), httpCode=$httpCode")
+        return result
     }
 
     companion object {

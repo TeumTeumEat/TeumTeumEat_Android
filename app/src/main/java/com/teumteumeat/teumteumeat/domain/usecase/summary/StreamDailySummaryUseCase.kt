@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.domain.usecase.summary
 
+import com.teumteumeat.teumteumeat.domain.model.sse.SseBusinessException
 import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
 import com.teumteumeat.teumteumeat.domain.model.sse.SseHttpException
 import com.teumteumeat.teumteumeat.domain.repository.summary.SummaryStreamRepository
@@ -34,9 +35,11 @@ class StreamDailySummaryUseCase @Inject constructor(
 }
 
 private fun SseEvent.StreamError.toUserFacingError(): SseEvent.StreamError {
+    // 비즈니스 에러는 ViewModel이 코드 기준으로 분기하므로 변환 없이 보존한다.
+    if (throwable is SseBusinessException) return this
+
     val message = when (val cause = throwable) {
         is SseHttpException -> when (cause.code) {
-            400 -> "목표 학습 횟수를 완료하였습니다."
             401 -> "인증이 필요합니다."
             403 -> "접근 권한이 없습니다."
             404 -> "카테고리를 찾을 수 없습니다."
