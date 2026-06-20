@@ -192,7 +192,7 @@ git push -u origin <선택된 브랜치명>
   원격 push     : origin/<새 브랜치명>
 
 이제 이 브랜치에서 작업을 시작할 수 있습니다.
-개발이 완료되면 `teum-commit` → `teum-pr-creator` 스킬을 순서대로 사용하세요.
+개발이 완료되면 `teum-code-reviewer` -> `teum-commit` → `teum-pr-creator` 스킬을 순서대로 사용하세요.
 ```
 
 ---
