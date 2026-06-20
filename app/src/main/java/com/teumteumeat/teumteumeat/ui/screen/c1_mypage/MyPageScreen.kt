@@ -135,7 +135,6 @@ fun MyPageScreen(
                                     description = uiState.topicDescription,
                                     goalWeek = uiState.goalWeek,
                                     difficulty = uiState.goalDifficulty,
-                                    isSelGoalExpired = uiState.isSelGoalCompleted
                                 )
                             }
 
