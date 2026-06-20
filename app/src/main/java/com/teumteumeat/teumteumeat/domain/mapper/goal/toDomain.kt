@@ -11,7 +11,6 @@ fun UserGoalResponse.toDomain(): UserGoal {
         type = type, // ✅ enum 전용 매퍼 사용,
         startDate = LocalDate.parse(startDate),
         endDate = LocalDate.parse(endDate),
-        isExpired = isExpired,
         isCompleted = isCompleted,
         studyPeriod = studyPeriod,
         difficulty = Difficulty.valueOf(difficulty),

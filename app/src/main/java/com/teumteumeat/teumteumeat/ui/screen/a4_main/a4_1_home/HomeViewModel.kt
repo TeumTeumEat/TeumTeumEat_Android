@@ -436,11 +436,10 @@ class HomeViewModel @Inject constructor(
                     cachedGoal = goal
                     Log.d("user's current goal", "${goal}")
 
-                    // 💡 목표가 만료되었거나 없을 경우 다이얼로그 상태를 true로 유지
-                    if (goal.isExpired || goal.goalId == -1L) {
-                        _uiState.update { it.copy(isShowGoalExpiredDialog = true) }
+                    if (goal.goalId == -1L) {
+                        _uiState.update { it.copy(isShowNewGoalGuideDialog = true) }
                     } else {
-                        _uiState.update { it.copy(isShowGoalExpiredDialog = false) }
+                        _uiState.update { it.copy(isShowNewGoalGuideDialog = false) }
                     }
 
                     // 2️⃣ 오늘 퀴즈 상태 조회
@@ -478,8 +477,7 @@ class HomeViewModel @Inject constructor(
                                     ),
                                     currentGoalCompleted = goal.isCompleted,
                                     summaryQuery = buildSummaryQuery(goal),
-                                    // ✅ 퀴즈 완료 또는 목표 기간 종료/목표 없음일 때 새 목표 안내 모달 노출
-                                    isShowGoalExpiredDialog = quizStatus.isCompleted || goal.isExpired || goal.goalId == -1L,
+                                    isShowNewGoalGuideDialog = quizStatus.isCompleted || goal.goalId == -1L,
                                     hasRunningGoal = hasRunningGoal
                                 )
                             }
@@ -520,40 +518,18 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // ================= 홈 비즈니스 로직 =================
-
-    fun checkExpiredGoal(): Boolean {
-        val goal = cachedGoal ?: return false
-        return goal.isCompleted
-    }
-
-    /**
-     * 만료된 목표 확인 다이얼로그를 닫는 함수
-     */
-    fun dismissGoalExpiredDialog() {
-        _uiState.update {
-            it.copy(isShowGoalExpiredDialog = false)
-        }
-    }
-
     /* ================= 상태 계산 ================= */
 
-    private fun resolveFireState(goal: UserGoal): FireState =
-        if (goal.isExpired) FireState.UnBurning else FireState.Burning
+    private fun resolveFireState(goal: UserGoal): FireState = FireState.Burning
 
 
     /**
-     * 🔥 햄버거(Snack) 상태의 단일 결정 함수
+     * 음식(Snack) 상태의 단일 결정 함수
      */
     private fun resolveSnackState(
         goal: UserGoal,
         hasSolvedToday: Boolean
     ): SnackState {
-
-        // 1️⃣ 목표 - 완료 시 또는 만료시
-        if (goal.isExpired) {
-            return SnackState.Expired
-        }
 
         if (goal.isCompleted) {
             return SnackState.Completed
@@ -570,9 +546,6 @@ class HomeViewModel @Inject constructor(
         // 3️⃣ 사용 가능
         return SnackState.Available
     }
-
-    private fun calculateStampCount(goal: UserGoal): Int =
-        if (goal.isExpired) 0 else 1
 
     private fun List<GetGoalResponse>.hasAnyRunningGoal(): Boolean {
         val today = LocalDate.now()
