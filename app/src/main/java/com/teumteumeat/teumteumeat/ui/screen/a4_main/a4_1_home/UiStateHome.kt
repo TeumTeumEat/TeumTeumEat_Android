@@ -49,7 +49,7 @@ data class UiStateHome(
     // 현재 선택된 랜덤 음식 리소스 ID (기본값 설정 가능)
     val selectedFoodRes: Int = R.drawable.food_rice,
 
-    val isShowGoalExpiredDialog: Boolean = false,
+    val isShowNewGoalGuideDialog: Boolean = false,
 
     val errorMessage: String? = null,
     val toastMessage: String? = null,
@@ -97,9 +97,6 @@ sealed class SnackState {
 
     /** 목표 완료 */
     data object Completed : SnackState()
-
-    /** 🚫 기간 종료 */
-    data object Expired : SnackState()
 }
 
 
