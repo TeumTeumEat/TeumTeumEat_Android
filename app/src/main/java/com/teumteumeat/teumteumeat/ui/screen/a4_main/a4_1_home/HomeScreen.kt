@@ -40,8 +40,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -54,13 +52,9 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
-import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
-import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
-import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
-import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
@@ -341,14 +335,6 @@ fun HomeScreen(
                                             }
                                         }
 
-                                        SnackState.Expired -> {
-                                            Toast.makeText(
-                                                activity,
-                                                "학습 기간이 만료된 목표입니다.",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-
                                         SnackState.Completed -> {
                                             Toast.makeText(
                                                 activity,
@@ -382,14 +368,6 @@ fun HomeScreen(
 
                                     Text(
                                         message,
-                                        style = MaterialTheme.appTypography.titleBold22,
-                                        textAlign = TextAlign.Center,
-                                    )
-                                }
-
-                                is SnackState.Expired -> {
-                                    Text(
-                                        "학습 목표 기간이 종료되었어요",
                                         style = MaterialTheme.appTypography.titleBold22,
                                         textAlign = TextAlign.Center,
                                     )
@@ -522,49 +500,6 @@ fun HomeScreen(
                         isAdLoading = uiState.isAdLoading
                     )
 
-                    // 🔹 목표 만료 알림 모달
-                    if (uiState.isShowGoalExpiredDialog) {
-                        // 배경을 어둡게 처리하거나 다이얼로그 형태로 띄우기 위해
-                        // 일반적으로 Box나 Dialog 컴포넌트 내부에서 호출합니다.
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Dialog(
-                                onDismissRequest = {
-                                    // viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                },
-                                properties = DialogProperties(
-                                    usePlatformDefaultWidth = false,
-                                    dismissOnBackPress = false, // 뒤로가기 버튼으로도 닫히지 않게 하려면 false
-                                    dismissOnClickOutside = false // 외부 터치 시 닫히지 않게 설정
-                                )
-                            ) {
-
-                                BaseModal(
-                                    title = "풀고 있는 틈틈잇이 없어요",
-                                    body = "먹을 간식이 없어요!\n새로운 지식을 먹여줄래요?",
-                                    primaryButtonText = "진행중인 틈틈잇 선택하기",
-                                    isPrimaryBtnEnabled = uiState.hasRunningGoal,
-                                    secondaryButtonText = "새로운 틈틈잇 시작하기",
-                                    isVerticalButtons = true,
-                                    onPrimaryClick = {
-                                        viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                        // 학습 주제 설정 화면(GoalListActivity)으로 이동
-                                        val intent = Intent(activity, GoalListActivity::class.java)
-                                        activity.startActivity(intent)
-                                    },
-                                    onSecondaryClick = {
-                                        viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                        // 새로운 목표 설정 화면(AddGoalActivity)으로 이동
-                                        // KEY_GOAL_TYPE을 넘기지 않음으로써 목표 방식 선택 화면이 첫 화면이 되도록 함
-                                        val intent = Intent(activity, AddGoalActivity::class.java)
-                                        activity.startActivity(intent)
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
 
             }
