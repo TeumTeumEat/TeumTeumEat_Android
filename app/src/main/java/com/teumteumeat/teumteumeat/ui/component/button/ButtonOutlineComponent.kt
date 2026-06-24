@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.ui.component.button
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +51,7 @@ fun BaseOutlineButton(
     subTextStyle: TextStyle = TextStyle(),
     isEnabled: Boolean = true,
     color: Color = MaterialTheme.colorScheme.primary,
+    borderWidth: Dp = 1.5.dp,
     onClick: () -> Unit = {},
     contentAligment: Alignment = Alignment.Center,
     btnHeight: Int = 50,
@@ -76,7 +78,7 @@ fun BaseOutlineButton(
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
             shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(1.5.dp, outlineColor),
+            border = BorderStroke(borderWidth, outlineColor),
             modifier = Modifier
                 .height(btnHeight.dp)
                 .fillMaxWidth(),
