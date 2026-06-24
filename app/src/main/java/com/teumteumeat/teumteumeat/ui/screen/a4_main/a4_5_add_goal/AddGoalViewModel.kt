@@ -16,7 +16,11 @@ import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
+import com.teumteumeat.teumteumeat.domain.usecase.document.CreateDocumentSummaryUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
@@ -32,6 +36,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -46,11 +51,15 @@ class AddGoalViewModel @Inject constructor(
     private val updateGoalUseCase: UpdateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val createDocumentSummaryUseCase: CreateDocumentSummaryUseCase,
+    private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
     private val emitGoalRefreshUseCase: EmitGoalRefreshUseCase,
     application: Application,
     val sessionManager: SessionManager,
 ) : ViewModel() {
     private val appContext = application.applicationContext
+
+    private var sseInitialRemainMs: Long = 0L
 
     // Flow 값으로 currentPage 읽기
     private val currentPage get() = uiState.value.currentPage
@@ -541,8 +550,9 @@ class AddGoalViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // ✅ 생성된 goalId 추출
+                    // ✅ 생성된 goalId 추출 후 uiState에 저장 (재시도 시 재사용)
                     val goalId = createResult.data.toLong()
+                    _uiState.update { it.copy(goalId = goalId.toInt()) }
 
                     // 1-1. 생성한 목표 ID로 수정
                     val updateGoalResult = updateGoalRequest(goalId)
@@ -550,7 +560,6 @@ class AddGoalViewModel @Inject constructor(
                         moveToError(updateGoalResult)
                         return@launch
                     }
-
 
                     // 2. 문서 확인
                     val uri = state.selectedFileUri
@@ -565,7 +574,7 @@ class AddGoalViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // 3. 문서 업로드
+                    // 3. 문서 업로드 (Presigned S3 + 서버 등록)
                     val uploadDocumentResult = uploadDocumentInternal(
                         goalId = goalId.toInt(),
                         uri = state.selectedFileUri,
@@ -577,12 +586,18 @@ class AddGoalViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // 4. 문서 등록
+                    // 4. documentId 조회 후 uiState에 저장
                     val fetchDocumentResult = fetchCompletedDocument(goalId.toInt())
                     if (fetchDocumentResult !is ApiResultV2.Success) {
                         moveToError(fetchDocumentResult)
                         return@launch
                     }
+
+                    val documentId = _uiState.value.documentId.toLong()
+
+                    // 5. SSE로 처리 상태 모니터링 (Success/Error 전환은 내부에서 처리)
+                    connectDocumentSSE(goalId, documentId)
+                    return@launch
                 }
 
                 GoalTypeUiState.CATEGORY -> {
@@ -773,6 +788,83 @@ class AddGoalViewModel @Inject constructor(
             is ApiResultV2.ServerError -> result
             is ApiResultV2.NetworkError -> result
             is ApiResultV2.UnknownError -> result
+        }
+    }
+
+    private suspend fun connectDocumentSSE(goalId: Long, documentId: Long) {
+        sseInitialRemainMs = 0L
+        _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseStatusText = null) }
+
+        streamDocumentProcessingUseCase(goalId, documentId)
+            .catch { e ->
+                Log.e("SSE_LIFECYCLE", "Flow 예외 전파: ${e.javaClass.simpleName}(${e.message})")
+                _mainState.value = UiStateAddGoalScreenState.Error(
+                    e.message ?: "알 수 없는 오류가 발생했습니다."
+                )
+            }
+            .collect { event ->
+            when (event) {
+                is DocumentProcessingEvent.Connected -> {
+                    _uiState.update { it.copy(isSseStarted = true) }
+                }
+                is DocumentProcessingEvent.Pending -> {
+                    _uiState.update { it.copy(isSseStarted = true, sseProgress = 0.05f) }
+                }
+                is DocumentProcessingEvent.Processing -> {
+                    val remainMs = event.remainMs
+                    if (sseInitialRemainMs == 0L && remainMs > 0L) {
+                        sseInitialRemainMs = remainMs
+                    }
+                    val progress = when {
+                        remainMs <= 0L -> 0.99f
+                        sseInitialRemainMs > 0L ->
+                            (0.05f + (1f - remainMs.toFloat() / sseInitialRemainMs) * 0.94f)
+                                .coerceIn(0.05f, 0.99f)
+                        else -> 0.05f
+                    }
+                    val statusText = if (remainMs <= 0L) "잠시만 기다려주세요"
+                        else "${(remainMs + 999L) / 1000L}초 남았어요."
+                    val progressText = if (remainMs > 0L) "${(progress * 100).toInt()}% 완료" else null
+                    _uiState.update { it.copy(sseProgress = progress, sseStatusText = statusText, sseProgressText = progressText) }
+                }
+                is DocumentProcessingEvent.Completed -> {
+                    Log.d("SSE_LIFECYCLE", "OCR 처리 완료 → SSE 연결 정상 종료")
+                    _uiState.update { it.copy(sseProgress = 1.0f, sseStatusText = null) }
+                    delay(600L)
+                    emitGoalRefreshUseCase()
+                    _mainState.value = UiStateAddGoalScreenState.Success
+                }
+                is DocumentProcessingEvent.Failed -> {
+                    _mainState.value = when (event.reason) {
+                        DocumentProcessingEvent.FailureReason.TIMEOUT ->
+                            UiStateAddGoalScreenState.SseTimeout
+                        DocumentProcessingEvent.FailureReason.SERVER_ERROR ->
+                            UiStateAddGoalScreenState.SseServerError
+                        DocumentProcessingEvent.FailureReason.ENCRYPTED_FILE ->
+                            UiStateAddGoalScreenState.SseEncryptedFile
+                        DocumentProcessingEvent.FailureReason.UNKNOWN ->
+                            UiStateAddGoalScreenState.Error("알 수 없는 오류가 발생했습니다.")
+                    }
+                }
+                is DocumentProcessingEvent.StreamError -> {
+                    _mainState.value = UiStateAddGoalScreenState.Error(
+                        event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
+                    )
+                }
+            }
+        }
+    }
+
+    fun retryDocumentSSE() {
+        viewModelScope.launch {
+            sseInitialRemainMs = 0L
+            _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseStatusText = null) }
+            _mainState.value = UiStateAddGoalScreenState.Loading
+
+            val goalId = _uiState.value.goalId.toLong()
+            val documentId = _uiState.value.documentId.toLong()
+
+            connectDocumentSSE(goalId, documentId)
         }
     }
 

@@ -24,6 +24,7 @@ internal class SseEventSourceListener(
 ) : EventSourceListener() {
 
     override fun onOpen(eventSource: EventSource, response: Response) {
+        Log.d("SSE_LIFECYCLE", "[${ts()}] ✅ onOpen — 연결 수립 성공")
         channel.trySend(SseEvent.Opened)
     }
 
@@ -33,10 +34,12 @@ internal class SseEventSourceListener(
         type: String?,
         data: String
     ) {
+        Log.d("SSE_LIFECYCLE", "[${ts()}] 📨 onEvent — type=$type | data=${data.take(120)}")
         channel.trySend(SseEvent.Message(id = id, type = type, data = data))
     }
 
     override fun onClosed(eventSource: EventSource) {
+        Log.d("SSE_LIFECYCLE", "[${ts()}] 🔚 onClosed — 서버가 스트림을 정상 종료")
         channel.trySend(SseEvent.Closed)
         channel.close() // 정상 종료 → retryWhen 미트리거
     }
@@ -46,8 +49,12 @@ internal class SseEventSourceListener(
         t: Throwable?,
         response: Response?
     ) {
-        // source.cancel()에 의한 정상 종료 — retryWhen 재시도를 방지한다.
+        Log.e("SSE_LIFECYCLE", "[${ts()}] ❌ onFailure — t=${t?.javaClass?.simpleName}(${t?.message}), httpCode=${response?.code}")
+
+        // SocketException("Socket closed") = source.cancel()에 의한 정상 종료.
+        // 예외 없이 채널을 닫아 retryWhen 재시도를 방지한다.
         if (t is java.net.SocketException && t.message == "Socket closed") {
+            Log.d("SSE_LIFECYCLE", "[${ts()}] 🔌 소켓 닫힘 — source.cancel()에 의한 정상 종료, 재시도 없음")
             channel.close()
             return
         }
@@ -95,5 +102,6 @@ internal class SseEventSourceListener(
 
     private companion object {
         private val gson = Gson()
+        private fun ts() = System.currentTimeMillis()
     }
 }
