@@ -17,14 +17,12 @@ import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
-import com.teumteumeat.teumteumeat.domain.usecase.document.CreateDocumentSummaryUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
-import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.UpdateGoalUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
@@ -51,7 +49,6 @@ class AddGoalViewModel @Inject constructor(
     private val updateGoalUseCase: UpdateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
-    private val createDocumentSummaryUseCase: CreateDocumentSummaryUseCase,
     private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
     private val emitGoalRefreshUseCase: EmitGoalRefreshUseCase,
     application: Application,
