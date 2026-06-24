@@ -24,6 +24,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.UpdateGoalUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category

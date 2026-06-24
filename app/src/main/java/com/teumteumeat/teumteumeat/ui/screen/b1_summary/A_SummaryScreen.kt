@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.MarkdownText
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
@@ -46,7 +45,6 @@ fun SummaryScreen(
 
     val viewModel = LocalViewModelContext.current as SummaryViewModel
     val context = LocalActivityContext.current as SummaryActivity
-    val processingState by viewModel.processingState.collectAsStateWithLifecycle()
     val screenState = LocalScreenState.current
 
     BackHandler {
@@ -143,8 +141,7 @@ fun SummaryScreen(
                             if (screenState is UiScreenState.Loading) {
                                 GoalLoadingScreen(
                                     title = "요약글을 생성하는 중",
-                                    message = "잠시만 기다려주세요...",
-                                    progress = processingState?.progress
+                                    message = "잠시만 기다려주세요..."
                                 )
                             }
 
