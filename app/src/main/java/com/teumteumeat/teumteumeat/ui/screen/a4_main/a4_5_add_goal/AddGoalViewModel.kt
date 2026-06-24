@@ -11,7 +11,6 @@ import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
-import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
@@ -21,6 +20,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.UpdateGoalUseCase
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
@@ -46,9 +46,9 @@ class AddGoalViewModel @Inject constructor(
     private val updateGoalUseCase: UpdateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val emitGoalRefreshUseCase: EmitGoalRefreshUseCase,
     application: Application,
     val sessionManager: SessionManager,
-    val goalRepository: GoalRepository,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -580,7 +580,7 @@ class AddGoalViewModel @Inject constructor(
                     // 4. 문서 등록
                     val fetchDocumentResult = fetchCompletedDocument(goalId.toInt())
                     if (fetchDocumentResult !is ApiResultV2.Success) {
-                        moveToError(uploadDocumentResult)
+                        moveToError(fetchDocumentResult)
                         return@launch
                     }
                 }
@@ -605,6 +605,7 @@ class AddGoalViewModel @Inject constructor(
 
                 GoalTypeUiState.NONE -> {
                     moveToFrontError("목표 타입이 선택되지 않았습니다.")
+                    return@launch
                 }
             }
 
@@ -613,7 +614,7 @@ class AddGoalViewModel @Inject constructor(
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
-            goalRepository.emitRefreshSignal()
+            emitGoalRefreshUseCase()
             _mainState.value = UiStateAddGoalScreenState.Success
 
         }
