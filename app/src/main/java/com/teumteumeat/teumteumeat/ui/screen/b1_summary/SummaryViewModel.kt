@@ -12,25 +12,20 @@ import com.teumteumeat.teumteumeat.domain.repository.pff_document.PdfDocumentRep
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
-import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
 import com.teumteumeat.teumteumeat.domain.model.sse.SseBusinessException
 import com.teumteumeat.teumteumeat.domain.model.sse.SseEvent
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
-import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.StreamPdfSummaryUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.summary.StreamDailySummaryUseCase
-import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -59,7 +54,6 @@ class SummaryViewModel @Inject constructor(
     private val pdfDocumentRepository: PdfDocumentRepository,
     private val categoryRepository: CategoryRepository,
     private val quizRepository: QuizRepository,
-    private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
     private val streamDailySummaryUseCase: StreamDailySummaryUseCase,
     private val streamPdfSummaryUseCase: StreamPdfSummaryUseCase,
     val application: Application,
@@ -75,19 +69,11 @@ class SummaryViewModel @Inject constructor(
         MutableStateFlow<UiScreenState>(UiScreenState.Idle)
     val screenState = _screenState.asStateFlow()
 
-    private val _processingState =
-        MutableStateFlow<ProcessingUiState?>(null)
-    val processingState = _processingState.asStateFlow()
-    private var processingJob: Job? = null
-
     private val _event = MutableSharedFlow<UiEvent>()
     val event: SharedFlow<UiEvent> = _event
 
     /** CATEGORY·DOCUMENT 모두 SSE 경로. loadInitialData에서 Success를 조기 설정하지 않기 위한 플래그. */
     private var shouldForceStream = false
-
-    /** DOCUMENT 목표에서 OCR 처리가 아직 완료되지 않은 경우 true. initSummary 호출 시 설정된다. */
-    private var isDocumentOcrPending = false
 
     fun loadInitialData() {
         viewModelScope.launch {
@@ -181,13 +167,8 @@ class SummaryViewModel @Inject constructor(
                         startCategorySummaryStream(cId)
                     }
                     DomainGoalType.DOCUMENT -> {
-                        if (isDocumentOcrPending) {
-                            // OCR 처리 대기 중 → 처리 완료 SSE 후 요약글 스트리밍
-                            loadDocumentSummary(currentState.goalId.toInt(), currentState.documentId.toInt())
-                        } else {
-                            // OCR 완료 → 바로 요약글 스트리밍 시작
-                            startPdfSummaryStream(currentState.goalId, currentState.documentId)
-                        }
+                        // OCR 처리는 AddGoalViewModel 에서 완료됨 → PDF 요약글 SSE 스트리밍 시작
+                        startPdfSummaryStream(currentState.goalId, currentState.documentId)
                     }
                     else -> {}
                 }
@@ -218,8 +199,7 @@ class SummaryViewModel @Inject constructor(
     ) {
         Log.d("SummaryViewModel", "goalId: $goalId, goalType: $goalType, documentId: $documentId, categoryId: $categoryId, forceStream: $forceStream")
 
-        // DOCUMENT: OCR 대기 여부 저장. CATEGORY·DOCUMENT 모두 SSE 경로.
-        isDocumentOcrPending = goalType == DomainGoalType.DOCUMENT && forceStream
+        // CATEGORY·DOCUMENT 모두 SSE 경로이므로 Success 전환은 각 SSE 핸들러가 담당한다.
         shouldForceStream = goalType == DomainGoalType.CATEGORY || goalType == DomainGoalType.DOCUMENT
         _uiState.update {
             it.copy(
@@ -314,58 +294,6 @@ class SummaryViewModel @Inject constructor(
     }
 
     /**
-     * 문서 처리 상태를 SSE 로 스트리밍하여 요약글을 로드한다.
-     *
-     * PENDING/PROCESSING → 로딩 바 표시 → COMPLETED → 요약글 API 호출
-     * FAILED / StreamError → 에러 화면
-     */
-    fun loadDocumentSummary(goalId: Int, documentId: Int) {
-        processingJob?.cancel()
-
-        viewModelScope.launch {
-            _screenState.value = UiScreenState.Loading
-            _processingState.value = null
-
-            if (goalId == -1 || documentId == -1) {
-                _screenState.value = UiScreenState.Error("goalId 나 documentId 가 등록되지 않았습니다.")
-                return@launch
-            }
-
-            streamDocumentProcessingUseCase(goalId.toLong(), documentId.toLong())
-                .collect { event ->
-                    when (event) {
-                        is DocumentProcessingEvent.Connected,
-                        is DocumentProcessingEvent.Pending -> {
-                            _processingState.value = null
-                        }
-
-                        is DocumentProcessingEvent.Processing -> {
-                            startProgressAnimation(event.remainMs)
-                        }
-
-                        is DocumentProcessingEvent.Completed -> {
-                            processingJob?.cancel()
-                            _processingState.value = ProcessingUiState(progress = 1f)
-                            startPdfSummaryStream(goalId.toLong(), documentId.toLong())
-                        }
-
-                        is DocumentProcessingEvent.Failed -> {
-                            processingJob?.cancel()
-                            _screenState.value = UiScreenState.Error(event.reason.toUiMessage())
-                        }
-
-                        is DocumentProcessingEvent.StreamError -> {
-                            processingJob?.cancel()
-                            _screenState.value = UiScreenState.Error(
-                                event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
-                            )
-                        }
-                    }
-                }
-        }
-    }
-
-    /**
      * PDF 요약글을 SSE 스트리밍으로 생성하고, 완료 후 GET으로 최종 메타데이터를 로드한다.
      *
      * ### 이벤트 처리
@@ -382,7 +310,7 @@ class SummaryViewModel @Inject constructor(
         streamPdfSummaryUseCase(goalId, documentId).collect { event ->
             when (event) {
                 is SseEvent.Connected -> {
-                    _processingState.value = null
+                    // 연결 수립 — 로딩 상태 유지
                 }
                 is SseEvent.Chunk -> {
                     if (BuildConfig.DEBUG) Log.d("PdfSummaryStream", "chunk: ${event.text}")
@@ -425,23 +353,6 @@ class SummaryViewModel @Inject constructor(
                 _screenState.value = UiScreenState.Error(
                     throwable.message ?: "요약글 생성에 실패했습니다."
                 )
-            }
-        }
-    }
-
-    /** remain_ms 기반으로 0f → 0.99f 진행 애니메이션을 별도 Job 으로 구동한다. */
-    private fun startProgressAnimation(remainMs: Long) {
-        processingJob?.cancel()
-        val startTime = System.currentTimeMillis()
-        val duration = remainMs.coerceAtLeast(1_000L)
-
-        processingJob = viewModelScope.launch {
-            while (isActive) {
-                val elapsed = System.currentTimeMillis() - startTime
-                val progress = (elapsed.toFloat() / duration).coerceIn(0f, 0.99f)
-                _processingState.value = ProcessingUiState(progress = progress)
-                if (elapsed >= duration) break
-                delay(100L)
             }
         }
     }
@@ -535,9 +446,3 @@ class SummaryViewModel @Inject constructor(
 
 }
 
-private fun DocumentProcessingEvent.FailureReason.toUiMessage(): String = when (this) {
-    DocumentProcessingEvent.FailureReason.TIMEOUT        -> "문서 처리 시간이 초과되었습니다. 문서를 다시 등록해주세요."
-    DocumentProcessingEvent.FailureReason.SERVER_ERROR   -> "서버 오류로 문서 처리에 실패했습니다. 잠시 후 다시 시도해주세요."
-    DocumentProcessingEvent.FailureReason.ENCRYPTED_FILE -> "암호화된 파일은 처리할 수 없습니다. 다른 파일을 등록해주세요."
-    DocumentProcessingEvent.FailureReason.UNKNOWN        -> "문서 처리에 실패했습니다. 문서를 다시 등록해주세요."
-}
