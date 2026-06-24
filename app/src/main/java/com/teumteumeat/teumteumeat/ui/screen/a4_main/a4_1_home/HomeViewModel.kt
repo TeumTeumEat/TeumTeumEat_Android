@@ -388,6 +388,7 @@ class HomeViewModel @Inject constructor(
         val query = _uiState.value.summaryQuery
         val forceStream = !couponSummaryCreated
         couponSummaryCreated = true
+        _uiState.update { it.copy(snackState = SnackState.Available) }
         onSuccess(query, forceStream)
     }
 
