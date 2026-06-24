@@ -309,18 +309,19 @@ private fun AnnotatedString.Builder.appendInline(
 private fun stripDangling(text: String): String =
     text.replace("**", "").replace("`", "")
 
+
 /**
  * 인라인 코드 칩. 밝은 회색 둥근 배경 위에 빨간 모노스페이스 텍스트를 배치한다.
  *
- * 배경(안쪽 Box)이 텍스트를 좌우 3dp 패딩으로 정확히 감싸고, 바깥 Box 가 이를
- * placeholder 영역 가운데에 정렬한다. placeholder 너비는 칩이 잘리지 않도록 넉넉히
- * 추정한다(인라인 코드는 ASCII 비중이 높아 모노스페이스 폭 추정이 안정적).
+ * - Placeholder.height = 2.2em: 일반 줄(22sp)보다 높아 칩이 들어간 줄에 위아래 여백이 생긴다.
+ * - 바깥 Box fillMaxSize + Center: 칩을 Placeholder 세로 중앙에 배치하여 위아래 공간을 확보한다.
+ * - 외부 좌우 여백은 추가하지 않는다(바깥 Box에 horizontal padding 없음).
  */
 private fun inlineCodeChip(code: String): InlineTextContent =
     InlineTextContent(
         placeholder = Placeholder(
             width = (code.length * 0.65f + 0.8f).em,
-            height = 1.5.em,
+            height = 2.2.em,
             placeholderVerticalAlign = PlaceholderVerticalAlign.Center
         )
     ) {

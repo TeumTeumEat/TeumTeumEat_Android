@@ -46,6 +46,12 @@ internal class SseEventSourceListener(
         t: Throwable?,
         response: Response?
     ) {
+        // source.cancel()에 의한 정상 종료 — retryWhen 재시도를 방지한다.
+        if (t is java.net.SocketException && t.message == "Socket closed") {
+            channel.close()
+            return
+        }
+
         val httpCode = response?.code
 
         // HTTP 오류(4xx/5xx)는 응답 바디의 비즈니스 코드까지 파싱하여 SseHttpException으로 래핑.

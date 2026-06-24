@@ -1,7 +1,6 @@
 package com.teumteumeat.teumteumeat.domain.repository.pff_document
 
 import android.net.Uri
-import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
@@ -61,11 +60,5 @@ interface PdfDocumentRepository {
         goalId: Int,
         documentId: Int,
     ): ApiResultV2<PdfDocumentSummary>
-
-    suspend fun createDocumentSummary(
-        goalId: Int,
-        documentId: Int,
-    ): ApiResultV2<DocumentSummaryResponse>
-
 
 }
