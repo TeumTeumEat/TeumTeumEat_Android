@@ -263,7 +263,8 @@ fun EditUserInfoScreen(
                         subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
                             color = MaterialTheme.extendedColors.textSecondary
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.extendedColors.btnLineDisable,
+                        borderWidth = 2.dp,
                         onClick = { viewModel.openBottomSheet(BottomSheetType.WorkInTime) }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -276,7 +277,8 @@ fun EditUserInfoScreen(
                         subTextStyle = MaterialTheme.appTypography.btnMedium18_h24.copy(
                             color = MaterialTheme.extendedColors.textSecondary
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.extendedColors.btnLineDisable,
+                        borderWidth = 2.dp,
                         onClick = { viewModel.openBottomSheet(BottomSheetType.WorkOutTime) }
                     )
                 }
@@ -386,7 +388,7 @@ fun TimeSettingRow(
                 .height(52.dp)
                 .background(Color.White)
                 .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, Color.LightGray, RoundedCornerShape(16.dp))
+                .border(2.dp, MaterialTheme.extendedColors.btnLineDisable, RoundedCornerShape(16.dp))
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
