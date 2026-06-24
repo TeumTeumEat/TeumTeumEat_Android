@@ -103,14 +103,20 @@ class SseClient @Inject constructor(
 
     private fun rawFlow(request: Request): Flow<SseEvent> =
         callbackFlow {
+            val startMs = System.currentTimeMillis()
+            Log.d("SSE_LIFECYCLE", "[${startMs}] 🔌 EventSource 생성됨: ${request.url}")
             val listener = SseEventSourceListener(channel)
             val source = eventSourceFactory.newEventSource(request, listener)
 
             // Flow 취소 시 EventSource 정리
-            awaitClose { source.cancel() }
+            awaitClose {
+                Log.w("SSE_LIFECYCLE", "[${System.currentTimeMillis()}] ⚠️ awaitClose → source.cancel() 호출 (uptime=${System.currentTimeMillis() - startMs}ms)")
+                source.cancel()
+            }
         }.retryWhen { cause, attempt ->
             // SseHttpException(4xx/5xx)은 재시도해도 동일한 오류가 반환되므로 즉시 전파.
             val shouldRetry = attempt < MAX_RETRY_COUNT && cause !is SseHttpException
+            Log.w("SSE_LIFECYCLE", "[${System.currentTimeMillis()}] 🔁 retryWhen — attempt=$attempt, shouldRetry=$shouldRetry, cause=${cause.javaClass.simpleName}(${cause.message})")
             if (shouldRetry) {
                 // 지수 백오프: 1000 * 2^attempt ms
                 delay(BASE_DELAY_MS * (1L shl attempt.toInt()))
