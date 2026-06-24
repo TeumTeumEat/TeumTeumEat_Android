@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -29,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -51,21 +53,45 @@ fun SubmitLoadingScreen(
     visibleStates: SnapshotStateList<Boolean>,
     isCompletedLoading: Boolean,
     onAnimationComplete: () -> Unit = {},
+    // PDF 문서 플로우 전용 SSE 진행 상태
+    isDocumentFlow: Boolean = false,
+    sseProgress: Float = 0f,
+    sseStatusText: String? = null,   // "N초 남았어요." / "잠시만 기다려주세요"
+    sseProgressText: String? = null, // "XX% 완료"
 ) {
     val extendedColors = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
 
+    // 카테고리 플로우: 1.8초 선형 애니메이션
     val progressAnimatable = remember { Animatable(0f) }
-
     LaunchedEffect(Unit) {
-        progressAnimatable.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = minDurationMs.toInt(),
-                easing = LinearEasing
+        if (!isDocumentFlow) {
+            progressAnimatable.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = minDurationMs.toInt(), easing = LinearEasing)
             )
-        )
-        onAnimationComplete()
+            onAnimationComplete()
+        }
+    }
+
+    // 문서 플로우: SSE 진행률 → 부드러운 원형 프로그레스 애니메이션
+    val animatedSseProgress by animateFloatAsState(
+        targetValue = if (isDocumentFlow) sseProgress else 0f,
+        animationSpec = tween(durationMillis = 600),
+        label = "sseProgressAnim"
+    )
+    LaunchedEffect(sseProgress) {
+        if (isDocumentFlow && sseProgress >= 1.0f) {
+            onAnimationComplete()
+        }
+    }
+
+    val effectiveProgress = if (isDocumentFlow) animatedSseProgress else progressAnimatable.value
+
+    val stepLabels = if (isDocumentFlow) {
+        listOf("파일 업로드 중", "문서 등록 중", "퀴즈 생성 중")
+    } else {
+        listOf("대중교통 이용 시간 취합 중", "난이도와 프롬프트 적용 중", "해당 카테고리 퀴즈 생성 중")
     }
 
     Box(
@@ -86,24 +112,38 @@ fun SubmitLoadingScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             GoalProgress(
-                progress = progressAnimatable.value,
+                progress = effectiveProgress,
                 isCompletedLoading = isCompletedLoading
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            val subtitleText = if (isDocumentFlow && sseStatusText != null) sseStatusText else "잠시만 기다려주세요"
             Text(
-                text = "틈틈잇을 생성하는 중\n잠시만 기다려주세요",
-                style = typography.subtitleSemiBold18.copy(
-                    lineHeight = 24.sp,
-                ),
+                text = "틈틈잇을 생성하는 중",
+                style = typography.subtitleSemiBold18.copy(lineHeight = 24.sp),
                 color = extendedColors.textPrimary
             )
+
+            Text(
+                text = subtitleText,
+                style = typography.subtitleSemiBold18.copy(lineHeight = 24.sp),
+                color = extendedColors.textPrimary
+            )
+
+            if (isDocumentFlow && sseProgressText != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = sseProgressText,
+                    style = typography.captionRegular14.copy(lineHeight = 24.sp),
+                    color = extendedColors.primary
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // ✅ 체크 리스트
+        // 체크 리스트
         Column(
             modifier = Modifier
                 .wrapContentSize()
@@ -121,21 +161,21 @@ fun SubmitLoadingScreen(
                     visible = visibleStates[0],
                     enter = fadeIn() + slideInVertically { it / 2 }
                 ) {
-                    LoadingCheckItem("대중교통 이용 시간 취합 중")
+                    LoadingCheckItem(stepLabels[0])
                 }
 
                 AnimatedVisibility(
                     visible = visibleStates[1],
                     enter = fadeIn() + slideInVertically { it / 2 }
                 ) {
-                    LoadingCheckItem("난이도와 프롬프트 적용 중")
+                    LoadingCheckItem(stepLabels[1])
                 }
 
                 AnimatedVisibility(
                     visible = visibleStates[2],
                     enter = fadeIn() + slideInVertically { it / 2 }
                 ) {
-                    LoadingCheckItem("해당 카테고리 퀴즈 생성 중")
+                    LoadingCheckItem(stepLabels[2])
                 }
             }
         }
@@ -152,6 +192,21 @@ private fun OnBoardingLoadingScreenPreview() {
             minDurationMs = 1800L,
             visibleStates = visibleStates,
             isCompletedLoading = false,
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360, heightDp = 800, name = "Document SSE Processing")
+@Composable
+private fun DocumentLoadingScreenPreview() {
+    TeumTeumEatTheme {
+        val visibleStates = remember { mutableStateListOf(true, true, true) }
+        SubmitLoadingScreen(
+            visibleStates = visibleStates,
+            isCompletedLoading = false,
+            isDocumentFlow = true,
+            sseProgress = 0.52f,
+            sseStatusText = "약 6초 남았어요",
         )
     }
 }
