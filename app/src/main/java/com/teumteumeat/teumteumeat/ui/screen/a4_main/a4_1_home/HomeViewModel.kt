@@ -15,6 +15,7 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.localdata.preference.HomePreference
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
@@ -52,6 +53,7 @@ class HomeViewModel @Inject constructor(
     private val adManager: RewardedAdManager,
     private val networkConnection: NetworkConnection,
     private val savedStateHandle: SavedStateHandle, // 프로세스 죽음 대비
+    private val homePreference: HomePreference,
 ) : ViewModel() {
 
     // SavedStateHandle에 날짜를 저장 (메모리 유실 방지)
@@ -79,10 +81,12 @@ class HomeViewModel @Inject constructor(
         get() = savedStateHandle["coupon_summary_created"] ?: false
         set(value) { savedStateHandle["coupon_summary_created"] = value }
 
-    // 음식 이미지 변경 시점 추적: 목표 변경 또는 일일 지식 교체 시에만 setRandomFood() 호출
-    private var lastKnownGoalId: Long = Long.MIN_VALUE
-
     init {
+        // 강제 종료 후 복귀 시에도 저장된 음식 즉시 복원 (API 응답 전 기본값 노출 방지)
+        homePreference.getSelectedFoodRes()?.let { savedFood ->
+            _uiState.update { it.copy(selectedFoodRes = savedFood) }
+        }
+
         // 실제 앱 구동 시에만 리시버 등록
         setupDateChangeReceiver()
 
@@ -411,12 +415,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun setRandomFood() {
-        _uiState.update { currentState ->
-            currentState.copy(
-                selectedFoodRes = currentState.foodList.random()
-            )
-        }
+    private fun setRandomFood(goalId: Long) {
+        val food = _uiState.value.foodList.random()
+        homePreference.saveGoalFood(goalId, food)
+        _uiState.update { it.copy(selectedFoodRes = food) }
     }
 
     /**
@@ -479,14 +481,17 @@ class HomeViewModel @Inject constructor(
                                     currentGoalCompleted = goal.isCompleted,
                                     summaryQuery = buildSummaryQuery(goal),
                                     isShowNewGoalGuideDialog = quizStatus.isCompleted || goal.goalId == -1L,
-                                    hasRunningGoal = hasRunningGoal
+                                    hasRunningGoal = hasRunningGoal,
+
+                                    // 같은 목표 재시작 → 저장된 음식 복원 / 목표 변경은 아래에서 처리
+                                    selectedFoodRes = homePreference.getSelectedFoodRes()
+                                        ?: it.selectedFoodRes
                                 )
                             }
 
-                            // 목표가 변경되었을 때 음식 이미지 교체
-                            if (goal.goalId != lastKnownGoalId) {
-                                lastKnownGoalId = goal.goalId
-                                setRandomFood()
+                            // 목표가 변경된 경우에만 새 음식 랜덤 선택
+                            if (goal.goalId != homePreference.getLastGoalId()) {
+                                setRandomFood(goal.goalId)
                             }
 
                             _screenState.value = UiScreenState.Success
