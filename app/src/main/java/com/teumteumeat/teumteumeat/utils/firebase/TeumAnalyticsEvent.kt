@@ -265,8 +265,13 @@ object TeumAnalyticsEvent {
         /** 집에 돌아가는 시간 — 온보딩 SetRoutineScreen에서 설정, 포맷: "HH:mm" */
         const val COMMUTE_TIME_SECOND = "commute_time_second" // "18:00"
 
-        /** 디바이스 종류 — 온보딩 알림 권한 허용 시 설정 */
-        const val DEVICE_TYPE = "device_type"  // "Android" | "iOS"
+        /**
+         * OS 종류 — 수동·자동 로그인 성공 시 설정
+         *
+         * 수동: [LoginViewModel.handleLoginResult] 성공 시
+         * 자동: [SplashViewModel.tryAutoLogin] 성공 시
+         */
+        const val OS_TYPE = "os_type"  // "Android" | "iOS"
 
         /** 알림 활성 상태 — 온보딩 알림 권한 허용 후 설정 */
         const val NOTIFY_ENABLED = "notify_enabled"  // "true" | "false"
@@ -291,6 +296,48 @@ object TeumAnalyticsEvent {
 
         /** 온보딩 완료 여부 — 온보딩 최종 완료 시 "complete"로 설정 */
         const val ONBOARDING_COMPLETE = "onboarding_complete"  // "not_yet" | "complete"
+
+        /**
+         * 요약본 최초 열람 여부 — [SummaryViewStart] 이벤트 첫 발화 시 "true"로 설정
+         *
+         * GA4 잠재고객 빌더에서 has_viewed_summary ≠ "true" 세그먼트로
+         * "온보딩 완료 후 학습 미진입 이탈 위험군" 식별 → FCM 리마인더 타겟팅에 직접 활용
+         */
+        const val HAS_VIEWED_SUMMARY = "has_viewed_summary"  // "true"
+
+        /**
+         * 소셜 로그인 방식 — 수동/자동 로그인 성공 시 설정
+         *
+         * 수동: [LoginViewModel.handleLoginResult] 성공 시
+         * 자동: [SplashViewModel.tryAutoLogin] 성공 시 ([TokenLocalDataSource.getProvider] 참조)
+         */
+        const val LOGIN_METHOD = "login_method"  // "kakao" | "google"
+    }
+
+    /**
+     * SUM-001 · 요약본 첫 페이지 노출 이벤트
+     *
+     * | 파라미터   | 타입   | 예시        | 목적                              |
+     * |-----------|--------|-------------|----------------------------------|
+     * | session_id | String | "42"        | 현재 학습 목표(goalId) 식별자     |
+     * | content_id | String | "17"        | 노출된 요약 콘텐츠 ID             |
+     * | topic      | String | "SwiftUI"   | 요약 콘텐츠 제목 (최대 100자)     |
+     *
+     * ## 측정 목적
+     * - `onboarding_complete → summary_view_start` 전환율로 온보딩 학습 유도 효과 판단
+     * - topic 세분화로 인기 콘텐츠 분포 파악 (GA4 맞춤 측정기준 등록 필요)
+     * - User Property [UserProperties.HAS_VIEWED_SUMMARY]를 "true"로 설정하여
+     *   학습 미진입 이탈 위험군 세그먼트 식별 (FCM 리마인더 타겟팅 활용)
+     *
+     * ## 발생 시점
+     * - [SummaryViewModel.loadCategorySummary] / [SummaryViewModel.loadDocumentSummary]
+     *   API 성공 후 최초 1회 (ViewModel 인스턴스당 1회 보장)
+     */
+    object SummaryViewStart {
+        const val NAME = "summary_view_start"
+        const val PARAM_SESSION_ID = "session_id"   // goalId.toString()
+        const val PARAM_CONTENT_ID = "content_id"   // categoryDocumentId 또는 documentId
+        const val PARAM_TOPIC = "topic"              // 콘텐츠 제목 (max 100자)
     }
 
     /**
