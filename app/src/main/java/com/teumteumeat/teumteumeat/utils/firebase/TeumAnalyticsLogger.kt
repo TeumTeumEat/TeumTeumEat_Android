@@ -262,6 +262,46 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * SUM-001 — 요약본 첫 페이지 노출 이벤트 로깅 ([TeumAnalyticsEvent.SummaryViewStart])
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.HAS_VIEWED_SUMMARY])를
+     * "true"로 설정합니다. [SummaryViewModel] 내에서 ViewModel 인스턴스당 최초 1회만 호출됩니다.
+     *
+     * @param sessionId 현재 학습 목표 ID (goalId.toString())
+     * @param contentId 노출된 요약 콘텐츠 ID (categoryDocumentId 또는 documentId)
+     * @param topic     요약 콘텐츠 제목 — 100자 초과 시 잘라냄
+     */
+    fun logSummaryViewStart(sessionId: String, contentId: String, topic: String) {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.HAS_VIEWED_SUMMARY, "true")
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.SummaryViewStart.PARAM_SESSION_ID, sessionId)
+            putString(TeumAnalyticsEvent.SummaryViewStart.PARAM_CONTENT_ID, contentId)
+            putString(TeumAnalyticsEvent.SummaryViewStart.PARAM_TOPIC, topic.take(100))
+        }
+        analytics.logEvent(TeumAnalyticsEvent.SummaryViewStart.NAME, params)
+    }
+
+    /**
+     * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
+     *
+     * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
+     *
+     * @param method 로그인 방식 — "kakao" 또는 "google"
+     */
+    fun setLoginMethod(method: String) {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.LOGIN_METHOD, method)
+    }
+
+    /**
+     * OS 종류를 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.OS_TYPE]).
+     *
+     * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
+     */
+    fun setOsType() {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.OS_TYPE, "Android")
+    }
+
+    /**
      * 소셜 로그인 성공 이벤트 로깅 ([TeumAnalyticsEvent.LoginComplete])
      *
      * @param method       로그인 방식 — "kakao" 또는 "google"

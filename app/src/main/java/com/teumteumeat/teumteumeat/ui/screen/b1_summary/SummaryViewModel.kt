@@ -18,6 +18,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ProcessingUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.toMonthDay
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -43,9 +44,13 @@ class SummaryViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
     val application: Application,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
 
     private val appContext = application.applicationContext
+
+    /** ViewModel 인스턴스당 summary_view_start 이벤트 중복 발송 방지 플래그 */
+    private var hasSummaryViewStartLogged = false
 
     private val _uiState = MutableStateFlow(UiStateSummary())
     val uiState = _uiState.asStateFlow()
@@ -314,6 +319,15 @@ class SummaryViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+
+                    if (!hasSummaryViewStartLogged) {
+                        hasSummaryViewStartLogged = true
+                        analyticsLogger.logSummaryViewStart(
+                            sessionId = _uiState.value.goalId.toString(),
+                            contentId = documentId.toString(),
+                            topic = summary.fileName,
+                        )
+                    }
                 }
 
                 is ApiResultV2.SessionExpired -> {
@@ -569,6 +583,15 @@ class SummaryViewModel @Inject constructor(
 
                     Utils.PrefsUtil.saveDocumentId(appContext, data.documentId.toInt())
                     _screenState.value = UiScreenState.Success
+
+                    if (!hasSummaryViewStartLogged) {
+                        hasSummaryViewStartLogged = true
+                        analyticsLogger.logSummaryViewStart(
+                            sessionId = _uiState.value.goalId.toString(),
+                            contentId = data.documentId.toString(),
+                            topic = data.title,
+                        )
+                    }
                 }
 
                 is ApiResultV2.SessionExpired -> {
