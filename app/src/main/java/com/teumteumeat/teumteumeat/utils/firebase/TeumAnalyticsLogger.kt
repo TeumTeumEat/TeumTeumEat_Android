@@ -282,6 +282,25 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * SUM-002 — 요약본 완독 이벤트 로깅 ([TeumAnalyticsEvent.SummaryViewComplete])
+     *
+     * [SummaryViewModel] 내에서 ViewModel 인스턴스당 최초 1회만 호출됩니다.
+     * 발화 조건: API 완전 수신 완료(`UiScreenState.Success`) AND 스크롤 최하단 도달.
+     *
+     * @param sessionId 현재 학습 목표 ID (goalId.toString())
+     * @param contentId 요약 콘텐츠 ID — summary_view_start 와 JOIN 키로 사용
+     * @param topic     요약 콘텐츠 제목 — 100자 초과 시 잘라냄
+     */
+    fun logSummaryViewComplete(sessionId: String, contentId: String, topic: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.SummaryViewComplete.PARAM_SESSION_ID, sessionId)
+            putString(TeumAnalyticsEvent.SummaryViewComplete.PARAM_CONTENT_ID, contentId)
+            putString(TeumAnalyticsEvent.SummaryViewComplete.PARAM_TOPIC, topic.take(100))
+        }
+        analytics.logEvent(TeumAnalyticsEvent.SummaryViewComplete.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
