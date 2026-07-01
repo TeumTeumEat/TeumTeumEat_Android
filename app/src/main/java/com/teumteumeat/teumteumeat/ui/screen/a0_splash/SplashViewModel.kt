@@ -6,14 +6,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.teumteumeat.teumteumeat.BuildConfig
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.login.AutoLogin
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.OnboardingDecision
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.auth.AutoLoginUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetAccountInfoUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompletedUseCase
+import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,9 +33,11 @@ import javax.inject.Inject
 class SplashViewModel @Inject constructor(
     private val autoLoginUseCase: AutoLoginUseCase,
     private val getOnboardingCompletedUseCase: GetOnboardingCompletedUseCase,
+    private val getAccountInfoUseCase: GetAccountInfoUseCase,
     private val tokenLocalDataSource: TokenLocalDataSource,
     private val remoteConfig: FirebaseRemoteConfig,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -126,6 +132,13 @@ class SplashViewModel @Inject constructor(
             when (val result = autoLoginUseCase()) {
                 is AutoLogin.Success -> {
                     Log.d("SplshVM", "리프래쉬 토큰 확인: ${tokenLocalDataSource.getRefreshToken()}")
+                    analyticsLogger.setOsType()
+                    val storedProvider = tokenLocalDataSource.getProvider()
+                    if (storedProvider != null) {
+                        analyticsLogger.setLoginMethod(storedProvider.lowercase())
+                    } else {
+                        syncLoginMethodFromServer()
+                    }
                     checkOnboardingCompleted()
                 }
                 is AutoLogin.SessionExpired -> {
@@ -143,6 +156,20 @@ class SplashViewModel @Inject constructor(
             }
 
             _uiState.update { it.copy(isLoading = false, errorState = null) }
+        }
+    }
+
+    private suspend fun syncLoginMethodFromServer() {
+        when (val result = getAccountInfoUseCase()) {
+            is ApiResultV2.Success -> {
+                val provider = result.data.socialProvider
+                if (provider != SocialProvider.NONE) {
+                    val providerStr = provider.name.lowercase()
+                    tokenLocalDataSource.saveProvider(providerStr)
+                    analyticsLogger.setLoginMethod(providerStr)
+                }
+            }
+            else -> { /* Analytics 실패는 앱 흐름에 영향 없음 */ }
         }
     }
 
