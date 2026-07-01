@@ -50,11 +50,13 @@ class TokenLocalDataSource @Inject constructor(
         // 1️⃣ 메모리 캐시 즉시 반영
         cachedAccessToken = token.accessToken
         cachedRefreshToken = token.refreshToken
+        token.socialLoginType?.let { cachedProvider = it }
 
         // 2️⃣ 디스크 저장
         prefs.edit {
             putString(KEY_ACCESS, token.accessToken)
             putString(KEY_REFRESH, token.refreshToken)
+            token.socialLoginType?.let { putString(KEY_PROVIDER, it) }
         }
     }
 
@@ -71,6 +73,11 @@ class TokenLocalDataSource @Inject constructor(
             putString(KEY_PROVIDER, provider)
             putString(KEY_ID_TOKEN, idToken)
         }
+    }
+
+    fun saveProvider(provider: String) {
+        cachedProvider = provider
+        prefs.edit { putString(KEY_PROVIDER, provider) }
     }
 
     fun getAccessToken(): String? = cachedAccessToken

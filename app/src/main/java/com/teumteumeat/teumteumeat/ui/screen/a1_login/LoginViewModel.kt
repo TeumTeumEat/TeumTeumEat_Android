@@ -214,6 +214,8 @@ class LoginViewModel @Inject constructor(
                 // isFirstLogin: 플래그가 아직 저장되지 않은 경우가 첫 번째 로그인
                 val isFirstLogin = !PrefsUtil.isFirstLoginCompleted(context)
                 analyticsLogger.logLoginComplete(method = method, isFirstLogin = isFirstLogin)
+                analyticsLogger.setLoginMethod(method)
+                analyticsLogger.setOsType()
                 if (isFirstLogin) PrefsUtil.markFirstLoginCompleted(context)
 
                 saveAuthToken(data)
