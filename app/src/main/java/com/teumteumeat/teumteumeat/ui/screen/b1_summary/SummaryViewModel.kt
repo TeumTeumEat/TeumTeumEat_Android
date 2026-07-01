@@ -52,6 +52,9 @@ class SummaryViewModel @Inject constructor(
     /** ViewModel 인스턴스당 summary_view_start 이벤트 중복 발송 방지 플래그 */
     private var hasSummaryViewStartLogged = false
 
+    /** ViewModel 인스턴스당 summary_view_complete 이벤트 중복 발송 방지 플래그 */
+    private var hasSummaryViewCompleteLogged = false
+
     private val _uiState = MutableStateFlow(UiStateSummary())
     val uiState = _uiState.asStateFlow()
 
@@ -531,6 +534,26 @@ class SummaryViewModel @Inject constructor(
         }*/
     }
 
+
+    /**
+     * 스크롤 최하단 도달 + 콘텐츠 완전 수신 시 Screen에서 호출.
+     * ViewModel 인스턴스당 최초 1회만 로깅합니다.
+     */
+    fun logSummaryViewComplete() {
+        if (hasSummaryViewCompleteLogged) return
+        val state = _uiState.value
+        val contentId = when (state.goalType) {
+            DomainGoalType.CATEGORY -> state.categoryDocumentId.toString()
+            DomainGoalType.DOCUMENT -> state.documentId.toString()
+            else -> return
+        }
+        hasSummaryViewCompleteLogged = true
+        analyticsLogger.logSummaryViewComplete(
+            sessionId = state.goalId.toString(),
+            contentId = contentId,
+            topic = state.title,
+        )
+    }
 
     fun resetIdleState() {
         _screenState.value = UiScreenState.Idle

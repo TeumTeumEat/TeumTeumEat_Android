@@ -341,6 +341,35 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * SUM-002 · 요약본 완독 이벤트
+     *
+     * | 파라미터   | 타입   | 예시        | 목적                                    |
+     * |-----------|--------|-------------|----------------------------------------|
+     * | session_id | String | "42"        | 현재 학습 목표(goalId) 식별자           |
+     * | content_id | String | "17"        | 요약 콘텐츠 ID — summary_view_start JOIN 키 |
+     * | topic      | String | "SwiftUI"   | 요약 콘텐츠 제목 (최대 100자)           |
+     *
+     * ## 발화 조건 (AND)
+     * 1. API 응답 완전 수신 완료 (`UiScreenState.Success`)
+     * 2. 스크롤 최하단 도달
+     *
+     * ## 오탐 방지
+     * 콘텐츠 로딩 완료 전 최하단 스크롤은 이벤트를 발화하지 않는다.
+     * ViewModel 인스턴스당 최초 1회만 발송 (`hasSummaryViewCompleteLogged` 플래그).
+     *
+     * ## 측정 목적
+     * - 완독률 퍼널: `summary_view_start → summary_view_complete`
+     * - content_id 기준 JOIN으로 콘텐츠별 완독률 세분화
+     * - topic 기준으로 주제별 완독률 비교 및 이탈 구간 개선 판단
+     */
+    object SummaryViewComplete {
+        const val NAME = "summary_view_complete"
+        const val PARAM_SESSION_ID = "session_id"   // goalId.toString()
+        const val PARAM_CONTENT_ID = "content_id"   // categoryDocumentId 또는 documentId
+        const val PARAM_TOPIC = "topic"              // 콘텐츠 제목 (max 100자)
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |
