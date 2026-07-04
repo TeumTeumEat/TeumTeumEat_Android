@@ -30,6 +30,7 @@ import com.teumteumeat.teumteumeat.utils.manager.ad.RewardedAdManager
 import com.teumteumeat.teumteumeat.utils.monitor.NetworkConnection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,13 +74,9 @@ class HomeViewModel @Inject constructor(
     // 서버에서 받은 goal 캐싱 (SnackState 계산용)
     private var cachedGoal: UserGoal? = null
 
-    /**
-     * 오늘 쿠폰 SSE 스트리밍이 한 번 이상 시작됐으면 true.
-     * SavedStateHandle로 유지하여 프로세스 종료 후 복귀 시에도 재스트리밍을 방지한다.
-     */
-    private var couponSummaryCreated: Boolean
-        get() = savedStateHandle["coupon_summary_created"] ?: false
-        set(value) { savedStateHandle["coupon_summary_created"] = value }
+    // 중복 로드 방지 — 새 요청이 들어오면 진행 중인 이전 로드를 취소한다
+    private var loadJob: Job? = null
+
 
     init {
         // 강제 종료 후 복귀 시에도 저장된 음식 즉시 복원 (API 응답 전 기본값 노출 방지)
@@ -101,12 +98,10 @@ class HomeViewModel @Inject constructor(
         // ON_RESUME이 이어서 발생해도 같은 날이면 checkDateChangeOnResume()이 건너뜁니다.
         lastDate = LocalDate.now().toString()
 
-        // 2. 목표 변경 리프래시 시그널 감지
+        // 2. 목표 변경 / 퀴즈 완료 리프래시 시그널 감지
         viewModelScope.launch {
-            // 목표를 완료하고 돌아왔을 때도 loadHomeState() 호출 되는지 확인
             goalRepository.refreshSignal.collect {
-                // 다른 액티비티에서 목표를 변경하고 돌아왔을 때 호출됨
-                loadHomeState()
+                loadHomeState(showLoading = false)
             }
         }
     }
@@ -381,19 +376,15 @@ class HomeViewModel @Inject constructor(
 
     /**
      * [쿠폰 사용] 버튼 클릭 시 호출됩니다.
-     *
-     * - 첫 번째 호출: `forceStream = true` → SummaryActivity에서 SSE 스트리밍으로 요약글 생성
-     * - 이후 호출 (홈 복귀 후 재진입): `forceStream = false` → GET으로 기존 요약글 조회
+     * Consumed 상태를 유지한 채 SummaryActivity로 이동합니다(forceStream=true).
+     * SummaryActivity 내부에서 에러 시 GET으로 폴백합니다.
      */
     fun useCoupon(
         onSuccess: (SummaryQuery, Boolean) -> Unit,
         onError: (String) -> Unit
     ) {
         val query = _uiState.value.summaryQuery
-        val forceStream = !couponSummaryCreated
-        couponSummaryCreated = true
-        _uiState.update { it.copy(snackState = SnackState.Available) }
-        onSuccess(query, forceStream)
+        onSuccess(query, true)
     }
 
     // 테스트에서 감시(Spy)하기 위해 open 또는 internal로 선언
@@ -403,16 +394,11 @@ class HomeViewModel @Inject constructor(
 
     /**
      * ON_RESUME 시 호출됩니다.
-     * 날짜가 바뀐 경우에만 loadHomeState()를 실행하여 중복 호출을 방지합니다.
-     * - 같은 날 다른 화면에서 돌아온 경우: refreshSignal이 처리하므로 여기서는 건너뜁니다.
-     * - 자정 이후 앱을 다시 열었는데 DateChangeReceiver가 동작하지 못한 경우(프로세스 종료 등): 여기서 처리합니다.
+     * 오늘 날짜로 lastDate를 갱신하는 역할만 담당합니다.
+     * loadHomeState()는 ON_RESUME에서 별도로 항상 호출됩니다.
      */
     fun checkDateChangeOnResume() {
-        val today = LocalDate.now().toString()
-        if (lastDate != today) {
-            lastDate = today
-            loadHomeState()
-        }
+        lastDate = LocalDate.now().toString()
     }
 
     private fun setRandomFood(goalId: Long) {
@@ -422,11 +408,23 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * 홈 진입 시 서버 기준 상태 로딩 및 요약글 자동 생성 로직
+     * 홈 진입 시 서버 기준 상태 로딩.
+     * @param showLoading true이면 Loading 상태를 노출한다. ON_RESUME에서는 false를 사용해 UX 플리커를 방지한다.
      */
-    fun loadHomeState() {
-        viewModelScope.launch {
-            _screenState.value = UiScreenState.Loading
+    fun loadHomeState(showLoading: Boolean = true) {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            if (showLoading) _screenState.value = UiScreenState.Loading
+
+            // API 응답 전 클라이언트 날짜 가드:
+            // 오늘이 아닌 날 기록된 Consumed 상태라면 즉시 Available 전환.
+            // 네트워크 오류로 API 호출이 실패해도 날짜 전환을 보장한다.
+            if (_uiState.value.snackState is SnackState.Consumed
+                && !homePreference.isSnackConsumedToday()
+            ) {
+                Log.d("HomeViewModel", "날짜 변경 감지 — Consumed → Available (클라이언트 가드)")
+                _uiState.update { it.copy(snackState = SnackState.Available) }
+            }
 
             Log.d("요약글 조회 디버깅", "홈화면 상태 가져옴 - 목표 조회 완료")
 
@@ -460,6 +458,12 @@ class HomeViewModel @Inject constructor(
                                 }
                             } else false
 
+                            // 서버 응답 기준으로 오늘의 Consumed 날짜 갱신
+                            // 다음 날 클라이언트 날짜 가드가 동작할 수 있도록 오늘 날짜를 기록한다
+                            if (quizStatus.hasSolvedToday) {
+                                homePreference.markSnackConsumedToday()
+                            }
+
                             _uiState.update {
                                 it.copy(
                                     fireState = resolveFireState(goal),
@@ -473,7 +477,6 @@ class HomeViewModel @Inject constructor(
                                     canIssueCoupon = quizStatus.canIssueCoupon,
                                     cupponCount = quizStatus.availableQuizCount,
 
-                                    // 🔥 HomeViewModel에서만 SnackState 분기
                                     snackState = resolveSnackState(
                                         goal = goal,
                                         hasSolvedToday = quizStatus.hasSolvedToday,
@@ -489,7 +492,7 @@ class HomeViewModel @Inject constructor(
                                 )
                             }
 
-                            // 목표가 변경된 경우에만 새 음식 랜덤 선택
+                            // 목표가 변경된 경우 음식 랜덤 선택
                             if (goal.goalId != homePreference.getLastGoalId()) {
                                 setRandomFood(goal.goalId)
                             }
