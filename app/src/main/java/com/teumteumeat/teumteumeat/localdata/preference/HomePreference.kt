@@ -61,4 +61,5 @@ class HomePreference @Inject constructor(
             .putInt(KEY_SELECTED_FOOD_RES, foodRes)
             .apply()
     }
+
 }
