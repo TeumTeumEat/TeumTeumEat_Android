@@ -769,160 +769,45 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    private fun calculateTargetPageForItemUnChecked(
-        selection: CategorySelectionState
-    ): Int {
-        return when {
-            selection.depth1 == null -> 0
-            selection.depth2 == null -> 1
-            selection.depth3 == null -> 2
-            else -> 3
+    fun toggleCategory(category: Category, page: Int) {
+        val currentPath = _uiState.value.categorySelection.selectedPath
+        val isUnselecting = currentPath.getOrNull(page)?.id == category.id
+        val isLeaf = !isUnselecting && category.children.isEmpty() && category.serverCategoryId != null
+
+        val newPath = if (isUnselecting) {
+            currentPath.take(page)
+        } else {
+            currentPath.take(page) + category
         }
-    }
 
-
-    fun toggleDepth1(category: Category) {
-        _uiState.update { state ->
-            val newSelection =
-                if (state.categorySelection.depth1?.id == category.id) {
-                    CategorySelectionState() // 전체 해제
-                } else {
-                    CategorySelectionState(depth1 = category)
-                }
-
-            state.copy(
-                categorySelection = newSelection,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
-            )
+        val newTargetPage = when {
+            isUnselecting -> maxOf(0, page - 1)
+            isLeaf -> page
+            else -> page + 1
         }
-    }
-
-
-    fun toggleDepth2(category: Category) {
-        _uiState.update { state ->
-            val currentDepth2 = state.categorySelection.depth2
-            val isUnselecting = currentDepth2?.id == category.id
-
-            val newSelection = if (isUnselecting) {
-                // 🔁 2뎁스 해제 → 하위 전부 해제
-                state.categorySelection.copy(
-                    depth2 = null,
-                    depth3 = null,
-                    depth4 = null
-                )
-            } else {
-                // ✅ 2뎁스 선택 → 하위 초기화
-                state.categorySelection.copy(
-                    depth2 = category,
-                    depth3 = null,
-                    depth4 = null
-                )
-            }
-
-            state.copy(
-                categorySelection = newSelection,
-                selectedCategoryId = null,
-
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    0 // 1뎁스 페이지로 복귀
-                } else {
-                    2 // 3뎁스 페이지
-                }
-            )
-        }
-    }
-
-    fun toggleDepth3(category: Category) {
-        Log.d(
-            "OnBoardingVM",
-            "toggleDepth3 input → " +
-                    "name=${category.name}, " +
-                    "serverId=${category.serverCategoryId}, " +
-                    "children=${category.children.size}"
-        )
 
         _uiState.update { state ->
-            val currentDepth3 = state.categorySelection.depth3
-            val isUnselecting = currentDepth3?.id == category.id
-
-            val newDepth3 = if (isUnselecting) null else category
-
             state.copy(
-                categorySelection = state.categorySelection.copy(
-                    depth3 = newDepth3,
-                    depth4 = null // ⭐ 3뎁스 변경 시 4뎁스 초기화
-                ),
-                selectedCategoryId = null,
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    1 // 2뎁스 페이지로 복귀
-                } else {
-                    3 // 4뎁스 페이지
-                }
-            )
-        }
-    }
-
-    fun toggleDepth4(category: Category) {
-        if (category.children.isNotEmpty()) return
-        if (category.serverCategoryId == null) return
-
-        _uiState.update { state ->
-            val currentDepth4 = state.categorySelection.depth4
-            val isUnselecting = currentDepth4?.id == category.id
-
-            val newDepth4 = if (isUnselecting) null else category
-
-            state.copy(
-                categorySelection = state.categorySelection.copy(
-                    depth4 = newDepth4
-                ),
-
-                selectedCategoryId = newDepth4?.serverCategoryId,
-
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    2 // 3뎁스 페이지로 복귀
-                } else {
-                    state.targetCategoryPage // ❗ 페이지 유지
-                }
+                categorySelection = CategorySelectionState(selectedPath = newPath),
+                selectedCategoryId = if (isLeaf) category.serverCategoryId else null,
+                targetCategoryPage = newTargetPage
             )
         }
 
-        // 선택된 카테고리 ID를 SavedStateHandle에 영속화
-        savedStateHandle[KEY_CATEGORY_ID] = _uiState.value.selectedCategoryId ?: -1
+        if (isLeaf) {
+            savedStateHandle[KEY_CATEGORY_ID] = _uiState.value.selectedCategoryId ?: -1
+        }
 
         Log.d(
             "OnBoardingVM",
-            "depth4=${_uiState.value.categorySelection.depth4?.name}, " +
-                    "selectedCategoryId=${_uiState.value.selectedCategoryId}"
+            "page=$page, category=${category.name}, serverId=${category.serverCategoryId}, " +
+                    "path=${newPath.map { it.name }}"
         )
     }
-
 
     fun resetCategorySelection() {
         _uiState.update { state ->
             state.copy(
-                categorySelection = CategorySelectionState(), // depth1,2,3 전부 초기화
-                selectedCategoryId = null,
-                targetCategoryPage = 0 // ⭐ 1뎁스 페이지로 이동
-            )
-        }
-    }
-
-
-    fun navigateBackInCategoryDepth() {
-        _uiState.update { state ->
-            if (state.targetCategoryPage > 0)
-                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
-            else state
-        }
-    }
-
-    fun clearDepth1() {
-        _uiState.update {
-            it.copy(
                 categorySelection = CategorySelectionState(),
                 selectedCategoryId = null,
                 targetCategoryPage = 0
@@ -930,34 +815,18 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun clearDepth2() {
+    fun navigateBackInCategoryDepth() {
         _uiState.update { state ->
-            val newSelection = state.categorySelection.copy(
-                depth2 = null,
-                depth3 = null,
-                depth4 = null,
-            )
+            if (state.targetCategoryPage <= 0) return@update state
+            val newPath = state.categorySelection.selectedPath.take(state.targetCategoryPage)
             state.copy(
-                categorySelection = newSelection,
+                categorySelection = CategorySelectionState(selectedPath = newPath),
                 selectedCategoryId = null,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+                targetCategoryPage = state.targetCategoryPage - 1
             )
         }
     }
 
-    fun clearDepth3() {
-        _uiState.update { state ->
-            val newSelection = state.categorySelection.copy(
-                depth3 = null,
-                depth4 = null,
-            )
-            state.copy(
-                categorySelection = newSelection,
-                selectedCategoryId = null,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
-            )
-        }
-    }
 
 
     fun onFileDeleted(
