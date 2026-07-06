@@ -25,6 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.model.on_boarding.maxDepth
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth1CategoryLabel
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth2CategoryLabel
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
@@ -39,25 +40,6 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
-/**
- * 카테고리 선택 UI — 온보딩과 목표 추가 화면이 공유하는 컴포넌트.
- *
- * @param speechBubbleText 상단 말풍선 텍스트 (화면마다 다름)
- * @param categories 1뎁스 카테고리 목록
- * @param selection 현재 뎁스별 선택 상태
- * @param targetCategoryPage ViewModel이 요청하는 이동 대상 페이지 인덱스
- * @param isLoading 카테고리 로딩 여부
- * @param pageErrorMessage 로딩 실패 에러 메시지 (null이면 에러 없음)
- * @param isCategorySelectionComplete 4뎁스까지 선택 완료 여부 (다음 버튼 활성화 조건)
- * @param loadKey 카테고리 최초 로드 트리거 키 (NavBackStackEntry.id 권장)
- * @param onLoadCategories 카테고리 로드/재시도 콜백
- * @param onNavigateBack 뎁스 뒤로 이동 콜백 (BackHandler용)
- * @param onToggleDepth1 1뎁스 항목 선택/해제 콜백
- * @param onToggleDepth2 2뎁스 항목 선택/해제 콜백
- * @param onToggleDepth3 3뎁스 항목 선택/해제 콜백
- * @param onToggleDepth4 4뎁스 항목 선택/해제 콜백
- * @param onNext "다음으로" 버튼 클릭 콜백
- */
 @Composable
 fun CategorySelectorContent(
     speechBubbleText: String,
@@ -70,18 +52,15 @@ fun CategorySelectorContent(
     loadKey: String,
     onLoadCategories: () -> Unit,
     onNavigateBack: () -> Unit,
-    onToggleDepth1: (Category) -> Unit,
-    onToggleDepth2: (Category) -> Unit,
-    onToggleDepth3: (Category) -> Unit,
-    onToggleDepth4: (Category) -> Unit,
+    onToggleCategory: (Category, Int) -> Unit,
     onNext: () -> Unit,
 ) {
     val pagerState = rememberPagerState(
         initialPage = targetCategoryPage,
-        pageCount = { 4 }
+        pageCount = { maxOf(1, categories.maxDepth()) }
     )
 
-    BackHandler(enabled = pagerState.currentPage > 0) {
+    BackHandler(enabled = targetCategoryPage > 0) {
         onNavigateBack()
     }
 
@@ -141,6 +120,10 @@ fun CategorySelectorContent(
                                 .fillMaxWidth()
                                 .weight(1f),
                         ) { page ->
+                            val pageCategories = if (page == 0) categories
+                                else selection.selectedPath.getOrNull(page - 1)?.children.orEmpty()
+                            val selectedId = selection.selectedPath.getOrNull(page)?.id
+
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -148,32 +131,26 @@ fun CategorySelectorContent(
                             ) {
                                 when (page) {
                                     0 -> CategoryGrid(
-                                        categories = categories,
-                                        selectedId = selection.depth1?.id,
-                                        onItemClick = onToggleDepth1,
+                                        categories = pageCategories,
+                                        selectedId = selectedId,
+                                        onItemClick = { onToggleCategory(it, page) },
                                         verticalColumns = 2,
-                                        currentPage = page,
+                                        currentPage = 0,
                                         labelMapper = { it.name.toDepth1CategoryLabel() },
                                     )
                                     1 -> CategoryGrid(
-                                        categories = selection.depth1?.children.orEmpty(),
-                                        selectedId = selection.depth2?.id,
-                                        onItemClick = onToggleDepth2,
-                                        currentPage = page,
+                                        categories = pageCategories,
+                                        selectedId = selectedId,
+                                        onItemClick = { onToggleCategory(it, page) },
+                                        currentPage = 1,
                                         wrapContentWidth = true,
                                         labelMapper = { it.name.toDepth2CategoryLabel() },
                                     )
-                                    2 -> CategoryGrid(
-                                        categories = selection.depth2?.children.orEmpty(),
-                                        selectedId = selection.depth3?.id,
-                                        onItemClick = onToggleDepth3,
-                                        currentPage = page,
-                                    )
-                                    3 -> CategoryGrid(
-                                        categories = selection.depth3?.children.orEmpty(),
-                                        selectedId = selection.depth4?.id,
-                                        onItemClick = onToggleDepth4,
-                                        currentPage = page,
+                                    else -> CategoryGrid(
+                                        categories = pageCategories,
+                                        selectedId = selectedId,
+                                        onItemClick = { onToggleCategory(it, page) },
+                                        currentPage = 2,
                                     )
                                 }
                             }
@@ -220,14 +197,10 @@ fun CategorySelectorContent(
 
 // ─── Preview helpers ───────────────────────────────────────────────────────────
 
-private val previewDepth4 = Category(id = "android", name = "Android", serverCategoryId = 1)
-private val previewDepth3 = Category(
-    id = "mobile", name = "모바일",
-    children = listOf(previewDepth4, Category("ios", "iOS", 2), Category("flutter", "Flutter", 3))
-)
+private val previewDepth3 = Category(id = "android", name = "Android", serverCategoryId = 1)
 private val previewDepth2 = Category(
-    id = "programming", name = "프로그래밍",
-    children = listOf(previewDepth3, Category("web", "웹"), Category("server", "서버/백엔드"))
+    id = "mobile", name = "모바일",
+    children = listOf(previewDepth3, Category("ios", "iOS", 2), Category("flutter", "Flutter", 3))
 )
 private val previewDepth1 = Category(
     id = "it", name = "IT/기술",
@@ -263,10 +236,7 @@ private fun previewContent(
             loadKey = "preview",
             onLoadCategories = {},
             onNavigateBack = {},
-            onToggleDepth1 = {},
-            onToggleDepth2 = {},
-            onToggleDepth3 = {},
-            onToggleDepth4 = {},
+            onToggleCategory = { _, _ -> },
             onNext = {},
         )
     }
@@ -289,7 +259,7 @@ private fun CategorySelectorDepth1Preview() = previewContent()()
 @Composable
 private fun CategorySelectorDepth2Preview() =
     previewContent(
-        selection = CategorySelectionState(depth1 = previewDepth1),
+        selection = CategorySelectionState(selectedPath = listOf(previewDepth1)),
         targetPage = 1,
     )()
 
@@ -297,20 +267,17 @@ private fun CategorySelectorDepth2Preview() =
 @Composable
 private fun CategorySelectorDepth3Preview() =
     previewContent(
-        selection = CategorySelectionState(depth1 = previewDepth1, depth2 = previewDepth2),
+        selection = CategorySelectionState(selectedPath = listOf(previewDepth1, previewDepth2)),
         targetPage = 2,
     )()
 
-@Preview(showBackground = true, name = "4뎁스 — 선택 완료")
+@Preview(showBackground = true, name = "3뎁스 — 선택 완료")
 @Composable
 private fun CategorySelectorCompletePreview() =
     previewContent(
         selection = CategorySelectionState(
-            depth1 = previewDepth1,
-            depth2 = previewDepth2,
-            depth3 = previewDepth3,
-            depth4 = previewDepth4,
+            selectedPath = listOf(previewDepth1, previewDepth2, previewDepth3),
         ),
-        targetPage = 3,
+        targetPage = 2,
         isComplete = true,
     )()

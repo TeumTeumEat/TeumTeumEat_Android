@@ -52,7 +52,9 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
+import com.teumteumeat.teumteumeat.ui.component.modal.GoalCompletedDialog
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -121,6 +123,7 @@ fun HomeScreen(
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
                     viewModel.checkDateChangeOnResume()
+                    viewModel.loadHomeState(showLoading = false)
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
@@ -323,16 +326,14 @@ fun HomeScreen(
                                                     SummaryArgs.KEY_CATEGORY_ID,
                                                     latestQuery.categoryId
                                                 )
-                                                // 오늘 요약글이 없으면 SSE 스트리밍으로 생성, 이미 있으면 GET 조회.
-                                                putExtra(SummaryArgs.KEY_FORCE_STREAM, !uiState.hasCreatedToday)
+                                                // 항상 SSE 생성 요청 — 에러 시 SummaryActivity 내부에서 GET 폴백
+                                                putExtra(SummaryArgs.KEY_FORCE_STREAM, true)
                                             }
                                             activity.startActivity(intent)
                                         }
 
                                         is SnackState.Consumed -> {
-                                            if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
-                                                viewModel.openAdModal()
-                                            }
+                                            viewModel.openAdModal()
                                         }
 
                                         SnackState.Completed -> {
@@ -426,6 +427,15 @@ fun HomeScreen(
                     }
 
                     // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
+                    GoalCompletedDialog(
+                        showDialog = uiState.isShowGoalCompletedDialog,
+                        onStartNewGoal = {
+                            viewModel.dismissGoalCompletedDialog()
+                            activity.startActivity(Intent(activity, AddGoalActivity::class.java))
+                        },
+                        onDismiss = { viewModel.dismissGoalCompletedDialog() }
+                    )
+
                     AdCouponDialog(
                         showDialog = uiState.isShowAdModalDialog,
                         couponCount = uiState.cupponCount,

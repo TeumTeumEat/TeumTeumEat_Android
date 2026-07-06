@@ -24,10 +24,7 @@ fun CategorySelectScreen(
         loadKey = navBackStackEntry.id,
         onLoadCategories = { viewModel.loadCategories() },
         onNavigateBack = { viewModel.navigateBackInCategoryDepth() },
-        onToggleDepth1 = viewModel::toggleDepth1,
-        onToggleDepth2 = viewModel::toggleDepth2,
-        onToggleDepth3 = viewModel::toggleDepth3,
-        onToggleDepth4 = viewModel::toggleDepth4,
+        onToggleCategory = viewModel::toggleCategory,
         onNext = onNext,
     )
 }

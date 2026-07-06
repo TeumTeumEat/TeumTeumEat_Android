@@ -15,6 +15,8 @@ class HomePreference @Inject constructor(
     companion object {
         private const val PREF_NAME = "home_pref"
         private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
+        private const val KEY_LAST_GOAL_ID = "last_goal_id"
+        private const val KEY_SELECTED_FOOD_RES = "selected_food_res"
     }
 
     private val prefs: SharedPreferences =
@@ -46,4 +48,18 @@ class HomePreference @Inject constructor(
             .remove(KEY_SNACK_CONSUMED_DATE)
             .apply()
     }
+
+    fun getLastGoalId(): Long = prefs.getLong(KEY_LAST_GOAL_ID, Long.MIN_VALUE)
+
+    fun getSelectedFoodRes(): Int? =
+        if (prefs.contains(KEY_SELECTED_FOOD_RES)) prefs.getInt(KEY_SELECTED_FOOD_RES, -1)
+        else null
+
+    fun saveGoalFood(goalId: Long, foodRes: Int) {
+        prefs.edit()
+            .putLong(KEY_LAST_GOAL_ID, goalId)
+            .putInt(KEY_SELECTED_FOOD_RES, foodRes)
+            .apply()
+    }
+
 }

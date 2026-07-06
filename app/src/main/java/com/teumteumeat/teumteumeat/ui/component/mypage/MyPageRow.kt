@@ -391,3 +391,41 @@ fun MyPageScreenGalleryPreview() {
     }
 }
 
+@Preview(
+    name = "학습 주제 박스 — 두 상태 비교",
+    showBackground = true,
+    backgroundColor = 0xFFF5F5F5,
+    widthDp = 400
+)
+@Composable
+private fun SelectedTopicSectionStatePreview() {
+    TeumTeumEatTheme {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 상태 1: 목표 진행 중 — SelectedTopicSection 표시
+            MyPageNavigateBox(title = "학습 주제 (진행 중)", onClick = {}) {
+                SelectedTopicSection(
+                    topic = "IT > 앱개발자 > Kotlin Multiplatform",
+                    description = "Kotlin을 활용해 멀티플랫폼 개발 생산성을 높이는 방법을 학습합니다.",
+                    goalWeek = "4주",
+                    difficulty = "난이도 상",
+                )
+            }
+
+            // 상태 2: 목표 완료 — 안내 텍스트 표시
+            MyPageNavigateBox(title = "학습 주제 (완료)", onClick = {}) {
+                Text(
+                    text = "선택된 학습 주제가 없습니다.",
+                    style = MaterialTheme.appTypography.bodyMedium14Reg,
+                    color = MaterialTheme.extendedColors.textSecondary,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 4.dp)
+                )
+            }
+        }
+    }
+}
+

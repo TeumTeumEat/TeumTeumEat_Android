@@ -130,12 +130,23 @@ fun MyPageScreen(
                                     color = theme.backgroundW100
                                 )
                             ) {
-                                SelectedTopicSection(
-                                    topic = uiState.selectedTopic,
-                                    description = uiState.topicDescription,
-                                    goalWeek = uiState.goalWeek,
-                                    difficulty = uiState.goalDifficulty,
-                                )
+                                if (uiState.isSelGoalCompleted) {
+                                    Text(
+                                        text = "선택된 학습 주제가 없습니다.",
+                                        style = typo.bodyMedium14Reg,
+                                        color = theme.textSecondary,
+                                        modifier = Modifier
+                                            .padding(horizontal = 20.dp)
+                                            .padding(bottom = 4.dp)
+                                    )
+                                } else {
+                                    SelectedTopicSection(
+                                        topic = uiState.selectedTopic,
+                                        description = uiState.topicDescription,
+                                        goalWeek = uiState.goalWeek,
+                                        difficulty = uiState.goalDifficulty,
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))

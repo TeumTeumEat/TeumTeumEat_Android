@@ -41,25 +41,29 @@ class QuizViewModel @Inject constructor(
         MutableStateFlow<UiScreenState>(UiScreenState.Idle)
     val screenState = _screenState.asStateFlow()
 
+    /**
+     * 채점하러가기 버튼 클릭 시 호출.
+     * /api/v1/user-quizzes/complete-set 응답이 온 뒤 refreshSignal을 방출해야
+     * HomeViewModel이 hasSolvedToday=true 상태를 정확히 반영할 수 있다.
+     */
     fun completeQuiz() {
-        // ✅ 2️⃣ 전역 시그널 방출
-        // Repository 내부의 MutableSharedFlow에 신호를 보냅니다.
-        // 이 신호는 MainActivity 등에서 감지하여 데이터를 새로고침하게 됩니다.
         viewModelScope.launch {
             completeCurrentQuizSet()
+            // API 완료 후 방출 — suspend 순서 보장
             goalRepository.emitRefreshSignal()
         }
     }
 
     /**
-     * 퀴즈 완료를 API 호출 시 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가 API 호출됨
+     * 퀴즈 완료 API 호출 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가.
+     * 성공 후 emitRefreshSignal() → HomeViewModel이 couponSummaryCreated=false 처리.
      */
-    private fun completeCurrentQuizSet() {
-        viewModelScope.launch {
-            when (val response = quizRepository.submitCompleteQuizSet()) {
-                is ApiResultV2.Success -> {}
-                else -> { moveToError(response) }
+    private suspend fun completeCurrentQuizSet() {
+        when (val response = quizRepository.submitCompleteQuizSet()) {
+            is ApiResultV2.Success -> {
+                Log.d("QuizViewModel", "completeCurrentQuizSet success")
             }
+            else -> { moveToError(response) }
         }
     }
 
