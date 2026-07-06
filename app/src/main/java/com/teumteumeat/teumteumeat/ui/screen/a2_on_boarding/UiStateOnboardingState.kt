@@ -139,8 +139,8 @@ data class UiStateOnboardingState(
         get() = currentPage > 1
 
     val isCategorySelectionComplete: Boolean
-        get() = targetCategoryPage == 3
-                && categorySelection.depth4 != null
+        get() = categorySelection.selectedPath.isNotEmpty()
+                && categorySelection.selectedPath.last().children.isEmpty()
                 && selectedCategoryId != null
 }
 
@@ -170,44 +170,13 @@ sealed interface BottomSheetType {
 }
 
 data class CategorySelectionState(
-    val depth1: Category? = null, // 내부 상태로만 유지
-    val depth2: Category? = null,
-    val depth3: Category? = null,
-    val depth4: Category? = null, // ⭐ 진짜 leaf
-) {
-
-    /** Pager에서 사용할 현재 페이지 (온보딩 기준) */
-    val currentPage: Int
-        get() = when {
-            depth4 != null -> 2
-            depth3 != null -> 1
-            else -> 0
-        }
-
-    /** 총 페이지 수 (온보딩은 최대 3페이지만) */
-    val totalPage: Int
-        get() = 3
-}
+    val selectedPath: List<Category> = emptyList()
+)
 
 data class StudyWeekOption(
     val label: String, // 화면 표시용 ("1주")
     val value: Int     // 실제 의미 값 (1)
 )
-
-data class MutableCategory(
-    val id: String,
-    val name: String,
-    val serverCategoryId: Int? = null,
-    val children: MutableMap<String, MutableCategory> = mutableMapOf()
-) {
-    fun toImmutable(): Category =
-        Category(
-            id = id,
-            name = name,
-            serverCategoryId = serverCategoryId,
-            children = children.values.map { it.toImmutable() }
-        )
-}
 
 data class Category(
     val id: String,

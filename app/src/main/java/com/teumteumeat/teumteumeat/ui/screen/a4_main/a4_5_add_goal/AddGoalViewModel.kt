@@ -104,41 +104,56 @@ class AddGoalViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 categorySelection = CategorySelectionState(),
+                selectedCategoryId = null,
                 isCategorySelectionComplete = false,
                 targetCategoryPage = 0,
             )
         }
     }
 
-    private fun calculateTargetPageForItemUnChecked(selection: CategorySelectionState): Int =
-        when {
-            selection.depth1 == null -> 0
-            selection.depth2 == null -> 1
-            selection.depth3 == null -> 2
-            else -> 3
+    fun toggleCategory(category: Category, page: Int) {
+        val currentPath = _uiState.value.categorySelection.selectedPath
+        val isUnselecting = currentPath.getOrNull(page)?.id == category.id
+        val isLeaf = !isUnselecting && category.children.isEmpty() && category.serverCategoryId != null
+
+        val newPath = if (isUnselecting) {
+            currentPath.take(page)
+        } else {
+            currentPath.take(page) + category
         }
 
-    fun toggleDepth1(category: Category) {
+        val newTargetPage = when {
+            isUnselecting -> maxOf(0, page - 1)
+            isLeaf -> page
+            else -> page + 1
+        }
+
         _uiState.update { state ->
-            val newSelection =
-                if (state.categorySelection.depth1?.id == category.id) {
-                    CategorySelectionState()
-                } else {
-                    CategorySelectionState(depth1 = category)
-                }
             state.copy(
-                categorySelection = newSelection,
-                isCategorySelectionComplete = false,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+                categorySelection = CategorySelectionState(selectedPath = newPath),
+                selectedCategoryId = if (isLeaf) category.serverCategoryId else null,
+                isCategorySelectionComplete = isLeaf,
+                targetCategoryPage = newTargetPage
             )
         }
+
+        Log.d(
+            "AddGoalVM",
+            "page=$page, category=${category.name}, serverId=${category.serverCategoryId}, " +
+                    "path=${newPath.map { it.name }}"
+        )
     }
 
     fun navigateBackInCategoryDepth() {
         _uiState.update { state ->
-            if (state.targetCategoryPage > 0)
-                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
-            else state
+            if (state.targetCategoryPage <= 0) return@update state
+            val newPath = state.categorySelection.selectedPath.take(state.targetCategoryPage)
+            state.copy(
+                categorySelection = CategorySelectionState(selectedPath = newPath),
+                selectedCategoryId = null,
+                isCategorySelectionComplete = false,
+                targetCategoryPage = state.targetCategoryPage - 1
+            )
         }
     }
 
@@ -267,73 +282,6 @@ class AddGoalViewModel @Inject constructor(
         val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
         _uiState.update { it.copy(promptInput = label) }
         closeBottomSheet()
-    }
-
-    fun toggleDepth2(category: Category) {
-        _uiState.update { state ->
-            val currentDepth2 = state.categorySelection.depth2
-            val isUnselecting = currentDepth2?.id == category.id
-
-            val newSelection = if (isUnselecting) {
-                state.categorySelection.copy(depth2 = null, depth3 = null, depth4 = null)
-            } else {
-                state.categorySelection.copy(depth2 = category, depth3 = null, depth4 = null)
-            }
-
-            state.copy(
-                categorySelection = newSelection,
-                selectedCategoryId = null,
-                isCategorySelectionComplete = false,
-                targetCategoryPage = if (isUnselecting) 0 else 2
-            )
-        }
-    }
-
-    fun toggleDepth3(category: Category) {
-        _uiState.update { state ->
-            val currentDepth3 = state.categorySelection.depth3
-            val isUnselecting = currentDepth3?.id == category.id
-
-            val newDepth3 = if (isUnselecting) null else category
-
-            state.copy(
-                categorySelection = state.categorySelection.copy(depth3 = newDepth3, depth4 = null),
-                selectedCategoryId = null,
-                isCategorySelectionComplete = false,
-                targetCategoryPage = if (isUnselecting) 1 else 3
-            )
-        }
-    }
-
-    fun toggleDepth4(category: Category) {
-        if (category.children.isNotEmpty()) return
-        if (category.serverCategoryId == null) return
-
-        _uiState.update { state ->
-            val currentDepth4 = state.categorySelection.depth4
-            val isUnselecting = currentDepth4?.id == category.id
-
-            val newDepth4 = if (isUnselecting) null else category
-
-            val newTargetCategoryPage = if (isUnselecting) 2 else state.targetCategoryPage
-
-            val isComplete = !isUnselecting
-                    && newDepth4?.serverCategoryId != null
-                    && newTargetCategoryPage == 3
-
-            state.copy(
-                categorySelection = state.categorySelection.copy(depth4 = newDepth4),
-                selectedCategoryId = newDepth4?.serverCategoryId,
-                targetCategoryPage = newTargetCategoryPage,
-                isCategorySelectionComplete = isComplete
-            )
-        }
-
-        Log.d(
-            "OnBoardingVM",
-            "depth4=${_uiState.value.categorySelection.depth4?.name}, " +
-                    "selectedCategoryId=${_uiState.value.selectedCategoryId}"
-        )
     }
 
     fun updateCategorySelectionComplete(isComplete: Boolean) {
