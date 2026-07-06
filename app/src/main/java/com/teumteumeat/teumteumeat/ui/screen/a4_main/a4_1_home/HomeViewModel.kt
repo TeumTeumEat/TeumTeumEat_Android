@@ -77,6 +77,9 @@ class HomeViewModel @Inject constructor(
     // 중복 로드 방지 — 새 요청이 들어오면 진행 중인 이전 로드를 취소한다
     private var loadJob: Job? = null
 
+    // 앱 세션당 1회만 목표 완료 팝업을 노출한다
+    private var goalCompletedDialogShown = false
+
 
     init {
         // 강제 종료 후 복귀 시에도 저장된 음식 즉시 복원 (API 응답 전 기본값 노출 방지)
@@ -443,6 +446,12 @@ class HomeViewModel @Inject constructor(
                         _uiState.update { it.copy(isShowNewGoalGuideDialog = false) }
                     }
 
+                    // 목표 완료 상태이고, 이번 세션에서 아직 팝업을 보여주지 않았다면 노출
+                    if (goal.isCompleted && !goalCompletedDialogShown) {
+                        goalCompletedDialogShown = true
+                        _uiState.update { it.copy(isShowGoalCompletedDialog = true) }
+                    }
+
                     // 2️⃣ 오늘 퀴즈 상태 조회
                     when (val quizResult = quizRepository.getUserQuizStatus()) {
 
@@ -585,6 +594,10 @@ class HomeViewModel @Inject constructor(
 
     fun clearErrorMessage() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun dismissGoalCompletedDialog() {
+        _uiState.update { it.copy(isShowGoalCompletedDialog = false) }
     }
 
     fun clearToastMessage() {

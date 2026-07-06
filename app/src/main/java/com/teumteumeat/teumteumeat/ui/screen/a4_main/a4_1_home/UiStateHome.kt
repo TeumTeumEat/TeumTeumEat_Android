@@ -52,6 +52,9 @@ data class UiStateHome(
 
     val isShowNewGoalGuideDialog: Boolean = false,
 
+    /** 목표 완료 시 홈 진입 안내 팝업 */
+    val isShowGoalCompletedDialog: Boolean = false,
+
     val errorMessage: String? = null,
     val toastMessage: String? = null,
 
