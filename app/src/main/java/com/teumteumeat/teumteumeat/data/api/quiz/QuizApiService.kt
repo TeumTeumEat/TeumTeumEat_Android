@@ -53,4 +53,10 @@ interface QuizApiService {
     @POST("/api/v1/user-quizzes/complete-set")
     suspend fun submitCompleteQuizSet(): ApiResponse<Unit, Any?>
 
+    /** [테스트 전용] 퀴즈 풀이 가능 횟수 강제 추가 — ADMIN 권한 필요 */
+    @POST("/api/v1/user-quizzes/test/add-quiz-count")
+    suspend fun addTestQuizCount(
+        @Query("count") count: Int = 1
+    ): ApiResponse<Unit, Any?>
+
 }

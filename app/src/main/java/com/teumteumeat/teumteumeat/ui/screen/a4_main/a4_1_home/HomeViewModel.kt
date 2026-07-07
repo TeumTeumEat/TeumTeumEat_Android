@@ -593,5 +593,16 @@ class HomeViewModel @Inject constructor(
         Log.d("HomeViewModel", "백그라운드 전환: 날짜 기록 ($today)")
     }
 
+    fun addTestQuizCount() {
+        viewModelScope.launch {
+            when (val result = quizRepository.addTestQuizCount()) {
+                is ApiResultV2.Success -> {
+                    _uiState.update { it.copy(toastMessage = "퀴즈 풀이 횟수 +1 추가됨") }
+                    updateUserQuizStatus()
+                }
+                else -> moveToError(result)
+            }
+        }
+    }
 
 }
