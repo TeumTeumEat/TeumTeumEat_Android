@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -302,7 +303,10 @@ fun MainCompositionProvider(
                         .padding(bottom = 100.dp, start = 16.dp),
                     contentAlignment = Alignment.BottomStart
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.alpha(0.5f),
+                    ) {
                         ExtendedFloatingActionButton(
                             onClick = { homeViewModel.resetGoal() },
                             containerColor = DebugSkyBlue,
