@@ -63,4 +63,10 @@ interface QuizApiService {
     @POST("/api/v1/user-quizzes/test/reset-ad-reward")
     suspend fun resetAdReward(): ApiResponse<Unit, Any?>
 
+    /** [테스트 전용] 목표 완료/만료 상태 초기화 — ADMIN 권한 필요. goalId 미전달 시 현재 목표 리셋 */
+    @POST("/api/v1/user-quizzes/test/reset-goal")
+    suspend fun resetGoal(
+        @Query("goalId") goalId: Long? = null
+    ): ApiResponse<Unit, Any?>
+
 }

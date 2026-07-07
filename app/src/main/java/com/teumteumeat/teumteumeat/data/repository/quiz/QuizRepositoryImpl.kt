@@ -145,4 +145,11 @@ class QuizRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun resetGoal(goalId: Long?): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = { quizApiService.resetGoal(goalId) },
+            mapper = {}
+        )
+    }
+
 }

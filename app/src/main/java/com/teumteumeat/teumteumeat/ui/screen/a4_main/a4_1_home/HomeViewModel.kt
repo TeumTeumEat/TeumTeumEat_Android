@@ -617,4 +617,16 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun resetGoal() {
+        viewModelScope.launch {
+            when (val result = quizRepository.resetGoal()) {
+                is ApiResultV2.Success -> {
+                    _uiState.update { it.copy(toastMessage = "목표 상태 초기화 완료") }
+                    loadHomeState()
+                }
+                else -> moveToError(result)
+            }
+        }
+    }
+
 }

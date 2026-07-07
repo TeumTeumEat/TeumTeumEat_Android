@@ -304,6 +304,20 @@ fun MainCompositionProvider(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         ExtendedFloatingActionButton(
+                            onClick = { homeViewModel.resetGoal() },
+                            containerColor = DebugSkyBlue,
+                            contentColor = Color.White,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = null,
+                                )
+                            },
+                            text = {
+                                Text(text = "목표 초기화")
+                            },
+                        )
+                        ExtendedFloatingActionButton(
                             onClick = { homeViewModel.resetAdReward() },
                             containerColor = DebugSkyBlue,
                             contentColor = Color.White,
