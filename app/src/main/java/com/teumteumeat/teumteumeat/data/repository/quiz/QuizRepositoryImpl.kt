@@ -138,4 +138,11 @@ class QuizRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun resetAdReward(): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = { quizApiService.resetAdReward() },
+            mapper = {}
+        )
+    }
+
 }

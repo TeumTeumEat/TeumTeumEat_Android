@@ -59,4 +59,8 @@ interface QuizApiService {
         @Query("count") count: Int = 1
     ): ApiResponse<Unit, Any?>
 
+    /** [테스트 전용] 광고 시청 횟수 및 퀴즈 풀이 횟수 상태 초기화 — ADMIN 권한 필요 */
+    @POST("/api/v1/user-quizzes/test/reset-ad-reward")
+    suspend fun resetAdReward(): ApiResponse<Unit, Any?>
+
 }
