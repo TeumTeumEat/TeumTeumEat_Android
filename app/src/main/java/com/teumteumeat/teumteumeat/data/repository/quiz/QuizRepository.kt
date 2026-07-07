@@ -34,4 +34,6 @@ interface QuizRepository {
     suspend fun submitCompleteQuizSet() : ApiResultV2<Unit>
 
     suspend fun addTestQuizCount(count: Int = 1): ApiResultV2<Unit>
+
+    suspend fun resetAdReward(): ApiResultV2<Unit>
 }

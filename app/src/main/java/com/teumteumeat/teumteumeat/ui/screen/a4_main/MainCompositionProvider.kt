@@ -63,7 +63,8 @@ import kotlin.jvm.java
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.runtime.mutableLongStateOf
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
@@ -74,6 +75,7 @@ import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import kotlinx.coroutines.flow.collectLatest
 import androidx.hilt.navigation.compose.hiltViewModel
 
+private val DebugSkyBlue = Color(0xFF56CCF2)
 
 @Composable
 fun MainCompositionProvider(
@@ -291,22 +293,43 @@ fun MainCompositionProvider(
                 )
             }
 
-            // [DEBUG 전용] 퀴즈 풀이 횟수 +1 플로팅 버튼
+            // [DEBUG 전용] 테스트용 플로팅 버튼 묶음
             if (BuildConfig.DEBUG) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .navigationBarsPadding()
-                        .padding(bottom = 80.dp, start = 16.dp),
+                        .padding(bottom = 100.dp, start = 16.dp),
                     contentAlignment = Alignment.BottomStart
                 ) {
-                    SmallFloatingActionButton(
-                        onClick = { homeViewModel.addTestQuizCount() },
-                        containerColor = MaterialTheme.colorScheme.error,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "퀴즈 풀이 횟수 +1"
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ExtendedFloatingActionButton(
+                            onClick = { homeViewModel.resetAdReward() },
+                            containerColor = DebugSkyBlue,
+                            contentColor = Color.White,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = null,
+                                )
+                            },
+                            text = {
+                                Text(text = "쿠폰 초기화")
+                            },
+                        )
+                        ExtendedFloatingActionButton(
+                            onClick = { homeViewModel.addTestQuizCount() },
+                            containerColor = DebugSkyBlue,
+                            contentColor = Color.White,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = null,
+                                )
+                            },
+                            text = {
+                                Text(text = "풀이 횟수 +1")
+                            },
                         )
                     }
                 }

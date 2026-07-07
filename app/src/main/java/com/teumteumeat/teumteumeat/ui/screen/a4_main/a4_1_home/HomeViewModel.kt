@@ -605,4 +605,16 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun resetAdReward() {
+        viewModelScope.launch {
+            when (val result = quizRepository.resetAdReward()) {
+                is ApiResultV2.Success -> {
+                    _uiState.update { it.copy(toastMessage = "쿠폰 상태 초기화 완료") }
+                    updateUserQuizStatus()
+                }
+                else -> moveToError(result)
+            }
+        }
+    }
+
 }
