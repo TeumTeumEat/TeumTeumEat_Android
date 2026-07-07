@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
@@ -61,7 +62,10 @@ import kotlinx.coroutines.flow.first
 import kotlin.jvm.java
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.mutableLongStateOf
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
@@ -285,6 +289,27 @@ fun MainCompositionProvider(
                     message = homeUiState.loadingMessage,
                     progress = homeUiState.processingState?.progress
                 )
+            }
+
+            // [DEBUG 전용] 퀴즈 풀이 횟수 +1 플로팅 버튼
+            if (BuildConfig.DEBUG) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                        .padding(bottom = 80.dp, start = 16.dp),
+                    contentAlignment = Alignment.BottomStart
+                ) {
+                    SmallFloatingActionButton(
+                        onClick = { homeViewModel.addTestQuizCount() },
+                        containerColor = MaterialTheme.colorScheme.error,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "퀴즈 풀이 횟수 +1"
+                        )
+                    }
+                }
             }
 
         }
