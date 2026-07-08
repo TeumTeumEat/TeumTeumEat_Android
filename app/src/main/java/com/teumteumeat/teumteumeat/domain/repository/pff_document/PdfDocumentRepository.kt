@@ -61,4 +61,13 @@ interface PdfDocumentRepository {
         documentId: Int,
     ): ApiResultV2<PdfDocumentSummary>
 
+    /**
+     * PDF 문서에 대한 퀴즈 생성을 서버에 요청합니다.
+     * (요약 SSE TitleReceived 직후 프리페치 용도)
+     */
+    suspend fun createDocumentQuiz(
+        goalId: Int,
+        documentId: Int,
+    ): ApiResultV2<Unit>
+
 }

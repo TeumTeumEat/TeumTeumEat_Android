@@ -319,8 +319,14 @@ class SummaryViewModel @Inject constructor(
                     _screenState.value = UiScreenState.Success
                 }
                 is SseEvent.TitleReceived -> {
-                    _uiState.update { it.copy(title = event.title, isStreaming = false) }
-                    fetchDocumentSummary(goalId.toInt(), documentId.toInt())
+                    // 스트리밍 완료 → 요약글 GET + PDF 퀴즈 프리페치 순차 실행
+                    _uiState.update { it.copy(title = event.title, isStreaming = false, isQuizLoading = true) }
+                    try {
+                        fetchDocumentSummary(goalId.toInt(), documentId.toInt())
+                        prefetchPdfQuiz(goalId.toInt(), documentId.toInt())
+                    } finally {
+                        _uiState.update { it.copy(isQuizLoading = false) }
+                    }
                 }
                 is SseEvent.StreamError -> {
                     handlePdfSummaryStreamError(event.throwable, goalId.toInt(), documentId.toInt())
@@ -441,6 +447,15 @@ class SummaryViewModel @Inject constructor(
         when (quizRepository.getUserQuizzes(documentId, GoalTypeUiState.CATEGORY)) {
             is ApiResultV2.Success -> Log.d("SummaryViewModel", "퀴즈 생성 완료: documentId=$documentId")
             else -> Log.w("SummaryViewModel", "퀴즈 생성 실패: documentId=$documentId (QuizActivity에서 재요청)")
+        }
+    }
+
+    /** SSE TitleReceived 후 PDF 퀴즈를 미리 생성 요청한다. (isQuizLoading 토글은 호출부가 담당) */
+    private suspend fun prefetchPdfQuiz(goalId: Int, documentId: Int) {
+        Log.d("SummaryViewModel", "PDF 퀴즈 생성 요청: goalId=$goalId, documentId=$documentId")
+        when (pdfDocumentRepository.createDocumentQuiz(goalId, documentId)) {
+            is ApiResultV2.Success -> Log.d("SummaryViewModel", "PDF 퀴즈 생성 완료: documentId=$documentId")
+            else -> Log.w("SummaryViewModel", "PDF 퀴즈 생성 실패: documentId=$documentId (QuizActivity에서 재요청)")
         }
     }
 
