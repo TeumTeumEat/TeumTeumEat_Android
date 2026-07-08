@@ -24,7 +24,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,9 +35,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
+import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.component.modal.NotificationSettingGuideOverlay
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageAccountSection
 import com.teumteumeat.teumteumeat.ui.component.mypage.MyPageArrowRow
@@ -74,6 +80,9 @@ fun MyPageScreen(
     val appContext = LocalAppContext.current
     val context = LocalContext.current
     val screenState = LocalScreenState.current
+
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var showWithdrawDialog by remember { mutableStateOf(false) }
 
     DefaultMonoBg() {
         Scaffold(
@@ -263,18 +272,18 @@ fun MyPageScreen(
                                     ),
 
                                     modifier = Modifier.clickable {
-                                        onLogoutClick()
+                                        showLogoutDialog = true
                                     },
 
                                     )
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Text(
                                     modifier = Modifier.clickable(
-                                        onClick = onWithdrawClick
+                                        onClick = { showWithdrawDialog = true }
                                     ),
                                     text = "탈퇴하기",
                                     style = typo.captionRegular12.copy(
-                                        color = theme.textGhost
+                                        color = theme.error
                                     ),
                                 )
                             }
@@ -290,6 +299,45 @@ fun MyPageScreen(
                 onConfirm = onNotificationGuideConfirm,
                 onDismiss = onNotificationGuideDismiss
             )
+
+            if (showLogoutDialog) {
+                Dialog(
+                    onDismissRequest = { showLogoutDialog = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    BaseModal(
+                        title = "로그아웃",
+                        body = "정말 로그아웃 하시겠습니까?",
+                        primaryButtonText = "로그아웃",
+                        secondaryButtonText = "취소",
+                        onSecondaryClick = { showLogoutDialog = false },
+                        onPrimaryClick = {
+                            showLogoutDialog = false
+                            onLogoutClick()
+                        }
+                    )
+                }
+            }
+
+            if (showWithdrawDialog) {
+                Dialog(
+                    onDismissRequest = { showWithdrawDialog = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    BaseModal(
+                        title = "회원 탈퇴",
+                        body = "탈퇴 시 모든 학습 기록과 데이터가 삭제되며\n복구할 수 없습니다. 정말 탈퇴하시겠습니까?",
+                        bodyColor = theme.error,
+                        primaryButtonText = "탈퇴하기",
+                        secondaryButtonText = "취소",
+                        onSecondaryClick = { showWithdrawDialog = false },
+                        onPrimaryClick = {
+                            showWithdrawDialog = false
+                            onWithdrawClick()
+                        }
+                    )
+                }
+            }
         }
     }
 }
