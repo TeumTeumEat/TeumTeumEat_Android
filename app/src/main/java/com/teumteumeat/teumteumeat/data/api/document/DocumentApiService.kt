@@ -41,4 +41,14 @@ interface DocumentApiService {
         @Path("documentId") documentId: Int
     ): ApiResponse<DocumentSummaryResponse, Any?>
 
+    /**
+     * PDF 문서에 대한 퀴즈 생성을 요청합니다.
+     * 요약글 SSE 스트리밍 완료 직후 프리페치 용도로 호출됩니다.
+     */
+    @POST("/api/v1/goals/{goalId}/documents/{documentId}/quizzes")
+    suspend fun createDocumentQuiz(
+        @Path("goalId") goalId: Int,
+        @Path("documentId") documentId: Int
+    ): ApiResponse<Unit, Any?>
+
 }
