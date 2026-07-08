@@ -15,13 +15,17 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 
 /**
  * 목표 완료 상태에서 홈화면 진입 시 표시되는 안내 팝업.
- * [onStartNewGoal] : 새 목표 시작하기 버튼 클릭
- * [onDismiss]      : 닫기 버튼 클릭
+ * [hasRunningGoal]      : 선택 가능한 진행중인 목표 존재 여부 — false면 [onSelectRunningGoal] 버튼 비활성화
+ * [onStartNewGoal]      : 새로운 틈틈잇 시작하기 버튼 클릭 (목표 추가 화면으로 이동)
+ * [onSelectRunningGoal] : 진행중인 틈틈잇 선택하기 버튼 클릭 (목표 선택 화면으로 이동)
+ * [onDismiss]           : 뒤로가기 등으로 팝업을 닫을 때 호출
  */
 @Composable
 fun GoalCompletedDialog(
     showDialog: Boolean,
+    hasRunningGoal: Boolean,
     onStartNewGoal: () -> Unit,
+    onSelectRunningGoal: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!showDialog) return
@@ -40,8 +44,9 @@ fun GoalCompletedDialog(
             primaryButtonText = "진행중인 틈틈잇 선택하기",
             secondaryButtonText = "새로운 틈틈잇 시작하기",
             isVerticalButtons = true,
-            onPrimaryClick = onStartNewGoal,
-            onSecondaryClick = onDismiss,
+            isPrimaryBtnEnabled = hasRunningGoal,
+            onPrimaryClick = onSelectRunningGoal,
+            onSecondaryClick = onStartNewGoal,
         )
     }
 }

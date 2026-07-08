@@ -77,9 +77,6 @@ class HomeViewModel @Inject constructor(
     // 중복 로드 방지 — 새 요청이 들어오면 진행 중인 이전 로드를 취소한다
     private var loadJob: Job? = null
 
-    // 앱 세션당 1회만 목표 완료 팝업을 노출한다
-    private var goalCompletedDialogShown = false
-
 
     init {
         // 강제 종료 후 복귀 시에도 저장된 음식 즉시 복원 (API 응답 전 기본값 노출 방지)
@@ -446,11 +443,9 @@ class HomeViewModel @Inject constructor(
                         _uiState.update { it.copy(isShowNewGoalGuideDialog = false) }
                     }
 
-                    // 목표 완료 상태이고, 이번 세션에서 아직 팝업을 보여주지 않았다면 노출
-                    if (goal.isCompleted && !goalCompletedDialogShown) {
-                        goalCompletedDialogShown = true
-                        _uiState.update { it.copy(isShowGoalCompletedDialog = true) }
-                    }
+                    // 목표 완료 상태라면 홈 화면 진입(로드) 시마다 매번 노출한다.
+                    // (다른 화면 이동 후 재진입한 경우에도 다시 보여야 하므로 세션 단위로 dedup하지 않는다)
+                    _uiState.update { it.copy(isShowGoalCompletedDialog = goal.isCompleted) }
 
                     // 2️⃣ 오늘 퀴즈 상태 조회
                     when (val quizResult = quizRepository.getUserQuizStatus()) {
@@ -460,7 +455,8 @@ class HomeViewModel @Inject constructor(
 
                             val today = LocalDate.now().toString()
 
-                            val hasRunningGoal = if (quizStatus.isCompleted) {
+                            // 목표완료 팝업의 [진행중인 틈틈잇 선택하기] 버튼 활성화 여부 판단용
+                            val hasRunningGoal = if (goal.isCompleted) {
                                 when (val listResult = getGoalListUseCase()) {
                                     is ApiResultV2.Success -> listResult.data.goalResponses.hasAnyRunningGoal()
                                     else -> false
@@ -565,9 +561,9 @@ class HomeViewModel @Inject constructor(
         return SnackState.Available
     }
 
+    // 진행 가능한 목표 기준: isCompleted == false
     private fun List<GetGoalResponse>.hasAnyRunningGoal(): Boolean {
-        val today = LocalDate.now()
-        return any { !it.isCompleted && LocalDate.parse(it.endDate) >= today }
+        return any { !it.isCompleted }
     }
 
     private fun buildSummaryQuery(goal: UserGoal): SummaryQuery =
