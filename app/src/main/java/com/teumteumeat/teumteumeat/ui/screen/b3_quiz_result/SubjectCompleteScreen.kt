@@ -79,6 +79,7 @@ fun SubjectCompleteScreen(
             LottieAnimation(
                 composition = composition,
                 progress = { progress }, // 현재 애니메이션 진행 상태
+                modifier = Modifier.size(200.dp),
                 // contentScale = ContentScale.Fit, // 필요 시 스케일 설정
             )
 
