@@ -614,5 +614,40 @@ class HomeViewModel @Inject constructor(
         Log.d("HomeViewModel", "백그라운드 전환: 날짜 기록 ($today)")
     }
 
+    fun addTestQuizCount() {
+        viewModelScope.launch {
+            when (val result = quizRepository.addTestQuizCount()) {
+                is ApiResultV2.Success -> {
+                    _uiState.update { it.copy(toastMessage = "퀴즈 풀이 횟수 +1 추가됨") }
+                    updateUserQuizStatus()
+                }
+                else -> moveToError(result)
+            }
+        }
+    }
+
+    fun resetAdReward() {
+        viewModelScope.launch {
+            when (val result = quizRepository.resetAdReward()) {
+                is ApiResultV2.Success -> {
+                    _uiState.update { it.copy(toastMessage = "쿠폰 상태 초기화 완료") }
+                    updateUserQuizStatus()
+                }
+                else -> moveToError(result)
+            }
+        }
+    }
+
+    fun resetGoal() {
+        viewModelScope.launch {
+            when (val result = quizRepository.resetGoal()) {
+                is ApiResultV2.Success -> {
+                    _uiState.update { it.copy(toastMessage = "목표 상태 초기화 완료") }
+                    loadHomeState()
+                }
+                else -> moveToError(result)
+            }
+        }
+    }
 
 }
