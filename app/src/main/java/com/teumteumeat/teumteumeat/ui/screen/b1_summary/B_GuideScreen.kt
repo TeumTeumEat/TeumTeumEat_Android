@@ -2,8 +2,9 @@ package com.teumteumeat.teumteumeat.ui.screen.b1_summary
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -28,10 +31,7 @@ import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
@@ -39,6 +39,11 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.btnGray200
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 
 @Composable
 fun GuideScreen(
@@ -50,7 +55,15 @@ fun GuideScreen(
 
     val theme = MaterialTheme.extendedColors
     val typography = MaterialTheme.appTypography
-    val scrollState = rememberScrollState()
+
+    /* ================= 로티파일 리소스 (홈 화면과 동일한 냠냠지식 캐릭터) ================= */
+    val backComposition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(R.raw.home_eat_before)
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = backComposition,
+        iterations = LottieConstants.IterateForever,
+    )
 
     BackHandler {
         onBackClick()
@@ -62,83 +75,56 @@ fun GuideScreen(
                 .fillMaxSize()
                 .background(theme.backSurface),
             content = { padding ->
-                Column(
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
-                        .systemBarsPadding()
-                        .padding()
-                        .verticalScroll(scrollState),
-                    verticalArrangement = Arrangement.SpaceBetween,
                 ) {
+                    // 홈 화면과 동일한 로티 컴포지션: w=360, h=572 (home_eat_before.json)
+                    // card 레이어: rect=[303.234, 442.253], transform scale=[98.257%, 98.837%]
+                    // card 중심 (컴포지션 좌표): x=180(수평 중앙), y=286+21.512=307.512
+                    val lottieRenderScale = minOf(
+                        maxWidth.value / 360f,
+                        maxHeight.value / 572f
+                    )
+                    val cardRenderedW = (303.234f * 0.98257f * lottieRenderScale).dp
+                    val cardRenderedH = (442.253f * 0.98837f * lottieRenderScale).dp
+                    val cardOffsetY = (21.512f * lottieRenderScale).dp
 
-                    Box(
+                    // 홈 화면과 동일한 냠냠지식 캐릭터 로티 애니메이션을 배경으로 사용
+                    LottieAnimation(
+                        composition = backComposition,
+                        progress = { progress },
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .systemBarsPadding()
                     ) {
+                        /**
+                         * 타이틀 바
+                         */
+                        TitleBar(
+                            title = "오늘의 냠냠지식",
+                            onBackClick = { onBackClick() }
+                        )
+                    }
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                        ) {
-                            /**
-                             * 타이틀 바
-                             */
-                            TitleBar(
-                                title = "오늘의 냠냠지식",
-                                onBackClick = { onBackClick() }
-                            )
-
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-
-                                // 2. 캐릭터와 카드를 감싸는 핵심 Box 레이아웃
-                                Box(
-                                    modifier = Modifier
-                                        .wrapContentWidth()
-                                        .padding(
-                                            horizontal = 16.dp,
-                                            vertical = 24.dp
-                                        ) // 카드 주변의 기본 패딩
-                                ) {
-
-                                    // --- 2.2 캐릭터 이미지 (오버레이 역할을 함) ---
-                                    Image(
-                                        painter = painterResource(id = R.drawable.back_char_quiz_guid_seen), // 이미지 리소스 ID
-                                        contentDescription = "귀여운 캐릭터",
-                                        modifier = Modifier
-                                            .size(203.dp) // 이미지 크기 조절 (필요에 따라 변경 가능)
-                                            .align(Alignment.TopEnd) // 핵심: Box 내에서 좌상단 배치
-                                        // 음수 오프셋을 주어 카드 밖으로 겹치게 함
-                                        // y축을 음수로 주어 위로 올리고, x축을 음수로 주어 왼쪽으로 이동시킴
-                                    )
-
-                                    Column(
-                                        modifier = Modifier
-                                            .wrapContentWidth()
-                                            .padding(
-                                                horizontal = 30.dp
-                                            )
-                                            .padding(top = 114.dp),
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        QuizGuideCard(
-                                            isDontShowChecked = isChecked,
-                                            onCheckedChange = onCheckedChange,
-                                            onQuizClick = onQuizClick
-                                        )
-                                    }
-
-
-                                }
-
-
-                            }
-
-                        }
+                    // 로티 애니메이션의 카드 사각형 영역에 맞춰 기존 컨텐츠를 정렬
+                    Box(
+                        modifier = Modifier
+                            .width(cardRenderedW)
+                            .height(cardRenderedH)
+                            .align(Alignment.Center)
+                            .offset(y = cardOffsetY),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        QuizGuideCard(
+                            isDontShowChecked = isChecked,
+                            onCheckedChange = onCheckedChange,
+                            onQuizClick = onQuizClick
+                        )
                     }
                 }
             },
@@ -174,10 +160,6 @@ fun QuizGuideCard(
         modifier = modifier
             .wrapContentWidth(),
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(
-            width = 2.dp,
-            color = btnGray200
-        ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.extendedColors.backgroundW100,
             contentColor = MaterialTheme.extendedColors.textPrimary
@@ -333,7 +315,11 @@ private fun DontShowAgainCheckbox(
     Row(
         modifier = Modifier
             .wrapContentWidth()
-            .width(260.dp),
+            .width(260.dp)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) { onCheckedChange(!checked) },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
