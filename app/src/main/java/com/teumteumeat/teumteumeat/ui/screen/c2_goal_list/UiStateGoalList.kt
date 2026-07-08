@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.ui.screen.c2_goal_list
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toUiText
 
 
@@ -46,7 +47,7 @@ fun GetGoalResponse.toUiModel(
     val (title, description) =
         when (type) {
             GoalTypeUiState.CATEGORY -> {
-                (category?.path ?: "미설정") to
+                (category?.let { Utils.TypeUtils.formatCategoryPath(it.path, it.name) } ?: "미설정") to
                         (prompt ?: "")
             }
 
