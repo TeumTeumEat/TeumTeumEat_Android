@@ -53,4 +53,20 @@ interface QuizApiService {
     @POST("/api/v1/user-quizzes/complete-set")
     suspend fun submitCompleteQuizSet(): ApiResponse<Unit, Any?>
 
+    /** [테스트 전용] 퀴즈 풀이 가능 횟수 강제 추가 — ADMIN 권한 필요 */
+    @POST("/api/v1/user-quizzes/test/add-quiz-count")
+    suspend fun addTestQuizCount(
+        @Query("count") count: Int = 1
+    ): ApiResponse<Unit, Any?>
+
+    /** [테스트 전용] 광고 시청 횟수 및 퀴즈 풀이 횟수 상태 초기화 — ADMIN 권한 필요 */
+    @POST("/api/v1/user-quizzes/test/reset-ad-reward")
+    suspend fun resetAdReward(): ApiResponse<Unit, Any?>
+
+    /** [테스트 전용] 목표 완료/만료 상태 초기화 — ADMIN 권한 필요. goalId 미전달 시 현재 목표 리셋 */
+    @POST("/api/v1/user-quizzes/test/reset-goal")
+    suspend fun resetGoal(
+        @Query("goalId") goalId: Long? = null
+    ): ApiResponse<Unit, Any?>
+
 }
