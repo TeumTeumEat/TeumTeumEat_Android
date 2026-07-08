@@ -151,6 +151,17 @@ class Utils {
             return "${date.monthValue}월 ${date.dayOfMonth}일"
         }
 
+        /**
+         * 카테고리 path("조상depth1/조상depth2") + name(리프)을
+         * "조상depth1 > 조상depth2 > name" 형태로 변환.
+         * path 마지막 세그먼트가 이미 name과 같으면 중복 없이 처리.
+         */
+        fun formatCategoryPath(path: String, name: String): String {
+            val segments = path.split("/").filter { it.isNotBlank() }
+            val fullSegments = if (segments.lastOrNull() == name) segments else segments + name
+            return fullSegments.joinToString(" > ")
+        }
+
     }
 
     object UiUtils{
