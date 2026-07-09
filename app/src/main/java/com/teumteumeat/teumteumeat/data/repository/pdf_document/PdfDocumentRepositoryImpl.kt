@@ -228,18 +228,4 @@ class PdfDocumentRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun createDocumentQuiz(
-        goalId: Int,
-        documentId: Int,
-    ): ApiResultV2<Unit> {
-        return safeApiVer2(
-            apiCall = {
-                documentApiService.createDocumentQuiz(
-                    goalId = goalId,
-                    documentId = documentId
-                )
-            },
-            mapper = { Unit }
-        )
-    }
 }
