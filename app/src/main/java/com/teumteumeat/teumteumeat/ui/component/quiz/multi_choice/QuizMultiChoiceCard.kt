@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.component.quiz.multi_choice
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,24 +55,6 @@ fun QuizMultiChoiceCard(
             .padding(horizontal = 24.dp),
         contentAlignment = Alignment.Center
     ) {
-
-        // 🔹 뒤에 깔리는 카드 (그림자 + 스택 효과)
-        Box(
-            modifier = Modifier
-                .offset(y = (-12).dp)
-                .fillMaxWidth()
-                .height(420.dp)
-                .shadow(
-                    elevation = 12.dp,
-                    shape = RoundedCornerShape(32.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.08f),
-                    spotColor = Color.Black.copy(alpha = 0.08f)
-                )
-                .background(
-                    color = Color.LightGray.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(32.dp)
-                )
-        )
 
         // 🔹 실제 카드
         Surface(

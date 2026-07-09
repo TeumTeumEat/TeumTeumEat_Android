@@ -1,20 +1,24 @@
 package com.teumteumeat.teumteumeat.ui.component.quiz.ox
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.quiz.QuizNextCardPreview
+import com.teumteumeat.teumteumeat.ui.component.quiz.QuizStackBackdrop
+import com.teumteumeat.teumteumeat.ui.component.quiz.calculateStackDepth
 import com.teumteumeat.teumteumeat.ui.component.quiz.multi_choice.QuizMultiChoiceCard
 import com.teumteumeat.teumteumeat.ui.component.quiz.multi_choice.VerticalSlideQuizCardWrapper
-import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizCardSection
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizCardUiState
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizType
+import kotlin.math.abs
+
+/** 다음 카드가 완전히 선명해지는 데 필요한 스와이프/슬라이드 이동 거리(px). */
+private const val REVEAL_DISTANCE_PX = 300f
 
 @Composable
 fun QuizCardStack(
@@ -26,29 +30,31 @@ fun QuizCardStack(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // 1. 다음에 올 카드 (배경 레이어)
-        if (currentIndex + 1 < quizzes.size) {
-            val nextQuiz = quizzes[currentIndex + 1]
-            QuizCardSection(
-                quiz = nextQuiz,
-                questionIndex = currentIndex + 2,
-                onSelectAnswer = {}, // 배경 카드는 클릭/스와이프 비활성화
-                modifier = Modifier
-                    .scale(0.9f)
-                    .alpha(0.5f)
-                    .offset(y = 10.dp) // 시각적 스택 효과
-            )
-        }
-
-        // 2. 현재 활성화된 카드 (최상단 레이어)
         if (currentIndex < quizzes.size) {
             val currentQuiz = quizzes[currentIndex]
+            val hasNext = currentIndex + 1 < quizzes.size
+            val remainingAfterCurrent = quizzes.size - currentIndex - 1
+            val stackDepth = calculateStackDepth(remainingAfterCurrent)
 
-            // OX 타입일 때만 스와이프 래퍼를 적용하고, MCQ는 일반 섹션으로 표시
+            // 1. 정적인 먼 레이어들 (최상단 1장은 QuizNextCardPreview가 담당)
+            QuizStackBackdrop(stackDepth = (stackDepth - 1).coerceAtLeast(0))
+
             when (currentQuiz.type) {
                 QuizType.OX -> {
+                    val offsetX = remember(currentIndex) { Animatable(0f) }
+                    val dismissProgress = (abs(offsetX.value) / REVEAL_DISTANCE_PX).coerceIn(0f, 1f)
+
+                    if (hasNext) {
+                        QuizNextCardPreview(
+                            progress = dismissProgress,
+                            nextQuiz = quizzes[currentIndex + 1],
+                            nextQuestionIndex = currentIndex + 2,
+                        )
+                    }
+
                     SwipeableQuizCardWrapper(
                         key = currentIndex,
+                        offsetX = offsetX,
                         onSelectAnswer = onAnswerSubmitted
                     ) { currentStatus, triggerYes, triggerNo -> // 람다 인자로 애니메이션 트리거를 받음
                         QuizOXCard(
@@ -57,14 +63,25 @@ fun QuizCardStack(
                             isCardStatus = currentStatus,
                             // 🔹 중요: 바로 onAnswerSubmitted를 부르지 않고 래퍼의 트리거를 사용
                             onYes = triggerYes,
-                            onNo = triggerNo
+                            onNo = triggerNo,
                         )
                     }
                 }
                 QuizType.MCQ -> {
+                    val offsetY = remember(currentIndex) { Animatable(0f) }
+                    val dismissProgress = (offsetY.value / REVEAL_DISTANCE_PX).coerceIn(0f, 1f)
+
+                    if (hasNext) {
+                        QuizNextCardPreview(
+                            progress = dismissProgress,
+                            nextQuiz = quizzes[currentIndex + 1],
+                            nextQuestionIndex = currentIndex + 2,
+                        )
+                    }
+
                     // MCQ 타입일 때 위로 슬라이드 효과 적용
                     VerticalSlideQuizCardWrapper(
-                        key = currentIndex,
+                        offsetY = offsetY,
                         onSelectAnswer = onAnswerSubmitted
                     ) { triggerSelect ->
                         QuizMultiChoiceCard(
@@ -79,7 +96,7 @@ fun QuizCardStack(
                             },
                             onPass = {
                                 triggerSelect("")
-                            }
+                            },
                         )
                     }
                 }
