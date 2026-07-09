@@ -401,9 +401,9 @@ class HomeViewModel @Inject constructor(
         lastDate = LocalDate.now().toString()
     }
 
-    private fun setRandomFood(goalId: Long) {
+    private fun setRandomFood() {
         val food = _uiState.value.foodList.random()
-        homePreference.saveGoalFood(goalId, food)
+        homePreference.saveTodayFood(food)
         _uiState.update { it.copy(selectedFoodRes = food) }
     }
 
@@ -497,9 +497,9 @@ class HomeViewModel @Inject constructor(
                                 )
                             }
 
-                            // 목표가 변경된 경우 음식 랜덤 선택
-                            if (goal.goalId != homePreference.getLastGoalId()) {
-                                setRandomFood(goal.goalId)
+                            // 날짜가 바뀐 경우에만 음식 랜덤 선택 (목표 전환은 음식에 영향 없음)
+                            if (homePreference.isFoodOutdated()) {
+                                setRandomFood()
                             }
 
                             _screenState.value = UiScreenState.Success
