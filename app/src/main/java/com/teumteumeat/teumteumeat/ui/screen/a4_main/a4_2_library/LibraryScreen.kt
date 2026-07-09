@@ -155,7 +155,7 @@ fun LibraryScreen(
 
                             StampCountBadgeStateful(
                                 modifier = Modifier.weight(1f),
-                                title = "이번달 도장",
+                                title = "이번달 스탬프",
                                 count = uiState.monthStampCount,
                             )
                         }
@@ -187,6 +187,20 @@ fun LibraryScreen(
                                 CircularProgressIndicator()
                             }
                         } else {
+                            if (uiState.calendarUiState.dailyLearningList.isNotEmpty()) {
+                                // ✅ 달력 하단과 헤더 사이 20dp
+                                Spacer(Modifier.height(20.dp))
+
+                                Text(
+                                    text = "이날 공부한 내용",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    style = MaterialTheme.appTypography.subtitleSemiBold16
+                                        .copy(color = theme.textSecondary),
+                                )
+
+                                Spacer(Modifier.height(12.dp))
+                            }
+
                             uiState.calendarUiState.dailyLearningList.forEach { item ->
                                 CalendarDailyLearningCard(
                                     title = item.title,
