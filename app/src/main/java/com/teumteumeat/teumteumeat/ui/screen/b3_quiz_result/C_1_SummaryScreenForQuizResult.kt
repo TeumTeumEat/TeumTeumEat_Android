@@ -95,9 +95,12 @@ fun SummaryScreenForQuizResult(
                                 } else {
                                     MarkdownText(
                                         markdown = uiState.summary.summary,
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
+
+                                // 스크롤 끝에서 마지막 컨텐츠가 화면 하단에 붙지 않도록 여백 확보
+                                Spacer(modifier = Modifier.height(40.dp))
                             }
                         }
 

@@ -165,6 +165,7 @@ class QuizResultViewModel @Inject constructor(
                     errorMessage = "goalId 를 전달받지 못했습니다. (id 전달 오류)"
                 )
             }
+            return
         }
 
         when (goal.type) {
@@ -217,6 +218,7 @@ class QuizResultViewModel @Inject constructor(
                     errorMessage = "documentId 를 전달받지 못했습니다. (id 전달 오류)"
                 )
             }
+            return
         }
 
         when (val result = historyRepository.getLearningHistorySummary(
@@ -235,6 +237,7 @@ class QuizResultViewModel @Inject constructor(
                             isLoading = false,
                             errorMessage = null,
                         ),
+                        isLoading = false,
                         errorMessage = null,
                     )
                 }
@@ -283,6 +286,7 @@ class QuizResultViewModel @Inject constructor(
                     errorMessage = "documentId 가 없습니다. (요약글 조회 오류)"
                 )
             }
+            return
         }
 
         // 2️⃣ 카테고리 목표 요약글 API 호출
@@ -302,6 +306,7 @@ class QuizResultViewModel @Inject constructor(
                             isLoading = false,
                             errorMessage = null,
                         ),
+                        isLoading = false,
                         errorMessage = null,
                     )
                 }
