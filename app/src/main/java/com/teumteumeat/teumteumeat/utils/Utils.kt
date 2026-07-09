@@ -400,6 +400,9 @@ class Utils {
             exitFlag: Boolean = true,
             extras: Bundle? = null // 데이터를 담을 Bundle 추가
         ){
+            // 이미 종료 처리 중인 Activity에서 재진입 호출된 경우(연타 등) 중복 인스턴스 생성 방지
+            if (context is Activity && context.isFinishing) return
+
             val intent = Intent(context, destinationActivity).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 extras?.let {putExtras(it)}
