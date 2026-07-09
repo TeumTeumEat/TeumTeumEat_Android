@@ -75,14 +75,23 @@ fun CustomBottomNavItem(
         label = "home_icon_box_size"
     )
 
-    // ⭐ 아이콘 크기 애니메이션
-    val animatedIconSize by animateDpAsState(
-        targetValue = if (isHomeItem && isSelected) 50.dp else 32.dp,
+    // ⭐ 아이콘 크기 애니메이션 (비선택 32x32, 홈탭 선택 시 42x38로 확대)
+    val animatedIconWidth by animateDpAsState(
+        targetValue = if (isHomeItem && isSelected) 42.dp else 32.dp,
         animationSpec = tween(
             durationMillis = 200,
             easing = FastOutSlowInEasing
         ),
-        label = "icon_size"
+        label = "icon_width"
+    )
+
+    val animatedIconHeight by animateDpAsState(
+        targetValue = if (isHomeItem && isSelected) 38.dp else 32.dp,
+        animationSpec = tween(
+            durationMillis = 200,
+            easing = FastOutSlowInEasing
+        ),
+        label = "icon_height"
     )
 
     Box(
@@ -116,7 +125,7 @@ fun CustomBottomNavItem(
                     Color.White
                 else
                     Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(animatedIconSize)
+                modifier = Modifier.size(width = animatedIconWidth, height = animatedIconHeight)
                     .graphicsLayer {
                         rotationZ = rotation
                     },
