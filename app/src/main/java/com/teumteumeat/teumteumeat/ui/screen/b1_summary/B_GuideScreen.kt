@@ -241,9 +241,9 @@ private fun QuizGuideBulletList(numberCount : Int) {
     )
 
     Column(
-        modifier = Modifier.wrapContentWidth(),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.Start
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
