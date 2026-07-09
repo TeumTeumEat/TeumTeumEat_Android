@@ -9,6 +9,9 @@ import androidx.compose.material3.Text
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +38,8 @@ fun OnBoardingSuccessScreen(
     nickname: String,
     onStartClick: () -> Unit,
 ) {
+    var isNavigating by remember { mutableStateOf(false) }
+
     BackHandler(enabled = true) { /* 온보딩 완료 후 뒤로가기 차단 */ }
     ForceLightStatusBarIcons()
 
@@ -101,7 +106,13 @@ fun OnBoardingSuccessScreen(
                     Color.White
                 ),
                 isEnabled = true,
-                onClick = onStartClick,
+                isLoading = isNavigating,
+                onClick = {
+                    if (!isNavigating) {
+                        isNavigating = true
+                        onStartClick()
+                    }
+                },
             )
         }
 
