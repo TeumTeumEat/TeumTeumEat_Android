@@ -156,23 +156,25 @@ fun QuizGuideCard(
     onCheckedChange: (Boolean) -> Unit,
     onQuizClick: () -> Unit,
 ) {
+    // 카드 배경은 로티 애니메이션의 card 레이어를 그대로 사용한다.
+    // 컨테이너를 투명하게 두어야 로티에서 카드 위로 겹쳐 그려지는 캐릭터 연출이 가려지지 않는다.
     Card(
         modifier = modifier
-            .wrapContentWidth(),
+            .fillMaxSize(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.extendedColors.backgroundW100,
+            containerColor = Color.Transparent,
             contentColor = MaterialTheme.extendedColors.textPrimary
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
-                .wrapContentWidth()
+                .fillMaxSize()
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-
             QuizTypeChip()
 
             Spacer(modifier = Modifier.height(20.dp))
