@@ -15,6 +15,7 @@ import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.quiz.result.QuizResultBody
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
@@ -44,40 +45,47 @@ fun DailyQuizResultScreen(
         onViewSummaryClick()
     }
 
-    // 🔴 에러 화면 (핵심)
-    if (screenState is UiScreenState.Error) {
-        val errorMessage =
-            (screenState as UiScreenState.Error).message
+    when (screenState) {
+        is UiScreenState.Error -> {
+            FullScreenErrorModal(
+                errorState = ErrorState(
+                    title = "에러가 발생했습니다.",
+                    description = screenState.message,
+                    retryLabel = "다시 시도하기",
+                    onRetry = { viewModel.loadQuizResults() }
+                ),
+                onBack = onViewSummaryClick,
+            )
+        }
 
-        FullScreenErrorModal(
-            errorState = ErrorState(
-                title = "에러가 발생했습니다.",
-                description = errorMessage,
-                retryLabel = "다시 시도하기",
-                onRetry = { viewModel.loadQuizResults() }
-            ),
-            onBack = onViewSummaryClick,
-        )
-    } else {
-        QuizResultBody(
-            title = "오늘의 정답 확인",
-            quizzes = uiState.quizzes,
-            onBackClick = onBack,
-        ) {
-            /** 🔹 하단 버튼 영역 */
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-                    .align(Alignment.BottomCenter),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+        UiScreenState.Idle, UiScreenState.Loading -> {
+            LoadingScreen(
+                title = "퀴즈 결과를 불러오는 중",
+                message = "잠시만 기다려주세요",
+            )
+        }
+
+        UiScreenState.Success -> {
+            QuizResultBody(
+                title = "오늘의 정답 확인",
+                quizzes = uiState.quizzes,
+                onBackClick = onBack,
             ) {
-                BaseFillButton(
+                /** 🔹 하단 버튼 영역 */
+                Row(
                     modifier = Modifier
-                        .weight(1f),
-                    onClick = onViewSummaryClick,
-                    text = "요약글 보기"
-                )
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                        .align(Alignment.BottomCenter),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    BaseFillButton(
+                        modifier = Modifier
+                            .weight(1f),
+                        onClick = onViewSummaryClick,
+                        text = "요약글 보기"
+                    )
+                }
             }
         }
     }
