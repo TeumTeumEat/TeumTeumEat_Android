@@ -13,12 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -27,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
+import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
 import com.teumteumeat.teumteumeat.ui.component.quiz.result.QuizResultCard
 import com.teumteumeat.teumteumeat.ui.component.quiz.result.QuizResultType
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
@@ -92,9 +88,9 @@ fun DailyQuizResultScreen(
                 ) {
 
                     /** 🔹 상단 타이틀 영역 */
-                    TopBar(
+                    TitleBar(
                         title = "오늘의 정답 확인",
-                        onBack = onBack
+                        onBackClick = onBack
                     )
 
                     /** 🔹 퀴즈 결과 리스트 */
@@ -144,44 +140,5 @@ fun DailyQuizResultScreen(
         }
     }
 
-}
-
-@Composable
-private fun TopBar(
-    title: String,
-    onBack: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier.size(30.dp)
-        ) {
-            Icon(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .size(24.dp),
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
-                contentDescription = "previous page",
-            )
-        }
-
-
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ){
-            Text(
-                text = title,
-                style = MaterialTheme.appTypography.subtitleSemiBold20
-            )
-        }
-    }
 }
 
