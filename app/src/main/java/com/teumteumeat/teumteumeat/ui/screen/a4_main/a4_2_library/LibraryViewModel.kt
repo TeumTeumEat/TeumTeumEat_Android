@@ -9,6 +9,8 @@ import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -49,20 +51,52 @@ class LibraryViewModel @Inject constructor(
 
     /** 📅 월별 퀴즈 히스토리 로드 */
     // 함수 앞에 suspend를 붙여 비동기 작업임을 명시합니다.
-    suspend fun loadCalendarHistory(yearMonth: YearMonth) {
-        // ⚠️ 내부의 viewModelScope.launch를 제거합니다.
-        when (
-            val result = historyRepository.getCalendarHistory(
+    suspend fun loadCalendarHistory(yearMonth: YearMonth) = coroutineScope {
+        // ✅ 캘린더 첫째/마지막 주에 표시되는 인접 달 날짜의 학습 여부도 필요하므로
+        //    현재 월 + 이전 월 + 다음 월을 병렬 로드한다
+        val currentDeferred = async {
+            historyRepository.getCalendarHistory(
                 year = yearMonth.year,
                 month = yearMonth.monthValue
             )
-        ) {
+        }
+        val prevMonth = yearMonth.minusMonths(1)
+        val prevDeferred = async {
+            historyRepository.getCalendarHistory(
+                year = prevMonth.year,
+                month = prevMonth.monthValue
+            )
+        }
+        val nextMonth = yearMonth.plusMonths(1)
+        val nextDeferred = async {
+            historyRepository.getCalendarHistory(
+                year = nextMonth.year,
+                month = nextMonth.monthValue
+            )
+        }
+
+        // ✅ 인접 월은 stampedDates만 사용 — 실패해도 무시 (원 표시만 생략됨)
+        val adjacentSolvedDates = listOf(prevDeferred, nextDeferred)
+            .map { it.await() }
+            .flatMap { result ->
+                when (result) {
+                    is ApiResultV2.Success -> result.data.stampedDates
+                    else -> {
+                        Log.e("LibraryViewModel", "⚠️ 인접 월 히스토리 로드 실패: ${result.uiMessage}")
+                        emptyList()
+                    }
+                }
+            }
+            .map { LocalDate.parse(it) }
+            .toSet()
+
+        when (val result = currentDeferred.await()) {
             is ApiResultV2.Success -> {
                 val data = result.data
 
                 val solvedDates = data.stampedDates
                     .map { LocalDate.parse(it) }
-                    .toSet()
+                    .toSet() + adjacentSolvedDates
 
                 // 현재 날짜 포함 여부 확인
                 val isTodayIncluded = solvedDates.contains(LocalDate.now())
@@ -80,7 +114,8 @@ class LibraryViewModel @Inject constructor(
 
                         calendarUiState = state.calendarUiState.copy(
                             currentMonth = yearMonth,
-                            solvedDates = solvedDates,
+                            // ✅ 기존 값과 union — 월 스와이프 왕복 시 이미 로드한 데이터 유지
+                            solvedDates = state.calendarUiState.solvedDates + solvedDates,
                         ),
 
                         motivationUiState = state.motivationUiState.copy(
@@ -133,6 +168,13 @@ class LibraryViewModel @Inject constructor(
 
     /** 📆 날짜 선택 */
     fun onCalendarDateSelected(date: LocalDate) {
+        // ✅ 이미 선택된 날짜를 다시 클릭하면 재로딩하지 않음
+        //    단, 직전 로드가 실패한 경우(dailyErrorMessage != null)는 재시도 허용
+        val calendarState = _uiState.value.calendarUiState
+        if (calendarState.selectedDate == date && calendarState.dailyErrorMessage == null) {
+            return
+        }
+
         Log.d("Calendar", "📆 날짜 선택: $date")
 
         // 1️⃣ 날짜 선택 상태 갱신
