@@ -23,6 +23,7 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.ForceLightStatusBarIcons
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -35,6 +36,7 @@ fun OnBoardingSuccessScreen(
     onStartClick: () -> Unit,
 ) {
     BackHandler(enabled = true) { /* 온보딩 완료 후 뒤로가기 차단 */ }
+    ForceLightStatusBarIcons()
 
     // 🎬 Lottie Composition 로드
     val composition by rememberLottieComposition(
