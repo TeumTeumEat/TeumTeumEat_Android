@@ -37,53 +37,54 @@ private enum class SseDebugState(
     val step1: Boolean,
     val step2: Boolean,
     val sseProgress: Float,
+    val sseRemainMs: Long?,
     val sseStatusText: String?,
     val sseProgressText: String?,
 ) {
     UPLOAD(
         label = "파일 업로드",
         step0 = true,  step1 = false, step2 = false,
-        sseProgress = 0f,     sseStatusText = null,    sseProgressText = null,
+        sseProgress = 0f, sseRemainMs = null, sseStatusText = null,    sseProgressText = null,
     ),
     REGISTER(
         label = "문서 등록",
         step0 = true,  step1 = true,  step2 = false,
-        sseProgress = 0f,     sseStatusText = null,    sseProgressText = null,
+        sseProgress = 0f, sseRemainMs = null, sseStatusText = null,    sseProgressText = null,
     ),
     CONNECTED(
         label = "SSE 연결",
         step0 = true,  step1 = true,  step2 = true,
-        sseProgress = 0f,     sseStatusText = null,    sseProgressText = null,
+        sseProgress = 0f, sseRemainMs = null, sseStatusText = null,    sseProgressText = null,
     ),
     PENDING(
         label = "PENDING",
         step0 = true,  step1 = true,  step2 = true,
-        sseProgress = 0.05f,  sseStatusText = null,    sseProgressText = null,
+        sseProgress = 0.05f, sseRemainMs = null, sseStatusText = null,    sseProgressText = null,
     ),
     PROCESSING_30S(
         label = "PROCESSING·30초",
         step0 = true,  step1 = true,  step2 = true,
-        sseProgress = 0.30f,  sseStatusText = "30초 남았어요.", sseProgressText = "30% 완료",
+        sseProgress = 0.30f, sseRemainMs = 30_000L, sseStatusText = "30초 남았어요.", sseProgressText = "30% 완료",
     ),
     PROCESSING_10S(
         label = "PROCESSING·10초",
         step0 = true,  step1 = true,  step2 = true,
-        sseProgress = 0.70f,  sseStatusText = "10초 남았어요.", sseProgressText = "70% 완료",
+        sseProgress = 0.70f, sseRemainMs = 10_000L, sseStatusText = "10초 남았어요.", sseProgressText = "70% 완료",
     ),
     PROCESSING_3S(
         label = "PROCESSING·3초",
         step0 = true,  step1 = true,  step2 = true,
-        sseProgress = 0.91f,  sseStatusText = "3초 남았어요.",  sseProgressText = "91% 완료",
+        sseProgress = 0.91f, sseRemainMs = 3_000L, sseStatusText = "3초 남았어요.",  sseProgressText = "91% 완료",
     ),
     PROCESSING_OVER(
         label = "시간 초과 중",
         step0 = true,  step1 = true,  step2 = true,
-        sseProgress = 0.99f,  sseStatusText = "잠시만 기다려주세요", sseProgressText = null,
+        sseProgress = 0.99f, sseRemainMs = 0L, sseStatusText = "잠시만 기다려주세요", sseProgressText = null,
     ),
     COMPLETED(
         label = "COMPLETED",
         step0 = true,  step1 = true,  step2 = true,
-        sseProgress = 1.0f,   sseStatusText = null,    sseProgressText = null,
+        sseProgress = 1.0f, sseRemainMs = 0L, sseStatusText = null,    sseProgressText = null,
     ),
 }
 
@@ -131,6 +132,7 @@ fun DocumentLoadingDebugScreen() {
             isCompletedLoading = true,
             isDocumentFlow = true,
             sseProgress = selectedState.sseProgress,
+            sseRemainMs = selectedState.sseRemainMs,
             sseStatusText = selectedState.sseStatusText,
             sseProgressText = selectedState.sseProgressText,
             onAnimationComplete = {},

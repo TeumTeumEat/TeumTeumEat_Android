@@ -120,6 +120,7 @@ data class UiStateAddGoalState(
     // SSE 문서 처리 진행 상태
     val isSseStarted: Boolean = false,
     val sseProgress: Float = 0f,
+    val sseRemainMs: Long? = null,       // 자연 증가 애니메이션 duration 계산용 (Completed 시 0L, Pending 시 null)
     val sseStatusText: String? = null,   // 시간 텍스트: "N초 남았어요." / "잠시만 기다려주세요"
     val sseProgressText: String? = null, // 진행률 텍스트: "XX% 완료"
 ){
