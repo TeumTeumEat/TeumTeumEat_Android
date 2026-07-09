@@ -252,7 +252,7 @@ class SummaryViewModel @Inject constructor(
                             try {
                                 loadCategorySummaryInternal(categoryId.toInt())
                                 val documentId = _uiState.value.categoryDocumentId
-                                if (documentId != -1) prefetchCategoryQuiz(documentId)
+                                if (documentId != -1) prefetchQuiz(documentId, GoalTypeUiState.CATEGORY)
                             } finally {
                                 _uiState.update { it.copy(isQuizLoading = false) }
                             }
@@ -323,7 +323,7 @@ class SummaryViewModel @Inject constructor(
                     _uiState.update { it.copy(title = event.title, isStreaming = false, isQuizLoading = true) }
                     try {
                         fetchDocumentSummary(goalId.toInt(), documentId.toInt())
-                        prefetchPdfQuiz(goalId.toInt(), documentId.toInt())
+                        prefetchQuiz(documentId.toInt(), GoalTypeUiState.DOCUMENT)
                     } finally {
                         _uiState.update { it.copy(isQuizLoading = false) }
                     }
@@ -441,21 +441,28 @@ class SummaryViewModel @Inject constructor(
         }
     }
 
-    /** SSE TitleReceived 후 퀴즈를 미리 생성 요청한다. (isQuizLoading 토글은 호출부 finally 가 담당) */
-    private suspend fun prefetchCategoryQuiz(documentId: Int) {
-        Log.d("SummaryViewModel", "퀴즈 생성 요청: documentId=$documentId")
-        when (quizRepository.getUserQuizzes(documentId, GoalTypeUiState.CATEGORY)) {
-            is ApiResultV2.Success -> Log.d("SummaryViewModel", "퀴즈 생성 완료: documentId=$documentId")
-            else -> Log.w("SummaryViewModel", "퀴즈 생성 실패: documentId=$documentId (QuizActivity에서 재요청)")
-        }
-    }
-
-    /** SSE TitleReceived 후 PDF 퀴즈를 미리 생성 요청한다. (isQuizLoading 토글은 호출부가 담당) */
-    private suspend fun prefetchPdfQuiz(goalId: Int, documentId: Int) {
-        Log.d("SummaryViewModel", "PDF 퀴즈 생성 요청: goalId=$goalId, documentId=$documentId")
-        when (pdfDocumentRepository.createDocumentQuiz(goalId, documentId)) {
-            is ApiResultV2.Success -> Log.d("SummaryViewModel", "PDF 퀴즈 생성 완료: documentId=$documentId")
-            else -> Log.w("SummaryViewModel", "PDF 퀴즈 생성 실패: documentId=$documentId (QuizActivity에서 재요청)")
+    /**
+     * SSE TitleReceived 후 퀴즈 세트를 미리 조회해 서버 캐시를 예열한다. (isQuizLoading 토글은 호출부가 담당)
+     * 서버가 퀴즈를 아직 다 만들지 못해 빈 리스트를 반환하면, 0.5초 뒤 다시 조회한다.
+     * 이 동안 호출부의 finally 가 실행되지 않으므로 버튼은 계속 비활성 상태로 유지된다.
+     */
+    private suspend fun prefetchQuiz(documentId: Int, documentType: GoalTypeUiState) {
+        Log.d("SummaryViewModel", "퀴즈 프리페치 요청: documentId=$documentId, documentType=$documentType")
+        while (true) {
+            when (val result = quizRepository.getUserQuizzes(documentId, documentType)) {
+                is ApiResultV2.Success -> {
+                    if (result.data.isNotEmpty()) {
+                        Log.d("SummaryViewModel", "퀴즈 프리페치 완료: documentId=$documentId")
+                        return
+                    }
+                    Log.d("SummaryViewModel", "퀴즈 프리페치 결과 없음 → 0.5초 후 재시도: documentId=$documentId")
+                    delay(500)
+                }
+                else -> {
+                    Log.w("SummaryViewModel", "퀴즈 프리페치 실패: documentId=$documentId (QuizActivity에서 재요청)")
+                    return
+                }
+            }
         }
     }
 
