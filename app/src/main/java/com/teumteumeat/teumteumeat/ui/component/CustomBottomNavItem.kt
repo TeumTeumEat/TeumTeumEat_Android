@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.graphicsLayer
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.BottomNavItem
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 @Composable
@@ -76,7 +77,7 @@ fun CustomBottomNavItem(
 
     // ⭐ 아이콘 크기 애니메이션
     val animatedIconSize by animateDpAsState(
-        targetValue = if (isHomeItem && isSelected) 52.dp else 30.dp,
+        targetValue = if (isHomeItem && isSelected) 50.dp else 32.dp,
         animationSpec = tween(
             durationMillis = 200,
             easing = FastOutSlowInEasing
@@ -99,7 +100,11 @@ fun CustomBottomNavItem(
             modifier = Modifier
                 .size(animatedSize)
                 .background(
-                    color = MaterialTheme.colorScheme.primary,
+                    // ✅ 비활성 탭은 흐린 색으로 구분
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.extendedColors.btnFillDisabledColorGhoast,
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
