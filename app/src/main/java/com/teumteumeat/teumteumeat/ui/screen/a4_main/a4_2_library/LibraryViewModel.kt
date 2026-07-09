@@ -33,8 +33,12 @@ class LibraryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
             // 1. 월별 데이터 로드가 끝날 때까지 여기서 '일시 정지'합니다.
             loadCalendarHistory(YearMonth.now())
+
+            _uiState.update { it.copy(isLoading = false) }
 
             // 2. 위 함수가 완료된 후 최신 상태값을 확인합니다.
             if (_uiState.value.isSolvedToday) {
@@ -192,12 +196,15 @@ class LibraryViewModel @Inject constructor(
 
     private fun fetchCategoryHistories() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isCategoryLoading = true) }
+
             when (val result = historyRepository.getCategoryHistories()) {
 
                 is ApiResultV2.Success -> {
                     allCategoryHistories = result.data
                     _uiState.update { state ->
                         state.copy(
+                            isCategoryLoading = false,
                             categoryHistories = if (state.showOnlyInProgress) {
                                 result.data.filter { category -> category.histories.none { it.isCompleted } }
                             } else {
@@ -208,6 +215,7 @@ class LibraryViewModel @Inject constructor(
                 }
 
                 is ApiResultV2.SessionExpired -> {
+                    _uiState.update { it.copy(isCategoryLoading = false) }
                     sessionManager.expireSession()
                 }
 
@@ -216,7 +224,7 @@ class LibraryViewModel @Inject constructor(
                 is ApiResultV2.UnknownError -> {
                     // 👉 공통 에러 메시지 처리
                     _uiState.update {
-                        it.copy(errorMessage = result.uiMessage)
+                        it.copy(isCategoryLoading = false, errorMessage = result.uiMessage)
                     }
                 }
             }
