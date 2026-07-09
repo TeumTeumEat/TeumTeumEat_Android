@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -216,7 +217,12 @@ fun LibraryScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 22.dp),
+                                .padding(horizontal = 22.dp)
+                                .clickable(
+                                    interactionSource = Utils.UiUtils.noRipple(),
+                                    indication = null,
+                                    onClick = { viewModel.onToggleInProgressFilter() },
+                                ),
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
