@@ -370,6 +370,44 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * QUIZ-001 · 퀴즈 화면 진입 이벤트
+     *
+     * | 파라미터   | 타입   | 예시      | 목적                                    |
+     * |-----------|--------|-----------|-----------------------------------------|
+     * | content_id | String | "17"      | summary_view_start/complete 와 JOIN 키  |
+     * | topic      | String | "SwiftUI" | 요약 콘텐츠 제목 (최대 100자)           |
+     * | quiz_count | Long   | 5         | 총 문제 수                              |
+     * | difficulty | String | "high"    | 사용자 난이도 설정                      |
+     * | entry_type | String | "first"   | 진입 유형 — 아래 값 정의 참조           |
+     *
+     * ## entry_type 값 정의
+     * - `"first"`  : 최초 진입
+     * - `"resume"` : 미완료 재진입 (complete-set API 미호출 상태에서 재진입)
+     * - `"retry"`  : 완료 후 재진입 (complete-set API 성공 이력 있음)
+     *
+     * 판단 로직은 [com.teumteumeat.teumteumeat.data.datastore.QuizTrackingDataStore.resolveEntryType] 참조.
+     * 앱 재설치 시 로컬 이력이 초기화되어 "first"로 재발생하는 것은 의도된 동작.
+     *
+     * ## 측정 목적
+     * - `entry_type = "first"` 필터링 → 전체 유저 중 퀴즈를 한 번이라도 시작한 유저 비율
+     * - `entry_type = "retry"` 카운트 → 완료 후 재도전 횟수로 학습 참여 깊이 측정
+     * - `entry_type = "resume"` 카운트 → 미완료 이탈 후 복귀율 파악
+     * - content_id 기준 summary_view_complete 와 JOIN하여 완독 → 퀴즈 진입 전환율 산출
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizViewModel.loadQuizzes] API 성공 후
+     *   ViewModel 인스턴스당 최초 1회 (재시도로 재성공해도 중복 발송 방지)
+     */
+    object QuizStart {
+        const val NAME = "quiz_start"
+        const val PARAM_CONTENT_ID = "content_id"    // documentId.toString()
+        const val PARAM_TOPIC = "topic"               // 콘텐츠 제목 (max 100자)
+        const val PARAM_QUIZ_COUNT = "quiz_count"     // 총 문제 수
+        const val PARAM_DIFFICULTY = "difficulty"     // "high" | "mid" | "low"
+        const val PARAM_ENTRY_TYPE = "entry_type"     // "first" | "resume" | "retry"
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |

@@ -211,17 +211,20 @@ class TeumAnalyticsLogger @Inject constructor(
      *   [Difficulty.NONE]이 전달되면 조기 반환합니다.
      */
     fun logDifficultySelect(difficulty: Difficulty) {
-        val value = when (difficulty) {
-            Difficulty.HARD -> "high"
-            Difficulty.MEDIUM -> "mid"
-            Difficulty.EASY -> "low"
-            Difficulty.NONE -> return
-        }
+        val value = difficulty.toAnalyticsValue() ?: return
         analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.DIFFICULTY, value)
         val params = Bundle().apply {
             putString(TeumAnalyticsEvent.DifficultySelect.PARAM_DIFFICULTY, value)
         }
         analytics.logEvent(TeumAnalyticsEvent.DifficultySelect.NAME, params)
+    }
+
+    /** [Difficulty] → Firebase Analytics 파라미터 값 매핑 ("high" | "mid" | "low") */
+    private fun Difficulty.toAnalyticsValue(): String? = when (this) {
+        Difficulty.HARD -> "high"
+        Difficulty.MEDIUM -> "mid"
+        Difficulty.EASY -> "low"
+        Difficulty.NONE -> null
     }
 
     /**
@@ -298,6 +301,36 @@ class TeumAnalyticsLogger @Inject constructor(
             putString(TeumAnalyticsEvent.SummaryViewComplete.PARAM_TOPIC, topic.take(100))
         }
         analytics.logEvent(TeumAnalyticsEvent.SummaryViewComplete.NAME, params)
+    }
+
+    /**
+     * QUIZ-001 — 퀴즈 화면 진입 이벤트 로깅 ([TeumAnalyticsEvent.QuizStart])
+     *
+     * [QuizViewModel] 내에서 ViewModel 인스턴스당 최초 1회만 호출됩니다.
+     * `difficulty`가 [Difficulty.NONE]이면 조기 반환하여 이벤트를 발송하지 않습니다.
+     *
+     * @param contentId 퀴즈 콘텐츠 ID (documentId.toString()) — summary 이벤트와 JOIN 키
+     * @param topic     콘텐츠 제목 — 100자 초과 시 잘라냄
+     * @param quizCount 총 문제 수
+     * @param difficulty 사용자 난이도 설정 — [Difficulty.HARD] | [Difficulty.MEDIUM] | [Difficulty.EASY]
+     * @param entryType 진입 유형 — "first" | "resume" | "retry"
+     */
+    fun logQuizStart(
+        contentId: String,
+        topic: String,
+        quizCount: Long,
+        difficulty: Difficulty,
+        entryType: String,
+    ) {
+        val difficultyValue = difficulty.toAnalyticsValue() ?: return
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.QuizStart.PARAM_CONTENT_ID, contentId)
+            putString(TeumAnalyticsEvent.QuizStart.PARAM_TOPIC, topic.take(100))
+            putLong(TeumAnalyticsEvent.QuizStart.PARAM_QUIZ_COUNT, quizCount)
+            putString(TeumAnalyticsEvent.QuizStart.PARAM_DIFFICULTY, difficultyValue)
+            putString(TeumAnalyticsEvent.QuizStart.PARAM_ENTRY_TYPE, entryType)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.QuizStart.NAME, params)
     }
 
     /**
