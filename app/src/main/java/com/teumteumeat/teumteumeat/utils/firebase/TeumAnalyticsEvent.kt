@@ -312,6 +312,13 @@ object TeumAnalyticsEvent {
          * 자동: [SplashViewModel.tryAutoLogin] 성공 시 ([TokenLocalDataSource.getProvider] 참조)
          */
         const val LOGIN_METHOD = "login_method"  // "kakao" | "google"
+
+        /**
+         * 유저 전체 누적 퀴즈 문항 응답 수 — [QuizAnswerSubmit] 발화 시마다 갱신
+         *
+         * 재도전(retry) 시에도 초기화되지 않고 계속 증가한다 (24자, GA4 키 최대 길이 제한 통과).
+         */
+        const val TOTAL_QUESTIONS_ANSWERED = "total_questions_answered"  // "1", "2", ...
     }
 
     /**
@@ -405,6 +412,61 @@ object TeumAnalyticsEvent {
         const val PARAM_QUIZ_COUNT = "quiz_count"     // 총 문제 수
         const val PARAM_DIFFICULTY = "difficulty"     // "high" | "mid" | "low"
         const val PARAM_ENTRY_TYPE = "entry_type"     // "first" | "resume" | "retry"
+    }
+
+    /**
+     * QUIZ-002 · 개별 문항 제출 이벤트
+     *
+     * | 파라미터    | 타입   | 예시   | 목적                                    |
+     * |------------|--------|--------|-----------------------------------------|
+     * | content_id  | String | "17"   | quiz_start 와 JOIN 키                   |
+     * | question_no | Long   | 12     | 전역 누적 문항 응답 수 (재도전해도 계속 증가) |
+     * | answer_type | String | "ox"   | 문항 유형                                |
+     * | is_correct  | String | "true" | 정답 여부                                |
+     *
+     * ## 측정 목적
+     * - `quiz_start(entry_type=first) 대비 quiz_answer_submit 발생 유저 비율` → 실제 풀이 전환율
+     * - User Property [UserProperties.TOTAL_QUESTIONS_ANSWERED]로 유저별 누적 풀이량 세그먼트 분석
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizViewModel.submitAnswer]
+     *   서버 응답 수신(`ApiResultV2.Success`) 시마다
+     */
+    object QuizAnswerSubmit {
+        const val NAME = "quiz_answer_submit"
+        const val PARAM_CONTENT_ID = "content_id"       // documentId.toString()
+        const val PARAM_QUESTION_NO = "question_no"     // 전역 누적값
+        const val PARAM_ANSWER_TYPE = "answer_type"     // "ox" | "mcq"
+        const val PARAM_IS_CORRECT = "is_correct"       // "true" | "false"
+    }
+
+    /**
+     * QUIZ-003 · 퀴즈 풀이 중 이탈 이벤트
+     *
+     * | 파라미터         | 타입   | 예시    | 목적                                    |
+     * |------------------|--------|---------|-----------------------------------------|
+     * | content_id       | String | "17"    | quiz_start 와 JOIN 키                   |
+     * | last_question_no | Long   | 3       | 세션 내 마지막 제출 문항 번호 (0=미풀이) |
+     * | quiz_count       | Long   | 5       | 이 세션의 전체 문항 수                   |
+     * | entry_type       | String | "first" | 진입 유형                                |
+     *
+     * `last_question_no`는 [QuizAnswerSubmit.PARAM_QUESTION_NO](전역 누적값)와 무관한
+     * ViewModel 인스턴스 전용 세션 카운터다. 전역 누적값을 재사용하면 재도전 이후
+     * 항상 quiz_count보다 커져 이탈이 감지되지 않기 때문에 분리했다.
+     *
+     * ## 측정 목적
+     * - 마지막 제출 문항 번호 기준 이탈 구간 분포 파악
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizViewModel.onCleared]에서
+     *   세션 내 제출 수가 quiz_count보다 적을 때만
+     */
+    object QuizAbandoned {
+        const val NAME = "quiz_abandoned"
+        const val PARAM_CONTENT_ID = "content_id"
+        const val PARAM_LAST_QUESTION_NO = "last_question_no"  // 세션 전용 카운터, 0=미풀이
+        const val PARAM_QUIZ_COUNT = "quiz_count"
+        const val PARAM_ENTRY_TYPE = "entry_type"               // "first" | "resume" | "retry"
     }
 
     /**
