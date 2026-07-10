@@ -47,6 +47,12 @@ class QuizViewModel @Inject constructor(
     /** [logQuizStartIfNeeded] 동시 호출 시 중복 발송 방지용 (check-then-act 레이스 방지) */
     private val quizStartLogMutex = Mutex()
 
+    /** 이 ViewModel 인스턴스(=1회 퀴즈 세션) 내 성공 제출 수. quiz_abandoned 판정 전용 — 전역 누적값과 분리 */
+    private var sessionAnsweredCount = 0
+
+    /** quiz_start 발화 시 계산된 entry_type. quiz_abandoned에서 재사용하기 위해 필드로 보관 */
+    private var resolvedEntryType: String = "first"
+
     private val _uiState = MutableStateFlow(UiStateQuiz())
     val uiState = _uiState.asStateFlow()
 
@@ -197,6 +203,7 @@ class QuizViewModel @Inject constructor(
                 else -> return@withLock
             }
             val entryType = quizTrackingDataStore.resolveEntryType(documentId.toString())
+            resolvedEntryType = entryType
 
             hasQuizStartLogged = true
             analyticsLogger.logQuizStart(
@@ -262,6 +269,16 @@ class QuizViewModel @Inject constructor(
                             quizzes = updatedQuizzes,
                         )
                     }
+
+                    val questionNo = quizTrackingDataStore.incrementAndGetTotalQuestionsAnswered()
+                    sessionAnsweredCount++
+                    analyticsLogger.logQuizAnswerSubmit(
+                        contentId = documentId.toString(),
+                        questionNo = questionNo.toLong(),
+                        answerType = quiz.type.toAnalyticsValue(),
+                        isCorrect = isCorrect,
+                    )
+
                     // ✅ 결과 반영 후 "이동 여부"는 여기서 판단
                     moveToNextQuizIfPossible(isCorrect)
                 }
@@ -311,5 +328,22 @@ class QuizViewModel @Inject constructor(
             }
         }
 
+    }
+
+    /**
+     * QUIZ-003 — 화면 이탈 감지. QuizActivity가 finish()될 때 ViewModel도 clear되므로
+     * 이 시점에서 세션 내 제출 수가 전체 문항 수보다 적으면 미완료 이탈로 간주한다.
+     */
+    override fun onCleared() {
+        super.onCleared()
+        val quizCount = uiState.value.totalSteps
+        if (sessionAnsweredCount < quizCount) {
+            analyticsLogger.logQuizAbandoned(
+                contentId = documentId.toString(),
+                lastQuestionNo = sessionAnsweredCount.toLong(),
+                quizCount = quizCount.toLong(),
+                entryType = resolvedEntryType,
+            )
+        }
     }
 }

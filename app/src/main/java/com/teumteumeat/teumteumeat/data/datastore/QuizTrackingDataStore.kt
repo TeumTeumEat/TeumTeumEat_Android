@@ -6,6 +6,7 @@ import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.catch
@@ -35,6 +36,7 @@ class QuizTrackingDataStore @Inject constructor(
     companion object {
         private val COMPLETED_QUIZ_IDS = stringSetPreferencesKey("completed_quiz_ids")
         private val ENTERED_QUIZ_IDS = stringSetPreferencesKey("entered_quiz_ids")
+        private val TOTAL_QUESTIONS_ANSWERED = intPreferencesKey("total_questions_answered")
     }
 
     /** complete-set API 성공 시 호출 — documentId를 완료 이력에 추가합니다. */
@@ -67,5 +69,19 @@ class QuizTrackingDataStore @Inject constructor(
                 "first"
             }
         }
+    }
+
+    /**
+     * QUIZ-002 `quiz_answer_submit`의 `question_no` / User Property
+     * `total_questions_answered`용 전역 누적 카운터. 문서 구분 없이 항상 증가하며
+     * 재도전(retry) 시에도 초기화되지 않는다.
+     */
+    suspend fun incrementAndGetTotalQuestionsAnswered(): Int {
+        var newValue = 0
+        dataStore.edit { prefs ->
+            newValue = (prefs[TOTAL_QUESTIONS_ANSWERED] ?: 0) + 1
+            prefs[TOTAL_QUESTIONS_ANSWERED] = newValue
+        }
+        return newValue
     }
 }

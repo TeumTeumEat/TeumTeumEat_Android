@@ -127,6 +127,12 @@ enum class QuizType {
         }
     }
 }
+
+/** QUIZ-002 `quiz_answer_submit`의 `answer_type` 파라미터 값 매핑 ("ox" | "mcq") */
+fun QuizType.toAnalyticsValue(): String = when (this) {
+    QuizType.OX -> "ox"
+    QuizType.MCQ -> "mcq"
+}
 /*
 data class UiStateUserQuiz(
     val isLoading: Boolean = false,

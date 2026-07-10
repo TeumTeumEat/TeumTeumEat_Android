@@ -334,6 +334,61 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * QUIZ-002 — 개별 문항 제출 이벤트 로깅 ([TeumAnalyticsEvent.QuizAnswerSubmit])
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.TOTAL_QUESTIONS_ANSWERED])를
+     * questionNo로 갱신합니다. [QuizViewModel.submitAnswer]에서 서버 응답 수신 시마다 호출됩니다.
+     *
+     * @param contentId  퀴즈 콘텐츠 ID (documentId.toString())
+     * @param questionNo 전역 누적 문항 응답 수 (재도전해도 초기화되지 않음)
+     * @param answerType 문항 유형 — "ox" | "mcq"
+     * @param isCorrect  정답 여부
+     */
+    fun logQuizAnswerSubmit(
+        contentId: String,
+        questionNo: Long,
+        answerType: String,
+        isCorrect: Boolean,
+    ) {
+        analytics.setUserProperty(
+            TeumAnalyticsEvent.UserProperties.TOTAL_QUESTIONS_ANSWERED,
+            questionNo.toString()
+        )
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.QuizAnswerSubmit.PARAM_CONTENT_ID, contentId)
+            putLong(TeumAnalyticsEvent.QuizAnswerSubmit.PARAM_QUESTION_NO, questionNo)
+            putString(TeumAnalyticsEvent.QuizAnswerSubmit.PARAM_ANSWER_TYPE, answerType)
+            putString(TeumAnalyticsEvent.QuizAnswerSubmit.PARAM_IS_CORRECT, isCorrect.toString())
+        }
+        analytics.logEvent(TeumAnalyticsEvent.QuizAnswerSubmit.NAME, params)
+    }
+
+    /**
+     * QUIZ-003 — 퀴즈 풀이 중 이탈 이벤트 로깅 ([TeumAnalyticsEvent.QuizAbandoned])
+     *
+     * [QuizViewModel.onCleared]에서 세션 내 제출 수가 전체 문항 수보다 적을 때만 호출됩니다.
+     *
+     * @param contentId      퀴즈 콘텐츠 ID (documentId.toString())
+     * @param lastQuestionNo 세션 내 마지막 제출 문항 번호 (0 = 한 문항도 안 풀고 이탈)
+     * @param quizCount      이 세션의 전체 문항 수
+     * @param entryType      진입 유형 — "first" | "resume" | "retry"
+     */
+    fun logQuizAbandoned(
+        contentId: String,
+        lastQuestionNo: Long,
+        quizCount: Long,
+        entryType: String,
+    ) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.QuizAbandoned.PARAM_CONTENT_ID, contentId)
+            putLong(TeumAnalyticsEvent.QuizAbandoned.PARAM_LAST_QUESTION_NO, lastQuestionNo)
+            putLong(TeumAnalyticsEvent.QuizAbandoned.PARAM_QUIZ_COUNT, quizCount)
+            putString(TeumAnalyticsEvent.QuizAbandoned.PARAM_ENTRY_TYPE, entryType)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.QuizAbandoned.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
