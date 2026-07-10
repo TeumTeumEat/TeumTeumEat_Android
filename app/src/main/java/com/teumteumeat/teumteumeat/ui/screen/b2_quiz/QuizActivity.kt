@@ -46,15 +46,18 @@ class QuizActivity : BaseActivity() {
         const val INVALID_DOCUMENT_ID = -1L
 
         const val GOAL_TYPE = "goalType"
+        const val EXTRA_TOPIC = "topic"
 
         fun newIntent(
             context: Context,
             documentId: Long,
             goalType: String,
+            topic: String,
         ): Intent {
             return Intent(context, QuizActivity::class.java).apply {
                 putExtra(EXTRA_DOCUMENT_ID, documentId)
                 putExtra(GOAL_TYPE, goalType)
+                putExtra(EXTRA_TOPIC, topic)
             }
         }
     }

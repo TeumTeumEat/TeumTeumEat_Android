@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.datastore.QuizTrackingDataStore
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
@@ -11,11 +12,14 @@ import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 
@@ -24,6 +28,8 @@ class QuizViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val quizRepository: QuizRepository,
     private val goalRepository: GoalRepository,
+    private val quizTrackingDataStore: QuizTrackingDataStore,
+    private val analyticsLogger: TeumAnalyticsLogger,
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
@@ -33,6 +39,13 @@ class QuizViewModel @Inject constructor(
         savedStateHandle.get<String>("goalType")
     )
     val documentId: Long = savedStateHandle.get<Long>("documentId") ?: -1L
+    val topic: String = savedStateHandle.get<String>("topic") ?: ""
+
+    /** ViewModel 인스턴스당 quiz_start 이벤트 중복 발송 방지 플래그 */
+    private var hasQuizStartLogged = false
+
+    /** [logQuizStartIfNeeded] 동시 호출 시 중복 발송 방지용 (check-then-act 레이스 방지) */
+    private val quizStartLogMutex = Mutex()
 
     private val _uiState = MutableStateFlow(UiStateQuiz())
     val uiState = _uiState.asStateFlow()
@@ -57,7 +70,9 @@ class QuizViewModel @Inject constructor(
     private fun completeCurrentQuizSet() {
         viewModelScope.launch {
             when (val response = quizRepository.submitCompleteQuizSet()) {
-                is ApiResultV2.Success -> {}
+                is ApiResultV2.Success -> {
+                    quizTrackingDataStore.markQuizCompleted(documentId.toString())
+                }
                 else -> { moveToError(response) }
             }
         }
@@ -146,6 +161,7 @@ class QuizViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+                    logQuizStartIfNeeded(quizCount = result.data.size)
                 }
 
                 is ApiResultV2.SessionExpired -> {
@@ -163,6 +179,33 @@ class QuizViewModel @Inject constructor(
                         UiScreenState.Error(result.uiMessage)
                 }
             }
+        }
+    }
+
+    /**
+     * QUIZ-001 — 퀴즈 화면 진입 이벤트 로깅. ViewModel 인스턴스당 최초 1회만 발송한다.
+     * 사용자 난이도 조회 실패 시 조용히 스킵한다 (퀴즈 플로우 자체는 막지 않음).
+     */
+    private suspend fun logQuizStartIfNeeded(quizCount: Int) {
+        if (hasQuizStartLogged) return
+
+        quizStartLogMutex.withLock {
+            if (hasQuizStartLogged) return@withLock
+
+            val difficulty = when (val goalResult = goalRepository.getUserGoal()) {
+                is ApiResultV2.Success -> goalResult.data.difficulty
+                else -> return@withLock
+            }
+            val entryType = quizTrackingDataStore.resolveEntryType(documentId.toString())
+
+            hasQuizStartLogged = true
+            analyticsLogger.logQuizStart(
+                contentId = documentId.toString(),
+                topic = topic,
+                quizCount = quizCount.toLong(),
+                difficulty = difficulty,
+                entryType = entryType,
+            )
         }
     }
 

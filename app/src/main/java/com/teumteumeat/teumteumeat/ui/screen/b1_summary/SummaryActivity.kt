@@ -98,7 +98,8 @@ class SummaryActivity : ComponentActivity() {
                                             val intent = QuizActivity.newIntent(
                                                 this@SummaryActivity,
                                                 categoryDocumentId.toLong(),
-                                                goalType.name
+                                                goalType.name,
+                                                uiState.title
                                             )
                                             startActivity(intent)
                                             finish() // 다음 화면으로 이동 후 현재 화면 종료
@@ -111,7 +112,8 @@ class SummaryActivity : ComponentActivity() {
                                             val intent = QuizActivity.newIntent(
                                                 this@SummaryActivity,
                                                 documentId,
-                                                goalType.name
+                                                goalType.name,
+                                                uiState.title
                                             )
                                             startActivity(intent)
                                             finish() // 다음 화면으로 이동 후 현재 화면 종료
