@@ -389,6 +389,45 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * QUIZ-004 — 퀴즈 세트 완료 이벤트 로깅 ([TeumAnalyticsEvent.QuizComplete])
+     *
+     * [QuizViewModel.completeCurrentQuizSet]에서 complete-set API 성공 시,
+     * [com.teumteumeat.teumteumeat.data.datastore.QuizTrackingDataStore.markQuizCompleted]
+     * 호출 직후 발송됩니다.
+     * `difficulty`가 [Difficulty.NONE]이면 조기 반환하여 이벤트를 발송하지 않습니다
+     * (quiz_start와 동일한 방어 — JOIN 키 일관성 유지).
+     *
+     * @param contentId    퀴즈 콘텐츠 ID (documentId.toString()) — quiz_start 와 JOIN 키
+     * @param topic        콘텐츠 제목 — 100자 초과 시 잘라냄
+     * @param difficulty   사용자 난이도 설정 — [Difficulty.HARD] | [Difficulty.MEDIUM] | [Difficulty.EASY]
+     * @param entryType    진입 유형 — "first" | "resume" | "retry"
+     * @param quizCount    전체 문항 수
+     * @param correctCount 정답 문항 수
+     * @param scoreRate    정답률(%) 문자열 — 호출부에서 0으로 나누기 방어 후 전달 (예: "60.0")
+     */
+    fun logQuizComplete(
+        contentId: String,
+        topic: String,
+        difficulty: Difficulty,
+        entryType: String,
+        quizCount: Long,
+        correctCount: Long,
+        scoreRate: String,
+    ) {
+        val difficultyValue = difficulty.toAnalyticsValue() ?: return
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.QuizComplete.PARAM_CONTENT_ID, contentId)
+            putString(TeumAnalyticsEvent.QuizComplete.PARAM_TOPIC, topic.take(100))
+            putString(TeumAnalyticsEvent.QuizComplete.PARAM_DIFFICULTY, difficultyValue)
+            putString(TeumAnalyticsEvent.QuizComplete.PARAM_ENTRY_TYPE, entryType)
+            putLong(TeumAnalyticsEvent.QuizComplete.PARAM_QUIZ_COUNT, quizCount)
+            putLong(TeumAnalyticsEvent.QuizComplete.PARAM_CORRECT_COUNT, correctCount)
+            putString(TeumAnalyticsEvent.QuizComplete.PARAM_SCORE_RATE, scoreRate)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.QuizComplete.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.

@@ -10,6 +10,7 @@ import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
@@ -50,8 +51,18 @@ class QuizViewModel @Inject constructor(
     /** 이 ViewModel 인스턴스(=1회 퀴즈 세션) 내 성공 제출 수. quiz_abandoned 판정 전용 — 전역 누적값과 분리 */
     private var sessionAnsweredCount = 0
 
-    /** quiz_start 발화 시 계산된 entry_type. quiz_abandoned에서 재사용하기 위해 필드로 보관 */
+    /** 이 ViewModel 인스턴스(=1회 퀴즈 세션) 내 정답 제출 수. quiz_complete의 correct_count로 사용 */
+    private var correctCount = 0
+
+    /** quiz_start 발화 시 계산된 entry_type. quiz_abandoned·quiz_complete에서 재사용하기 위해 필드로 보관 */
     private var resolvedEntryType: String = "first"
+
+    /**
+     * quiz_start 발화 시 조회된 사용자 난이도. quiz_complete에서 재사용하기 위해 필드로 보관한다.
+     * difficulty 조회 실패로 quiz_start 자체가 스킵되면 Difficulty.NONE으로 남고,
+     * logQuizComplete 내부의 동일한 가드에 의해 quiz_complete도 함께 스킵된다.
+     */
+    private var resolvedDifficulty: Difficulty = Difficulty.NONE
 
     private val _uiState = MutableStateFlow(UiStateQuiz())
     val uiState = _uiState.asStateFlow()
@@ -72,12 +83,29 @@ class QuizViewModel @Inject constructor(
 
     /**
      * 퀴즈 완료를 API 호출 시 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가 API 호출됨
+     * 성공 시 QUIZ-004 quiz_complete 이벤트를 로깅한다.
      */
     private fun completeCurrentQuizSet() {
         viewModelScope.launch {
             when (val response = quizRepository.submitCompleteQuizSet()) {
                 is ApiResultV2.Success -> {
                     quizTrackingDataStore.markQuizCompleted(documentId.toString())
+
+                    val quizCount = uiState.value.totalSteps
+                    val scoreRate = if (quizCount > 0) {
+                        (correctCount.toFloat() / quizCount.toFloat() * 100)
+                    } else {
+                        0f
+                    }
+                    analyticsLogger.logQuizComplete(
+                        contentId = documentId.toString(),
+                        topic = topic,
+                        difficulty = resolvedDifficulty,
+                        entryType = resolvedEntryType,
+                        quizCount = quizCount.toLong(),
+                        correctCount = correctCount.toLong(),
+                        scoreRate = scoreRate.toString(),
+                    )
                 }
                 else -> { moveToError(response) }
             }
@@ -202,6 +230,7 @@ class QuizViewModel @Inject constructor(
                 is ApiResultV2.Success -> goalResult.data.difficulty
                 else -> return@withLock
             }
+            resolvedDifficulty = difficulty
             val entryType = quizTrackingDataStore.resolveEntryType(documentId.toString())
             resolvedEntryType = entryType
 
@@ -272,6 +301,7 @@ class QuizViewModel @Inject constructor(
 
                     val questionNo = quizTrackingDataStore.incrementAndGetTotalQuestionsAnswered()
                     sessionAnsweredCount++
+                    if (isCorrect) correctCount++
                     analyticsLogger.logQuizAnswerSubmit(
                         contentId = documentId.toString(),
                         questionNo = questionNo.toLong(),
