@@ -470,6 +470,48 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * QUIZ-004 · 퀴즈 세트 완료 이벤트
+     *
+     * | 파라미터      | 타입   | 예시      | 목적                                        |
+     * |--------------|--------|-----------|---------------------------------------------|
+     * | content_id    | String | "17"      | quiz_start 와 JOIN 키                       |
+     * | topic         | String | "SwiftUI" | 콘텐츠 제목 (최대 100자)                     |
+     * | difficulty    | String | "high"    | 사용자 난이도 설정                           |
+     * | entry_type    | String | "first"   | 진입 유형 — "first" \| "resume" \| "retry"  |
+     * | quiz_count    | Long   | 5         | 전체 문항 수                                 |
+     * | correct_count | Long   | 3         | 정답 문항 수                                 |
+     * | score_rate    | String | "60.0"    | 정답률(%) — Float 계산 후 String 변환        |
+     *
+     * ## 측정 목적
+     * - `quiz_start → quiz_complete` 전환율로 퀴즈 완료율 산출 (entry_type별 분리 가능)
+     * - difficulty·entry_type별 score_rate 평균으로 난이도 체감도 및 재도전 성향 분석
+     * - content_id 기준 quiz_answer_submit 과 JOIN하여 answer_type별 정답률 세분화 (BigQuery)
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizViewModel.completeCurrentQuizSet]
+     *   `POST /api/v1/user-quizzes/complete-set` 성공(`ApiResultV2.Success`) 시,
+     *   [com.teumteumeat.teumteumeat.data.datastore.QuizTrackingDataStore.markQuizCompleted]
+     *   호출 직후
+     *
+     * ## 주의
+     * - difficulty 조회 실패로 quiz_start 자체가 스킵된 경우 (`resolvedDifficulty`가
+     *   [com.teumteumeat.teumteumeat.domain.model.goal.Difficulty.NONE]으로 남음)
+     *   quiz_complete도 동일한 가드로 함께 스킵된다 — quiz_start 없는 quiz_complete 단독 발생을
+     *   막아 JOIN 분석 일관성을 지키기 위한 의도된 동작이다.
+     * - quiz_count가 0이면 score_rate는 "0.0"으로 방어 처리한다.
+     */
+    object QuizComplete {
+        const val NAME = "quiz_complete"
+        const val PARAM_CONTENT_ID = "content_id"
+        const val PARAM_TOPIC = "topic"
+        const val PARAM_DIFFICULTY = "difficulty"       // "high" | "mid" | "low"
+        const val PARAM_ENTRY_TYPE = "entry_type"       // "first" | "resume" | "retry"
+        const val PARAM_QUIZ_COUNT = "quiz_count"
+        const val PARAM_CORRECT_COUNT = "correct_count"
+        const val PARAM_SCORE_RATE = "score_rate"       // Float → String, 예: "60.0"
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |
