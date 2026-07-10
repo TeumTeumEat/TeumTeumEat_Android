@@ -256,6 +256,9 @@ dependencies {
     // Kotlin Coroutines Test: runTest, TestDispatcher 등을 사용하기 위함
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
+    // Turbine: StateFlow/Flow 순차 방출 검증
+    testImplementation("app.cash.turbine:turbine:1.1.0")
+
     // (선택 사항) JUnit4: 기본적인 테스트 프레임워크
     // AndroidX Test Core (ApplicationProvider 사용을 위해 필수)
     testImplementation("androidx.test:core-ktx:1.6.1")

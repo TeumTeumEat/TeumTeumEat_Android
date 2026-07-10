@@ -55,6 +55,7 @@ import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.GoalCompletedDialog
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
+import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -429,9 +430,14 @@ fun HomeScreen(
                     // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
                     GoalCompletedDialog(
                         showDialog = uiState.isShowGoalCompletedDialog,
+                        hasRunningGoal = uiState.hasRunningGoal,
                         onStartNewGoal = {
                             viewModel.dismissGoalCompletedDialog()
                             activity.startActivity(Intent(activity, AddGoalActivity::class.java))
+                        },
+                        onSelectRunningGoal = {
+                            viewModel.dismissGoalCompletedDialog()
+                            activity.startActivity(Intent(activity, GoalListActivity::class.java))
                         },
                         onDismiss = { viewModel.dismissGoalCompletedDialog() }
                     )

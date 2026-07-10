@@ -143,7 +143,7 @@ fun CategorySelectorContent(
                                         selectedId = selectedId,
                                         onItemClick = { onToggleCategory(it, page) },
                                         currentPage = 1,
-                                        wrapContentWidth = true,
+                                        verticalColumns = 1,
                                         labelMapper = { it.name.toDepth2CategoryLabel() },
                                     )
                                     else -> CategoryGrid(

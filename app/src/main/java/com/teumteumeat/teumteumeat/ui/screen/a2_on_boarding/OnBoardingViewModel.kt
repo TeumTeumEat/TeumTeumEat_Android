@@ -20,9 +20,11 @@ import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
+import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
@@ -42,6 +44,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -63,6 +66,7 @@ class OnBoardingViewModel @Inject constructor(
     private val createGoalUseCase: CreateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
     @ApplicationContext private val context: Context,
@@ -99,6 +103,8 @@ class OnBoardingViewModel @Inject constructor(
     // Flow 값으로 currentPage 읽기
     private val currentPage get() = uiState.value.currentPage
     private val totalPage get() = uiState.value.totalPage
+
+    private var sseInitialRemainMs: Long = 0L
 
     private val _uiState = MutableStateFlow<UiStateOnboardingState>(UiStateOnboardingState())
     val uiState = _uiState.asStateFlow()
@@ -206,6 +212,12 @@ class OnBoardingViewModel @Inject constructor(
                 return@launch
             }
 
+            // 서버에서 닉네임 조회 (실패해도 온보딩 완료를 막지 않음)
+            when (val nameResult = getUserNameUseCase()) {
+                is ApiResultV2.Success -> _uiState.update { it.copy(serverNickname = nameResult.data.name) }
+                else -> Unit
+            }
+
             // 5. 문서 업로드 documentID 생성
             Log.d("OnBoardingVM", "타입: ${state.goalTypeUiState}의 퀴즈 생성")
             when (state.goalTypeUiState) {
@@ -247,6 +259,12 @@ class OnBoardingViewModel @Inject constructor(
                         moveToError(fetchDocumentResult)
                         return@launch
                     }
+
+                    // 5-5. SSE로 처리 상태 모니터링 (Success/Error 전환은 내부에서 처리)
+                    val goalId = _uiState.value.goalId.toLong()
+                    val documentId = _uiState.value.documentId.toLong()
+                    connectDocumentSSE(goalId, documentId)
+                    return@launch
                 }
 
                 GoalTypeUiState.CATEGORY -> {
@@ -262,19 +280,88 @@ class OnBoardingViewModel @Inject constructor(
                 GoalTypeUiState.NONE -> {}
             }
 
-            // 서버에서 닉네임 조회 (실패해도 온보딩 완료를 막지 않음)
-            when (val nameResult = getUserNameUseCase()) {
-                is ApiResultV2.Success -> _uiState.update { it.copy(serverNickname = nameResult.data.name) }
-                else -> Unit
-            }
-
-            // 🔹 최소 로딩 1.8초 보장
+            // 🔹 최소 로딩 1.8초 보장 (CATEGORY / NONE 플로우만 도달)
             val elapsed = System.currentTimeMillis() - startTime
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
             _mainState.value = UiStateOnboardingScreenState.Success
         }
+    }
+
+    /**
+     * PDF 문서 처리 상태를 SSE로 구독해 진행률을 갱신하고,
+     * 완료/실패 시 [mainState]를 최종 전환한다.
+     */
+    private suspend fun connectDocumentSSE(goalId: Long, documentId: Long) {
+        sseInitialRemainMs = 0L
+        _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseRemainMs = null, sseStatusText = null) }
+
+        streamDocumentProcessingUseCase(goalId, documentId)
+            .catch { e ->
+                Log.e("SSE_LIFECYCLE", "Flow 예외 전파: ${e.javaClass.simpleName}(${e.message})")
+                _mainState.value = UiStateOnboardingScreenState.Error(
+                    e.message ?: "알 수 없는 오류가 발생했습니다."
+                )
+            }
+            .collect { event ->
+                when (event) {
+                    is DocumentProcessingEvent.Connected -> {
+                        _uiState.update { it.copy(isSseStarted = true) }
+                    }
+                    is DocumentProcessingEvent.Pending -> {
+                        _uiState.update { it.copy(isSseStarted = true, sseProgress = 0.05f, sseRemainMs = null) }
+                    }
+                    is DocumentProcessingEvent.Processing -> {
+                        val remainMs = event.remainMs
+                        if (sseInitialRemainMs == 0L && remainMs > 0L) {
+                            sseInitialRemainMs = remainMs
+                        }
+                        val progress = when {
+                            remainMs <= 0L -> 0.99f
+                            sseInitialRemainMs > 0L ->
+                                (0.05f + (1f - remainMs.toFloat() / sseInitialRemainMs) * 0.94f)
+                                    .coerceIn(0.05f, 0.99f)
+                            else -> 0.05f
+                        }
+                        val statusText = if (remainMs <= 0L) "잠시만 기다려주세요"
+                            else "${(remainMs + 999L) / 1000L}초 남았어요."
+                        val progressText = if (remainMs > 0L) "${(progress * 100).toInt()}% 완료" else null
+                        _uiState.update {
+                            it.copy(
+                                sseProgress = progress,
+                                sseRemainMs = remainMs,
+                                sseStatusText = statusText,
+                                sseProgressText = progressText
+                            )
+                        }
+                    }
+                    is DocumentProcessingEvent.Completed -> {
+                        Log.d("SSE_LIFECYCLE", "OCR 처리 완료 → SSE 연결 정상 종료")
+                        _uiState.update { it.copy(sseProgress = 1.0f, sseRemainMs = 0L, sseStatusText = null) }
+                        delay(600L)
+                        _mainState.value = UiStateOnboardingScreenState.Success
+                    }
+                    is DocumentProcessingEvent.Failed -> {
+                        val message = when (event.reason) {
+                            DocumentProcessingEvent.FailureReason.TIMEOUT ->
+                                "문서 처리 시간이 초과되었어요. 다시 시도해주세요."
+                            DocumentProcessingEvent.FailureReason.SERVER_ERROR ->
+                                "서버 처리 중 오류가 발생했어요. 다시 시도해주세요."
+                            DocumentProcessingEvent.FailureReason.ENCRYPTED_FILE ->
+                                "암호화된 PDF 파일은 처리할 수 없어요. 다른 파일을 선택해주세요."
+                            DocumentProcessingEvent.FailureReason.UNKNOWN ->
+                                "알 수 없는 오류가 발생했습니다."
+                        }
+                        _mainState.value = UiStateOnboardingScreenState.Error(message)
+                    }
+                    is DocumentProcessingEvent.StreamError -> {
+                        _mainState.value = UiStateOnboardingScreenState.Error(
+                            event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
+                        )
+                    }
+                }
+            }
     }
 
     private suspend fun createGoalAndSaveId(): ApiResultV2<Int> {

@@ -57,10 +57,10 @@ fun GoalCard(
             modifier = modifier
                 .padding(horizontal = 20.dp)
                 .fillMaxWidth()
-                // ⭐ 만료되지 않은 경우만 클릭 가능
+                // ⭐ 만료되지 않은 경우만 클릭 가능, 이미 선택된 주제는 DEBUG에서도 재선택 불가
                 .clip(shape)
                 .clickable(
-                    enabled = if (BuildConfig.DEBUG) true else !uiModel.isCompleted && !uiModel.isSelected,
+                    enabled = !uiModel.isSelected && (BuildConfig.DEBUG || !uiModel.isCompleted),
                     interactionSource = remember { MutableInteractionSource() },
                     onClick = {
                         onClick(uiModel.goalId)

@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.calendar.Calendar
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.calendar.CalendarUiState
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.mapStreakToMotivationUiState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.BottomFadeOverlay
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
@@ -86,6 +89,14 @@ fun LibraryScreen(
         sessionManager.sessionEvent.collectLatest {
             Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
         }
+    }
+
+    if (uiState.isLoading) {
+        LoadingScreen(
+            title = "학습 기록을 불러오는 중",
+            message = "잠시만 기다려주세요",
+        )
+        return
     }
 
     Box(
@@ -144,7 +155,7 @@ fun LibraryScreen(
 
                             StampCountBadgeStateful(
                                 modifier = Modifier.weight(1f),
-                                title = "이번달 도장",
+                                title = "이번달 스탬프",
                                 count = uiState.monthStampCount,
                             )
                         }
@@ -166,36 +177,61 @@ fun LibraryScreen(
                             }
                         )
 
-                        uiState.calendarUiState.dailyLearningList.forEach { item ->
-                            CalendarDailyLearningCard(
-                                title = item.title,
-                                description = item.summarySnippet,
-                                dateText = item.lastStudiedAt.toLocalDate()
-                                    .format(DateTimeFormatter.ofPattern("MM.dd")),
-                                domainGoalTypeV1 = item.type,   // ✅ Domain → UI 그대로 전달
-                                onClick = {
-                                    val intent = Intent(
-                                        activity,
-                                        DailySummaryActivity::class.java
-                                    ).apply {
-                                        putExtra(
-                                            DailySummaryArgs.KEY_ID,
-                                            item.id
-                                        )
-                                        putExtra(
-                                            DailySummaryArgs.KEY_TYPE,
-                                            item.type.name   // ✅ enum → String
-                                        )
-                                        putExtra(
-                                            DailySummaryArgs.KEY_DATE,
-                                            item.lastStudiedAt.toLocalDate().toString()
-                                        )
-                                    }
+                        if (uiState.calendarUiState.isDailyLoading) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 24.dp),
+                                horizontalArrangement = Arrangement.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        } else {
+                            if (uiState.calendarUiState.dailyLearningList.isNotEmpty()) {
+                                // ✅ 달력 하단과 헤더 사이 20dp
+                                Spacer(Modifier.height(20.dp))
 
-                                    activity.startActivity(intent)
-                                }
-                            )
-                            Spacer(Modifier.height(12.dp))
+                                Text(
+                                    text = "이날 공부한 내용",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    style = MaterialTheme.appTypography.subtitleSemiBold16
+                                        .copy(color = theme.textSecondary),
+                                )
+
+                                Spacer(Modifier.height(12.dp))
+                            }
+
+                            uiState.calendarUiState.dailyLearningList.forEach { item ->
+                                CalendarDailyLearningCard(
+                                    title = item.title,
+                                    description = item.summarySnippet,
+                                    dateText = item.lastStudiedAt.toLocalDate()
+                                        .format(DateTimeFormatter.ofPattern("MM.dd")),
+                                    domainGoalTypeV1 = item.type,   // ✅ Domain → UI 그대로 전달
+                                    onClick = {
+                                        val intent = Intent(
+                                            activity,
+                                            DailySummaryActivity::class.java
+                                        ).apply {
+                                            putExtra(
+                                                DailySummaryArgs.KEY_ID,
+                                                item.id
+                                            )
+                                            putExtra(
+                                                DailySummaryArgs.KEY_TYPE,
+                                                item.type.name   // ✅ enum → String
+                                            )
+                                            putExtra(
+                                                DailySummaryArgs.KEY_DATE,
+                                                item.lastStudiedAt.toLocalDate().toString()
+                                            )
+                                        }
+
+                                        activity.startActivity(intent)
+                                    }
+                                )
+                                Spacer(Modifier.height(12.dp))
+                            }
                         }
 
                         Spacer(Modifier.height(200.dp))
@@ -216,7 +252,12 @@ fun LibraryScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 22.dp),
+                                .padding(horizontal = 22.dp)
+                                .clickable(
+                                    interactionSource = Utils.UiUtils.noRipple(),
+                                    indication = null,
+                                    onClick = { viewModel.onToggleInProgressFilter() },
+                                ),
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -244,8 +285,19 @@ fun LibraryScreen(
                             verticalArrangement = Arrangement.spacedBy(20.dp),
                         ) {
 
-                            // 1. 등록된 주제가 없는 경우 처리
-                            if (uiState.categoryHistories.isEmpty()) {
+                            // 1. 카테고리 목록 로딩 중
+                            if (uiState.isCategoryLoading) {
+                                item {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillParentMaxHeight()
+                                            .fillMaxWidth(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                            } else if (uiState.categoryHistories.isEmpty()) {
                                 item {
                                     Box(
                                         modifier = Modifier
