@@ -118,35 +118,33 @@ class QuizResultViewModel @Inject constructor(
         }
     }
 
-    fun loadQuizResults(
+    suspend fun loadQuizResults(
         type: DomainGoalType,
         id: Long,
         date: String
     ) {
-        viewModelScope.launch {
-            // 2️⃣ API 호출
-            when (val result = quizRepository.getQuizHistory(type, id, date)) {
+        // 2️⃣ API 호출
+        when (val result = quizRepository.getQuizHistory(type, id, date)) {
 
-                is ApiResultV2.Success -> {
-                    val history = result.data
+            is ApiResultV2.Success -> {
+                val history = result.data
 
-                    val quizzes = history.quizzes
-                    val correctCount = quizzes.count { it.isCorrect }
+                val quizzes = history.quizzes
+                val correctCount = quizzes.count { it.isCorrect }
 
-                    // 3️⃣ 성공 상태 반영
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            quizzes = quizzes,
-                            createdAt = history.createdAt,
-                            correctCount = correctCount
-                        )
-                    }
+                // 3️⃣ 성공 상태 반영
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        quizzes = quizzes,
+                        createdAt = history.createdAt,
+                        correctCount = correctCount
+                    )
                 }
+            }
 
-                else -> {
-                    moveToError(result)
-                }
+            else -> {
+                moveToError(result)
             }
         }
     }
@@ -167,6 +165,7 @@ class QuizResultViewModel @Inject constructor(
                     errorMessage = "goalId 를 전달받지 못했습니다. (id 전달 오류)"
                 )
             }
+            return
         }
 
         when (goal.type) {
@@ -204,49 +203,49 @@ class QuizResultViewModel @Inject constructor(
     /**
      * 오늘의 남남지식 요약 조회
      */
-    fun loadDocumentSummary(goalType: DomainGoalType, documentSummaryId: Int, date: String) {
+    suspend fun loadDocumentSummary(goalType: DomainGoalType, documentSummaryId: Int, date: String) {
         Log.d("loadDocumentSummary", "Pdf 문서 요약글 Id: $documentSummaryId")
-        viewModelScope.launch {
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+            )
+        }
+
+        if (documentSummaryId == -1) {
             _uiState.update {
                 it.copy(
-                    isLoading = true,
+                    isLoading = false,
+                    errorMessage = "documentId 를 전달받지 못했습니다. (id 전달 오류)"
                 )
             }
+            return
+        }
 
-            if (documentSummaryId == -1) {
+        when (val result = historyRepository.getLearningHistorySummary(
+            goalType, documentSummaryId.toLong(), date
+        )
+        ) {
+            is ApiResultV2.Success -> {
+                val data = result.data
+
                 _uiState.update {
                     it.copy(
+                        summary = UiStateSummary(
+                            title = data.title,
+                            dateText = Utils.TimeUtil.todayText(),
+                            summary = data.summary, // ⭐ 아래 유틸 참고
+                            isLoading = false,
+                            errorMessage = null,
+                        ),
                         isLoading = false,
-                        errorMessage = "documentId 를 전달받지 못했습니다. (id 전달 오류)"
+                        errorMessage = null,
                     )
                 }
+
             }
 
-            when (val result = historyRepository.getLearningHistorySummary(
-                goalType, documentSummaryId.toLong(), date
-            )
-            ) {
-                is ApiResultV2.Success -> {
-                    val data = result.data
-
-                    _uiState.update {
-                        it.copy(
-                            summary = UiStateSummary(
-                                title = data.title,
-                                dateText = Utils.TimeUtil.todayText(),
-                                summary = data.summary, // ⭐ 아래 유틸 참고
-                                isLoading = false,
-                                errorMessage = null,
-                            ),
-                            errorMessage = null,
-                        )
-                    }
-
-                }
-
-                else -> {
-                    moveToError(result)
-                }
+            else -> {
+                moveToError(result)
             }
         }
     }
@@ -278,46 +277,45 @@ class QuizResultViewModel @Inject constructor(
     /**
      * 카테고리 목표 요약글 조회
      */
-    private fun loadCategoryGoalSummary(goalType: DomainGoalType, categoryId: Long, date: String) {
+    private suspend fun loadCategoryGoalSummary(goalType: DomainGoalType, categoryId: Long, date: String) {
 
-        viewModelScope.launch {
-            if (categoryId == -1L) {
+        if (categoryId == -1L) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = "documentId 가 없습니다. (요약글 조회 오류)"
+                )
+            }
+            return
+        }
+
+        // 2️⃣ 카테고리 목표 요약글 API 호출
+        when (val result = historyRepository.getLearningHistorySummary(
+            goalType, categoryId, date
+        )
+        ) {
+            is ApiResultV2.Success -> {
+                val data = result.data
+
                 _uiState.update {
                     it.copy(
+                        summary = UiStateSummary(
+                            title = data.title,
+                            dateText = Utils.TimeUtil.todayText(),
+                            summary = data.summary, // ⭐ 아래 유틸 참고
+                            isLoading = false,
+                            errorMessage = null,
+                        ),
                         isLoading = false,
-                        errorMessage = "documentId 가 없습니다. (요약글 조회 오류)"
+                        errorMessage = null,
                     )
                 }
+
             }
 
-            // 2️⃣ 카테고리 목표 요약글 API 호출
-            when (val result = historyRepository.getLearningHistorySummary(
-                goalType, categoryId, date
-            )
-            ) {
-                is ApiResultV2.Success -> {
-                    val data = result.data
-
-                    _uiState.update {
-                        it.copy(
-                            summary = UiStateSummary(
-                                title = data.title,
-                                dateText = Utils.TimeUtil.todayText(),
-                                summary = data.summary, // ⭐ 아래 유틸 참고
-                                isLoading = false,
-                                errorMessage = null,
-                            ),
-                            errorMessage = null,
-                        )
-                    }
-
-                }
-
-                else -> {
-                    moveToError(result)
-                }
+            else -> {
+                moveToError(result)
             }
-
         }
     }
 

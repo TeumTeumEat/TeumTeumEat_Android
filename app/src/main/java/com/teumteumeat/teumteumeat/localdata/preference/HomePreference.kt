@@ -15,8 +15,8 @@ class HomePreference @Inject constructor(
     companion object {
         private const val PREF_NAME = "home_pref"
         private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
-        private const val KEY_LAST_GOAL_ID = "last_goal_id"
         private const val KEY_SELECTED_FOOD_RES = "selected_food_res"
+        private const val KEY_SELECTED_FOOD_DATE = "selected_food_date"
     }
 
     private val prefs: SharedPreferences =
@@ -49,15 +49,23 @@ class HomePreference @Inject constructor(
             .apply()
     }
 
-    fun getLastGoalId(): Long = prefs.getLong(KEY_LAST_GOAL_ID, Long.MIN_VALUE)
+    /**
+     * 음식이 마지막으로 선택된 날짜가 오늘이 아니면(=날짜가 바뀌었으면) true.
+     * 목표 전환 여부와는 무관하게, 오직 날짜 변경 시에만 음식을 재선택하기 위한 판단 기준.
+     */
+    fun isFoodOutdated(): Boolean {
+        val savedDate = prefs.getString(KEY_SELECTED_FOOD_DATE, null)
+        val today = LocalDate.now().toString()
+        return savedDate != today
+    }
 
     fun getSelectedFoodRes(): Int? =
         if (prefs.contains(KEY_SELECTED_FOOD_RES)) prefs.getInt(KEY_SELECTED_FOOD_RES, -1)
         else null
 
-    fun saveGoalFood(goalId: Long, foodRes: Int) {
+    fun saveTodayFood(foodRes: Int) {
         prefs.edit()
-            .putLong(KEY_LAST_GOAL_ID, goalId)
+            .putString(KEY_SELECTED_FOOD_DATE, LocalDate.now().toString())
             .putInt(KEY_SELECTED_FOOD_RES, foodRes)
             .apply()
     }

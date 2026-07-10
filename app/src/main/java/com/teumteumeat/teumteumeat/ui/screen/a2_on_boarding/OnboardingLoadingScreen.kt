@@ -3,7 +3,6 @@ package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -56,6 +55,7 @@ fun SubmitLoadingScreen(
     // PDF 문서 플로우 전용 SSE 진행 상태
     isDocumentFlow: Boolean = false,
     sseProgress: Float = 0f,
+    sseRemainMs: Long? = null,       // 자연 증가 애니메이션 duration 계산용
     sseStatusText: String? = null,   // "N초 남았어요." / "잠시만 기다려주세요"
     sseProgressText: String? = null, // "XX% 완료"
 ) {
@@ -74,19 +74,23 @@ fun SubmitLoadingScreen(
         }
     }
 
-    // 문서 플로우: SSE 진행률 → 부드러운 원형 프로그레스 애니메이션
-    val animatedSseProgress by animateFloatAsState(
-        targetValue = if (isDocumentFlow) sseProgress else 0f,
-        animationSpec = tween(durationMillis = 600),
-        label = "sseProgressAnim"
-    )
+    // 문서 플로우: 실이벤트 값까지 짧게 보정 후, 남은 시간(remainMs)만큼 선형으로 저절로 채워지도록 애니메이션
+    val documentProgress = remember { Animatable(0f) }
+    LaunchedEffect(sseProgress, sseRemainMs, isDocumentFlow) {
+        if (!isDocumentFlow) return@LaunchedEffect
+        documentProgress.animateTo(sseProgress, tween(durationMillis = 500))
+        val durationMs = (sseRemainMs ?: 0L).coerceIn(0L, 600_000L)
+        if (durationMs > 0L && sseProgress < 0.99f) {
+            documentProgress.animateTo(0.99f, tween(durationMillis = durationMs.toInt(), easing = LinearEasing))
+        }
+    }
     LaunchedEffect(sseProgress) {
         if (isDocumentFlow && sseProgress >= 1.0f) {
             onAnimationComplete()
         }
     }
 
-    val effectiveProgress = if (isDocumentFlow) animatedSseProgress else progressAnimatable.value
+    val effectiveProgress = if (isDocumentFlow) documentProgress.value else progressAnimatable.value
 
     val stepLabels = if (isDocumentFlow) {
         listOf("파일 업로드 중", "문서 등록 중", "퀴즈 생성 중")
@@ -206,6 +210,7 @@ private fun DocumentLoadingScreenPreview() {
             isCompletedLoading = false,
             isDocumentFlow = true,
             sseProgress = 0.52f,
+            sseRemainMs = 6_000L,
             sseStatusText = "약 6초 남았어요",
         )
     }

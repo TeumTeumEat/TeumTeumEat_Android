@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main.component.calendar
 
 import android.util.Log
 import java.time.LocalDate
+import java.time.Year
 import java.time.YearMonth
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.domain.model.history.CalendarDailyItem
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -58,7 +60,12 @@ fun CalendarHeader(
         Spacer(Modifier.width(32.dp))
 
         Text(
-            text = "${yearMonth.year}년 ${yearMonth.monthValue}월",
+            // ✅ 현재 년도면 년도 생략, 월만 표시
+            text = if (yearMonth.year == Year.now().value) {
+                "${yearMonth.monthValue}월"
+            } else {
+                "${yearMonth.year}년 ${yearMonth.monthValue}월"
+            },
             style = MaterialTheme.appTypography.subtitleSemiBold18.copy(
                 color = MaterialTheme.extendedColors.textSecondary
             )
@@ -82,6 +89,7 @@ fun CalendarPager(
     uiState: CalendarUiState,
     onMonthChange: (YearMonth) -> Unit,
     onDateClick: (LocalDate) -> Unit,
+    weekSpacing: Dp = 0.dp,
 ) {
     val totalPage = 120                 // ±5년
     val startPage = totalPage / 2       // 현재 월 기준
@@ -126,17 +134,14 @@ fun CalendarPager(
             // ✅ 각 페이지의 월도 anchor 기준으로 계산해야 함
             val month = anchorMonth.plusMonths(page.toLong() - startPage)
 
-            val selectedDateForMonth = remember(uiState.selectedDate, month) {
-                uiState.selectedDate?.takeIf {
-                    YearMonth.from(it) == month
-                }
-            }
-
+            // ✅ 인접 달(leading/trailing) 칸에서도 선택 표시가 되도록
+            //    월 필터 없이 셀 단위 date == selectedDate 비교에 맡긴다
             CalendarMonth(
                 yearMonth = month,
-                selectedDate = selectedDateForMonth,
+                selectedDate = uiState.selectedDate,
                 onDateClick = onDateClick,
                 solvedDates = uiState.solvedDates,
+                weekSpacing = weekSpacing,
             )
         }
     }

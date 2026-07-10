@@ -12,6 +12,7 @@ import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.FieldErrorDetail
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.domain.model.auth.ResponseBody
+import kotlinx.coroutines.CancellationException
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -97,6 +98,8 @@ abstract class BaseRepository(
                 }
             }
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: retrofit2.HttpException) {
             // 🔥 서버 에러 body 파싱
             val errorResponse = parseErrorResponse(e)
@@ -279,6 +282,8 @@ abstract class BaseRepository(
             }
 
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             tokenLocalDataSource.clear()
             ApiResultV2.SessionExpired(
@@ -320,6 +325,8 @@ abstract class BaseRepository(
                 }
             }
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: UnauthorizedException) {
             handleUnauthorized(apiCall, mapper)
 
@@ -382,6 +389,8 @@ abstract class BaseRepository(
                 message = retryResponse.message
             )
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             tokenLocalDataSource.clear()
             ApiResult.SessionExpired(

@@ -111,6 +111,7 @@ fun AddCategoryGoalCompositionProvider(
                     onAnimationComplete = { isAnimationComplete = true },
                     isDocumentFlow = isDocumentFlow,
                     sseProgress = if (isDocumentFlow) uiState.sseProgress else 0f,
+                    sseRemainMs = if (isDocumentFlow) uiState.sseRemainMs else null,
                     sseStatusText = if (isDocumentFlow) uiState.sseStatusText else null,
                     sseProgressText = if (isDocumentFlow) uiState.sseProgressText else null,
                 )

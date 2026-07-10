@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,16 +21,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.utils.appTypography
 
@@ -81,18 +87,26 @@ fun MarkdownText(
 
 @Composable
 private fun MarkdownTextBlock(text: String) {
-    val (annotated, inlineContent) = remember(text) {
-        val map = LinkedHashMap<String, InlineTextContent>()
-        buildBlockAnnotation(text, map) to map
+    val density = LocalDensity.current
+    val textMeasurer = rememberTextMeasurer()
+
+    BoxWithConstraints {
+        val containerWidthPx = with(density) { maxWidth.toPx() }.toInt().coerceAtLeast(1)
+
+        val (annotated, inlineContent) = remember(text, density, textMeasurer, containerWidthPx) {
+            val map = LinkedHashMap<String, InlineTextContent>()
+            val chipCtx = ChipMeasureContext(density, textMeasurer, containerWidthPx)
+            buildBlockAnnotation(text, map, chipCtx) to map
+        }
+
+        if (!(annotated.isBlank() && inlineContent.isEmpty())) {
+            Text(
+                text = annotated,
+                inlineContent = inlineContent,
+                style = MaterialTheme.appTypography.bodyMedium16.copy(lineHeight = 22.sp)
+            )
+        }
     }
-
-    if (annotated.isBlank() && inlineContent.isEmpty()) return
-
-    Text(
-        text = annotated,
-        inlineContent = inlineContent,
-        style = MaterialTheme.appTypography.bodyMedium16.copy(lineHeight = 22.sp)
-    )
 }
 
 // ── 코드 블록 UI ─────────────────────────────────────────────────────────────────
@@ -234,7 +248,8 @@ private fun parseListItem(line: String): String? {
 
 private fun buildBlockAnnotation(
     text: String,
-    inlineContent: MutableMap<String, InlineTextContent>
+    inlineContent: MutableMap<String, InlineTextContent>,
+    chipCtx: ChipMeasureContext
 ): AnnotatedString = buildAnnotatedString {
     var codeSeq = 0
     // 줄바꿈 없이 이어 붙은 리스트 항목을 먼저 줄 단위로 분리
@@ -256,17 +271,17 @@ private fun buildBlockAnnotation(
                 }
                 val weight = if (level <= 2) FontWeight.Bold else FontWeight.SemiBold
                 withStyle(SpanStyle(fontSize = size, fontWeight = weight)) {
-                    codeSeq = appendInline(content, inlineContent, codeSeq)
+                    codeSeq = appendInline(content, inlineContent, codeSeq, chipCtx)
                 }
             }
 
             listContent != null -> {
                 append("•  ")
-                codeSeq = appendInline(listContent, inlineContent, codeSeq)
+                codeSeq = appendInline(listContent, inlineContent, codeSeq, chipCtx)
             }
 
             else -> {
-                codeSeq = appendInline(line, inlineContent, codeSeq)
+                codeSeq = appendInline(line, inlineContent, codeSeq, chipCtx)
             }
         }
         // 마지막 줄 뒤에는 개행을 넣지 않아 코드 블록/다음 요소와의 후행 간격을 없앤다.
@@ -283,7 +298,8 @@ private fun buildBlockAnnotation(
 private fun AnnotatedString.Builder.appendInline(
     text: String,
     inlineContent: MutableMap<String, InlineTextContent>,
-    startSeq: Int
+    startSeq: Int,
+    chipCtx: ChipMeasureContext
 ): Int {
     var seq = startSeq
     var last = 0
@@ -296,7 +312,7 @@ private fun AnnotatedString.Builder.appendInline(
         } else {
             val code = match.groupValues[2]
             val id = "code_${seq++}"
-            inlineContent[id] = inlineCodeChip(code)
+            inlineContent[id] = inlineCodeChip(code, chipCtx)
             appendInlineContent(id, code)
         }
         last = match.range.last + 1
@@ -310,40 +326,109 @@ private fun stripDangling(text: String): String =
     text.replace("**", "").replace("`", "")
 
 
+/** 인라인 코드 칩 크기를 실측하기 위해 필요한 컴포지션 스코프 값 묶음. */
+private class ChipMeasureContext(
+    val density: Density,
+    val textMeasurer: TextMeasurer,
+    /** 칩이 속한 문단(Text)이 실제로 사용할 수 있는 최대 폭(px). 긴 코드가 줄바꿈될 때 기준이 된다. */
+    val containerWidthPx: Int
+)
+
+private val CODE_CHIP_TEXT_STYLE = TextStyle(
+    fontFamily = FontFamily.Monospace,
+    fontSize = 12.sp,
+    letterSpacing = 0.sp
+)
+private val CODE_CHIP_HORIZONTAL_PADDING = 5.dp
+private val CODE_CHIP_VERTICAL_PADDING = 1.dp
+
+/** measure() 자체 비용을 방어하기 위한 1차 컷(정상 범위에서는 도달하지 않음). */
+private const val CODE_CHIP_HARD_CHAR_LIMIT = 500
+
+/** 한 줄에 압축된 형태로 붙을 수 있는 최대 폭. 초과 시 줄 전체 폭을 쓰는 줄바꿈 칩으로 전환한다. */
+private val CODE_CHIP_COMPACT_MAX_WIDTH = 240.dp
+
 /**
  * 인라인 코드 칩. 밝은 회색 둥근 배경 위에 빨간 모노스페이스 텍스트를 배치한다.
  *
- * - Placeholder.height = 2.2em: 일반 줄(22sp)보다 높아 칩이 들어간 줄에 위아래 여백이 생긴다.
- * - 바깥 Box fillMaxSize + Center: 칩을 Placeholder 세로 중앙에 배치하여 위아래 공간을 확보한다.
- * - 외부 좌우 여백은 추가하지 않는다(바깥 Box에 horizontal padding 없음).
+ * Placeholder의 width/height는 실제로 렌더링될 텍스트(고정 12sp Monospace)를 [TextMeasurer]로
+ * 직접 측정한 뒤 고정 padding을 더해 계산한다. 글자 수 기반 어림값 대신 실측값을 쓰고,
+ * em이 아닌 [Density.toSp]로 절대 단위(sp)를 사용해 삽입 위치의 ambient 폰트 크기(본문/헤딩)와
+ * 무관하게 항상 일정한 칩 크기를 보장한다.
+ *
+ * - 압축 폭([CODE_CHIP_COMPACT_MAX_WIDTH]) 이내면 한 줄짜리 작은 칩으로 텍스트 옆에 붙는다.
+ * - 압축 폭을 넘으면 내용을 자르지 않고, 문단이 사용 가능한 최대 폭([ChipMeasureContext.containerWidthPx])을
+ *   그대로 차지하는 블록형 칩으로 전환해 필요한 만큼 여러 줄에 걸쳐 전체 내용을 보여준다.
  */
-private fun inlineCodeChip(code: String): InlineTextContent =
-    InlineTextContent(
+private fun inlineCodeChip(code: String, chipCtx: ChipMeasureContext): InlineTextContent {
+    val density = chipCtx.density
+    val textMeasurer = chipCtx.textMeasurer
+
+    val safeCode = code.take(CODE_CHIP_HARD_CHAR_LIMIT)
+    val singleLineResult = textMeasurer.measure(safeCode, CODE_CHIP_TEXT_STYLE, maxLines = 1, softWrap = false)
+    val compactMaxWidthPx = with(density) { CODE_CHIP_COMPACT_MAX_WIDTH.toPx() }.toInt()
+    val isCompact = singleLineResult.size.width <= compactMaxWidthPx
+
+    val (contentWidthPx, contentHeightPx) = if (isCompact) {
+        singleLineResult.size.width to singleLineResult.size.height
+    } else {
+        val horizontalPaddingPx = with(density) { (CODE_CHIP_HORIZONTAL_PADDING * 2).toPx() }.toInt()
+        val wrapWidthPx = (chipCtx.containerWidthPx - horizontalPaddingPx).coerceAtLeast(1)
+        val wrappedResult = textMeasurer.measure(
+            text = safeCode,
+            style = CODE_CHIP_TEXT_STYLE,
+            softWrap = true,
+            constraints = Constraints(maxWidth = wrapWidthPx)
+        )
+        wrapWidthPx to wrappedResult.size.height
+    }
+
+    val chipWidthDp = with(density) { contentWidthPx.toDp() } + CODE_CHIP_HORIZONTAL_PADDING * 2
+    val chipHeightDp = with(density) { contentHeightPx.toDp() } + CODE_CHIP_VERTICAL_PADDING * 2
+
+    return InlineTextContent(
         placeholder = Placeholder(
-            width = (code.length * 0.65f + 0.8f).em,
-            height = 2.2.em,
+            width = with(density) { chipWidthDp.toSp() },
+            height = with(density) { chipHeightDp.toSp() },
             placeholderVerticalAlign = PlaceholderVerticalAlign.Center
         )
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
+        if (isCompact) {
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFFEAEAEA))
-                    .padding(horizontal = 5.dp, vertical = 1.dp),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFFEAEAEA))
+                        .padding(horizontal = CODE_CHIP_HORIZONTAL_PADDING, vertical = CODE_CHIP_VERTICAL_PADDING),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = safeCode,
+                        style = CODE_CHIP_TEXT_STYLE,
+                        color = Color(0xFFD32F2F),
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFFEAEAEA))
+                    .padding(horizontal = CODE_CHIP_HORIZONTAL_PADDING, vertical = CODE_CHIP_VERTICAL_PADDING)
+            ) {
                 Text(
-                    text = code,
+                    text = safeCode,
+                    style = CODE_CHIP_TEXT_STYLE,
                     color = Color(0xFFD32F2F),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    softWrap = false
+                    softWrap = true
                 )
             }
         }
     }
+}

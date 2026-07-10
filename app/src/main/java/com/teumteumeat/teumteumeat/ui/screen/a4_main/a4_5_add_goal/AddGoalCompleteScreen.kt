@@ -20,6 +20,7 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.ForceLightStatusBarIcons
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -30,6 +31,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 fun AddGoalSuccessScreen(
     onStartClick: () -> Unit,
 ) {
+    ForceLightStatusBarIcons()
 
     // 🎬 Lottie Composition 로드
     val composition by rememberLottieComposition(

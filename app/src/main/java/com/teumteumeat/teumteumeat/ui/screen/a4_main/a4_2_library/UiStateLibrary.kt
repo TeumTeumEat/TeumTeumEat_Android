@@ -6,6 +6,9 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.MotivationUiState
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.calendar.CalendarUiState
 
 data class UiStateLibrary(
+    val isLoading: Boolean = false,
+    val isCategoryLoading: Boolean = false,
+
     val currentPage: Int = 0,
     val totalPage: Int = 5,
 

@@ -753,7 +753,7 @@ class AddGoalViewModel @Inject constructor(
                     _uiState.update { it.copy(isSseStarted = true) }
                 }
                 is DocumentProcessingEvent.Pending -> {
-                    _uiState.update { it.copy(isSseStarted = true, sseProgress = 0.05f) }
+                    _uiState.update { it.copy(isSseStarted = true, sseProgress = 0.05f, sseRemainMs = null) }
                 }
                 is DocumentProcessingEvent.Processing -> {
                     val remainMs = event.remainMs
@@ -770,11 +770,11 @@ class AddGoalViewModel @Inject constructor(
                     val statusText = if (remainMs <= 0L) "잠시만 기다려주세요"
                         else "${(remainMs + 999L) / 1000L}초 남았어요."
                     val progressText = if (remainMs > 0L) "${(progress * 100).toInt()}% 완료" else null
-                    _uiState.update { it.copy(sseProgress = progress, sseStatusText = statusText, sseProgressText = progressText) }
+                    _uiState.update { it.copy(sseProgress = progress, sseRemainMs = remainMs, sseStatusText = statusText, sseProgressText = progressText) }
                 }
                 is DocumentProcessingEvent.Completed -> {
                     Log.d("SSE_LIFECYCLE", "OCR 처리 완료 → SSE 연결 정상 종료")
-                    _uiState.update { it.copy(sseProgress = 1.0f, sseStatusText = null) }
+                    _uiState.update { it.copy(sseProgress = 1.0f, sseRemainMs = 0L, sseStatusText = null) }
                     delay(600L)
                     emitGoalRefreshUseCase()
                     _mainState.value = UiStateAddGoalScreenState.Success
@@ -803,7 +803,7 @@ class AddGoalViewModel @Inject constructor(
     fun retryDocumentSSE() {
         viewModelScope.launch {
             sseInitialRemainMs = 0L
-            _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseStatusText = null) }
+            _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseRemainMs = null, sseStatusText = null) }
             _mainState.value = UiStateAddGoalScreenState.Loading
 
             val goalId = _uiState.value.goalId.toLong()
