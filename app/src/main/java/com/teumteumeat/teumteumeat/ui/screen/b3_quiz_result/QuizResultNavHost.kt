@@ -79,6 +79,7 @@ fun QuizResultNavHost(
                 },
                 onBack = { navController.popBackStack() },
                 onShowSummary = {
+                    viewModel.onReviewConceptTap()
                     navController.navigate(QuizResultRoute.Summary.route)
                 },
                 goEndScreen = {

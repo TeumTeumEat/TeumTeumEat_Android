@@ -17,6 +17,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,20 +33,27 @@ class QuizResultViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
     private val categoryRepository: CategoryRepository,
     private val goalRepository: GoalRepository,
+    private val analyticsLogger: TeumAnalyticsLogger,
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
     companion object {
         private const val KEY_DOCUMENT_ID = "document_id"
         private const val KEY_DATE = "quiz_date"
+        private const val KEY_TOPIC = "topic"
+        private const val KEY_ENTRY_TYPE = "entry_type"
     }
 
     fun initArgs(
         documentId: Long,
-        date: String
+        date: String,
+        topic: String,
+        entryType: String,
     ) {
         savedStateHandle[KEY_DOCUMENT_ID] = documentId
         savedStateHandle[KEY_DATE] = date
+        savedStateHandle[KEY_TOPIC] = topic
+        savedStateHandle[KEY_ENTRY_TYPE] = entryType
     }
 
     private val _uiState = MutableStateFlow(UiStateQuizResult())
@@ -61,6 +69,24 @@ class QuizResultViewModel @Inject constructor(
 
     fun getDate(): String =
         savedStateHandle[KEY_DATE] ?: error("date missing")
+
+    fun getTopic(): String =
+        savedStateHandle[KEY_TOPIC] ?: ""
+
+    fun getEntryType(): String =
+        savedStateHandle[KEY_ENTRY_TYPE] ?: "first"
+
+    /**
+     * QUIZ-005 — 퀴즈 결과 화면 "글보기" 버튼 탭 시 호출.
+     * documentId/topic/entryType은 QuizActivity → QuizResultActivity Intent extra로 전달받은 값이다.
+     */
+    fun onReviewConceptTap() {
+        analyticsLogger.logReviewConceptTap(
+            contentId = getDocumentId().toString(),
+            topic = getTopic(),
+            entryType = getEntryType(),
+        )
+    }
 
     fun initQuizResult() {
         viewModelScope.launch {

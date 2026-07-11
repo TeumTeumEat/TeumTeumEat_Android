@@ -512,6 +512,35 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * QUIZ-005 · 퀴즈 결과 화면 "글보기" 버튼 탭 이벤트
+     *
+     * | 파라미터   | 타입   | 예시      | 목적                                    |
+     * |-----------|--------|-----------|-----------------------------------------|
+     * | content_id | String | "17"      | quiz_complete 와 JOIN 키                |
+     * | topic      | String | "SwiftUI" | 콘텐츠 제목 (최대 100자)                |
+     * | entry_type | String | "first"   | 진입 유형 — "first" \| "resume" \| "retry" |
+     *
+     * `entry_type`은 [QuizStart]에서 계산된 값을 그대로 재사용한다.
+     * 결과 화면 시점에는 이미 `complete-set` API가 성공해 로컬 이력에
+     * documentId가 기록된 상태라, [com.teumteumeat.teumteumeat.data.datastore.QuizTrackingDataStore.resolveEntryType]을
+     * 다시 호출하면 항상 "retry"가 반환되어 재계산할 수 없다.
+     *
+     * ## 측정 목적
+     * - quiz_complete를 분모, review_concept_tap을 분자로 하여 콘텐츠별·entry_type별 복습 이용률 산출
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultViewModel.onReviewConceptTap]
+     *   퀴즈 결과 화면에서 "글보기" 버튼 탭 직후 (quiz_complete 이후 결과 화면에서만 노출되는 버튼이므로
+     *   quiz_abandoned 상태에서는 발생하지 않는다)
+     */
+    object ReviewConceptTap {
+        const val NAME = "review_concept_tap"
+        const val PARAM_CONTENT_ID = "content_id"    // documentId.toString()
+        const val PARAM_TOPIC = "topic"               // 콘텐츠 제목 (max 100자)
+        const val PARAM_ENTRY_TYPE = "entry_type"     // "first" | "resume" | "retry"
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |

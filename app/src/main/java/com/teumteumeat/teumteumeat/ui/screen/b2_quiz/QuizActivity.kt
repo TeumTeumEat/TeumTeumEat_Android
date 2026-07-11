@@ -47,17 +47,20 @@ class QuizActivity : BaseActivity() {
 
         const val GOAL_TYPE = "goalType"
         const val EXTRA_TOPIC = "topic"
+        const val EXTRA_HAS_SOLVED_TODAY = "hasSolvedToday"
 
         fun newIntent(
             context: Context,
             documentId: Long,
             goalType: String,
             topic: String,
+            hasSolvedToday: Boolean,
         ): Intent {
             return Intent(context, QuizActivity::class.java).apply {
                 putExtra(EXTRA_DOCUMENT_ID, documentId)
                 putExtra(GOAL_TYPE, goalType)
                 putExtra(EXTRA_TOPIC, topic)
+                putExtra(EXTRA_HAS_SOLVED_TODAY, hasSolvedToday)
             }
         }
     }
@@ -127,11 +130,13 @@ class QuizActivity : BaseActivity() {
                         },
                         onCompleteQuiz = {
                             val documentId = viewModel.documentId
+                            val topic = viewModel.topic
+                            val entryType = viewModel.resolvedEntryType
 
                             viewModel.completeQuiz()
 
                             activity.startActivity(
-                                QuizResultActivity.newIntent(activity, documentId)
+                                QuizResultActivity.newIntent(activity, documentId, topic, entryType)
                             )
 
                             finish()
