@@ -319,6 +319,9 @@ object TeumAnalyticsEvent {
          * 재도전(retry) 시에도 초기화되지 않고 계속 증가한다 (24자, GA4 키 최대 길이 제한 통과).
          */
         const val TOTAL_QUESTIONS_ANSWERED = "total_questions_answered"  // "1", "2", ...
+
+        /** 가장 최근 완주한 목표의 기간(주 단위) — [CourseComplete] 발화 시 설정 */
+        const val GOAL_WEEKS = "goal_weeks"  // "2", "4", ...
     }
 
     /**
@@ -538,6 +541,41 @@ object TeumAnalyticsEvent {
         const val PARAM_CONTENT_ID = "content_id"    // documentId.toString()
         const val PARAM_TOPIC = "topic"               // 콘텐츠 제목 (max 100자)
         const val PARAM_ENTRY_TYPE = "entry_type"     // "first" | "resume" | "retry"
+    }
+
+    /**
+     * GOAL-001 · 목표 완주 이벤트
+     *
+     * | 파라미터           | 타입   | 예시      | 목적                                       |
+     * |-------------------|--------|-----------|---------------------------------------------|
+     * | goal_id            | String | "42"      | 완주한 목표 식별 ID                          |
+     * | category_id        | String | "17"      | CATEGORY 목표: categoryId / DOCUMENT 목표: 파일명 |
+     * | learning_type      | String | "category"| 학습 방식 — "category" \| "pdf"              |
+     * | goal_weeks         | Long   | 2         | 목표 기간(주) — startDate~endDate 근사 계산   |
+     * | total_stamps       | Long   | 42        | 완주 시점까지 획득한 전체 누적 스탬프         |
+     * | is_first_complete  | String | "true"    | 첫 완주 여부 — "true" \| "false"             |
+     *
+     * `category_id`는 DOCUMENT(PDF 업로드형) 목표는 category가 null이라 대신 파일명을 전달한다.
+     * `goal_weeks`는 API가 주 단위 필드를 제공하지 않아 `ChronoUnit.WEEKS.between(startDate, endDate)`로
+     * 클라이언트에서 근사 계산한 값이다.
+     *
+     * ## 측정 목적
+     * - 퀴즈를 한 번이라도 시작한 유저(quiz_start) 대비 완주 달성 유저 비율 산출
+     * - category_id·learning_type·goal_weeks·difficulty(User Property)별 완주율 세분화
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultViewModel.onCourseCompleteScreenEntered]
+     *   [com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result.QuizResultNavHost]의 `goEndScreen`에서
+     *   `userGoal.isCompleted == true`로 완주 화면(SubjectCompleteScreen)에 진입하기 직전
+     */
+    object CourseComplete {
+        const val NAME = "course_complete"
+        const val PARAM_GOAL_ID = "goal_id"
+        const val PARAM_CATEGORY_ID = "category_id"     // CATEGORY: categoryId / DOCUMENT: fileName
+        const val PARAM_LEARNING_TYPE = "learning_type" // "category" | "pdf"
+        const val PARAM_GOAL_WEEKS = "goal_weeks"       // Long, ChronoUnit.WEEKS.between 근사값
+        const val PARAM_TOTAL_STAMPS = "total_stamps"   // Long, stamp_earned와 동일 기준(getCalendarHistory)
+        const val PARAM_IS_FIRST_COMPLETE = "is_first_complete" // "true" | "false"
     }
 
     /**

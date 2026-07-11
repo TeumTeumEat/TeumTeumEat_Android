@@ -444,6 +444,41 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * GOAL-001 — 목표 완주 이벤트를 로깅합니다.
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.GOAL_WEEKS])도 등록합니다.
+     * `difficulty`/`learning_type`/`quiz_count` User Property는 온보딩 시점에 이미 등록되어
+     * 있으므로 이 함수에서 재등록하지 않습니다.
+     *
+     * @param goalId          완주한 목표 식별 ID
+     * @param categoryId      CATEGORY 목표: categoryId / DOCUMENT 목표: 파일명
+     * @param learningType    학습 방식 — "category" | "pdf"
+     * @param goalWeeks       목표 기간(주) — startDate~endDate 근사 계산값
+     * @param totalStamps     완주 시점까지 획득한 전체 누적 스탬프
+     * @param isFirstComplete 첫 완주 여부 — "true" | "false"
+     */
+    fun logCourseComplete(
+        goalId: String,
+        categoryId: String,
+        learningType: String,
+        goalWeeks: Long,
+        totalStamps: Long,
+        isFirstComplete: String,
+    ) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.CourseComplete.PARAM_GOAL_ID, goalId)
+            putString(TeumAnalyticsEvent.CourseComplete.PARAM_CATEGORY_ID, categoryId)
+            putString(TeumAnalyticsEvent.CourseComplete.PARAM_LEARNING_TYPE, learningType)
+            putLong(TeumAnalyticsEvent.CourseComplete.PARAM_GOAL_WEEKS, goalWeeks)
+            putLong(TeumAnalyticsEvent.CourseComplete.PARAM_TOTAL_STAMPS, totalStamps)
+            putString(TeumAnalyticsEvent.CourseComplete.PARAM_IS_FIRST_COMPLETE, isFirstComplete)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.CourseComplete.NAME, params)
+
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.GOAL_WEEKS, goalWeeks.toString())
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
