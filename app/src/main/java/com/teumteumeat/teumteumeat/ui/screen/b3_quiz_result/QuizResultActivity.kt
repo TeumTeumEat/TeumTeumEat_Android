@@ -35,12 +35,19 @@ class QuizResultActivity : ComponentActivity() {
         const val GOAL_TYPE = "goal_type"
         const val INVAILD_GOAL_TYPE = -1
 
+        const val EXTRA_TOPIC = "extra_topic"
+        const val EXTRA_ENTRY_TYPE = "extra_entry_type"
+
         fun newIntent(
             context: Context,
             documentId: Long,
+            topic: String,
+            entryType: String,
         ): Intent {
             return Intent(context, QuizResultActivity::class.java).apply {
                 putExtra(EXTRA_DOCUMENT_ID, documentId)
+                putExtra(EXTRA_TOPIC, topic)
+                putExtra(EXTRA_ENTRY_TYPE, entryType)
             }
         }
     }
@@ -49,6 +56,8 @@ class QuizResultActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val documentId = intent.getLongExtra(EXTRA_DOCUMENT_ID, INVALID_DOCUMENT_ID)
+        val topic = intent.getStringExtra(EXTRA_TOPIC) ?: ""
+        val entryType = intent.getStringExtra(EXTRA_ENTRY_TYPE) ?: "first"
 
         if (documentId == INVALID_DOCUMENT_ID) {
             // 필수 값 누락 → 방어 코드
@@ -69,7 +78,9 @@ class QuizResultActivity : ComponentActivity() {
                     val nowDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE)
                     viewModel.initArgs(
                         documentId = documentId,
-                        date = nowDate
+                        date = nowDate,
+                        topic = topic,
+                        entryType = entryType,
                     )
 
                     viewModel.initQuizResult()

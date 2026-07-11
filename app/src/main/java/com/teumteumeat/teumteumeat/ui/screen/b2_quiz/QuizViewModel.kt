@@ -54,8 +54,12 @@ class QuizViewModel @Inject constructor(
     /** 이 ViewModel 인스턴스(=1회 퀴즈 세션) 내 정답 제출 수. quiz_complete의 correct_count로 사용 */
     private var correctCount = 0
 
-    /** quiz_start 발화 시 계산된 entry_type. quiz_abandoned·quiz_complete에서 재사용하기 위해 필드로 보관 */
-    private var resolvedEntryType: String = "first"
+    /**
+     * quiz_start 발화 시 계산된 entry_type. quiz_abandoned·quiz_complete에서 재사용하기 위해 필드로 보관.
+     * QuizResultActivity로의 Intent extra 전달을 위해 외부에서 읽을 수 있도록 공개(읽기 전용)한다.
+     */
+    var resolvedEntryType: String = "first"
+        private set
 
     /**
      * quiz_start 발화 시 조회된 사용자 난이도. quiz_complete에서 재사용하기 위해 필드로 보관한다.

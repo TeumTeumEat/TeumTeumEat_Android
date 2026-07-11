@@ -428,6 +428,22 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * QUIZ-005 — 퀴즈 결과 화면 "글보기" 버튼 탭 이벤트를 로깅합니다.
+     *
+     * @param contentId 퀴즈 콘텐츠 ID (documentId.toString()) — quiz_complete 와 JOIN 키
+     * @param topic     콘텐츠 제목 — 100자 초과 시 잘라냄
+     * @param entryType 진입 유형 — quiz_start에서 계산된 값을 그대로 전달 ("first" | "resume" | "retry")
+     */
+    fun logReviewConceptTap(contentId: String, topic: String, entryType: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.ReviewConceptTap.PARAM_CONTENT_ID, contentId)
+            putString(TeumAnalyticsEvent.ReviewConceptTap.PARAM_TOPIC, topic.take(100))
+            putString(TeumAnalyticsEvent.ReviewConceptTap.PARAM_ENTRY_TYPE, entryType)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.ReviewConceptTap.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
