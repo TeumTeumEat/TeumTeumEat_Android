@@ -479,6 +479,32 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * GOAL-002 — 완주 후 재학습 시작 이벤트를 로깅합니다.
+     *
+     * @param prevGoalId       직전에 완주한 목표 식별 ID
+     * @param prevCategoryId   직전 완주 목표의 category_id (course_complete와 동일 기준)
+     * @param prevLearningType 직전 완주 목표 학습 방식 — "category" | "pdf"
+     * @param nextLearningType 새로 선택한 목표 학습 방식 — "category" | "pdf"
+     * @param isFirstComplete  직전 완주가 첫 완주였는지 — "true" | "false"
+     */
+    fun logNextCourseStart(
+        prevGoalId: String,
+        prevCategoryId: String,
+        prevLearningType: String,
+        nextLearningType: String,
+        isFirstComplete: String,
+    ) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.NextCourseStart.PARAM_PREV_GOAL_ID, prevGoalId)
+            putString(TeumAnalyticsEvent.NextCourseStart.PARAM_PREV_CATEGORY_ID, prevCategoryId)
+            putString(TeumAnalyticsEvent.NextCourseStart.PARAM_PREV_LEARNING_TYPE, prevLearningType)
+            putString(TeumAnalyticsEvent.NextCourseStart.PARAM_NEXT_LEARNING_TYPE, nextLearningType)
+            putString(TeumAnalyticsEvent.NextCourseStart.PARAM_IS_FIRST_COMPLETE, isFirstComplete)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.NextCourseStart.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.

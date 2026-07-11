@@ -20,6 +20,7 @@ fun SelectInputMethodScreen(
             viewModel.resetCategorySelection()
             viewModel.onFileDeleted()
             viewModel.updateCategorySelectionComplete(false)
+            viewModel.logNextCourseStartIfEligible(uiState.goalTypeUiState)
             when (uiState.goalTypeUiState) {
                 GoalTypeUiState.CATEGORY -> onNextCateGorySelect()
                 GoalTypeUiState.DOCUMENT -> onNextFileUpload()

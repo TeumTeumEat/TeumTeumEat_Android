@@ -37,6 +37,9 @@ class AddGoalActivity : ComponentActivity() {
         // 1️⃣ 외부 진입 데이터가 있다면 뷰모델 초기화
         initialGoalType?.let { viewModel.initGoalType(it) }
 
+        // GOAL-002 next_course_start 트래킹 초기화 — 진입 경로와 무관하게 항상 호출
+        viewModel.initNextCourseStartTracking()
+
         setContent {
             TeumTeumEatTheme {
                 // 2️⃣ hiltViewModel() 사용 시, 현재 Activity 스코프의 뷰모델을 공유하도록 설정 가능
