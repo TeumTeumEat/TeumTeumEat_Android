@@ -579,6 +579,49 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * GOAL-002 · 완주 후 재학습 시작 이벤트
+     *
+     * | 파라미터           | 타입   | 예시      | 목적                                    |
+     * |-------------------|--------|-----------|------------------------------------------|
+     * | prev_goal_id       | String | "42"      | 직전에 완주한 목표 식별 ID               |
+     * | prev_category_id   | String | "17"      | 직전 완주 목표 category_id (course_complete와 동일 기준) |
+     * | prev_learning_type | String | "category"| 직전 완주 목표 학습 방식 — "category" \| "pdf" |
+     * | next_learning_type | String | "pdf"     | 새로 선택한 목표 학습 방식 — "category" \| "pdf" |
+     * | is_first_complete  | String | "true"    | 직전 완주가 첫 완주였는지 — course_complete 계산값 재사용 |
+     *
+     * `prev_*`/`is_first_complete`는 [com.teumteumeat.teumteumeat.data.datastore.GoalTrackingDataStore]에
+     * `course_complete` 발화 시점에 저장해둔 스냅샷([com.teumteumeat.teumteumeat.data.datastore.LastCompletedGoal])을
+     * 그대로 재사용한다 — `AddGoalActivity` 진입 경로(완주 화면 / Home "+" / GuideExpiredGoalActivity 등)에
+     * 관계없이 동일하게 동작한다.
+     *
+     * ## 측정 목적
+     * - `course_complete` 대비 `next_course_start` 발생 유저 비율로 완주 후 재학습 전환율 측정
+     * - prev → next learning_type 전환 패턴 분석
+     * - is_first_complete별 재학습 전환율 비교
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalViewModel.initNextCourseStartTracking]
+     *   목표 타입이 사전 지정되어 `SelectInputMethodScreen`을 건너뛰는 진입(Home "+", GuideExpiredGoalActivity)에서
+     *   `AddGoalActivity` 진입 직후 즉시, 또는
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalViewModel.logNextCourseStartIfEligible]
+     *   `SelectInputMethodScreen` "다음" 버튼 탭 시
+     *
+     *   두 경우 모두 `GoalTrackingDataStore`에 직전 완주 스냅샷이 남아있을 때만 발화한다.
+     *
+     * ## 이탈 분석
+     * 별도 이탈 이벤트를 수집하지 않고, BigQuery에서 `course_complete` 발생 후
+     * `next_course_start`가 발생하지 않은 유저를 이탈로 정의해 분석한다.
+     */
+    object NextCourseStart {
+        const val NAME = "next_course_start"
+        const val PARAM_PREV_GOAL_ID = "prev_goal_id"
+        const val PARAM_PREV_CATEGORY_ID = "prev_category_id"     // CATEGORY: categoryId / DOCUMENT: fileName
+        const val PARAM_PREV_LEARNING_TYPE = "prev_learning_type" // "category" | "pdf"
+        const val PARAM_NEXT_LEARNING_TYPE = "next_learning_type" // "category" | "pdf"
+        const val PARAM_IS_FIRST_COMPLETE = "is_first_complete"   // "true" | "false" — course_complete 계산값 재사용
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |

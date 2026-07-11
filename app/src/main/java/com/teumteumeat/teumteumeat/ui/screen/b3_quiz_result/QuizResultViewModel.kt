@@ -126,6 +126,16 @@ class QuizResultViewModel @Inject constructor(
             val isFirstComplete =
                 goalTrackingDataStore.resolveAndMarkFirstComplete(userGoal.goalId.toString())
 
+            // GOAL-002 next_course_start의 prev_* 복원을 위한 스냅샷 저장.
+            // AddGoalActivity의 모든 진입 경로(완주 화면/Home "+"/GuideExpiredGoalActivity)가
+            // 공통으로 조회하므로 별도 Intent extra 전달이 필요 없다.
+            goalTrackingDataStore.saveLastCompletedGoal(
+                goalId = userGoal.goalId.toString(),
+                categoryId = categoryId,
+                learningType = learningType,
+                isFirstComplete = isFirstComplete,
+            )
+
             hasCourseCompleteLogged = true
             analyticsLogger.logCourseComplete(
                 goalId = userGoal.goalId.toString(),

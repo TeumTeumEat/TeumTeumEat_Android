@@ -5,6 +5,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.datastore.GoalTrackingDataStore
+import com.teumteumeat.teumteumeat.data.datastore.LastCompletedGoal
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
@@ -53,6 +55,7 @@ class AddGoalViewModel @Inject constructor(
     val sessionManager: SessionManager,
     val goalRepository: GoalRepository,
     private val analyticsLogger: TeumAnalyticsLogger,
+    private val goalTrackingDataStore: GoalTrackingDataStore,
 ) : ViewModel() {
     private val appContext = application.applicationContext
 
@@ -88,6 +91,52 @@ class AddGoalViewModel @Inject constructor(
             }
 
         }
+    }
+
+    /** GOAL-002 next_course_start 발화용 직전 완주 목표 스냅샷 캐시 */
+    private var lastCompletedGoal: LastCompletedGoal? = null
+
+    /** GOAL-002 next_course_start 중복 발송 방지 플래그 */
+    private var hasNextCourseStartLogged = false
+
+    /**
+     * GOAL-002 next_course_start 트래킹 초기화. Activity onCreate에서 진입 경로와 무관하게 항상 호출한다.
+     * 직전 완주 스냅샷을 조회해 캐시하고, 목표 타입이 이미 정해져 있는 진입(Home "+"·GuideExpiredGoalActivity,
+     * SelectInputMethodScreen을 건너뜀)이면 그 자리에서 바로 발화를 시도한다.
+     */
+    fun initNextCourseStartTracking() {
+        viewModelScope.launch {
+            lastCompletedGoal = goalTrackingDataStore.getLastCompletedGoal()
+            if (_uiState.value.isSkipTypeSelect) {
+                logNextCourseStartIfEligible(_uiState.value.goalTypeUiState)
+            }
+        }
+    }
+
+    /**
+     * 완주 이력(스냅샷)이 있고 nextGoalType이 유효할 때만 next_course_start를 발화한다.
+     * SelectInputMethodScreen "다음" 탭 시 직접 호출되거나, [initNextCourseStartTracking]에서
+     * 타입 사전 지정 진입 시 자동 호출된다. 발화 성공 시 스냅샷을 소비(제거)해 동일 완주 건의
+     * 중복 발화를 막는다 — 타입 미선택 이탈 시에는 소비하지 않아 다음 진짜 시도에서 재시도할 수 있다.
+     */
+    fun logNextCourseStartIfEligible(nextGoalType: GoalTypeUiState) {
+        if (hasNextCourseStartLogged) return
+        val goal = lastCompletedGoal ?: return
+        val nextLearningType = when (nextGoalType) {
+            GoalTypeUiState.CATEGORY -> "category"
+            GoalTypeUiState.DOCUMENT -> "pdf"
+            GoalTypeUiState.NONE -> return
+        }
+
+        hasNextCourseStartLogged = true
+        analyticsLogger.logNextCourseStart(
+            prevGoalId = goal.goalId,
+            prevCategoryId = goal.categoryId,
+            prevLearningType = goal.learningType,
+            nextLearningType = nextLearningType,
+            isFirstComplete = goal.isFirstComplete,
+        )
+        viewModelScope.launch { goalTrackingDataStore.clearLastCompletedGoal() }
     }
 
     fun selectLearningMethod(type: GoalTypeUiState) {
