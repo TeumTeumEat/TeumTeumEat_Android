@@ -88,6 +88,12 @@ fun LibraryScreen(
         }
     }
 
+    // 📊 LIB-001 히스토리 탭 진입 이벤트 — 하단 탭 재방문 시에도 재실행되도록
+    // (ViewModel init{}이 아닌) Composable의 LaunchedEffect(Unit)에서 매번 호출
+    LaunchedEffect(Unit) {
+        viewModel.onCalendarViewEntered()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()

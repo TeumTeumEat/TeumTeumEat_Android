@@ -622,6 +622,32 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * LIB-001 · 히스토리 탭(캘린더) 진입 이벤트
+     *
+     * | 파라미터 | 타입   | 예시         | 목적                    |
+     * |---------|--------|--------------|-------------------------|
+     * | month   | String | "2025-05"    | 진입 시점의 년월        |
+     * | date    | String | "2025-05-01" | 진입 시점의 날짜        |
+     *
+     * 다른 이벤트와 달리 최초 1회로 제한하지 않는다 — 히스토리 탭에 진입할 때마다 매번 발화한다.
+     *
+     * ## 측정 목적
+     * - 일별/월별 히스토리 탭 이용률 측정
+     * - `stamp_earned` 발생일과 `calendar_view` 발생일 비교로 스트릭/스탬프 기능의
+     *   히스토리 탭 유입 효과 검증
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onCalendarViewEntered]
+     *   [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryScreen]의
+     *   `LaunchedEffect(Unit)`에서 진입할 때마다 호출 (하단 탭 재방문 포함)
+     */
+    object CalendarView {
+        const val NAME = "calendar_view"
+        const val PARAM_MONTH = "month" // "yyyy-MM", 예: "2025-05"
+        const val PARAM_DATE = "date"   // "yyyy-MM-dd", 예: "2025-05-01"
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |
