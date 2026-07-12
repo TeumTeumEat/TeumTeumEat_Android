@@ -8,6 +8,7 @@ import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
+    private val analyticsLogger: TeumAnalyticsLogger,
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
@@ -29,6 +31,17 @@ class LibraryViewModel @Inject constructor(
 
     private var allCategoryHistories: List<com.teumteumeat.teumteumeat.domain.model.history.CategoryHistoryUiModel> =
         emptyList()
+
+    /**
+     * LIB-001 — 히스토리 탭 진입 시 호출. 최초 1회로 제한하지 않고
+     * [LibraryScreen]의 LaunchedEffect(Unit)에서 매 진입마다 호출된다.
+     */
+    fun onCalendarViewEntered() {
+        analyticsLogger.logCalendarView(
+            month = YearMonth.now().toString(), // ISO 포맷이 이미 "yyyy-MM"과 일치
+            date = LocalDate.now().toString(),  // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
+        )
+    }
 
 
     init {

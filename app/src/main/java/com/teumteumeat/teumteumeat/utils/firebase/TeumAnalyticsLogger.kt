@@ -505,6 +505,21 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * LIB-001 — 히스토리 탭(캘린더) 진입 이벤트를 로깅합니다.
+     * 최초 1회로 제한하지 않고 탭에 진입할 때마다 매번 호출됩니다.
+     *
+     * @param month 진입 시점의 년월 — "yyyy-MM" (예: "2025-05")
+     * @param date  진입 시점의 날짜 — "yyyy-MM-dd" (예: "2025-05-01")
+     */
+    fun logCalendarView(month: String, date: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.CalendarView.PARAM_MONTH, month)
+            putString(TeumAnalyticsEvent.CalendarView.PARAM_DATE, date)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.CalendarView.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
