@@ -515,6 +515,40 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * STAMP-001 · 스탬프 적립 이벤트
+     *
+     * | 파라미터       | 타입   | 예시 | 목적                        |
+     * |---------------|--------|------|-----------------------------|
+     * | content_id     | String | "17" | quiz_complete 와 JOIN 키    |
+     * | streak_count   | Long   | 3    | 연속 학습일수               |
+     * | total_stamps   | Long   | 42   | 누적 스탬프 수              |
+     * | monthly_stamps | Long   | 5    | 이번 달 스탬프 수           |
+     *
+     * ## 측정 목적
+     * - content_id별 스탬프 적립 횟수로 콘텐츠 학습 관심도 파악
+     * - streak_count 분포로 리텐션 패턴 분석
+     * - total_stamps/monthly_stamps 추이로 누적 학습량 파악
+     *
+     * ## 발생 조건 (변경 감지 방식)
+     * - 퀴즈 진입 전 `user-quizzes/status`의 hasSolvedToday(before)가 false였고,
+     * - `POST /api/v1/user-quizzes/complete-set` 성공 후 재조회한 hasSolvedToday(after)가
+     *   true로 바뀐 경우에만 — 즉 "오늘 하루 중 첫 퀴즈 완료"일 때만 발화한다.
+     * - 오늘 이미 완료 후 재도전(retry)인 경우, 혹은 재조회/캘린더 조회 API 실패 시에는
+     *   발화하지 않는다. 이 경우에도 quiz_complete 발화에는 영향을 주지 않는다.
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizViewModel.completeCurrentQuizSet]
+     *   에서 quiz_complete 로깅 직후, 위 조건 충족 시
+     */
+    object StampEarned {
+        const val NAME = "stamp_earned"
+        const val PARAM_CONTENT_ID = "content_id"
+        const val PARAM_STREAK_COUNT = "streak_count"
+        const val PARAM_TOTAL_STAMPS = "total_stamps"
+        const val PARAM_MONTHLY_STAMPS = "monthly_stamps"
+    }
+
+    /**
      * QUIZ-005 · 퀴즈 결과 화면 "글보기" 버튼 탭 이벤트
      *
      * | 파라미터   | 타입   | 예시      | 목적                                    |

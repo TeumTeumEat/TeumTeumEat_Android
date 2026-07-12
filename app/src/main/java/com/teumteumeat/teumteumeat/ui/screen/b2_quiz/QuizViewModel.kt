@@ -11,6 +11,7 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.LocalDate
 import javax.inject.Inject
 
 
@@ -29,6 +31,7 @@ class QuizViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val quizRepository: QuizRepository,
     private val goalRepository: GoalRepository,
+    private val historyRepository: HistoryRepository,
     private val quizTrackingDataStore: QuizTrackingDataStore,
     private val analyticsLogger: TeumAnalyticsLogger,
     val sessionManager: SessionManager,
@@ -41,6 +44,14 @@ class QuizViewModel @Inject constructor(
     )
     val documentId: Long = savedStateHandle.get<Long>("documentId") ?: -1L
     val topic: String = savedStateHandle.get<String>("topic") ?: ""
+
+    /**
+     * 퀴즈 화면 진입 전 user-quizzes/status 응답의 전역 hasSolvedToday.
+     * complete-set 성공 후 재조회 값과 비교해 stamp_earned 변경 감지에 사용한다.
+     * ⚠️ complete-set 성공 후 값이 바뀌므로 반드시 진입 전 값을 그대로 유지해야 한다.
+     */
+    private val hasSolvedTodayBefore: Boolean =
+        savedStateHandle.get<Boolean>(QuizActivity.EXTRA_HAS_SOLVED_TODAY) ?: false
 
     /** ViewModel 인스턴스당 quiz_start 이벤트 중복 발송 방지 플래그 */
     private var hasQuizStartLogged = false
@@ -87,7 +98,7 @@ class QuizViewModel @Inject constructor(
 
     /**
      * 퀴즈 완료를 API 호출 시 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가 API 호출됨
-     * 성공 시 QUIZ-004 quiz_complete 이벤트를 로깅한다.
+     * 성공 시 QUIZ-004 quiz_complete 이벤트를 로깅하고, STAMP-001 stamp_earned 변경 감지를 시도한다.
      */
     private fun completeCurrentQuizSet() {
         viewModelScope.launch {
@@ -110,9 +121,45 @@ class QuizViewModel @Inject constructor(
                         correctCount = correctCount.toLong(),
                         scoreRate = scoreRate.toString(),
                     )
+
+                    logStampEarnedIfSolvedTodayChanged()
                 }
                 else -> { moveToError(response) }
             }
+        }
+    }
+
+    /**
+     * STAMP-001 — hasSolvedToday 변경 감지(false → true)로 "오늘 하루 첫 완료"를 판정해
+     * stamp_earned 이벤트를 로깅한다.
+     *
+     * 오늘 이미 완료 후 재도전(hasSolvedTodayBefore == true)인 경우 스킵하며,
+     * status/calendar 재조회 실패 시에도 조용히 스킵한다(quiz_complete에는 영향 없음).
+     */
+    private suspend fun logStampEarnedIfSolvedTodayChanged() {
+        if (hasSolvedTodayBefore) return
+
+        val hasSolvedTodayAfter = when (val result = quizRepository.getUserQuizStatus()) {
+            is ApiResultV2.Success -> result.data.hasSolvedToday
+            else -> return
+        }
+        if (!hasSolvedTodayAfter) return
+
+        val now = LocalDate.now()
+        when (
+            val calendarResult =
+                historyRepository.getCalendarHistory(year = now.year, month = now.monthValue)
+        ) {
+            is ApiResultV2.Success -> {
+                val calendar = calendarResult.data
+                analyticsLogger.logStampEarned(
+                    contentId = documentId.toString(),
+                    streakCount = calendar.currentStreak.toLong(),
+                    totalStamps = calendar.totalStamps.toLong(),
+                    monthlyStamps = calendar.monthlyStamps.toLong(),
+                )
+            }
+            else -> return
         }
     }
 

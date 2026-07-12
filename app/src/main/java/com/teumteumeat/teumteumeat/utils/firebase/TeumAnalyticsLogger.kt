@@ -428,6 +428,25 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * STAMP-001 — 스탬프 적립 이벤트를 로깅합니다.
+     * 오늘 하루 중 첫 퀴즈 완료로 hasSolvedToday가 false → true로 바뀐 경우에만 호출된다.
+     */
+    fun logStampEarned(
+        contentId: String,
+        streakCount: Long,
+        totalStamps: Long,
+        monthlyStamps: Long,
+    ) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.StampEarned.PARAM_CONTENT_ID, contentId)
+            putLong(TeumAnalyticsEvent.StampEarned.PARAM_STREAK_COUNT, streakCount)
+            putLong(TeumAnalyticsEvent.StampEarned.PARAM_TOTAL_STAMPS, totalStamps)
+            putLong(TeumAnalyticsEvent.StampEarned.PARAM_MONTHLY_STAMPS, monthlyStamps)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.StampEarned.NAME, params)
+    }
+
+    /**
      * QUIZ-005 — 퀴즈 결과 화면 "글보기" 버튼 탭 이벤트를 로깅합니다.
      *
      * @param contentId 퀴즈 콘텐츠 ID (documentId.toString()) — quiz_complete 와 JOIN 키
