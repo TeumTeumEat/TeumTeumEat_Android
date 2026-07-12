@@ -120,6 +120,7 @@ class SummaryViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isQuizGuideSeen = result.data.isQuizGuideSeen,
+                        hasSolvedTodayGlobal = result.data.hasSolvedToday,
                     )
                 }
             }

@@ -99,7 +99,8 @@ class SummaryActivity : ComponentActivity() {
                                                 this@SummaryActivity,
                                                 categoryDocumentId.toLong(),
                                                 goalType.name,
-                                                uiState.title
+                                                uiState.title,
+                                                uiState.hasSolvedTodayGlobal
                                             )
                                             startActivity(intent)
                                             finish() // 다음 화면으로 이동 후 현재 화면 종료
@@ -113,7 +114,8 @@ class SummaryActivity : ComponentActivity() {
                                                 this@SummaryActivity,
                                                 documentId,
                                                 goalType.name,
-                                                uiState.title
+                                                uiState.title,
+                                                uiState.hasSolvedTodayGlobal
                                             )
                                             startActivity(intent)
                                             finish() // 다음 화면으로 이동 후 현재 화면 종료
