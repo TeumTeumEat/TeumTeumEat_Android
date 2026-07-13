@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.domain.model.history.CalendarDailyItem
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
@@ -229,6 +230,23 @@ class LibraryViewModel @Inject constructor(
         if (hasStamp) {
             onCalendarDateSelected(date)
         }
+    }
+
+    /**
+     * 📄 LIB-003 — 날짜별 탭 캘린더 하단 학습 기록 카드 탭 시 호출.
+     * 주제별 탭의 동일 카드는 "날짜 클릭" 맥락이 없으므로 이 함수를 호출하지 않는다.
+     *
+     * date는 탭한 캘린더 선택 날짜(`calendar_date_tap`과 조인 기준 일치)를 사용하고,
+     * 선택 날짜가 없는 예외 상황에서는 카드의 마지막 학습 날짜로 폴백한다.
+     */
+    fun onDailyLearningRecordTapped(item: CalendarDailyItem) {
+        val date = _uiState.value.calendarUiState.selectedDate
+            ?: item.lastStudiedAt.toLocalDate()
+
+        analyticsLogger.logLearningRecordByDateTap(
+            date = date.toString(), // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
+            topic = item.title,     // 주제명 or PDF 파일명 (서버 응답 그대로)
+        )
     }
 
     /** 📆 날짜 선택 */

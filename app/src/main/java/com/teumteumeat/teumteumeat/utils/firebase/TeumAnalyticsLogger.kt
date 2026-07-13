@@ -567,6 +567,21 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * LIB-003 — 일별 학습 기록 카드 탭 이벤트를 로깅합니다.
+     * 발화 횟수를 제한하지 않고 카드를 탭할 때마다 매번 호출됩니다.
+     *
+     * @param date  조회한 캘린더 선택 날짜 — "yyyy-MM-dd" (예: "2025-05-19")
+     * @param topic 주제명 or PDF 파일명 (예: "관세사 관세법")
+     */
+    fun logLearningRecordByDateTap(date: String, topic: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.LearningRecordByDateTap.PARAM_DATE, date)
+            putString(TeumAnalyticsEvent.LearningRecordByDateTap.PARAM_TOPIC, topic)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.LearningRecordByDateTap.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
