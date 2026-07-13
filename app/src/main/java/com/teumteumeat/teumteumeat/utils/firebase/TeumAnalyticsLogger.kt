@@ -656,6 +656,54 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * 마이페이지 사용 설정 변경 이벤트를 로깅합니다 ([TeumAnalyticsEvent.SettingsChange]).
+     * 변경된 항목마다 setting_type이 다른 이벤트를 각 1건씩 발화하며, 변경된 항목이 없으면 발화하지 않습니다.
+     *
+     * 출퇴근 시간·퀴즈 수 변경 시 User Property([TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_FIRST],
+     * [TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_SECOND], [TeumAnalyticsEvent.UserProperties.QUIZ_COUNT])도 갱신합니다.
+     *
+     * 저장 버튼 클릭 시점(서버 반영 성공이 아닌 저장 시도)에 호출됩니다 — 저장 직후 Activity가
+     * finish되어 API 성공 콜백 도달이 보장되지 않기 때문입니다.
+     *
+     * @param nicknameChanged 닉네임 변경 여부 — 개인정보 성격이라 value는 수집하지 않음
+     * @param commuteTimeFrom 변경 전 출퇴근 시간 — "HH:mm-HH:mm" (예: "08:00-18:00"), null = 미변경
+     * @param commuteTimeTo   변경 후 출퇴근 시간 — "HH:mm-HH:mm" (예: "09:00-18:00"), null = 미변경
+     * @param quizCountFrom   변경 전 하루 퀴즈 수 — 3 | 5 | 7 | 10, null = 미변경
+     * @param quizCountTo     변경 후 하루 퀴즈 수 — 3 | 5 | 7 | 10, null = 미변경
+     */
+    fun logSettingsChange(
+        nicknameChanged: Boolean,
+        commuteTimeFrom: String?,
+        commuteTimeTo: String?,
+        quizCountFrom: Int?,
+        quizCountTo: Int?,
+    ) {
+        if (nicknameChanged) {
+            logSettingsChangeEvent(settingType = "nickname", value = null)
+        }
+        if (commuteTimeFrom != null && commuteTimeTo != null) {
+            val (first, second) = commuteTimeTo.split("-")
+            analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_FIRST, first)
+            analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.COMMUTE_TIME_SECOND, second)
+            logSettingsChangeEvent(settingType = "commute_time", value = "$commuteTimeFrom → $commuteTimeTo")
+        }
+        if (quizCountFrom != null && quizCountTo != null) {
+            analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.QUIZ_COUNT, quizCountTo.toString())
+            logSettingsChangeEvent(settingType = "quiz_count", value = "$quizCountFrom → $quizCountTo")
+        }
+    }
+
+    private fun logSettingsChangeEvent(settingType: String, value: String?) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.SettingsChange.PARAM_SETTING_TYPE, settingType)
+            if (value != null) {
+                putString(TeumAnalyticsEvent.SettingsChange.PARAM_VALUE, value)
+            }
+        }
+        analytics.logEvent(TeumAnalyticsEvent.SettingsChange.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
