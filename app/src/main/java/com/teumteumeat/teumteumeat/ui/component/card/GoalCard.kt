@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.BuildConfig
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.ui.component.mypage.TagChip
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalCardUiModel
@@ -193,6 +194,7 @@ fun GoalCardStatesPreview() {
                 // 1. 기본 상태 (미선택, 미완료)
                 GoalCard(
                     uiModel = GoalCardUiModel(
+                        type = GoalTypeUiState.CATEGORY,
                         goalId = 1,
                         weekText = "1주차",
                         difficulty = Difficulty.EASY,
@@ -210,6 +212,7 @@ fun GoalCardStatesPreview() {
                 // 2. 선택된 상태 (isSelected = true)
                 GoalCard(
                     uiModel = GoalCardUiModel(
+                        type = GoalTypeUiState.CATEGORY,
                         goalId = 2,
                         weekText = "2주차",
                         difficulty = Difficulty.EASY,
@@ -227,6 +230,7 @@ fun GoalCardStatesPreview() {
                 // 3. 만료된 상태 (isCompleted = true) - 검은색 오버레이 테스트
                 GoalCard(
                     uiModel = GoalCardUiModel(
+                        type = GoalTypeUiState.CATEGORY,
                         goalId = 3,
                         weekText = "3주차",
                         difficulty = Difficulty.MEDIUM,
@@ -244,6 +248,7 @@ fun GoalCardStatesPreview() {
                 // 3. 완료된 상태 (isCompleted = true) - 검은색 오버레이 테스트
                 GoalCard(
                     uiModel = GoalCardUiModel(
+                        type = GoalTypeUiState.CATEGORY,
                         goalId = 3,
                         weekText = "3주차",
                         difficulty = Difficulty.MEDIUM,
@@ -261,6 +266,7 @@ fun GoalCardStatesPreview() {
                 // 4. 설명(description)이 없는 기본 상태
                 GoalCard(
                     uiModel = GoalCardUiModel(
+                        type = GoalTypeUiState.CATEGORY,
                         goalId = 4,
                         weekText = "4주차",
                         difficulty = Difficulty.HARD,

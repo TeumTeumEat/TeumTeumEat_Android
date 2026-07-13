@@ -179,16 +179,38 @@ class TeumAnalyticsLogger @Inject constructor(
      * @param goalType 선택한 학습 방식 — [GoalTypeUiState.CATEGORY] 또는 [GoalTypeUiState.DOCUMENT]
      */
     fun logLearningTypeSelect(goalType: GoalTypeUiState) {
-        val value = when (goalType) {
-            GoalTypeUiState.CATEGORY -> "category"
-            GoalTypeUiState.DOCUMENT -> "pdf"
-            GoalTypeUiState.NONE -> return
-        }
+        val value = goalType.toAnalyticsValue() ?: return
         analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.LEARNING_TYPE, value)
         val params = Bundle().apply {
             putString(TeumAnalyticsEvent.LearningTypeSelect.PARAM_LEARNING_TYPE, value)
         }
         analytics.logEvent(TeumAnalyticsEvent.LearningTypeSelect.NAME, params)
+    }
+
+    /**
+     * 학습 주제 변경 완료 이벤트를 로깅합니다 ([TeumAnalyticsEvent.TopicChange]).
+     * 변경 후 학습 유형을 User Property([TeumAnalyticsEvent.UserProperties.LEARNING_TYPE])로도 갱신합니다.
+     *
+     * @param fromType 변경 전 학습 유형 — [GoalTypeUiState.CATEGORY] 또는 [GoalTypeUiState.DOCUMENT]
+     * @param toType   변경 후 학습 유형 — [GoalTypeUiState.CATEGORY] 또는 [GoalTypeUiState.DOCUMENT]
+     */
+    fun logTopicChange(fromType: GoalTypeUiState, toType: GoalTypeUiState) {
+        val fromValue = fromType.toAnalyticsValue() ?: return
+        val toValue = toType.toAnalyticsValue() ?: return
+
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.LEARNING_TYPE, toValue)
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.TopicChange.PARAM_FROM_TYPE, fromValue)
+            putString(TeumAnalyticsEvent.TopicChange.PARAM_TO_TYPE, toValue)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.TopicChange.NAME, params)
+    }
+
+    /** Analytics 파라미터 값 변환 — [GoalTypeUiState.NONE]은 수집 대상이 아니므로 null */
+    private fun GoalTypeUiState.toAnalyticsValue(): String? = when (this) {
+        GoalTypeUiState.CATEGORY -> "category"
+        GoalTypeUiState.DOCUMENT -> "pdf"
+        GoalTypeUiState.NONE -> null
     }
 
     /**

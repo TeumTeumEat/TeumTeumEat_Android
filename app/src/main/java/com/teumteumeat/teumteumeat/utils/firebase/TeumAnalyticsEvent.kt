@@ -851,4 +851,27 @@ object TeumAnalyticsEvent {
         const val NAME = "mypage_view"
         const val PARAM_DATE = "date" // "yyyy-MM-dd", 예: "2025-01-01"
     }
+
+    /**
+     * 학습 주제 변경 완료 이벤트
+     *
+     * | 파라미터  | 타입   | 예시               | 목적              |
+     * |-----------|--------|--------------------|-------------------|
+     * | from_type | String | "category" / "pdf" | 변경 전 학습 유형 |
+     * | to_type   | String | "category" / "pdf" | 변경 후 학습 유형 |
+     *
+     * ## 측정 목적
+     * - 주제 변경 패턴 파악 (category ↔ pdf 전환 흐름)
+     * - 변경 후 학습 미진행으로 인한 이탈 신호 탐지 (GA4 퍼널: topic_change → summary/quiz 이벤트)
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListViewModel] onConfirmChangeGoal —
+     *   updateGoal 서버 성공 응답 시 1회
+     * - 현재 선택된 목표를 재선택한 경우(변경 아님)에는 발화하지 않는다
+     */
+    object TopicChange {
+        const val NAME = "topic_change"
+        const val PARAM_FROM_TYPE = "from_type" // "category" or "pdf"
+        const val PARAM_TO_TYPE = "to_type"     // "category" or "pdf"
+    }
 }
