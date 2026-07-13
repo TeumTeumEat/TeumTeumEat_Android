@@ -605,6 +605,19 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * 마이페이지 진입 이벤트를 로깅합니다 ([TeumAnalyticsEvent.MyPageView]).
+     * 마이페이지 진입(Activity 생성) 1회당 1번 호출됩니다.
+     *
+     * @param date 방문 날짜 — "yyyy-MM-dd" (예: "2025-01-01")
+     */
+    fun logMyPageView(date: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.MyPageView.PARAM_DATE, date)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.MyPageView.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.

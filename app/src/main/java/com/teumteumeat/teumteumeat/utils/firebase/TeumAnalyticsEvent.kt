@@ -831,4 +831,24 @@ object TeumAnalyticsEvent {
         const val PARAM_VERSION_CODE = "version_code"  // 예: "17"
         const val PARAM_VERSION_NAME = "version_name"  // 예: "1.0.17"
     }
+
+    /**
+     * 마이페이지 진입 이벤트
+     *
+     * | 파라미터 | 타입   | 예시         | 목적           |
+     * |---------|--------|--------------|----------------|
+     * | date    | String | "2025-01-01" | 방문 날짜 기록 |
+     *
+     * ## 측정 목적
+     * - 마이페이지 이용률 측정
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.c1_mypage.MyPageViewModel] init 블록 —
+     *   마이페이지 진입(Activity 생성) 1회당 1번 발화
+     * - 화면 회전 등 구성 변경 시에는 ViewModel이 유지되므로 재발화하지 않는다
+     */
+    object MyPageView {
+        const val NAME = "mypage_view"
+        const val PARAM_DATE = "date" // "yyyy-MM-dd", 예: "2025-01-01"
+    }
 }
