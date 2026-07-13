@@ -14,6 +14,7 @@ data class UiStateGoalList(
     val errorMessage: String? = null,
 
     val currentGoalId: Long? = null,
+    val currentGoalType: GoalTypeUiState = GoalTypeUiState.NONE,
     val goals: List<GoalCardUiModel> = emptyList(),
 
     // ⭐ 주제 변경 확인 오버레이
@@ -23,6 +24,7 @@ data class UiStateGoalList(
 
 data class GoalCardUiModel(
     val goalId: Int,
+    val type: GoalTypeUiState,
 
     // 배지
     val weekText: String,        // "4주"
@@ -76,6 +78,7 @@ fun GetGoalResponse.toUiModel(
 
     return GoalCardUiModel(
         goalId = goalId,
+        type = type,
         weekText = studyPeriod,
         difficultyText = difficulty.toUiText(),
         difficulty = difficulty,
