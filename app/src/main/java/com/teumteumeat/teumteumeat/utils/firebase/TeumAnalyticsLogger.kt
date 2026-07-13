@@ -590,6 +590,21 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * LIB-005 — 주제별 학습 기록 재조회 이벤트를 로깅합니다.
+     * 발화 횟수를 제한하지 않고 주제별 탭의 학습 카드를 탭할 때마다 매번 호출됩니다.
+     *
+     * @param topic 카드가 속한 카테고리명 or PDF 파일명 (예: "React Native")
+     * @param date  클릭한 학습 카드의 학습 날짜 — "yyyy-MM-dd" (예: "2025-05-10")
+     */
+    fun logHistoryModalOpen(topic: String, date: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.HistoryModalOpen.PARAM_TOPIC, topic)
+            putString(TeumAnalyticsEvent.HistoryModalOpen.PARAM_DATE, date)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.HistoryModalOpen.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.

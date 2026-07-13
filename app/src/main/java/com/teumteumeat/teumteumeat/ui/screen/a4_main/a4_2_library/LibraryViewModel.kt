@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.domain.model.history.CalendarDailyItem
+import com.teumteumeat.teumteumeat.domain.model.history.LearningHistoryUiModel
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
@@ -263,6 +264,20 @@ class LibraryViewModel @Inject constructor(
         analyticsLogger.logLearningRecordByDateTap(
             date = date.toString(), // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
             topic = item.title,     // 주제명 or PDF 파일명 (서버 응답 그대로)
+        )
+    }
+
+    /**
+     * 📚 LIB-005 — 주제별 탭 학습 카드 탭 시 호출.
+     * 날짜별 탭의 동일 카드는 LIB-003([onDailyLearningRecordTapped])이 담당하므로
+     * 이 함수를 호출하지 않는다.
+     *
+     * topic은 카드가 속한 카테고리명(PDF 목표는 파일명), date는 카드의 학습 날짜를 사용한다.
+     */
+    fun onTopicLearningRecordTapped(categoryName: String, history: LearningHistoryUiModel) {
+        analyticsLogger.logHistoryModalOpen(
+            topic = categoryName,
+            date = history.date.toLocalDate().toString(), // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
         )
     }
 

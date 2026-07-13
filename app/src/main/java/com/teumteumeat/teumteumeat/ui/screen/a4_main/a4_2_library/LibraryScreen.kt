@@ -330,6 +330,12 @@ fun LibraryScreen(
                                                             dateText = history.dateText,
                                                             domainGoalTypeV1 = history.domainGoalTypeV1,
                                                             onClick = {
+                                                                // 📊 LIB-005 — 주제별 학습 기록 재조회 이벤트 (날짜별 탭 경로는 LIB-003)
+                                                                viewModel.onTopicLearningRecordTapped(
+                                                                    categoryName = category.categoryName,
+                                                                    history = history,
+                                                                )
+
                                                                 val intent = Intent(
                                                                     activity,
                                                                     DailySummaryActivity::class.java
