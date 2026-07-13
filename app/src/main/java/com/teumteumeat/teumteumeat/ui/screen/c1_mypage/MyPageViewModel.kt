@@ -208,6 +208,7 @@ class MyPageViewModel @Inject constructor(
             when (result) {
                 is ApiResultV2.Success -> {
                     _uiState.update { it.copy(isAlarmEnabled = isAlarmEnabled) }
+                    analyticsLogger.logPushToggle(enabled = isAlarmEnabled)
                 }
 
                 is ApiResultV2.SessionExpired -> {
