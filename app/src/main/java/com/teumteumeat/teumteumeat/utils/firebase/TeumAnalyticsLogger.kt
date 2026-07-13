@@ -627,6 +627,23 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * 홈화면 진입 이벤트를 로깅합니다 ([TeumAnalyticsEvent.HomeView]).
+     * DAU 측정 기준 이벤트로, 홈화면 퀴즈 상태 조회 완료 시점에 날짜별 1회 호출됩니다.
+     *
+     * @param quizDoneToday    당일 퀴즈 완료 여부 — "true" | "false" | 조회 실패 시 "unknown"
+     * @param summaryDoneToday 당일 요약 생성 여부 — "true" | "false" | 조회 실패 시 "unknown"
+     * @param date             방문 날짜 — "yyyy-MM-dd" (예: "2025-01-01")
+     */
+    fun logHomeView(quizDoneToday: String, summaryDoneToday: String, date: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.HomeView.PARAM_QUIZ_DONE_TODAY, quizDoneToday)
+            putString(TeumAnalyticsEvent.HomeView.PARAM_SUMMARY_DONE_TODAY, summaryDoneToday)
+            putString(TeumAnalyticsEvent.HomeView.PARAM_DATE, date)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.HomeView.NAME, params)
+    }
+
+    /**
      * 마이페이지 진입 이벤트를 로깅합니다 ([TeumAnalyticsEvent.MyPageView]).
      * 마이페이지 진입(Activity 생성) 1회당 1번 호출됩니다.
      *

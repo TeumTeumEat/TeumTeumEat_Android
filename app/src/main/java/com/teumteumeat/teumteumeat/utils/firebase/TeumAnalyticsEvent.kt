@@ -833,6 +833,33 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * 홈화면 진입 이벤트 — DAU 측정 기준 이벤트
+     *
+     * | 파라미터           | 타입   | 예시                          | 목적                     |
+     * |--------------------|--------|-------------------------------|--------------------------|
+     * | quiz_done_today    | String | "true" / "false" / "unknown"  | 당일 퀴즈 완료 여부      |
+     * | summary_done_today | String | "true" / "false" / "unknown"  | 당일 요약 생성 여부      |
+     * | date               | String | "2025-01-01"                  | 방문 날짜 기록           |
+     *
+     * ## 측정 목적
+     * - DAU 측정 기준 이벤트
+     * - 활성 사용자 중 당일 학습 활동(퀴즈 완료·요약 생성) 비율 분석
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel] loadHomeState —
+     *   퀴즈 상태 조회 완료 시점에 날짜별 1회 발화 (같은 날 재조회 시 중복 발화하지 않음)
+     * - 퀴즈 상태는 서버 응답 후에만 정확하므로 init이 아닌 조회 완료 시점에 발화한다
+     * - 퀴즈 상태 조회 실패 시에도 DAU 누락 방지를 위해 "unknown" 값으로 발화한다 (세션 만료 제외)
+     * - 자정을 넘겨 앱을 계속 사용하는 경우 날짜 변경 감지 재조회 시 새 날짜로 재발화한다
+     */
+    object HomeView {
+        const val NAME = "home_view"
+        const val PARAM_QUIZ_DONE_TODAY = "quiz_done_today"       // "true" | "false" | "unknown"
+        const val PARAM_SUMMARY_DONE_TODAY = "summary_done_today" // "true" | "false" | "unknown"
+        const val PARAM_DATE = "date"                             // "yyyy-MM-dd", 예: "2025-01-01"
+    }
+
+    /**
      * 마이페이지 진입 이벤트
      *
      * | 파라미터 | 타입   | 예시         | 목적           |
