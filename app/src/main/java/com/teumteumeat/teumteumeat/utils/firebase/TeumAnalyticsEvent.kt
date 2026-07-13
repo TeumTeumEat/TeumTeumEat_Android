@@ -860,6 +860,30 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * '오늘의 간식' 오브젝트 탭 이벤트
+     *
+     * | 파라미터        | 타입   | 예시                                              | 목적                    |
+     * |-----------------|--------|---------------------------------------------------|-------------------------|
+     * | quiz_done_today | String | "true" / "false"                                  | 당일 퀴즈 완료 여부     |
+     * | snack_state     | String | "available" / "consumed" / "completed" / "expired" | 탭 시점의 간식 상태     |
+     *
+     * ## 측정 목적
+     * - 홈→퀴즈 전환율 측정 (GA4 퍼널: snack_tap → quiz_start)
+     * - 전환율 분모는 학습 플로우로 진입 가능한 snack_state == "available" 탭만 사용
+     * - consumed/completed/expired 상태의 죽은 탭 비율로 UX 마찰 측정
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel] onSnackTapped —
+     *   홈화면 중앙 음식 이미지(BouncingImage) 탭 시 매번 발화 (횟수 제한 없음, 퍼널 왜곡 방지)
+     * - available 상태에서만 탭이 SummaryActivity(요약→퀴즈 플로우)로 이어진다
+     */
+    object SnackTap {
+        const val NAME = "snack_tap"
+        const val PARAM_QUIZ_DONE_TODAY = "quiz_done_today" // "true" | "false"
+        const val PARAM_SNACK_STATE = "snack_state"         // "available" | "consumed" | "completed" | "expired"
+    }
+
+    /**
      * 마이페이지 진입 이벤트
      *
      * | 파라미터 | 타입   | 예시         | 목적           |
