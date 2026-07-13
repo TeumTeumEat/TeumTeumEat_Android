@@ -256,13 +256,13 @@ object TeumAnalyticsEvent {
      * User Property는 최대 25개, 키 최대 24자, 값 최대 36자 제한.
      */
     object UserProperties {
-        /** 선호 하루 퀴즈 수 — 온보딩 SetRoutineScreen에서 설정 */
+        /** 선호 하루 퀴즈 수 — 온보딩 SetRoutineScreen에서 설정, 설정 변경([SettingsChange]) 시 갱신 */
         const val QUIZ_COUNT = "quiz_count"  // "3" | "5" | "7" | "10"
 
-        /** 집에서 나오는 시간 — 온보딩 SetRoutineScreen에서 설정, 포맷: "HH:mm" */
+        /** 집에서 나오는 시간 — 온보딩 SetRoutineScreen에서 설정, 설정 변경([SettingsChange]) 시 갱신, 포맷: "HH:mm" */
         const val COMMUTE_TIME_FIRST = "commute_time_first"   // "08:00"
 
-        /** 집에 돌아가는 시간 — 온보딩 SetRoutineScreen에서 설정, 포맷: "HH:mm" */
+        /** 집에 돌아가는 시간 — 온보딩 SetRoutineScreen에서 설정, 설정 변경([SettingsChange]) 시 갱신, 포맷: "HH:mm" */
         const val COMMUTE_TIME_SECOND = "commute_time_second" // "18:00"
 
         /**
@@ -895,5 +895,33 @@ object TeumAnalyticsEvent {
     object PushToggle {
         const val NAME = "push_toggle"
         const val PARAM_ENABLED = "enabled" // "true" | "false"
+    }
+
+    /**
+     * 마이페이지 사용 설정 변경 이벤트
+     *
+     * | 파라미터     | 타입   | 예시                                    | 목적                |
+     * |--------------|--------|-----------------------------------------|---------------------|
+     * | setting_type | String | "nickname" / "commute_time" / "quiz_count" | 변경한 설정 항목    |
+     * | value        | String | "3 → 5", "08:00-18:00 → 09:00-18:00"    | 변경 전후 값        |
+     *
+     * ## 측정 목적
+     * - 설정 변경 빈도 및 항목 파악 (어떤 설정을 얼마나 자주 바꾸는지)
+     * - User Property [UserProperties.QUIZ_COUNT], [UserProperties.COMMUTE_TIME_FIRST],
+     *   [UserProperties.COMMUTE_TIME_SECOND]를 함께 갱신하여 온보딩 이후 stale해지는
+     *   현재값 기준 세그먼트 분석 유지
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.c3_edit_user_info.EditUserInfoViewModel] saveUserInfo —
+     *   저장 버튼 클릭 시, 변경된 항목마다 각 1건 발화 (닉네임+퀴즈 수 동시 변경 시 2건)
+     * - 변경된 항목이 없으면 발화하지 않는다
+     * - 닉네임(nickname)은 개인정보 성격이라 value를 수집하지 않는다
+     * - 저장 클릭 직후 Activity가 finish되어 API 성공 콜백 도달이 보장되지 않으므로,
+     *   서버 반영 성공이 아닌 "저장 시도(변경 항목 존재)" 시점에 발화한다
+     */
+    object SettingsChange {
+        const val NAME = "settings_change"
+        const val PARAM_SETTING_TYPE = "setting_type" // "nickname" | "commute_time" | "quiz_count"
+        const val PARAM_VALUE = "value" // "3 → 5", "08:00-18:00 → 09:00-18:00" (nickname은 미수집)
     }
 }
