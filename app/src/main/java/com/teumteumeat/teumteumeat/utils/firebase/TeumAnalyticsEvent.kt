@@ -658,27 +658,73 @@ object TeumAnalyticsEvent {
     /**
      * LIB-001 · 히스토리 탭(캘린더) 진입 이벤트
      *
-     * | 파라미터 | 타입   | 예시         | 목적                    |
-     * |---------|--------|--------------|-------------------------|
-     * | month   | String | "2025-05"    | 진입 시점의 년월        |
-     * | date    | String | "2025-05-01" | 진입 시점의 날짜        |
+     * | 파라미터           | 타입   | 예시         | 목적                                        |
+     * |-------------------|--------|--------------|---------------------------------------------|
+     * | month             | String | "2025-05"    | 진입 시 표시 중인 캘린더 월                 |
+     * | date              | String | "2025-05-01" | 진입 시점의 날짜                            |
+     * | month_stamp_count | Long   | 3            | 표시 월에 획득한 스탬프 수. 로드 실패 시 -1 |
+     * | has_month_stamp   | String | "true"       | "true" / "false" / "unknown"(로드 실패)     |
+     * | total_stamps      | Long   | 27           | 누적 스탬프 수. 로드 실패 시 -1             |
      *
      * 다른 이벤트와 달리 최초 1회로 제한하지 않는다 — 히스토리 탭에 진입할 때마다 매번 발화한다.
+     * 단, 화면 회전·다크모드 전환 등 Activity 재생성으로 인한 컴포지션 재구성 시에는 발화하지 않는다.
      *
      * ## 측정 목적
      * - 일별/월별 히스토리 탭 이용률 측정
      * - `stamp_earned` 발생일과 `calendar_view` 발생일 비교로 스트릭/스탬프 기능의
      *   히스토리 탭 유입 효과 검증
+     * - has_month_stamp = "true" 진입 유저 중 `calendar_date_tap`(has_stamp="true") 발생
+     *   유저 비율로 스탬프 확인형 vs 단순 조회형 유저 구분 (BigQuery 조인 분석,
+     *   GA4 맞춤 측정기준 등록 불필요)
      *
      * ## 발생 시점
      * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onCalendarViewEntered]
      *   [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryScreen]의
-     *   `LaunchedEffect(Unit)`에서 진입할 때마다 호출 (하단 탭 재방문 포함)
+     *   `DisposableEffect(Unit)`에서 진입할 때마다 호출 (하단 탭 재방문 포함)
+     * - 첫 진입 시에는 캘린더 데이터 로드 완료 후 발화한다 — 스탬프 파라미터에 정확한 값을
+     *   싣기 위함. 로드 실패 시에도 unknown/-1로 발화해 탭 이용률 모수는 보존한다.
+     *   세션 만료 시에는 발화하지 않는다.
+     * - Activity 재생성(config change)으로 인한 재진입 시에는 ViewModel의 발화 플래그로 중복 발화 차단
+     *   — 탭을 실제로 떠날 때(`onDispose && !isChangingConfigurations`)만 플래그 리셋
      */
     object CalendarView {
         const val NAME = "calendar_view"
         const val PARAM_MONTH = "month" // "yyyy-MM", 예: "2025-05"
         const val PARAM_DATE = "date"   // "yyyy-MM-dd", 예: "2025-05-01"
+        const val PARAM_MONTH_STAMP_COUNT = "month_stamp_count" // Long, 로드 실패 시 -1
+        const val PARAM_HAS_MONTH_STAMP = "has_month_stamp"     // "true" | "false" | "unknown"
+        const val PARAM_TOTAL_STAMPS = "total_stamps"           // Long, 로드 실패 시 -1
+    }
+
+    /**
+     * LIB-002 · 캘린더 날짜 탭 이벤트
+     *
+     * | 파라미터   | 타입   | 예시         | 목적                          |
+     * |-----------|--------|--------------|-------------------------------|
+     * | date      | String | "2025-05-19" | 탭한 날짜                     |
+     * | has_stamp | String | "true"       | 탭한 날짜의 스탬프 존재 여부  |
+     *
+     * 발화 횟수를 제한하지 않는다 — 날짜 셀을 탭할 때마다 매번 발화한다.
+     *
+     * ## has_stamp 판단 기준
+     * - 클라이언트가 캘린더 UI 렌더링과 동일한 소스(서버 응답 기반 `solvedDates`)로 판단
+     * - 미스탬프 날짜는 이벤트만 발화되고 화면 동작(선택/일별 상세 조회)은 없다
+     *
+     * ## 측정 목적
+     * - `calendar_view` 대비 `calendar_date_tap` 발생 비율로 히스토리 탭 이용 방식 구분
+     *   (단순 조회 vs 날짜 상세 탐색)
+     * - has_stamp = "true" 날짜를 탭하는 유저 비율 측정 (스탬프 기록 확인 행동 유저 식별)
+     * - GA4 맞춤 측정기준 등록 불필요 — has_stamp 분석은 BigQuery로 처리
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onCalendarDateTapped]
+     *   캘린더 날짜 셀 탭 시 호출. 히스토리 탭 진입 시 오늘 날짜 자동 선택
+     *   (`onCalendarDateSelected` 직접 호출) 경로에서는 발화하지 않는다.
+     */
+    object CalendarDateTap {
+        const val NAME = "calendar_date_tap"
+        const val PARAM_DATE = "date"           // "yyyy-MM-dd", 예: "2025-05-19"
+        const val PARAM_HAS_STAMP = "has_stamp" // "true" | "false"
     }
 
     /**

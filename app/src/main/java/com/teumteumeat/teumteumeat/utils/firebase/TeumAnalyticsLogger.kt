@@ -526,16 +526,44 @@ class TeumAnalyticsLogger @Inject constructor(
     /**
      * LIB-001 — 히스토리 탭(캘린더) 진입 이벤트를 로깅합니다.
      * 최초 1회로 제한하지 않고 탭에 진입할 때마다 매번 호출됩니다.
+     * 첫 진입 시에는 캘린더 데이터 로드 완료 후 호출되어 스탬프 파라미터에 정확한 값을 싣습니다.
      *
-     * @param month 진입 시점의 년월 — "yyyy-MM" (예: "2025-05")
-     * @param date  진입 시점의 날짜 — "yyyy-MM-dd" (예: "2025-05-01")
+     * @param month           진입 시 표시 중인 캘린더 월 — "yyyy-MM" (예: "2025-05")
+     * @param date            진입 시점의 날짜 — "yyyy-MM-dd" (예: "2025-05-01")
+     * @param monthStampCount 표시 월에 획득한 스탬프 수 — 로드 실패 시 -1
+     * @param hasMonthStamp   표시 월 스탬프 보유 여부 — "true" | "false" | "unknown"(로드 실패)
+     * @param totalStamps     누적 스탬프 수 — 로드 실패 시 -1
      */
-    fun logCalendarView(month: String, date: String) {
+    fun logCalendarView(
+        month: String,
+        date: String,
+        monthStampCount: Long,
+        hasMonthStamp: String,
+        totalStamps: Long,
+    ) {
         val params = Bundle().apply {
             putString(TeumAnalyticsEvent.CalendarView.PARAM_MONTH, month)
             putString(TeumAnalyticsEvent.CalendarView.PARAM_DATE, date)
+            putLong(TeumAnalyticsEvent.CalendarView.PARAM_MONTH_STAMP_COUNT, monthStampCount)
+            putString(TeumAnalyticsEvent.CalendarView.PARAM_HAS_MONTH_STAMP, hasMonthStamp)
+            putLong(TeumAnalyticsEvent.CalendarView.PARAM_TOTAL_STAMPS, totalStamps)
         }
         analytics.logEvent(TeumAnalyticsEvent.CalendarView.NAME, params)
+    }
+
+    /**
+     * LIB-002 — 캘린더 날짜 탭 이벤트를 로깅합니다.
+     * 발화 횟수를 제한하지 않고 날짜 셀을 탭할 때마다 매번 호출됩니다.
+     *
+     * @param date     탭한 날짜 — "yyyy-MM-dd" (예: "2025-05-19")
+     * @param hasStamp 탭한 날짜의 스탬프 존재 여부 — "true" | "false"
+     */
+    fun logCalendarDateTap(date: String, hasStamp: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.CalendarDateTap.PARAM_DATE, date)
+            putString(TeumAnalyticsEvent.CalendarDateTap.PARAM_HAS_STAMP, hasStamp)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.CalendarDateTap.NAME, params)
     }
 
     /**
