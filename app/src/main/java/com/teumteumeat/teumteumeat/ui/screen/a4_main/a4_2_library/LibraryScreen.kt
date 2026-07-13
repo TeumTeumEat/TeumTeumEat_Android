@@ -187,6 +187,9 @@ fun LibraryScreen(
                                     .format(DateTimeFormatter.ofPattern("MM.dd")),
                                 domainGoalTypeV1 = item.type,   // ✅ Domain → UI 그대로 전달
                                 onClick = {
+                                    // 📊 LIB-003 — 일자별 학습 기록 재조회 이벤트 (주제별 탭 경로는 미발화)
+                                    viewModel.onDailyLearningRecordTapped(item)
+
                                     val intent = Intent(
                                         activity,
                                         DailySummaryActivity::class.java

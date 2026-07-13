@@ -728,6 +728,35 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * LIB-003 · 일별 학습 기록 카드 탭 이벤트
+     *
+     * | 파라미터 | 타입   | 예시              | 목적                          |
+     * |---------|--------|-------------------|-------------------------------|
+     * | date    | String | "2025-05-19"      | 조회한 캘린더 선택 날짜       |
+     * | topic   | String | "관세사 관세법"    | 주제명 or PDF 파일명          |
+     *
+     * 발화 횟수를 제한하지 않는다 — 학습 기록 카드를 탭할 때마다 매번 발화한다.
+     *
+     * ## 측정 목적
+     * - 일자별 과거 학습 내용 재조회 빈도 측정
+     * - GA4 맞춤 측정기준 등록 불필요 — 분석은 BigQuery로 처리
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onDailyLearningRecordTapped]
+     *   히스토리 탭 진입 → 캘린더 날짜 클릭 → 하단 학습 기록 카드 탭(상세 화면 진입) 시 호출
+     * - 주제별 탭의 동일 카드(카테고리 펼침 목록)는 "날짜 클릭" 맥락이 없으므로 발화하지 않는다
+     *
+     * ## 비고
+     * - 스펙 원문의 이벤트명 `learing_record_by_date_tap`은 오타로 확인되어
+     *   `learning_record_by_date_tap`으로 교정해 구현 (스펙 시트 측 수정 필요)
+     */
+    object LearningRecordByDateTap {
+        const val NAME = "learning_record_by_date_tap"
+        const val PARAM_DATE = "date"   // "yyyy-MM-dd", 예: "2025-05-19"
+        const val PARAM_TOPIC = "topic" // 주제명 or PDF 파일명
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |
