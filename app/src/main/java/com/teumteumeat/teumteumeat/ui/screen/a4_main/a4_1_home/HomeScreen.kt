@@ -305,6 +305,9 @@ fun HomeScreen(
                             ) {
 
                                 BouncingImage(foodRes) {
+                                    // 간식 탭 이벤트 (홈→퀴즈 전환율 측정, 매 탭 발화)
+                                    viewModel.onSnackTapped()
+
                                     val latestQuery = currentUiState.summaryQuery
                                     when (uiState.snackState) {
                                         SnackState.Available -> {

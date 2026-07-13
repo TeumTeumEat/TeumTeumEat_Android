@@ -644,6 +644,21 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * '오늘의 간식' 오브젝트 탭 이벤트를 로깅합니다 ([TeumAnalyticsEvent.SnackTap]).
+     * 홈→퀴즈 전환율 측정용 퍼널 이벤트로, 발화 횟수를 제한하지 않고 탭할 때마다 매번 호출됩니다.
+     *
+     * @param quizDoneToday 당일 퀴즈 완료 여부 — "true" | "false"
+     * @param snackState    탭 시점의 간식 상태 — "available" | "consumed" | "completed" | "expired"
+     */
+    fun logSnackTap(quizDoneToday: String, snackState: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.SnackTap.PARAM_QUIZ_DONE_TODAY, quizDoneToday)
+            putString(TeumAnalyticsEvent.SnackTap.PARAM_SNACK_STATE, snackState)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.SnackTap.NAME, params)
+    }
+
+    /**
      * 마이페이지 진입 이벤트를 로깅합니다 ([TeumAnalyticsEvent.MyPageView]).
      * 마이페이지 진입(Activity 생성) 1회당 1번 호출됩니다.
      *

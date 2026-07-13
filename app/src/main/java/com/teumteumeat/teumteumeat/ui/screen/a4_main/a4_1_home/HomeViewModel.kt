@@ -162,6 +162,26 @@ class HomeViewModel @Inject constructor(
         )
     }
 
+    /**
+     * '오늘의 간식' 오브젝트 탭 이벤트(snack_tap)를 발화합니다 — 홈→퀴즈 전환율 측정용.
+     *
+     * 퍼널 이벤트이므로 발화 횟수를 제한하지 않고 탭할 때마다 매번 호출합니다.
+     * 어떤 snackState에서든 발화하며, 전환율 계산 시 snack_state == "available"만 분모로 사용합니다.
+     */
+    fun onSnackTapped() {
+        val state = _uiState.value
+        val snackStateName = when (state.snackState) {
+            SnackState.Available -> "available"
+            is SnackState.Consumed -> "consumed"
+            SnackState.Completed -> "completed"
+            SnackState.Expired -> "expired"
+        }
+        analyticsLogger.logSnackTap(
+            quizDoneToday = state.hasSolvedToday.toString(),
+            snackState = snackStateName,
+        )
+    }
+
     private fun observeAdStatus() {
         viewModelScope.launch {
             // 광고 상태를 관찰하여 null이 되면 자동으로 로드
