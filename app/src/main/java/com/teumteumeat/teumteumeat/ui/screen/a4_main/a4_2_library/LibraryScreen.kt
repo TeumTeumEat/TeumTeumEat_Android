@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -89,9 +90,15 @@ fun LibraryScreen(
     }
 
     // 📊 LIB-001 히스토리 탭 진입 이벤트 — 하단 탭 재방문 시에도 재실행되도록
-    // (ViewModel init{}이 아닌) Composable의 LaunchedEffect(Unit)에서 매번 호출
-    LaunchedEffect(Unit) {
+    // Composable 진입마다 호출하되, 화면 회전 등 Activity 재생성 시에는 미발화.
+    // 탭을 실제로 떠날 때(dispose && !isChangingConfigurations)만 플래그를 리셋한다.
+    DisposableEffect(Unit) {
         viewModel.onCalendarViewEntered()
+        onDispose {
+            if (!activity.isChangingConfigurations) {
+                viewModel.onCalendarViewExited()
+            }
+        }
     }
 
     Box(
@@ -166,9 +173,9 @@ fun LibraryScreen(
                                 viewModel.onCalendarMonthChanged(yearMonth)
                             },
 
-                            // ✅ 날짜 클릭 시
+                            // ✅ 날짜 클릭 시 — LIB-002 발화 포함 유저 탭 전용 진입점
                             onDateClick = { date ->
-                                viewModel.onCalendarDateSelected(date)
+                                viewModel.onCalendarDateTapped(date)
                             }
                         )
 
