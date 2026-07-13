@@ -779,6 +779,35 @@ object TeumAnalyticsEvent {
     }
 
     /**
+     * LIB-005 · 주제별 학습 기록 재조회 이벤트
+     *
+     * | 파라미터 | 타입   | 예시           | 목적                                  |
+     * |---------|--------|----------------|---------------------------------------|
+     * | topic   | String | "React Native" | 카드가 속한 카테고리명 or PDF 파일명  |
+     * | date    | String | "2025-05-10"   | 클릭한 학습 카드의 학습 날짜          |
+     *
+     * 발화 횟수를 제한하지 않는다 — 학습 카드를 탭할 때마다 매번 발화한다.
+     *
+     * ## 측정 목적
+     * - 주제별 과거 학습 내용 재조회 빈도 측정
+     * - GA4 맞춤 측정기준 등록 불필요 — 분석은 BigQuery로 처리
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onTopicLearningRecordTapped]
+     *   주제별 탭 → 카테고리 펼침 → 학습 카드 탭(상세 화면 진입) 시 호출
+     * - 날짜별 탭의 동일 카드는 [LearningRecordByDateTap](LIB-003)이 담당하므로 발화하지 않는다
+     *
+     * ## 비고
+     * - 이벤트명의 "modal"은 스펙 시트 유래 — Android 구현은 모달이 아닌
+     *   상세 화면(DailySummaryActivity) 이동이지만 스펙과의 정합을 위해 이름을 유지
+     */
+    object HistoryModalOpen {
+        const val NAME = "history_modal_open"
+        const val PARAM_TOPIC = "topic" // 카테고리명 or PDF 파일명
+        const val PARAM_DATE = "date"   // "yyyy-MM-dd", 예: "2025-05-10"
+    }
+
+    /**
      * APP-001 · 앱 설치 또는 업데이트 후 첫 시작 이벤트
      *
      * | 파라미터      | 타입   | 예시    | 목적                          |
