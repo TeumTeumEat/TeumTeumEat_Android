@@ -640,6 +640,22 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * 마이페이지 푸시 알림 토글 변경 이벤트를 로깅합니다 ([TeumAnalyticsEvent.PushToggle]).
+     * 변경 후 알림 상태를 User Property([TeumAnalyticsEvent.UserProperties.NOTIFY_ENABLED])로도 갱신합니다.
+     *
+     * 서버 반영(디바이스 토큰 등록/삭제) 성공 시에만 호출됩니다.
+     *
+     * @param enabled 변경 후 알림 활성 상태 — true(켬) / false(끔)
+     */
+    fun logPushToggle(enabled: Boolean) {
+        analytics.setUserProperty(TeumAnalyticsEvent.UserProperties.NOTIFY_ENABLED, enabled.toString())
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.PushToggle.PARAM_ENABLED, enabled.toString())
+        }
+        analytics.logEvent(TeumAnalyticsEvent.PushToggle.NAME, params)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.

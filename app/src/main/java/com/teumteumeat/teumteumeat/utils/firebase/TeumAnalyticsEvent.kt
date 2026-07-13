@@ -273,7 +273,7 @@ object TeumAnalyticsEvent {
          */
         const val OS_TYPE = "os_type"  // "Android" | "iOS"
 
-        /** 알림 활성 상태 — 온보딩 알림 권한 허용 후 설정 */
+        /** 알림 활성 상태 — 온보딩 알림 권한 허용 후 설정, 마이페이지 푸시 토글 변경([PushToggle]) 시 갱신 */
         const val NOTIFY_ENABLED = "notify_enabled"  // "true" | "false"
 
         /** 학습 방식 선호도 — 온보딩 SelectLearningMethodScreen에서 설정 */
@@ -873,5 +873,27 @@ object TeumAnalyticsEvent {
         const val NAME = "topic_change"
         const val PARAM_FROM_TYPE = "from_type" // "category" or "pdf"
         const val PARAM_TO_TYPE = "to_type"     // "category" or "pdf"
+    }
+
+    /**
+     * 마이페이지 푸시 알림 토글 변경 이벤트
+     *
+     * | 파라미터 | 타입   | 예시             | 목적                |
+     * |---------|--------|------------------|---------------------|
+     * | enabled | String | "true" / "false" | 변경 후 알림 활성 상태 |
+     *
+     * ## 측정 목적
+     * - 알림 설정 변경 추이 파악 (켜기/끄기 비율, 시계열 변화)
+     * - User Property [UserProperties.NOTIFY_ENABLED]를 함께 갱신하여
+     *   현재 알림 상태 기준 사용자 세그먼트 분석
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.c1_mypage.MyPageViewModel] updateAlarmInternal —
+     *   디바이스 토큰 등록/삭제 서버 반영 성공 시 1회
+     * - 권한 거절·설정 미완료 등으로 실제 설정이 변경되지 않은 경우에는 발화하지 않는다
+     */
+    object PushToggle {
+        const val NAME = "push_toggle"
+        const val PARAM_ENABLED = "enabled" // "true" | "false"
     }
 }
