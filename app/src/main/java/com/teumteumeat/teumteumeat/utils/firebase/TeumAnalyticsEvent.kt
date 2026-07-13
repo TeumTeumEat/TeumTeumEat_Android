@@ -678,7 +678,7 @@ object TeumAnalyticsEvent {
      *   GA4 맞춤 측정기준 등록 불필요)
      *
      * ## 발생 시점
-     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onCalendarViewEntered]
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onLibraryScreenEntered]
      *   [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryScreen]의
      *   `DisposableEffect(Unit)`에서 진입할 때마다 호출 (하단 탭 재방문 포함)
      * - 첫 진입 시에는 캘린더 데이터 로드 완료 후 발화한다 — 스탬프 파라미터에 정확한 값을
@@ -754,6 +754,28 @@ object TeumAnalyticsEvent {
         const val NAME = "learning_record_by_date_tap"
         const val PARAM_DATE = "date"   // "yyyy-MM-dd", 예: "2025-05-19"
         const val PARAM_TOPIC = "topic" // 주제명 or PDF 파일명
+    }
+
+    /**
+     * LIB-004 · 도서관(히스토리 주제별 탭) 진입 이벤트
+     *
+     * 파라미터 없음.
+     *
+     * ## 측정 목적
+     * - 도서관(주제별 탭) 이용률 측정 — `calendar_view` 대비 발생 비율로
+     *   히스토리 화면 내 주제별 탭 이용 비중 파악
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.selectLibraryTab]
+     *   날짜별 → 주제별 탭 버튼 전환 시 발화 (주제별 탭이 이미 선택된 상태의 재탭은 미발화)
+     * - [com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_2_library.LibraryViewModel.onLibraryScreenEntered]
+     *   주제별 탭이 유지된 상태로 히스토리 화면에 재진입한 경우도 도서관 진입으로 발화
+     *   (Activity 스코프 ViewModel이라 하단 탭 이동 후 복귀 시 탭 상태가 유지됨)
+     * - Activity 재생성(화면 회전 등)으로 인한 재진입 시에는 `calendar_view`와 동일한
+     *   발화 플래그 + `isChangingConfigurations` 패턴으로 중복 발화 차단
+     */
+    object LibraryView {
+        const val NAME = "library_view"
     }
 
     /**

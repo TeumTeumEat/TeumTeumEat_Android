@@ -89,14 +89,14 @@ fun LibraryScreen(
         }
     }
 
-    // 📊 LIB-001 히스토리 탭 진입 이벤트 — 하단 탭 재방문 시에도 재실행되도록
+    // 📊 LIB-001/LIB-004 히스토리 화면 진입 이벤트 — 하단 탭 재방문 시에도 재실행되도록
     // Composable 진입마다 호출하되, 화면 회전 등 Activity 재생성 시에는 미발화.
     // 탭을 실제로 떠날 때(dispose && !isChangingConfigurations)만 플래그를 리셋한다.
     DisposableEffect(Unit) {
-        viewModel.onCalendarViewEntered()
+        viewModel.onLibraryScreenEntered()
         onDispose {
             if (!activity.isChangingConfigurations) {
-                viewModel.onCalendarViewExited()
+                viewModel.onLibraryScreenExited()
             }
         }
     }

@@ -37,9 +37,16 @@ class LibraryViewModel @Inject constructor(
      * LIB-001 발화 여부 플래그.
      * 이 ViewModel은 Activity 스코프라 config change(화면 회전 등)에도 유지되므로,
      * Activity 재생성으로 컴포지션이 재구성되어도 중복 발화를 막는다.
-     * 탭을 실제로 떠날 때만 [onCalendarViewExited]로 리셋된다.
+     * 탭을 실제로 떠날 때만 [onLibraryScreenExited]로 리셋된다.
      */
     private var hasLoggedCalendarView = false
+
+    /**
+     * LIB-004 발화 여부 플래그 — [hasLoggedCalendarView]와 동일한 회전 중복 방지 역할.
+     * 주제별 탭이 유지된 상태로 Activity가 재생성돼 [onLibraryScreenEntered]가
+     * 다시 호출되어도 중복 발화를 막는다.
+     */
+    private var hasLoggedLibraryView = false
 
     /** LIB-001 — 진입 시점에 캘린더 데이터 로드가 미완료면 로드 완료 후 발화하도록 예약하는 플래그 */
     private var pendingCalendarViewLog = false
@@ -51,22 +58,31 @@ class LibraryViewModel @Inject constructor(
     private var isCalendarDataLoadSucceeded = false
 
     /**
-     * LIB-001 — 히스토리 탭 진입 시 호출. 최초 1회로 제한하지 않고
+     * 히스토리 화면 진입 시 호출되는 화면 수준 콜백. 최초 1회로 제한하지 않고
      * [LibraryScreen]의 DisposableEffect(Unit)에서 매 진입마다 호출된다.
      * 단, 화면 회전 등 Activity 재생성으로 인한 재진입 시에는 발화하지 않는다.
      *
-     * 첫 진입처럼 캘린더 데이터 로드가 끝나지 않은 상태면 즉시 발화하지 않고
-     * [loadCalendarHistory] 완료 시점으로 발화를 미룬다 — 스탬프 파라미터
-     * (month_stamp_count / has_month_stamp / total_stamps)에 정확한 값을 싣기 위함.
+     * - LIB-001(calendar_view): 첫 진입처럼 캘린더 데이터 로드가 끝나지 않은 상태면
+     *   즉시 발화하지 않고 [loadCalendarHistory] 완료 시점으로 발화를 미룬다 — 스탬프
+     *   파라미터(month_stamp_count / has_month_stamp / total_stamps)에 정확한 값을 싣기 위함.
+     * - LIB-004(library_view): 주제별 탭이 유지된 상태로 화면에 진입한 경우
+     *   도서관 진입으로 집계해 발화한다 (탭 버튼 전환 발화는 [selectLibraryTab]).
      */
-    fun onCalendarViewEntered() {
-        if (hasLoggedCalendarView) return
-        hasLoggedCalendarView = true
+    fun onLibraryScreenEntered() {
+        if (!hasLoggedCalendarView) {
+            hasLoggedCalendarView = true
 
-        if (isCalendarDataLoadCompleted) {
-            logCalendarViewNow()
-        } else {
-            pendingCalendarViewLog = true
+            if (isCalendarDataLoadCompleted) {
+                logCalendarViewNow()
+            } else {
+                pendingCalendarViewLog = true
+            }
+        }
+
+        // LIB-004: 주제별 탭이 유지된 상태로 화면 진입한 경우도 도서관 진입으로 집계
+        if (_uiState.value.selectedLibraryTab == LibraryTabType.TOPIC && !hasLoggedLibraryView) {
+            hasLoggedLibraryView = true
+            analyticsLogger.logLibraryView()
         }
     }
 
@@ -96,11 +112,12 @@ class LibraryViewModel @Inject constructor(
     }
 
     /**
-     * LIB-001 — 유저가 히스토리 탭을 실제로 떠날 때 호출 (config change로 인한 dispose 제외).
-     * 플래그를 리셋해 탭 재방문 시 다시 발화되도록 한다.
+     * 유저가 히스토리 탭을 실제로 떠날 때 호출 (config change로 인한 dispose 제외).
+     * LIB-001/LIB-004 발화 플래그를 리셋해 탭 재방문 시 다시 발화되도록 한다.
      */
-    fun onCalendarViewExited() {
+    fun onLibraryScreenExited() {
         hasLoggedCalendarView = false
+        hasLoggedLibraryView = false
     }
 
 
@@ -303,11 +320,18 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun selectLibraryTab(tab: LibraryTabType) {
+        val previousTab = _uiState.value.selectedLibraryTab
+
         _uiState.update {
             it.copy(selectedLibraryTab = tab)
         }
 
         if (tab == LibraryTabType.TOPIC) {
+            // 📊 LIB-004: 재탭(TOPIC→TOPIC)은 미발화, 실제 전환 시에만 발화
+            if (previousTab != LibraryTabType.TOPIC) {
+                hasLoggedLibraryView = true
+                analyticsLogger.logLibraryView()
+            }
             fetchCategoryHistories()
         }
     }

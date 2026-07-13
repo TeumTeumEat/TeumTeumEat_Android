@@ -582,6 +582,14 @@ class TeumAnalyticsLogger @Inject constructor(
     }
 
     /**
+     * LIB-004 — 도서관(히스토리 주제별 탭) 진입 이벤트를 로깅합니다.
+     * 파라미터 없이 주제별 탭 진입(탭 버튼 전환 또는 주제별 탭 유지 상태 화면 재진입)마다 호출됩니다.
+     */
+    fun logLibraryView() {
+        analytics.logEvent(TeumAnalyticsEvent.LibraryView.NAME, null)
+    }
+
+    /**
      * 소셜 로그인 방식을 User Property로 등록합니다 ([TeumAnalyticsEvent.UserProperties.LOGIN_METHOD]).
      *
      * 수동 로그인과 자동 로그인 모두 성공 시 호출됩니다.
