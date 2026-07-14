@@ -15,6 +15,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeU
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.NameViolation
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.fromServerTime
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24Hour
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,11 +29,12 @@ class EditUserInfoViewModel @Inject constructor(
     private val registerUserNameUseCase: RegisterUserNameUseCase,
     private val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
     companion object {
         private const val MIN_LENGTH = 1
         private const val MAX_LENGTH = 10
-        private val ALLOWED_REGEX = Regex("^[가-힣a-zA-Z0-9]*$")
+        private val ALLOWED_REGEX = Regex("^[가-힣a-zA-Z0-9 ]*$")
     }
 
     private val _uiState = MutableStateFlow(UiStateEditUserInfo())
@@ -96,6 +98,10 @@ class EditUserInfoViewModel @Inject constructor(
     }
 
     fun saveUserInfo(){
+        // 저장 클릭 직후 Activity가 finish되어 viewModelScope가 취소될 수 있으므로
+        // 코루틴 진입 전에 동기적으로 발화한다 (settings_change)
+        logSettingsChangeIfChanged()
+
         viewModelScope.launch {
             val nameResult = setUserNameInternal()
             if (nameResult !is ApiResultV2.Success) {
@@ -110,6 +116,32 @@ class EditUserInfoViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * 원본(original*) 대비 실제 변경된 설정 항목만 settings_change 이벤트로 발화합니다.
+     * 변경된 항목이 없으면 발화하지 않습니다.
+     */
+    private fun logSettingsChangeIfChanged() {
+        val state = _uiState.value
+
+        val nicknameChanged = state.charName != state.originalCharName
+        // TimeState 전체 비교는 isSelected 플래그 차이로 오판할 수 있어 수집 표현("HH:mm")끼리 비교한다
+        val commuteFrom = "${state.originalWorkInTime.toHHmm()}-${state.originalWorkOutTime.toHHmm()}"
+        val commuteTo = "${state.workInTime.toHHmm()}-${state.workOutTime.toHHmm()}"
+        val commuteChanged = commuteFrom != commuteTo
+        val quizChanged = state.useMinutes != state.originalUseMinutes
+
+        analyticsLogger.logSettingsChange(
+            nicknameChanged = nicknameChanged,
+            commuteTimeFrom = if (commuteChanged) commuteFrom else null,
+            commuteTimeTo = if (commuteChanged) commuteTo else null,
+            quizCountFrom = if (quizChanged) state.originalUseMinutes else null,
+            quizCountTo = if (quizChanged) state.useMinutes else null,
+        )
+    }
+
+    // Analytics용 "HH:mm" 표기 — toServerTime()의 "HH:mm:00"에서 초 제거
+    private fun TimeState.toHHmm(): String = toServerTime().take(5)
 
 
     // 서버 전송용: 문제 수(3,5,7,10) → 분(5,7,10,15)
@@ -151,7 +183,7 @@ class EditUserInfoViewModel @Inject constructor(
             )
         }
 
-        return when (val result = registerUserNameUseCase(state.charName)) {
+        return when (val result = registerUserNameUseCase(state.charName.trim())) {
 
             is ApiResultV2.Success -> {
                 _uiState.update {
@@ -397,15 +429,18 @@ class EditUserInfoViewModel @Inject constructor(
 
             is ApiResultV2.Success -> {
                 val name = result.data.name
+                val trimmedName = name.trim()
+                val isValid = trimmedName.length in MIN_LENGTH..MAX_LENGTH &&
+                              trimmedName.matches(ALLOWED_REGEX)
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         originalCharName = name,
                         charName = name,
-                        isNameValid = name.length in MIN_LENGTH..MAX_LENGTH,
-                        nameErrorMessage = "",
-                        violation = NameViolation.None
+                        isNameValid = isValid,
+                        nameErrorMessage = if (isValid) "" else "한글, 영문, 숫자만 입력해주세요",
+                        violation = if (isValid) NameViolation.None else NameViolation.HasSpecialChar
                     )
                 }
             }
@@ -419,32 +454,29 @@ class EditUserInfoViewModel @Inject constructor(
 
     fun onNameTextChanged(input: String) {
         viewModelScope.launch {
-            // ✅ 입력은 최대 10자까지만 "받는다"(저장)
-            val trimmedToMax = if (input.length > MAX_LENGTH) input.take(MAX_LENGTH) else input
+            val truncated = if (input.length > MAX_LENGTH) input.take(MAX_LENGTH) else input
 
-            // ✅ 유효성은 별도로 판단 (입력은 되지만 invalid 가능)
+            // 앞뒤 공백 제거 후 유효성 판단
+            val trimmed = truncated.trim()
             val violation = when {
-                trimmedToMax.isEmpty() -> NameViolation.Empty
-                trimmedToMax.length < MIN_LENGTH -> NameViolation.Empty // 사실상 동일
-                trimmedToMax.contains(" ") -> NameViolation.HasSpace
-                !trimmedToMax.matches(ALLOWED_REGEX) -> NameViolation.HasSpecialChar
+                trimmed.isEmpty() -> NameViolation.Empty
+                !trimmed.matches(ALLOWED_REGEX) -> NameViolation.HasSpecialChar
                 else -> NameViolation.None
             }
 
-            val isValid =
-                violation == NameViolation.None && trimmedToMax.length in MIN_LENGTH..MAX_LENGTH
+            val isValid = violation == NameViolation.None && trimmed.length in MIN_LENGTH..MAX_LENGTH
 
             val message = when (violation) {
                 NameViolation.None -> ""
                 NameViolation.Empty -> "1자 이상 입력해주세요"
-                NameViolation.HasSpace -> "공백은 사용할 수 없어요"
-                NameViolation.HasSpecialChar -> "특수문자는 사용할 수 없어요 (한글/영문/숫자만)"
-                NameViolation.TooLong -> "10자 이하로 입력해주세요" // 현재 take(MAX)라 실제로는 잘 안 옴
+                NameViolation.HasSpecialChar -> "한글, 영문, 숫자만 입력해주세요"
+                NameViolation.HasSpace -> ""
+                NameViolation.TooLong -> ""
             }
 
             _uiState.update {
                 it.copy(
-                    charName = trimmedToMax,
+                    charName = truncated,
                     isNameValid = isValid,
                     nameErrorMessage = message,
                     violation = violation

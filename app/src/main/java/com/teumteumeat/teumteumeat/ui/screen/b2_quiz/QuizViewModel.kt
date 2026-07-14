@@ -4,18 +4,25 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.datastore.QuizTrackingDataStore
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
+import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.time.LocalDate
 import javax.inject.Inject
 
 
@@ -24,6 +31,9 @@ class QuizViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val quizRepository: QuizRepository,
     private val goalRepository: GoalRepository,
+    private val historyRepository: HistoryRepository,
+    private val quizTrackingDataStore: QuizTrackingDataStore,
+    private val analyticsLogger: TeumAnalyticsLogger,
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
@@ -33,6 +43,41 @@ class QuizViewModel @Inject constructor(
         savedStateHandle.get<String>("goalType")
     )
     val documentId: Long = savedStateHandle.get<Long>("documentId") ?: -1L
+    val topic: String = savedStateHandle.get<String>("topic") ?: ""
+
+    /**
+     * 퀴즈 화면 진입 전 user-quizzes/status 응답의 전역 hasSolvedToday.
+     * complete-set 성공 후 재조회 값과 비교해 stamp_earned 변경 감지에 사용한다.
+     * ⚠️ complete-set 성공 후 값이 바뀌므로 반드시 진입 전 값을 그대로 유지해야 한다.
+     */
+    private val hasSolvedTodayBefore: Boolean =
+        savedStateHandle.get<Boolean>(QuizActivity.EXTRA_HAS_SOLVED_TODAY) ?: false
+
+    /** ViewModel 인스턴스당 quiz_start 이벤트 중복 발송 방지 플래그 */
+    private var hasQuizStartLogged = false
+
+    /** [logQuizStartIfNeeded] 동시 호출 시 중복 발송 방지용 (check-then-act 레이스 방지) */
+    private val quizStartLogMutex = Mutex()
+
+    /** 이 ViewModel 인스턴스(=1회 퀴즈 세션) 내 성공 제출 수. quiz_abandoned 판정 전용 — 전역 누적값과 분리 */
+    private var sessionAnsweredCount = 0
+
+    /** 이 ViewModel 인스턴스(=1회 퀴즈 세션) 내 정답 제출 수. quiz_complete의 correct_count로 사용 */
+    private var correctCount = 0
+
+    /**
+     * quiz_start 발화 시 계산된 entry_type. quiz_abandoned·quiz_complete에서 재사용하기 위해 필드로 보관.
+     * QuizResultActivity로의 Intent extra 전달을 위해 외부에서 읽을 수 있도록 공개(읽기 전용)한다.
+     */
+    var resolvedEntryType: String = "first"
+        private set
+
+    /**
+     * quiz_start 발화 시 조회된 사용자 난이도. quiz_complete에서 재사용하기 위해 필드로 보관한다.
+     * difficulty 조회 실패로 quiz_start 자체가 스킵되면 Difficulty.NONE으로 남고,
+     * logQuizComplete 내부의 동일한 가드에 의해 quiz_complete도 함께 스킵된다.
+     */
+    private var resolvedDifficulty: Difficulty = Difficulty.NONE
 
     private val _uiState = MutableStateFlow(UiStateQuiz())
     val uiState = _uiState.asStateFlow()
@@ -41,25 +86,82 @@ class QuizViewModel @Inject constructor(
         MutableStateFlow<UiScreenState>(UiScreenState.Idle)
     val screenState = _screenState.asStateFlow()
 
+    /**
+     * 채점하러가기 버튼 클릭 시 호출.
+     * /api/v1/user-quizzes/complete-set 응답이 온 뒤 refreshSignal을 방출해야
+     * HomeViewModel이 hasSolvedToday=true 상태를 정확히 반영할 수 있다.
+     */
     fun completeQuiz() {
-        // ✅ 2️⃣ 전역 시그널 방출
-        // Repository 내부의 MutableSharedFlow에 신호를 보냅니다.
-        // 이 신호는 MainActivity 등에서 감지하여 데이터를 새로고침하게 됩니다.
         viewModelScope.launch {
             completeCurrentQuizSet()
+            // API 완료 후 방출 — suspend 순서 보장
             goalRepository.emitRefreshSignal()
         }
     }
 
     /**
-     * 퀴즈 완료를 API 호출 시 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가 API 호출됨
+     * 퀴즈 완료 API 호출 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가.
+     * 성공 후 emitRefreshSignal() → HomeViewModel이 couponSummaryCreated=false 처리.
      */
-    private fun completeCurrentQuizSet() {
-        viewModelScope.launch {
-            when (val response = quizRepository.submitCompleteQuizSet()) {
-                is ApiResultV2.Success -> {}
-                else -> { moveToError(response) }
+    private suspend fun completeCurrentQuizSet() {
+        when (val response = quizRepository.submitCompleteQuizSet()) {
+            is ApiResultV2.Success -> {
+                Log.d("QuizViewModel", "completeCurrentQuizSet success")
+                quizTrackingDataStore.markQuizCompleted(documentId.toString())
+
+                val quizCount = uiState.value.totalSteps
+                val scoreRate = if (quizCount > 0) {
+                    (correctCount.toFloat() / quizCount.toFloat() * 100)
+                } else {
+                    0f
+                }
+                analyticsLogger.logQuizComplete(
+                    contentId = documentId.toString(),
+                    topic = topic,
+                    difficulty = resolvedDifficulty,
+                    entryType = resolvedEntryType,
+                    quizCount = quizCount.toLong(),
+                    correctCount = correctCount.toLong(),
+                    scoreRate = scoreRate.toString(),
+                )
+
+                logStampEarnedIfSolvedTodayChanged()
             }
+            else -> { moveToError(response) }
+        }
+    }
+
+    /**
+     * STAMP-001 — hasSolvedToday 변경 감지(false → true)로 "오늘 하루 첫 완료"를 판정해
+     * stamp_earned 이벤트를 로깅한다.
+     *
+     * 오늘 이미 완료 후 재도전(hasSolvedTodayBefore == true)인 경우 스킵하며,
+     * status/calendar 재조회 실패 시에도 조용히 스킵한다(quiz_complete에는 영향 없음).
+     */
+    private suspend fun logStampEarnedIfSolvedTodayChanged() {
+        if (hasSolvedTodayBefore) return
+
+        val hasSolvedTodayAfter = when (val result = quizRepository.getUserQuizStatus()) {
+            is ApiResultV2.Success -> result.data.hasSolvedToday
+            else -> return
+        }
+        if (!hasSolvedTodayAfter) return
+
+        val now = LocalDate.now()
+        when (
+            val calendarResult =
+                historyRepository.getCalendarHistory(year = now.year, month = now.monthValue)
+        ) {
+            is ApiResultV2.Success -> {
+                val calendar = calendarResult.data
+                analyticsLogger.logStampEarned(
+                    contentId = documentId.toString(),
+                    streakCount = calendar.currentStreak.toLong(),
+                    totalStamps = calendar.totalStamps.toLong(),
+                    monthlyStamps = calendar.monthlyStamps.toLong(),
+                )
+            }
+            else -> return
         }
     }
 
@@ -146,6 +248,7 @@ class QuizViewModel @Inject constructor(
                     }
 
                     _screenState.value = UiScreenState.Success
+                    logQuizStartIfNeeded(quizCount = result.data.size)
                 }
 
                 is ApiResultV2.SessionExpired -> {
@@ -163,6 +266,35 @@ class QuizViewModel @Inject constructor(
                         UiScreenState.Error(result.uiMessage)
                 }
             }
+        }
+    }
+
+    /**
+     * QUIZ-001 — 퀴즈 화면 진입 이벤트 로깅. ViewModel 인스턴스당 최초 1회만 발송한다.
+     * 사용자 난이도 조회 실패 시 조용히 스킵한다 (퀴즈 플로우 자체는 막지 않음).
+     */
+    private suspend fun logQuizStartIfNeeded(quizCount: Int) {
+        if (hasQuizStartLogged) return
+
+        quizStartLogMutex.withLock {
+            if (hasQuizStartLogged) return@withLock
+
+            val difficulty = when (val goalResult = goalRepository.getUserGoal()) {
+                is ApiResultV2.Success -> goalResult.data.difficulty
+                else -> return@withLock
+            }
+            resolvedDifficulty = difficulty
+            val entryType = quizTrackingDataStore.resolveEntryType(documentId.toString())
+            resolvedEntryType = entryType
+
+            hasQuizStartLogged = true
+            analyticsLogger.logQuizStart(
+                contentId = documentId.toString(),
+                topic = topic,
+                quizCount = quizCount.toLong(),
+                difficulty = difficulty,
+                entryType = entryType,
+            )
         }
     }
 
@@ -219,6 +351,17 @@ class QuizViewModel @Inject constructor(
                             quizzes = updatedQuizzes,
                         )
                     }
+
+                    val questionNo = quizTrackingDataStore.incrementAndGetTotalQuestionsAnswered()
+                    sessionAnsweredCount++
+                    if (isCorrect) correctCount++
+                    analyticsLogger.logQuizAnswerSubmit(
+                        contentId = documentId.toString(),
+                        questionNo = questionNo.toLong(),
+                        answerType = quiz.type.toAnalyticsValue(),
+                        isCorrect = isCorrect,
+                    )
+
                     // ✅ 결과 반영 후 "이동 여부"는 여기서 판단
                     moveToNextQuizIfPossible(isCorrect)
                 }
@@ -268,5 +411,22 @@ class QuizViewModel @Inject constructor(
             }
         }
 
+    }
+
+    /**
+     * QUIZ-003 — 화면 이탈 감지. QuizActivity가 finish()될 때 ViewModel도 clear되므로
+     * 이 시점에서 세션 내 제출 수가 전체 문항 수보다 적으면 미완료 이탈로 간주한다.
+     */
+    override fun onCleared() {
+        super.onCleared()
+        val quizCount = uiState.value.totalSteps
+        if (sessionAnsweredCount < quizCount) {
+            analyticsLogger.logQuizAbandoned(
+                contentId = documentId.toString(),
+                lastQuestionNo = sessionAnsweredCount.toLong(),
+                quizCount = quizCount.toLong(),
+                entryType = resolvedEntryType,
+            )
+        }
     }
 }

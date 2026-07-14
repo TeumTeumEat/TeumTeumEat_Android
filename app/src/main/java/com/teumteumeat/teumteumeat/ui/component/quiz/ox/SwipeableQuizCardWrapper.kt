@@ -1,12 +1,12 @@
 package com.teumteumeat.teumteumeat.ui.component.quiz.ox
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -18,11 +18,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun SwipeableQuizCardWrapper(
     key: Any,
+    offsetX: Animatable<Float, AnimationVector1D>,
     onSelectAnswer: (String) -> Unit,
     content: @Composable (CardStatus, triggerYes: () -> Unit, triggerNo: () -> Unit) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val offsetX = remember(key) { Animatable(0f) }
     val pxThreshold = with(LocalDensity.current) { 100.dp.toPx() }
 
     // 람다 변수에서 suspend 키워드를 제거하여 일반 함수로 만듭니다.

@@ -36,12 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
-import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.loading.FullScreenLoading
 import com.teumteumeat.teumteumeat.ui.component.login.TermsAgreementBottomSheetContent
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
@@ -54,7 +52,6 @@ import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
-import kotlinx.coroutines.flow.collectLatest
 import kotlin.jvm.java
 
 @Composable
@@ -68,16 +65,8 @@ fun LoginScreen(
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
     val loginButtonShape = RoundedCornerShape(12.dp)
-    val sessionManager = viewModel.sessionManager // 세션메니저 정의
 
-    // 🔥 전역 세션 이벤트 감지
-    LaunchedEffect(Unit) {
-        sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
-        }
-    }
-
-    // 🔥 이벤트 수신
+    // 🔥 이벤트 수신 — 세션 만료 이벤트 포함 (ViewModel이 SessionManager를 캡슐화하여 전달)
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -89,16 +78,30 @@ fun LoginScreen(
 
                 LoginUiEvent.NavigateToOnboarding -> {
                     Log.d("Login", "navigate onboarding")
-                    moveActivity(activity, OnBoardingActivity::class.java, exitFlag = true)
+                    // 온보딩에서 뒤로가기 시 로그인 화면이 다시 노출되지 않도록 태스크 초기화
+                    moveActivity(
+                        activity,
+                        OnBoardingActivity::class.java,
+                        exitFlag = true,
+                        clearTask = true
+                    )
                 }
 
                 LoginUiEvent.NavigateToMain -> {
                     Log.d("Login", "navigate Main")
-                    moveActivity(activity, MainActivity::class.java, exitFlag = true)
+                    // 홈에서 뒤로가기 시 로그인 화면이 다시 노출되지 않도록 태스크 초기화
+                    moveActivity(
+                        activity,
+                        MainActivity::class.java,
+                        exitFlag = true,
+                        clearTask = true
+                    )
                 }
 
+                // 세션 만료 또는 로그아웃 시 LoginActivity 재시작 (백스택 초기화)
                 LoginUiEvent.NavigateToLogin -> {
-                    Log.d("Login", "return to login")
+                    Log.d("Login", "session expired → restart LoginActivity")
+                    moveActivity(activity, LoginActivity::class.java, clearTask = true)
                 }
             }
         }
@@ -149,22 +152,6 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (BuildConfig.DEBUG) {
-                    BaseOutlineButton(
-                        modifier = Modifier.padding(20.dp),
-                        text = "회원탈퇴",
-                        textStyle = typo.bodyMedium14_20.copy(
-                            color = theme.error
-                        ),
-                        isEnabled = true,
-                        onClick = {
-                            // 회원탈퇴 기능 구현
-                            viewModel.withdrawUser()
-                        },
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

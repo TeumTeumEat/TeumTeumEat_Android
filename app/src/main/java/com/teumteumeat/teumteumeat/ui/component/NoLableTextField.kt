@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Composable
 fun NoLableTextField(
@@ -48,82 +49,24 @@ fun NoLableTextField(
     isOneLine: Boolean = true,
     onDone: KeyboardActionScope.() -> Unit = {}
 ) {
-    val containerColor = if (!isError) MaterialTheme.colorScheme.onSurfaceVariant
+    val containerColor = if (!isError) MaterialTheme.extendedColors.btnLineDisable
     else MaterialTheme.colorScheme.error
 
-    Box(
-        contentAlignment = Alignment.Center,
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp) // 원하는 높이 지정
+            .height(50.dp)
             .border(
-                width = 1.dp,
+                width = 2.dp,
                 color = containerColor,
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(horizontal = 25.dp)
+            .padding(horizontal = 25.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // label 고정
-        Text(
-            text = labelText,
-            style = TextStyle(fontSize = 14.sp, color = Color.Gray),
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-        )
-
-        // placeholder (입력 전 중앙)
-        if (value.isEmpty()) {
-            Text(
-                text = placeholderText,
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            BasicTextField(
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequesterThis),
-                value = value,
-                onValueChange = { text ->
-                    if (text.length <= rearMaxLength) onValueChange(text)
-                },
-                textStyle = TextStyle(
-                    fontSize = 16.sp,
-                    color = Color.Black,
-                    textAlign = TextAlign.Start
-                ),
-                singleLine = true,
-                interactionSource = interactionSource,
-            )
-
-            if (showCharCount) {
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Text(
-                    text = "${value.length}/$seenMaxLength",
-                    fontSize = 12.sp,
-                    color = containerColor
-                )
-            }
-        }
-
-        /*// 입력 텍스트
         BasicTextField(
             modifier = Modifier
-                .fillMaxWidth()
+                .weight(1f)
                 .focusRequester(focusRequesterThis),
             value = value,
             onValueChange = { text ->
@@ -134,28 +77,38 @@ fun NoLableTextField(
                 color = Color.Black,
                 textAlign = TextAlign.Center
             ),
-            singleLine = isOneLine,
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Done
-            ),
+            singleLine = true,
             interactionSource = interactionSource,
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    this.onDone()
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, keyboardType = keyboardType),
+            keyboardActions = KeyboardActions(onDone = { onDone() }),
+            decorationBox = { innerTextField ->
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholderText,
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        )
+                    }
+                    innerTextField()
                 }
-            )
-
+            }
         )
 
-        // 글자 수 표시 (옵션)
         if (showCharCount) {
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "${value.length}/$seenMaxLength",
-                style = TextStyle(fontSize = 12.sp, color = containerColor),
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
+                fontSize = 12.sp,
+                color = containerColor
             )
-        }*/
+        }
     }
 }
 
@@ -178,7 +131,7 @@ fun NoLableMultiLineTextField(
     isError: Boolean = false,
     isOneLine: Boolean = false,
 ) {
-    val containerColor = if (!isError) MaterialTheme.colorScheme.onSurfaceVariant
+    val containerColor = if (!isError) MaterialTheme.extendedColors.btnLineDisable
     else MaterialTheme.colorScheme.error
 
     Box(

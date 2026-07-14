@@ -151,6 +151,17 @@ class Utils {
             return "${date.monthValue}월 ${date.dayOfMonth}일"
         }
 
+        /**
+         * 카테고리 path("조상depth1/조상depth2") + name(리프)을
+         * "조상depth1 > 조상depth2 > name" 형태로 변환.
+         * path 마지막 세그먼트가 이미 name과 같으면 중복 없이 처리.
+         */
+        fun formatCategoryPath(path: String, name: String): String {
+            val segments = path.split("/").filter { it.isNotBlank() }
+            val fullSegments = if (segments.lastOrNull() == name) segments else segments + name
+            return fullSegments.joinToString(" > ")
+        }
+
     }
 
     object UiUtils{
@@ -382,15 +393,22 @@ class Utils {
          * @param context 현재 컨텍스트 (보통 `Activity` 또는 `ApplicationContext`)
          * @param destinationActivity 이동할 대상 액티비티의 클래스 (`Class<out Activity>`)
          * @param exitFlag `true`이면 현재 액티비티를 종료하고, `false`이면 종료하지 않음 (기본값: `true`)
+         * @param clearTask `true`이면 기존 태스크(백스택)를 모두 비우고 대상 액티비티만 남김 (기본값: `false`)
+         *                  로그인 → 온보딩, 온보딩 → 메인처럼 뒤로가기로 이전 화면에 돌아가면 안 되는 전환에 사용
          */
         fun moveActivity(
             context: Context,
             destinationActivity: Class<out Activity>,
             exitFlag: Boolean = true,
-            extras: Bundle? = null // 데이터를 담을 Bundle 추가
+            extras: Bundle? = null, // 데이터를 담을 Bundle 추가
+            clearTask: Boolean = false
         ){
+            // 이미 종료 처리 중인 Activity에서 재진입 호출된 경우(연타 등) 중복 인스턴스 생성 방지
+            if (context is Activity && context.isFinishing) return
+
             val intent = Intent(context, destinationActivity).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (clearTask) addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 extras?.let {putExtras(it)}
             }
             context.startActivity(intent)
@@ -648,6 +666,10 @@ class Utils {
 
 
     object InfoUtil{
+        /**
+         * 앱 버전명 반환 (예: "v1.0.17")
+         * UI 표시용
+         */
         fun getAppVersion(context: Context): String {
             return try {
                 val packageInfo = context.packageManager.getPackageInfo(
@@ -657,6 +679,34 @@ class Utils {
                 "v${packageInfo.versionName}"
             } catch (e: Exception) {
                 "v1.0.0"
+            }
+        }
+
+        /**
+         * 앱 버전코드 반환
+         *
+         * - API 28+ : [android.content.pm.PackageInfo.getLongVersionCode]
+         * - API 26-27: [android.content.pm.PackageInfo.versionCode] (deprecated)
+         * - 예외 발생 시 -1L 반환
+         *
+         * GA4 Audience 빌더에서 `app_version_code >= 17` 조건을 만들 때
+         * [com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger]가
+         * 이 값을 User Property로 자동 설정합니다.
+         */
+        fun getAppVersionCode(context: Context): Long {
+            return try {
+                val packageInfo = context.packageManager.getPackageInfo(
+                    context.packageName,
+                    0
+                )
+                @Suppress("DEPRECATION")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    packageInfo.longVersionCode
+                } else {
+                    packageInfo.versionCode.toLong()
+                }
+            } catch (e: Exception) {
+                -1L
             }
         }
     }
@@ -679,6 +729,32 @@ class Utils {
         private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
 
+        // 앱 설치 후 최초 로그인 완료 여부 (Analytics is_first_login 파라미터 관리)
+        private const val KEY_FIRST_LOGIN_COMPLETED = "first_login_completed"
+
+
+        /**
+         * 앱 설치 후 첫 번째 로그인 성공 여부 확인
+         *
+         * - 기본값 `false` → 로그인 성공 전까지 첫 로그인으로 간주
+         * - [markFirstLoginCompleted] 호출 후 `true` 반환
+         * - 앱 재설치·데이터 삭제 시 자동 초기화 → 다시 `false`
+         */
+        fun isFirstLoginCompleted(context: Context): Boolean {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            return prefs.getBoolean(KEY_FIRST_LOGIN_COMPLETED, false)
+        }
+
+        /**
+         * 첫 번째 로그인 완료 플래그 저장
+         *
+         * 로그인 성공 이벤트 전송 직후 호출하여,
+         * 이후 로그인부터 is_first_login = "false"가 전송되도록 합니다.
+         */
+        fun markFirstLoginCompleted(context: Context) {
+            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putBoolean(KEY_FIRST_LOGIN_COMPLETED, true).apply()
+        }
 
         /**
          * 온보딩 완료 상태 저장

@@ -21,6 +21,10 @@ data class UiStateSummary(
     val hasSolvedToday: Boolean = true,
     val isFirstTime: Boolean = true,
 
+    /* user-quizzes/status 응답의 전역 hasSolvedToday. 문서별 값인 [hasSolvedToday]와 달리
+     * "오늘 하루 중 퀴즈를 한 번이라도 완료했는가"를 나타내며 stamp_earned 변경 감지에 사용된다. */
+    val hasSolvedTodayGlobal: Boolean = false,
+
     /* category 전용 */
     val categoryDocumentId: Int = -1,
 
@@ -30,5 +34,10 @@ data class UiStateSummary(
     /* 퀴즈 안내씬 클라이언트에서 보낼 분기 값 */
     val isSkipQuizGuideChecked: Boolean = false,
 
+    /** true: SSE 청크 수신 중 — 퀴즈 버튼 비활성화 */
+    val isStreaming: Boolean = false,
+
+    /** true: 요약글 완료 후 퀴즈 프리페치 진행 중 — 하단 버튼에 "퀴즈를 불러오는 중..." 표시 */
+    val isQuizLoading: Boolean = false,
 )
 

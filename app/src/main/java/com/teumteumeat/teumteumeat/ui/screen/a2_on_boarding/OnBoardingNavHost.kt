@@ -24,7 +24,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
         }
     }
 
@@ -53,7 +53,8 @@ fun OnBoardingNavHost(navController: NavHostController) {
         ) {
             OnBoardingSetRoutineScreen(
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
+                    // ONB-003: 퀴즈 수 이벤트 로깅 + 화면 상태 전환
+                    viewModel.onSetRoutineCompleted()
                     navController.navigate(OnBoardingScreens.SelectLearningMethodScreen.route)
                 },
                 onPrev = {

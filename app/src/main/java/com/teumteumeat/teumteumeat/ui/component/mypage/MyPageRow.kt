@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -251,7 +249,6 @@ fun SelectedTopicSection(
     description: String,
     goalWeek: String,
     difficulty: String,
-    isSelGoalExpired: Boolean, // 이 상태값에 따라 오버레이 노출
 ) {
     val theme = MaterialTheme.extendedColors
     val shape = RoundedCornerShape(12.dp)
@@ -288,11 +285,9 @@ fun SelectedTopicSection(
                         color = theme.primary
                     )
 
-                    if (!isSelGoalExpired){
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            TagChip(text = goalWeek)
-                            TagChip(text = difficulty)
-                        }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        TagChip(text = goalWeek)
+                        TagChip(text = difficulty)
                     }
                 }
 
@@ -316,43 +311,6 @@ fun SelectedTopicSection(
             }
         }
 
-        // 2. 만료 시 반투명 검정 오버레이 (GoalCard와 동일한 로직)
-        if (isSelGoalExpired) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize() // 부모 Box 크기에 맞춤
-                    .clip(shape)
-                    .background(color = Color.Black.copy(alpha = 0.4f)) // 40% 투명도
-                    .border(
-                        width = 2.dp,
-                        color = theme.primary, // 오버레이 위에도 파란색 테두리 유지
-                        shape = shape
-                    )
-            ) {
-                // 상단 우측 '만료된 주제' 표시
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Cancel,
-                        contentDescription = null,
-                        tint = theme.textOnError,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "만료된 주제",
-                        style = MaterialTheme.appTypography.captionRegular14.copy(
-                            color = theme.textOnError
-                        )
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -429,6 +387,44 @@ fun MyPageScreenGalleryPreview() {
                 title = "Title",
                 onClick = {},
             )
+        }
+    }
+}
+
+@Preview(
+    name = "학습 주제 박스 — 두 상태 비교",
+    showBackground = true,
+    backgroundColor = 0xFFF5F5F5,
+    widthDp = 400
+)
+@Composable
+private fun SelectedTopicSectionStatePreview() {
+    TeumTeumEatTheme {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 상태 1: 목표 진행 중 — SelectedTopicSection 표시
+            MyPageNavigateBox(title = "학습 주제 (진행 중)", onClick = {}) {
+                SelectedTopicSection(
+                    topic = "IT > 앱개발자 > Kotlin Multiplatform",
+                    description = "Kotlin을 활용해 멀티플랫폼 개발 생산성을 높이는 방법을 학습합니다.",
+                    goalWeek = "4주",
+                    difficulty = "난이도 상",
+                )
+            }
+
+            // 상태 2: 목표 완료 — 안내 텍스트 표시
+            MyPageNavigateBox(title = "학습 주제 (완료)", onClick = {}) {
+                Text(
+                    text = "선택된 학습 주제가 없습니다.",
+                    style = MaterialTheme.appTypography.bodyMedium14Reg,
+                    color = MaterialTheme.extendedColors.textSecondary,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 4.dp)
+                )
+            }
         }
     }
 }
