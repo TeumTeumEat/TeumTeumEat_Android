@@ -16,7 +16,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
-import dagger.hilt.android.internal.Contexts.getApplication
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,8 +32,9 @@ class LoginViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val socialLoginRepository: SocialLoginRepository,
     private val tokenLocalDataSource: TokenLocalDataSource,
+    private val analyticsLogger: TeumAnalyticsLogger,
     @ApplicationContext private val context: Context,
-    val sessionManager: SessionManager,
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
@@ -44,6 +45,14 @@ class LoginViewModel @Inject constructor(
     )
     val uiEvent = _uiEvent.asSharedFlow()
 
+    init {
+        // 세션 만료 이벤트를 uiEvent로 전달 — Screen이 SessionManager를 직접 참조하지 않도록 캡슐화
+        viewModelScope.launch {
+            sessionManager.sessionEvent.collect {
+                _uiEvent.emit(LoginUiEvent.NavigateToLogin)
+            }
+        }
+    }
 
     /**
      * 💡 왜 일반 로딩과 분리 하였는가?
@@ -159,6 +168,8 @@ class LoginViewModel @Inject constructor(
 
 
     fun agreeTermsAndRegister() {
+        // 📊 ONB-001: 약관 전체 동의 완료 — 재로그인 요청 직전 전송
+        analyticsLogger.logTermsAgreeComplete()
         // ✅ 어떤 소셜 로그인인지 ViewModel이 이미 알고 있음
         requestSocialLogin(termsAgreed = true)
     }
@@ -185,6 +196,8 @@ class LoginViewModel @Inject constructor(
     private suspend fun handleLoginResult(result: ApiResultV2<AuthResponse?>) {
         Log.d("LoginDebug", "handleLoginResult called: $result")
 
+        val method = _uiState.value.pendingSocialLogin.provider.name.lowercase()
+
         when (result) {
 
             is ApiResultV2.Success -> {
@@ -197,6 +210,14 @@ class LoginViewModel @Inject constructor(
                     return
                 }
 
+                // 📊 login_complete: 소셜 로그인 성공
+                // isFirstLogin: 플래그가 아직 저장되지 않은 경우가 첫 번째 로그인
+                val isFirstLogin = !PrefsUtil.isFirstLoginCompleted(context)
+                analyticsLogger.logLoginComplete(method = method, isFirstLogin = isFirstLogin)
+                analyticsLogger.setLoginMethod(method)
+                analyticsLogger.setOsType()
+                if (isFirstLogin) PrefsUtil.markFirstLoginCompleted(context)
+
                 saveAuthToken(data)
 
                 // ✅ 로그인 성공 후 → 온보딩 여부 조회
@@ -207,11 +228,22 @@ class LoginViewModel @Inject constructor(
                 when (result.code) {
                     "AUTH-006" -> {
                         // ✅ 약관 미동의 → 이벤트
-                        Log.d("LoginDebug", "AUTH-006 detected → openTermsBottomSheet()")
+                        // 📊 login_fail: 약관 미동의로 인한 실패 (error_message로 서버 메시지 기록)
+                        analyticsLogger.logLoginFail(
+                            method = method,
+                            errorCode = result.code,
+                            errorMessage = result.uiMessage,
+                        )
                         _uiEvent.emit(LoginUiEvent.NeedTermsAgreement)
                     }
 
                     else -> {
+                        // 📊 login_fail: 서버 에러 (error_message로 서버 메시지 기록)
+                        analyticsLogger.logLoginFail(
+                            method = method,
+                            errorCode = result.code,
+                            errorMessage = result.uiMessage,
+                        )
                         // ❌ 서버 에러 → 상태
                         _uiState.update {
                             it.copy(errorMessage = result.uiMessage)
@@ -221,12 +253,16 @@ class LoginViewModel @Inject constructor(
             }
 
             is ApiResultV2.NetworkError -> {
+                // 📊 login_fail: 네트워크 오류 (상세 메시지 불필요 — 연결 실패 자체가 원인)
+                analyticsLogger.logLoginFail(method = method, errorCode = "NETWORK_ERROR")
                 _uiState.update {
                     it.copy(errorMessage = result.uiMessage)
                 }
             }
 
             is ApiResultV2.SessionExpired -> {
+                // 📊 login_fail: 세션 만료
+                analyticsLogger.logLoginFail(method = method, errorCode = "SESSION_EXPIRED")
                 // _uiEvent.emit(LoginUiEvent.NavigateToLogin)
                 _uiState.update {
                     it.copy(errorMessage = result.uiMessage)
@@ -234,6 +270,15 @@ class LoginViewModel @Inject constructor(
             }
 
             is ApiResultV2.UnknownError -> {
+                // 📊 login_fail: 알 수 없는 오류
+                // throwable_class: 어떤 예외 클래스인지 (예: UnknownHostException, SocketTimeoutException)
+                // error_message: throwable 메시지 우선, 없으면 result.message
+                analyticsLogger.logLoginFail(
+                    method = method,
+                    errorCode = "UNKNOWN_ERROR",
+                    errorMessage = result.throwable?.message ?: result.message,
+                    throwableClass = result.throwable?.javaClass?.simpleName,
+                )
                 _uiState.update {
                     it.copy(errorMessage = result.uiMessage)
                 }
@@ -246,7 +291,7 @@ class LoginViewModel @Inject constructor(
 
             is ApiResultV2.Success -> {
                 if (result.data.completed) {
-                    PrefsUtil.setOnboardingCompleted(getApplication(context), true)
+                    PrefsUtil.setOnboardingCompleted(context, true)
                     _uiEvent.emit(LoginUiEvent.NavigateToMain)
                 } else {
                     _uiEvent.emit(LoginUiEvent.NavigateToOnboarding)

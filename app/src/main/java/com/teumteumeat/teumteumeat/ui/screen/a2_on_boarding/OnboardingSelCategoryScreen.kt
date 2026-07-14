@@ -25,6 +25,9 @@ fun CategorySelectScreen(
         onLoadCategories = { viewModel.loadCategories() },
         onNavigateBack = { viewModel.navigateBackInCategoryDepth() },
         onToggleCategory = viewModel::toggleCategory,
-        onNext = onNext,
+        onNext = {
+            viewModel.onCategoryNextClicked()
+            onNext()
+        },
     )
 }

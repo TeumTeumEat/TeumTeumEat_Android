@@ -52,7 +52,6 @@ import com.teumteumeat.teumteumeat.utils.Utils.UxUtils
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveActivity
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
-import kotlinx.coroutines.flow.collectLatest
 import kotlin.jvm.java
 
 @Composable
@@ -66,16 +65,8 @@ fun LoginScreen(
     val theme = MaterialTheme.extendedColors
     val typo = MaterialTheme.appTypography
     val loginButtonShape = RoundedCornerShape(12.dp)
-    val sessionManager = viewModel.sessionManager // 세션메니저 정의
 
-    // 🔥 전역 세션 이벤트 감지
-    LaunchedEffect(Unit) {
-        sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
-        }
-    }
-
-    // 🔥 이벤트 수신
+    // 🔥 이벤트 수신 — 세션 만료 이벤트 포함 (ViewModel이 SessionManager를 캡슐화하여 전달)
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -95,8 +86,10 @@ fun LoginScreen(
                     moveActivity(activity, MainActivity::class.java, exitFlag = true)
                 }
 
+                // 세션 만료 또는 로그아웃 시 LoginActivity 재시작 (백스택 초기화)
                 LoginUiEvent.NavigateToLogin -> {
-                    Log.d("Login", "return to login")
+                    Log.d("Login", "session expired → restart LoginActivity")
+                    moveActivity(activity, LoginActivity::class.java)
                 }
             }
         }

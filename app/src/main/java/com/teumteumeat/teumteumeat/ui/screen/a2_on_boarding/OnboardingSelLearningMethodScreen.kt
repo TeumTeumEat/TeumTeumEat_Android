@@ -17,6 +17,7 @@ fun SelectLearningMethodScreen(
         selectedType = uiState.goalTypeUiState,
         onSelected = { viewModel.selectLearningMethod(it) },
         onNextClick = {
+            viewModel.onLearningMethodNextClicked()
             viewModel.resetCategorySelection()
             viewModel.onFileDeleted()
             when (uiState.goalTypeUiState) {

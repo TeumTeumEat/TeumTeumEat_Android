@@ -6,9 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.usecase.GetGoalListUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +23,7 @@ class GoalListViewModel @Inject constructor(
     private val getGoalListUseCase: GetGoalListUseCase,
     private val goalRepository: GoalRepository,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateGoalList())
@@ -104,7 +107,9 @@ class GoalListViewModel @Inject constructor(
 
                 _uiState.update { state ->
                     state.copy(
-                        currentGoalId = userGoal.goalId
+                        currentGoalId = userGoal.goalId,
+                        // DomainGoalType과 enum 이름(CATEGORY/DOCUMENT)이 동일해 fromString 재사용
+                        currentGoalType = GoalTypeUiState.fromString(userGoal.type.name)
                     )
                 }
             }
@@ -143,6 +148,10 @@ class GoalListViewModel @Inject constructor(
             .firstOrNull { it.goalId == pendingGoalId }
             ?: return
 
+        // 🔹 변경 전 목표 정보 캡처 (성공 후 loadUserGoal 재조회가 덮어쓰기 전에 확보)
+        val fromGoalId = _uiState.value.currentGoalId
+        val fromType = _uiState.value.currentGoalType
+
         viewModelScope.launch {
             // ✅ 로딩 시작
             _uiState.update { it.copy(isLoading = true) }
@@ -152,6 +161,14 @@ class GoalListViewModel @Inject constructor(
             )){
 
                 is ApiResultV2.Success -> {
+
+                    // 주제 변경 완료 이벤트 — 같은 목표 재선택은 변경이 아니므로 스킵
+                    if (targetGoal.goalId.toLong() != fromGoalId) {
+                        analyticsLogger.logTopicChange(
+                            fromType = fromType,
+                            toType = targetGoal.type
+                        )
+                    }
 
                     // ✅ 1️⃣ 오버레이 즉시 닫기
                     _uiState.update {

@@ -5,9 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.domain.model.history.CalendarDailyItem
+import com.teumteumeat.teumteumeat.domain.model.history.LearningHistoryUiModel
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -23,6 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
+    private val analyticsLogger: TeumAnalyticsLogger,
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
@@ -31,6 +35,93 @@ class LibraryViewModel @Inject constructor(
 
     private var allCategoryHistories: List<com.teumteumeat.teumteumeat.domain.model.history.CategoryHistoryUiModel> =
         emptyList()
+
+    /**
+     * LIB-001 발화 여부 플래그.
+     * 이 ViewModel은 Activity 스코프라 config change(화면 회전 등)에도 유지되므로,
+     * Activity 재생성으로 컴포지션이 재구성되어도 중복 발화를 막는다.
+     * 탭을 실제로 떠날 때만 [onLibraryScreenExited]로 리셋된다.
+     */
+    private var hasLoggedCalendarView = false
+
+    /**
+     * LIB-004 발화 여부 플래그 — [hasLoggedCalendarView]와 동일한 회전 중복 방지 역할.
+     * 주제별 탭이 유지된 상태로 Activity가 재생성돼 [onLibraryScreenEntered]가
+     * 다시 호출되어도 중복 발화를 막는다.
+     */
+    private var hasLoggedLibraryView = false
+
+    /** LIB-001 — 진입 시점에 캘린더 데이터 로드가 미완료면 로드 완료 후 발화하도록 예약하는 플래그 */
+    private var pendingCalendarViewLog = false
+
+    /** 첫 캘린더 데이터 로드 시도 완료 여부 (성공/실패 무관) */
+    private var isCalendarDataLoadCompleted = false
+
+    /** 마지막 캘린더 데이터 로드 성공 여부 — false면 스탬프 파라미터를 unknown/-1로 발화 */
+    private var isCalendarDataLoadSucceeded = false
+
+    /**
+     * 히스토리 화면 진입 시 호출되는 화면 수준 콜백. 최초 1회로 제한하지 않고
+     * [LibraryScreen]의 DisposableEffect(Unit)에서 매 진입마다 호출된다.
+     * 단, 화면 회전 등 Activity 재생성으로 인한 재진입 시에는 발화하지 않는다.
+     *
+     * - LIB-001(calendar_view): 첫 진입처럼 캘린더 데이터 로드가 끝나지 않은 상태면
+     *   즉시 발화하지 않고 [loadCalendarHistory] 완료 시점으로 발화를 미룬다 — 스탬프
+     *   파라미터(month_stamp_count / has_month_stamp / total_stamps)에 정확한 값을 싣기 위함.
+     * - LIB-004(library_view): 주제별 탭이 유지된 상태로 화면에 진입한 경우
+     *   도서관 진입으로 집계해 발화한다 (탭 버튼 전환 발화는 [selectLibraryTab]).
+     */
+    fun onLibraryScreenEntered() {
+        if (!hasLoggedCalendarView) {
+            hasLoggedCalendarView = true
+
+            if (isCalendarDataLoadCompleted) {
+                logCalendarViewNow()
+            } else {
+                pendingCalendarViewLog = true
+            }
+        }
+
+        // LIB-004: 주제별 탭이 유지된 상태로 화면 진입한 경우도 도서관 진입으로 집계
+        if (_uiState.value.selectedLibraryTab == LibraryTabType.TOPIC && !hasLoggedLibraryView) {
+            hasLoggedLibraryView = true
+            analyticsLogger.logLibraryView()
+        }
+    }
+
+    /**
+     * LIB-001 실제 발화. 로드 성공 상태면 표시 월 기준 실값, 실패 상태면 unknown/-1을 싣는다.
+     * month는 재방문 시 마지막으로 보던 월이 표시되므로 `calendarUiState.currentMonth`를 사용해
+     * month_stamp_count와 월 기준을 일치시킨다.
+     */
+    private fun logCalendarViewNow() {
+        val state = _uiState.value
+        val loaded = isCalendarDataLoadSucceeded
+
+        analyticsLogger.logCalendarView(
+            month = state.calendarUiState.currentMonth.toString(), // ISO 포맷이 이미 "yyyy-MM"과 일치
+            date = LocalDate.now().toString(),                     // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
+            monthStampCount = if (loaded) state.monthStampCount.toLong() else -1L,
+            hasMonthStamp = if (loaded) (state.monthStampCount > 0).toString() else "unknown",
+            totalStamps = if (loaded) state.stampCount.toLong() else -1L,
+        )
+    }
+
+    /** 로드 완료 시점에 예약된 LIB-001 발화를 수행한다. */
+    private fun flushPendingCalendarViewLog() {
+        if (!pendingCalendarViewLog) return
+        pendingCalendarViewLog = false
+        logCalendarViewNow()
+    }
+
+    /**
+     * 유저가 히스토리 탭을 실제로 떠날 때 호출 (config change로 인한 dispose 제외).
+     * LIB-001/LIB-004 발화 플래그를 리셋해 탭 재방문 시 다시 발화되도록 한다.
+     */
+    fun onLibraryScreenExited() {
+        hasLoggedCalendarView = false
+        hasLoggedLibraryView = false
+    }
 
 
     init {
@@ -123,15 +214,25 @@ class LibraryViewModel @Inject constructor(
                         )
                     )
                 }
+
+                isCalendarDataLoadCompleted = true
+                isCalendarDataLoadSucceeded = true
+                flushPendingCalendarViewLog()
             }
 
             is ApiResultV2.SessionExpired -> {
+                // ⚠️ LIB-001 pending 발화를 수행하지 않음 — 로그인 화면으로 이탈하는 경로
                 sessionManager.expireSession()
             }
 
             else -> {
                 // 👉 에러 메시지는 ViewModel 확장함수에서 처리된다고 가정
                 Log.e("LibraryViewModel", "❌ 캘린더 히스토리 로드 실패: ${result.uiMessage}")
+
+                // LIB-001: 로드 실패도 '완료'로 취급해 unknown/-1로 발화 (탭 이용률 모수 보존)
+                isCalendarDataLoadCompleted = true
+                isCalendarDataLoadSucceeded = false
+                flushPendingCalendarViewLog()
             }
         }
     }
@@ -164,6 +265,59 @@ class LibraryViewModel @Inject constructor(
             // ✅ 월 변경 시 해당 월 이력 다시 로드
             loadCalendarHistory(yearMonth)
         }
+    }
+
+    /**
+     * 📆 LIB-002 — 캘린더 날짜 셀 유저 탭 전용 진입점.
+     *
+     * 스탬프 유무와 무관하게 `calendar_date_tap` 이벤트를 발화하고,
+     * 화면 동작(날짜 선택/일별 상세 조회)은 기존과 동일하게 스탬프 날짜에만 수행한다.
+     * has_stamp는 스탬프 렌더링과 동일한 소스(`calendarUiState.solvedDates`)로 판단한다.
+     *
+     * 진입 시 오늘 날짜 자동 선택(`init`의 [onCalendarDateSelected] 직접 호출)은
+     * 유저 탭이 아니므로 이 함수를 거치지 않아 이벤트가 발화되지 않는다.
+     */
+    fun onCalendarDateTapped(date: LocalDate) {
+        val hasStamp = _uiState.value.calendarUiState.solvedDates.contains(date)
+        analyticsLogger.logCalendarDateTap(
+            date = date.toString(),         // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
+            hasStamp = hasStamp.toString(), // "true" | "false"
+        )
+
+        if (hasStamp) {
+            onCalendarDateSelected(date)
+        }
+    }
+
+    /**
+     * 📄 LIB-003 — 날짜별 탭 캘린더 하단 학습 기록 카드 탭 시 호출.
+     * 주제별 탭의 동일 카드는 "날짜 클릭" 맥락이 없으므로 이 함수를 호출하지 않는다.
+     *
+     * date는 탭한 캘린더 선택 날짜(`calendar_date_tap`과 조인 기준 일치)를 사용하고,
+     * 선택 날짜가 없는 예외 상황에서는 카드의 마지막 학습 날짜로 폴백한다.
+     */
+    fun onDailyLearningRecordTapped(item: CalendarDailyItem) {
+        val date = _uiState.value.calendarUiState.selectedDate
+            ?: item.lastStudiedAt.toLocalDate()
+
+        analyticsLogger.logLearningRecordByDateTap(
+            date = date.toString(), // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
+            topic = item.title,     // 주제명 or PDF 파일명 (서버 응답 그대로)
+        )
+    }
+
+    /**
+     * 📚 LIB-005 — 주제별 탭 학습 카드 탭 시 호출.
+     * 날짜별 탭의 동일 카드는 LIB-003([onDailyLearningRecordTapped])이 담당하므로
+     * 이 함수를 호출하지 않는다.
+     *
+     * topic은 카드가 속한 카테고리명(PDF 목표는 파일명), date는 카드의 학습 날짜를 사용한다.
+     */
+    fun onTopicLearningRecordTapped(categoryName: String, history: LearningHistoryUiModel) {
+        analyticsLogger.logHistoryModalOpen(
+            topic = categoryName,
+            date = history.date.toLocalDate().toString(), // ISO 포맷이 이미 "yyyy-MM-dd"와 일치
+        )
     }
 
     /** 📆 날짜 선택 */
@@ -227,11 +381,18 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun selectLibraryTab(tab: LibraryTabType) {
+        val previousTab = _uiState.value.selectedLibraryTab
+
         _uiState.update {
             it.copy(selectedLibraryTab = tab)
         }
 
         if (tab == LibraryTabType.TOPIC) {
+            // 📊 LIB-004: 재탭(TOPIC→TOPIC)은 미발화, 실제 전환 시에만 발화
+            if (previousTab != LibraryTabType.TOPIC) {
+                hasLoggedLibraryView = true
+                analyticsLogger.logLibraryView()
+            }
             fetchCategoryHistories()
         }
     }

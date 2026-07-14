@@ -145,8 +145,6 @@ fun CalendarDayCell(
     val today = LocalDate.now()
     val isToday = date == today
 
-    val isEnabled = isSolved   // ✅ 핵심 규칙
-
     Box(
         modifier = Modifier
             .aspectRatio(1f)  // ✅ 셀을 무조건 정사각형으로
@@ -171,7 +169,9 @@ fun CalendarDayCell(
                 }
             )
             .clickable(
-                enabled = isEnabled,
+                // ✅ LIB-002: 미스탬프 날짜도 탭을 감지해 이벤트를 발화해야 하므로 항상 활성.
+                //    선택/상세 조회 등 화면 동작은 ViewModel(onCalendarDateTapped)에서
+                //    스탬프 날짜만 수행한다.
                 indication = null, // 🔥 리플 제거
                 interactionSource = remember { MutableInteractionSource() },
                 onClick = onClick

@@ -5,6 +5,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.datastore.GoalTrackingDataStore
+import com.teumteumeat.teumteumeat.data.datastore.LastCompletedGoal
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
@@ -18,12 +20,14 @@ import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetPdfPageCountUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.UpdateGoalUseCase
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
@@ -49,8 +53,11 @@ class AddGoalViewModel @Inject constructor(
     private val updateGoalUseCase: UpdateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val getPdfPageCountUseCase: GetPdfPageCountUseCase,
     private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
     private val emitGoalRefreshUseCase: EmitGoalRefreshUseCase,
+    private val analyticsLogger: TeumAnalyticsLogger,
+    private val goalTrackingDataStore: GoalTrackingDataStore,
     application: Application,
     val sessionManager: SessionManager,
 ) : ViewModel() {
@@ -90,6 +97,52 @@ class AddGoalViewModel @Inject constructor(
             }
 
         }
+    }
+
+    /** GOAL-002 next_course_start 발화용 직전 완주 목표 스냅샷 캐시 */
+    private var lastCompletedGoal: LastCompletedGoal? = null
+
+    /** GOAL-002 next_course_start 중복 발송 방지 플래그 */
+    private var hasNextCourseStartLogged = false
+
+    /**
+     * GOAL-002 next_course_start 트래킹 초기화. Activity onCreate에서 진입 경로와 무관하게 항상 호출한다.
+     * 직전 완주 스냅샷을 조회해 캐시하고, 목표 타입이 이미 정해져 있는 진입(Home "+"·GuideExpiredGoalActivity,
+     * SelectInputMethodScreen을 건너뜀)이면 그 자리에서 바로 발화를 시도한다.
+     */
+    fun initNextCourseStartTracking() {
+        viewModelScope.launch {
+            lastCompletedGoal = goalTrackingDataStore.getLastCompletedGoal()
+            if (_uiState.value.isSkipTypeSelect) {
+                logNextCourseStartIfEligible(_uiState.value.goalTypeUiState)
+            }
+        }
+    }
+
+    /**
+     * 완주 이력(스냅샷)이 있고 nextGoalType이 유효할 때만 next_course_start를 발화한다.
+     * SelectInputMethodScreen "다음" 탭 시 직접 호출되거나, [initNextCourseStartTracking]에서
+     * 타입 사전 지정 진입 시 자동 호출된다. 발화 성공 시 스냅샷을 소비(제거)해 동일 완주 건의
+     * 중복 발화를 막는다 — 타입 미선택 이탈 시에는 소비하지 않아 다음 진짜 시도에서 재시도할 수 있다.
+     */
+    fun logNextCourseStartIfEligible(nextGoalType: GoalTypeUiState) {
+        if (hasNextCourseStartLogged) return
+        val goal = lastCompletedGoal ?: return
+        val nextLearningType = when (nextGoalType) {
+            GoalTypeUiState.CATEGORY -> "category"
+            GoalTypeUiState.DOCUMENT -> "pdf"
+            GoalTypeUiState.NONE -> return
+        }
+
+        hasNextCourseStartLogged = true
+        analyticsLogger.logNextCourseStart(
+            prevGoalId = goal.goalId,
+            prevCategoryId = goal.categoryId,
+            prevLearningType = goal.learningType,
+            nextLearningType = nextLearningType,
+            isFirstComplete = goal.isFirstComplete,
+        )
+        viewModelScope.launch { goalTrackingDataStore.clearLastCompletedGoal() }
     }
 
     fun selectLearningMethod(type: GoalTypeUiState) {
@@ -665,6 +718,11 @@ class AddGoalViewModel @Inject constructor(
         fileName: String,
         mimeType: String
     ): ApiResultV2<Unit> {
+
+        // 📊 ONB-PDF-1: pdf_upload_start 이벤트 + pdf_upload_attempt_count User Property
+        val fileSizeKb = _uiState.value.selectedFileSize / 1024
+        val pageCount = getPdfPageCountUseCase(uri).getOrDefault(0)
+        analyticsLogger.logPdfUploadStart(fileSizeKb = fileSizeKb, pageCount = pageCount)
 
         return when (
             val result = uploadDocumentUseCase(

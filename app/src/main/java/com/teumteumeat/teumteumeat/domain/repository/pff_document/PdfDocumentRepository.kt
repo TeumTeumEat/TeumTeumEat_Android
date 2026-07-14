@@ -60,5 +60,7 @@ interface PdfDocumentRepository {
         goalId: Int,
         documentId: Int,
     ): ApiResultV2<PdfDocumentSummary>
+    
+    suspend fun getPdfPageCount(uri: Uri): Result<Int>
 
 }

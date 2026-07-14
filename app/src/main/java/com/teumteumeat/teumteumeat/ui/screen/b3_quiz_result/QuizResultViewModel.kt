@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.datastore.GoalTrackingDataStore
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.repository.category.CategoryRepository
@@ -17,11 +18,14 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.UiStateSummary
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.Utils
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,20 +36,28 @@ class QuizResultViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
     private val categoryRepository: CategoryRepository,
     private val goalRepository: GoalRepository,
+    private val analyticsLogger: TeumAnalyticsLogger,
+    private val goalTrackingDataStore: GoalTrackingDataStore,
     val sessionManager: SessionManager,
 ) : ViewModel() {
 
     companion object {
         private const val KEY_DOCUMENT_ID = "document_id"
         private const val KEY_DATE = "quiz_date"
+        private const val KEY_TOPIC = "topic"
+        private const val KEY_ENTRY_TYPE = "entry_type"
     }
 
     fun initArgs(
         documentId: Long,
-        date: String
+        date: String,
+        topic: String,
+        entryType: String,
     ) {
         savedStateHandle[KEY_DOCUMENT_ID] = documentId
         savedStateHandle[KEY_DATE] = date
+        savedStateHandle[KEY_TOPIC] = topic
+        savedStateHandle[KEY_ENTRY_TYPE] = entryType
     }
 
     private val _uiState = MutableStateFlow(UiStateQuizResult())
@@ -61,6 +73,80 @@ class QuizResultViewModel @Inject constructor(
 
     fun getDate(): String =
         savedStateHandle[KEY_DATE] ?: error("date missing")
+
+    fun getTopic(): String =
+        savedStateHandle[KEY_TOPIC] ?: ""
+
+    fun getEntryType(): String =
+        savedStateHandle[KEY_ENTRY_TYPE] ?: "first"
+
+    /**
+     * QUIZ-005 — 퀴즈 결과 화면 "글보기" 버튼 탭 시 호출.
+     * documentId/topic/entryType은 QuizActivity → QuizResultActivity Intent extra로 전달받은 값이다.
+     */
+    fun onReviewConceptTap() {
+        analyticsLogger.logReviewConceptTap(
+            contentId = getDocumentId().toString(),
+            topic = getTopic(),
+            entryType = getEntryType(),
+        )
+    }
+
+    /** GOAL-001 course_complete 이벤트 중복 발송 방지 플래그. 발송 성공 시에만 true로 전환한다. */
+    private var hasCourseCompleteLogged = false
+
+    /**
+     * GOAL-001 — 완주 화면(SubjectCompleteScreen) 진입 직전 호출.
+     * userGoal은 [initQuizResult]에서 이미 로드된 값을 호출부(QuizResultNavHost)에서 그대로 전달받는다.
+     * 완주 화면 재진입 등으로 중복 호출되어도 [hasCourseCompleteLogged]가 이미 true면 스킵한다.
+     * total_stamps 조회(getCalendarHistory) 실패 시에는 stamp_earned와 동일하게 이벤트 발송 자체를
+     * 보류하며, 이 경우 [hasCourseCompleteLogged]도 갱신하지 않아 다음 진입 시 재시도할 수 있다.
+     */
+    fun onCourseCompleteScreenEntered(userGoal: UserGoal) {
+        if (hasCourseCompleteLogged) return
+
+        viewModelScope.launch {
+            val now = LocalDate.now()
+            val totalStamps = when (
+                val result = historyRepository.getCalendarHistory(now.year, now.monthValue)
+            ) {
+                is ApiResultV2.Success -> result.data.totalStamps.toLong()
+                else -> return@launch
+            }
+
+            val categoryId = when (userGoal.type) {
+                DomainGoalType.CATEGORY -> userGoal.category?.categoryId?.toString() ?: ""
+                DomainGoalType.DOCUMENT -> userGoal.fileName ?: ""
+            }
+            val learningType = when (userGoal.type) {
+                DomainGoalType.CATEGORY -> "category"
+                DomainGoalType.DOCUMENT -> "pdf"
+            }
+            val goalWeeks = ChronoUnit.WEEKS.between(userGoal.startDate, userGoal.endDate)
+            val isFirstComplete =
+                goalTrackingDataStore.resolveAndMarkFirstComplete(userGoal.goalId.toString())
+
+            // GOAL-002 next_course_start의 prev_* 복원을 위한 스냅샷 저장.
+            // AddGoalActivity의 모든 진입 경로(완주 화면/Home "+"/GuideExpiredGoalActivity)가
+            // 공통으로 조회하므로 별도 Intent extra 전달이 필요 없다.
+            goalTrackingDataStore.saveLastCompletedGoal(
+                goalId = userGoal.goalId.toString(),
+                categoryId = categoryId,
+                learningType = learningType,
+                isFirstComplete = isFirstComplete,
+            )
+
+            hasCourseCompleteLogged = true
+            analyticsLogger.logCourseComplete(
+                goalId = userGoal.goalId.toString(),
+                categoryId = categoryId,
+                learningType = learningType,
+                goalWeeks = goalWeeks,
+                totalStamps = totalStamps,
+                isFirstComplete = isFirstComplete.toString(),
+            )
+        }
+    }
 
     fun initQuizResult() {
         viewModelScope.launch {

@@ -21,6 +21,10 @@ data class UiStateSummary(
     val hasSolvedToday: Boolean = true,
     val isFirstTime: Boolean = true,
 
+    /* user-quizzes/status 응답의 전역 hasSolvedToday. 문서별 값인 [hasSolvedToday]와 달리
+     * "오늘 하루 중 퀴즈를 한 번이라도 완료했는가"를 나타내며 stamp_earned 변경 감지에 사용된다. */
+    val hasSolvedTodayGlobal: Boolean = false,
+
     /* category 전용 */
     val categoryDocumentId: Int = -1,
 

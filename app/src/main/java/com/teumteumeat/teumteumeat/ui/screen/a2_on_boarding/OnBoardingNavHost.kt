@@ -53,7 +53,8 @@ fun OnBoardingNavHost(navController: NavHostController) {
         ) {
             OnBoardingSetRoutineScreen(
                 onNext = {
-                    viewModel.navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
+                    // ONB-003: 퀴즈 수 이벤트 로깅 + 화면 상태 전환
+                    viewModel.onSetRoutineCompleted()
                     navController.navigate(OnBoardingScreens.SelectLearningMethodScreen.route)
                 },
                 onPrev = {
