@@ -24,7 +24,7 @@ fun OnBoardingNavHost(navController: NavHostController) {
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
         }
     }
 
