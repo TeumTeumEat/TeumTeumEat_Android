@@ -393,18 +393,22 @@ class Utils {
          * @param context 현재 컨텍스트 (보통 `Activity` 또는 `ApplicationContext`)
          * @param destinationActivity 이동할 대상 액티비티의 클래스 (`Class<out Activity>`)
          * @param exitFlag `true`이면 현재 액티비티를 종료하고, `false`이면 종료하지 않음 (기본값: `true`)
+         * @param clearTask `true`이면 기존 태스크(백스택)를 모두 비우고 대상 액티비티만 남김 (기본값: `false`)
+         *                  로그인 → 온보딩, 온보딩 → 메인처럼 뒤로가기로 이전 화면에 돌아가면 안 되는 전환에 사용
          */
         fun moveActivity(
             context: Context,
             destinationActivity: Class<out Activity>,
             exitFlag: Boolean = true,
-            extras: Bundle? = null // 데이터를 담을 Bundle 추가
+            extras: Bundle? = null, // 데이터를 담을 Bundle 추가
+            clearTask: Boolean = false
         ){
             // 이미 종료 처리 중인 Activity에서 재진입 호출된 경우(연타 등) 중복 인스턴스 생성 방지
             if (context is Activity && context.isFinishing) return
 
             val intent = Intent(context, destinationActivity).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (clearTask) addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 extras?.let {putExtras(it)}
             }
             context.startActivity(intent)
