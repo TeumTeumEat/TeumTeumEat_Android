@@ -25,6 +25,7 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.ui.component.ForceLightStatusBarIcons
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -36,6 +37,8 @@ fun SubjectCompleteScreen(
     onGoHomeClick: () -> Unit,
     onStartNewSubjectClick: () -> Unit,
 ) {
+    ForceLightStatusBarIcons()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -79,6 +82,7 @@ fun SubjectCompleteScreen(
             LottieAnimation(
                 composition = composition,
                 progress = { progress }, // 현재 애니메이션 진행 상태
+                modifier = Modifier.size(200.dp),
                 // contentScale = ContentScale.Fit, // 필요 시 스케일 설정
             )
 

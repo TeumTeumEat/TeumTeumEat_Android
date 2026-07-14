@@ -32,12 +32,10 @@ fun ReviewScreen(
     val subjectLabel = if (uiState.goalTypeUiState == GoalTypeUiState.CATEGORY) "관심분야" else "문서이름"
     val subjectText = when (uiState.goalTypeUiState) {
         GoalTypeUiState.DOCUMENT -> uiState.selectedFileName.ifEmpty { "선택된 파일 없음" }
-        GoalTypeUiState.CATEGORY -> listOfNotNull(
-            uiState.categorySelection.depth1?.name,
-            uiState.categorySelection.depth2?.name,
-            uiState.categorySelection.depth3?.name,
-            uiState.categorySelection.depth4?.name,
-        ).joinToString(" > ").ifEmpty { "선택된 카테고리 없음" }
+        GoalTypeUiState.CATEGORY -> uiState.categorySelection.selectedPath
+            .map { it.name }
+            .joinToString(" > ")
+            .ifEmpty { "선택된 카테고리 없음" }
 
         else -> "선택 안함"
     }

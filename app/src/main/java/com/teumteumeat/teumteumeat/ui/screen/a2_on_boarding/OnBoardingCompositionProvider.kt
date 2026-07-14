@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FlowTopProgressBar
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
@@ -127,6 +128,11 @@ fun OnBoardingCompositionProvider(
                     visibleStates = visibleStates,
                     isCompletedLoading = true,
                     onAnimationComplete = { isAnimationComplete = true },
+                    isDocumentFlow = uiState.goalTypeUiState == GoalTypeUiState.DOCUMENT,
+                    sseProgress = uiState.sseProgress,
+                    sseRemainMs = uiState.sseRemainMs,
+                    sseStatusText = uiState.sseStatusText,
+                    sseProgressText = uiState.sseProgressText,
                 )
             }
 

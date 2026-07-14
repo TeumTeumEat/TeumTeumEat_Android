@@ -201,6 +201,7 @@ dependencies {
     // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
+    implementation("com.squareup.okhttp3:okhttp-sse:4.10.0")
 
     // 카카오 SDK
     implementation("com.kakao.sdk:v2-user:2.20.0")
@@ -254,6 +255,9 @@ dependencies {
 
     // Kotlin Coroutines Test: runTest, TestDispatcher 등을 사용하기 위함
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // Turbine: StateFlow/Flow 순차 방출 검증
+    testImplementation("app.cash.turbine:turbine:1.1.0")
 
     // (선택 사항) JUnit4: 기본적인 테스트 프레임워크
     // AndroidX Test Core (ApplicationProvider 사용을 위해 필수)

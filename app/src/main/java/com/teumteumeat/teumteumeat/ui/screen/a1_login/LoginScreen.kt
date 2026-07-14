@@ -36,12 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.BottomSheetContainerRightTopConfirm
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
-import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
 import com.teumteumeat.teumteumeat.ui.component.loading.FullScreenLoading
 import com.teumteumeat.teumteumeat.ui.component.login.TermsAgreementBottomSheetContent
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
@@ -142,22 +140,6 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.Bottom,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (BuildConfig.DEBUG) {
-                    BaseOutlineButton(
-                        modifier = Modifier.padding(20.dp),
-                        text = "회원탈퇴",
-                        textStyle = typo.bodyMedium14_20.copy(
-                            color = theme.error
-                        ),
-                        isEnabled = true,
-                        onClick = {
-                            // 회원탈퇴 기능 구현
-                            viewModel.withdrawUser()
-                        },
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

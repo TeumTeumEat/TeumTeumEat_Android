@@ -131,4 +131,25 @@ class QuizRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun addTestQuizCount(count: Int): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = { quizApiService.addTestQuizCount(count) },
+            mapper = {}
+        )
+    }
+
+    override suspend fun resetAdReward(): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = { quizApiService.resetAdReward() },
+            mapper = {}
+        )
+    }
+
+    override suspend fun resetGoal(goalId: Long?): ApiResultV2<Unit> {
+        return safeApiVer2(
+            apiCall = { quizApiService.resetGoal(goalId) },
+            mapper = {}
+        )
+    }
+
 }

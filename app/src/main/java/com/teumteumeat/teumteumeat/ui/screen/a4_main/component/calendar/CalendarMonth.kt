@@ -7,15 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -31,26 +26,41 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 
-fun buildMonthDays(yearMonth: YearMonth): List<LocalDate?> {
+data class CalendarDayInfo(
+    val date: LocalDate,
+    val isInCurrentMonth: Boolean,
+)
+
+fun buildMonthDays(yearMonth: YearMonth): List<CalendarDayInfo> {
     val firstDay = yearMonth.atDay(1)
 
     // ✅ 월요일 시작 기준 offset
-    val dayOfWeek = firstDay.dayOfWeek.value - 1
+    val leadingCount = firstDay.dayOfWeek.value - 1
     // 월=1 → 0, 화=2 → 1, ..., 일=7 → 6
 
-    val totalDays = yearMonth.lengthOfMonth()
-    val list = mutableListOf<LocalDate?>()
+    val list = mutableListOf<CalendarDayInfo>()
 
-    repeat(dayOfWeek) {
-        list.add(null)
+    // ✅ 첫째 주: 이전 달 마지막 날짜들로 채움
+    for (i in leadingCount downTo 1) {
+        list.add(CalendarDayInfo(firstDay.minusDays(i.toLong()), isInCurrentMonth = false))
     }
 
-    for (day in 1..totalDays) {
-        list.add(yearMonth.atDay(day))
+    for (day in 1..yearMonth.lengthOfMonth()) {
+        list.add(CalendarDayInfo(yearMonth.atDay(day), isInCurrentMonth = true))
+    }
+
+    // ✅ 마지막 주: 7의 배수가 될 때까지 다음 달 날짜들로 채움
+    val lastDay = yearMonth.atEndOfMonth()
+    var trailing = 1L
+    while (list.size % 7 != 0) {
+        list.add(CalendarDayInfo(lastDay.plusDays(trailing++), isInCurrentMonth = false))
     }
 
     return list
 }
+
+// ✅ 달력 최대 행 수 (31일 달 + leading offset 5 이상 = 6행)
+private const val MAX_WEEK_ROWS = 6
 
 @Composable
 fun CalendarMonth(
@@ -58,6 +68,7 @@ fun CalendarMonth(
     selectedDate: LocalDate?,
     solvedDates: Set<LocalDate>,
     onDateClick: (LocalDate) -> Unit,
+    weekSpacing: Dp = 0.dp,
 ) {
     val days = remember(yearMonth) {
         buildMonthDays(yearMonth)
@@ -66,21 +77,37 @@ fun CalendarMonth(
     Column {
         WeekHeaderRow()
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier.height(320.dp),
-            userScrollEnabled = false
+        Column(
+            verticalArrangement = Arrangement.spacedBy(weekSpacing),
         ) {
-            items(days) { date ->
-                if (date == null) {
-                    Spacer(Modifier.size(size = 40.dp))
-                } else {
-                    CalendarDayCell(
-                        date = date,
-                        isSelected = date == selectedDate,
-                        isSolved = solvedDates.contains(date),
-                        onClick = { onDateClick(date) }
-                    )
+            val weeks = days.chunked(7)
+
+            weeks.forEach { week ->
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    week.forEach { dayInfo ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            CalendarDayCell(
+                                date = dayInfo.date,
+                                isSelected = dayInfo.date == selectedDate,
+                                isSolved = solvedDates.contains(dayInfo.date),
+                                isOutsideMonth = !dayInfo.isInCurrentMonth,
+                                onClick = { onDateClick(dayInfo.date) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ✅ 6행 고정: 5주 달은 빈 행으로 채워 월 스와이프 시 높이 통일
+            repeat(MAX_WEEK_ROWS - weeks.size) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    repeat(7) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                        )
+                    }
                 }
             }
         }
@@ -113,6 +140,7 @@ fun CalendarDayCell(
     isSelected: Boolean,
     onClick: () -> Unit,
     isSolved: Boolean,
+    isOutsideMonth: Boolean = false,
 ) {
     val today = LocalDate.now()
     val isToday = date == today
@@ -130,10 +158,12 @@ fun CalendarDayCell(
                     )
 
                     // ✅ 퀴즈를 푼 날짜 (원색)
-                    isSolved -> Modifier.background(
-                        color = MaterialTheme.extendedColors.btnFillSecondary,
-                        shape = CircleShape
-                    )
+                    isSolved -> Modifier
+                        .padding(1.5.dp)
+                        .background(
+                            color = MaterialTheme.extendedColors.btnFillDisabledColor,
+                            shape = CircleShape
+                        )
 
                     else -> Modifier
                 }
@@ -160,6 +190,10 @@ fun CalendarDayCell(
 
                 isToday ->
                     MaterialTheme.extendedColors.textSecondary
+
+                // ✅ 학습하지 않은 인접 달 날짜는 더 흐리게 구분
+                isOutsideMonth ->
+                    MaterialTheme.extendedColors.textGhost.copy(alpha = 0.4f)
 
                 else ->
                     MaterialTheme.extendedColors.textGhost

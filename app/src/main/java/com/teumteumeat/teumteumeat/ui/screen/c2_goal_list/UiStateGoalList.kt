@@ -3,8 +3,8 @@ package com.teumteumeat.teumteumeat.ui.screen.c2_goal_list
 import com.teumteumeat.teumteumeat.data.network.model_response.GetGoalResponse
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.TypeUtils.toUiText
-import java.time.LocalDate
 
 
 data class UiStateGoalList(
@@ -37,12 +37,9 @@ data class GoalCardUiModel(
     val title: String,
     val description: String,
 
-    /** 목표의 만료여부는 목표가 완료되었는지로 구분됨 **/
     val isCompleted: Boolean,
 
-    // 상태
     val isSelected: Boolean,
-    val isExpired: Boolean,
 )
 
 fun GetGoalResponse.toUiModel(
@@ -52,7 +49,7 @@ fun GetGoalResponse.toUiModel(
     val (title, description) =
         when (type) {
             GoalTypeUiState.CATEGORY -> {
-                (category?.path ?: "미설정") to
+                (category?.let { Utils.TypeUtils.formatCategoryPath(it.path, it.name) } ?: "미설정") to
                         (prompt ?: "")
             }
 
@@ -68,12 +65,6 @@ fun GetGoalResponse.toUiModel(
 
 
 
-    val start = startDate.toLocalDate()
-    val end = endDate.toLocalDate()
-    val today = LocalDate.now()
-    val isExpired = today.isAfter(end)
-
-    // ⭐ 만료된 목표는 선택 해제
     val isSelected = goalId.toLong() == currentGoalId
 
     return GoalCardUiModel(
@@ -87,11 +78,8 @@ fun GetGoalResponse.toUiModel(
         description = description,
         isSelected = isSelected,
         isCompleted = isCompleted,
-        isExpired = isExpired,
     )
 }
 
 
-private fun String.toLocalDate(): LocalDate =
-    LocalDate.parse(this) // yyyy-MM-dd 전제
 

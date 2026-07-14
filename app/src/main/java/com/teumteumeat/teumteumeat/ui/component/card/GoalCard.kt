@@ -58,10 +58,10 @@ fun GoalCard(
             modifier = modifier
                 .padding(horizontal = 20.dp)
                 .fillMaxWidth()
-                // ⭐ 만료되지 않은 경우만 클릭 가능
+                // ⭐ 만료되지 않은 경우만 클릭 가능, 이미 선택된 주제는 DEBUG에서도 재선택 불가
                 .clip(shape)
                 .clickable(
-                    enabled = if (BuildConfig.DEBUG) true else !uiModel.isCompleted && !uiModel.isSelected,
+                    enabled = !uiModel.isSelected && (BuildConfig.DEBUG || !uiModel.isCompleted),
                     interactionSource = remember { MutableInteractionSource() },
                     onClick = {
                         onClick(uiModel.goalId)
@@ -117,9 +117,7 @@ fun GoalCard(
             }
         }
 
-        // 2. 컨텐츠 위에 씌울 검은색 반투명 오버레이
-        // uiModel.isExpired 상황 등 특정 조건에서만 보여주고 싶다면 if문 사용
-        if (uiModel.isCompleted || uiModel.isExpired) {
+        if (uiModel.isCompleted) {
             Box(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
@@ -204,7 +202,6 @@ fun GoalCardStatesPreview() {
                         description = "아침에 일어나서 공복에 미지근한 물을 마십니다.",
                         isCompleted = false,
                         isSelected = false,
-                        isExpired = false,
                     ),
                     onClick = {}
                 )
@@ -222,25 +219,6 @@ fun GoalCardStatesPreview() {
                         description = "점심시간이나 퇴근 후 가볍게 산책합니다.",
                         isCompleted = false,
                         isSelected = true,
-                        isExpired = false
-                    ),
-                    onClick = {}
-                )
-
-                // 3. 만료된 상태 (isCompleted = true) - 검은색 오버레이 테스트
-                GoalCard(
-                    uiModel = GoalCardUiModel(
-                        type = GoalTypeUiState.CATEGORY,
-                        goalId = 3,
-                        weekText = "3주차",
-                        difficulty = Difficulty.MEDIUM,
-                        difficultyText = Difficulty.HARD.toUiText(),
-                        showDifficulty = true,
-                        title = "만료된 목표입니다",
-                        description = "기한이 지나 클릭할 수 없는 목표입니다.",
-                        isCompleted = true,
-                        isSelected = false,
-                        isExpired = false,
                     ),
                     onClick = {}
                 )
@@ -257,8 +235,7 @@ fun GoalCardStatesPreview() {
                         title = "완료된 목표입니다",
                         description = "기한이 지나 클릭할 수 없는 목표입니다.",
                         isCompleted = true,
-                        isSelected = true,
-                        isExpired = false,
+                        isSelected = false,
                     ),
                     onClick = {}
                 )
@@ -272,11 +249,10 @@ fun GoalCardStatesPreview() {
                         difficulty = Difficulty.HARD,
                         difficultyText = Difficulty.HARD.toUiText(),
                         showDifficulty = true,
-                        title = "설명이 없는 심플한 목표", // 설명란 비우기
+                        title = "설명이 없는 심플한 목표",
                         description = "",
                         isCompleted = false,
                         isSelected = false,
-                        isExpired = true,
                     ),
                     onClick = {}
                 )
