@@ -257,14 +257,6 @@ class SummaryViewModel @Inject constructor(
                     is SseEvent.TitleReceived -> {
                         // 스트리밍 완료 → 요약글 GET + 퀴즈 프리페치 순차 실행
                         _uiState.update { it.copy(isStreaming = false, isQuizLoading = true) }
-                        if (!hasSummaryViewStartLogged) {
-                            hasSummaryViewStartLogged = true
-                            analyticsLogger.logSummaryViewStart(
-                                sessionId = _uiState.value.goalId.toString(),
-                                contentId = documentId.toString(),
-                                topic = summary.fileName,
-                            )
-                        }
                         viewModelScope.launch {
                             // 요약 GET·퀴즈 프리페치가 중단되어도 버튼이 "퀴즈를 불러오는 중..."에
                             // 고정되지 않도록 finally 에서 isQuizLoading 을 반드시 내린다.
@@ -396,6 +388,15 @@ class SummaryViewModel @Inject constructor(
                     )
                 }
                 _screenState.value = UiScreenState.Success
+
+                if (!hasSummaryViewStartLogged) {
+                    hasSummaryViewStartLogged = true
+                    analyticsLogger.logSummaryViewStart(
+                        sessionId = _uiState.value.goalId.toString(),
+                        contentId = documentId.toString(),
+                        topic = summary.fileName,
+                    )
+                }
             }
 
             is ApiResultV2.SessionExpired -> sessionManager.expireSession()
@@ -468,6 +469,15 @@ class SummaryViewModel @Inject constructor(
                 }
                 Utils.PrefsUtil.saveDocumentId(appContext, data.documentId.toInt())
                 _screenState.value = UiScreenState.Success
+
+                if (!hasSummaryViewStartLogged) {
+                    hasSummaryViewStartLogged = true
+                    analyticsLogger.logSummaryViewStart(
+                        sessionId = _uiState.value.goalId.toString(),
+                        contentId = data.documentId.toString(),
+                        topic = data.title,
+                    )
+                }
             }
             is ApiResultV2.SessionExpired -> sessionManager.expireSession()
             is ApiResultV2.ServerError,

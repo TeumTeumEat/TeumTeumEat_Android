@@ -168,7 +168,6 @@ class HomeViewModel @Inject constructor(
             SnackState.Available -> "available"
             is SnackState.Consumed -> "consumed"
             SnackState.Completed -> "completed"
-            SnackState.Expired -> "expired"
         }
         analyticsLogger.logSnackTap(
             quizDoneToday = state.hasSolvedToday.toString(),

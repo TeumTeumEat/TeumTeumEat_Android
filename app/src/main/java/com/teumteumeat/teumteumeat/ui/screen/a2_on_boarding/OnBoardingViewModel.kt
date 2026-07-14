@@ -1129,15 +1129,15 @@ class OnBoardingViewModel @Inject constructor(
     /**
      * ONB-007 — CategorySelectScreen "다음으로" 버튼 처리
      *
-     * depth1·depth2·depth3가 모두 선택된 상태에서만 이벤트와 User Property를 로깅합니다.
-     * depth4(leaf)가 없으면 early return — isCategorySelectionComplete 보장 후 호출 권장.
+     * selectedPath에 depth1·depth2·depth3가 모두 선택된 상태에서만 이벤트와 User Property를 로깅합니다.
+     * 경로가 3뎁스 미만이면 early return — isCategorySelectionComplete 보장 후 호출 권장.
      * 실제 NavController 이동은 [CategorySelectScreen]에서 담당합니다.
      */
     fun onCategoryNextClicked() {
-        val selection = _uiState.value.categorySelection
-        val depth1 = selection.depth1?.name ?: return
-        val depth2 = selection.depth2?.name ?: return
-        val depth3 = selection.depth3?.name ?: return
+        val selectedPath = _uiState.value.categorySelection.selectedPath
+        val depth1 = selectedPath.getOrNull(0)?.name ?: return
+        val depth2 = selectedPath.getOrNull(1)?.name ?: return
+        val depth3 = selectedPath.getOrNull(2)?.name ?: return
         analyticsLogger.logCategorySelect(depth1, depth2, depth3)
     }
 
