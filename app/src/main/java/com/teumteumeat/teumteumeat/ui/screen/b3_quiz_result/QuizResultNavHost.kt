@@ -47,7 +47,7 @@ fun QuizResultNavHost(
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
         }
     }
 
@@ -79,10 +79,13 @@ fun QuizResultNavHost(
                 },
                 onBack = { navController.popBackStack() },
                 onShowSummary = {
+                    viewModel.onReviewConceptTap()
                     navController.navigate(QuizResultRoute.Summary.route)
                 },
                 goEndScreen = {
-                    if (uiState.userGoal?.isCompleted == true) {
+                    val userGoal = uiState.userGoal
+                    if (userGoal?.isCompleted == true) {
+                        viewModel.onCourseCompleteScreenEntered(userGoal)
                         navController.navigate(QuizResultRoute.SubjectComplete.route)
                     } else {
                         navController.navigate(QuizResultRoute.QuizEnding.route)

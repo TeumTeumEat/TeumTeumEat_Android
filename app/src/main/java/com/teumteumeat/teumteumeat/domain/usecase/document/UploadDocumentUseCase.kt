@@ -16,8 +16,19 @@ class UploadDocumentUseCase @Inject constructor(
         mimeType: String
     ): ApiResultV2<Unit> {
 
-        // 1️⃣ presigned URL 발급
-        val presignedResult = repository.issuePresignedUrl(fileName)
+        // 1️⃣ URI → ByteArray 읽기 (fileSize 확정 및 재읽기 방지)
+        val bytes = repository.readFileBytes(uri).getOrElse {
+            return ApiResultV2.UnknownError(
+                message = "파일을 읽을 수 없습니다.",
+                throwable = it
+            )
+        }
+
+        // 2️⃣ presigned URL 발급 (실제 바이트 크기로 서명 요청)
+        val presignedResult = repository.issuePresignedUrl(
+            fileName = fileName,
+            fileSize = bytes.size.toLong()
+        )
 
         val presigned = when (presignedResult) {
             is ApiResultV2.Success -> presignedResult.data
@@ -26,10 +37,10 @@ class UploadDocumentUseCase @Inject constructor(
             else -> return presignedResult as ApiResultV2<Unit>
         }
 
-        // 2️⃣ S3 PUT 업로드
+        // 3️⃣ S3 PUT 업로드 (읽어둔 bytes 재사용 — ContentProvider 재호출 없음)
         val uploadResult = repository.uploadFileToS3(
             presignedUrl = presigned.presignedUrl,
-            uri = uri,
+            bytes = bytes,
             mimeType = mimeType
         )
 
@@ -41,7 +52,7 @@ class UploadDocumentUseCase @Inject constructor(
             )
         }
 
-        // 3️⃣ 서버에 문서 등록
+        // 4️⃣ 서버에 문서 등록
         val registerResult = repository.registerDocument(
             goalId = goalId,
             fileName = fileName,

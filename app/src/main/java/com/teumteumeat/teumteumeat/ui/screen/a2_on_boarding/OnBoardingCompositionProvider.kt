@@ -1,8 +1,11 @@
 package com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -19,9 +22,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FlowTopProgressBar
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
@@ -60,6 +67,20 @@ fun OnBoardingCompositionProvider(
 
     val visibleStates = remember { mutableStateListOf(false, false, false) }
     var isAnimationComplete by remember { mutableStateOf(false) }
+
+    // ON_RESUME마다 시스템 설정 화면 복귀를 포함한 모든 포그라운드 진입 시 권한 동기화.
+    // Process Death 후 재시작 시에도 최신 권한 상태를 ViewModel에 반영한다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val isGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true  // API 33 미만: POST_NOTIFICATIONS 권한 없음 → 허용으로 간주
+        }
+        viewModel.syncNotificationPermission(isGranted)
+    }
 
     CompositionLocalProvider(
         LocalAppContext provides context,
@@ -107,6 +128,11 @@ fun OnBoardingCompositionProvider(
                     visibleStates = visibleStates,
                     isCompletedLoading = true,
                     onAnimationComplete = { isAnimationComplete = true },
+                    isDocumentFlow = uiState.goalTypeUiState == GoalTypeUiState.DOCUMENT,
+                    sseProgress = uiState.sseProgress,
+                    sseRemainMs = uiState.sseRemainMs,
+                    sseStatusText = uiState.sseStatusText,
+                    sseProgressText = uiState.sseProgressText,
                 )
             }
 
@@ -117,10 +143,12 @@ fun OnBoardingCompositionProvider(
                 OnBoardingSuccessScreen(
                     nickname = uiState.serverNickname.ifEmpty { uiState.charName },
                     onStartClick = {
+                        // 홈에서 뒤로가기 한 번에 앱이 종료되도록 태스크 초기화
                         Utils.UxUtils.moveActivity(
                             activity,
                             MainActivity::class.java,
-                            exitFlag = true
+                            exitFlag = true,
+                            clearTask = true
                         )
                     }
                 )

@@ -1,7 +1,10 @@
 package com.teumteumeat.teumteumeat.data.repository.pdf_document
 
 import android.content.Context
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.util.Log
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.document.DocumentApiService
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2 // safeApiVer2가 반환하는 타입
@@ -12,7 +15,6 @@ import com.teumteumeat.teumteumeat.data.network.model_request.RegisterDocumentRe
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository // safeApiVer2 사용을 위해 필요
-import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.mapper.toPdfDocumentSummary
 import com.teumteumeat.teumteumeat.data.mapper.toDocumentSummaryId
 import com.teumteumeat.teumteumeat.domain.model.document.DocumentSummaryId
@@ -107,49 +109,6 @@ class PdfDocumentRepositoryImpl @Inject constructor(
     }
 
 
-    /**
-     * 오늘의 PDF 문서 요약글을 생성(POST)합니다.
-     */
-    override suspend fun createDocumentSummary(
-        goalId: Int,
-        documentId: Int
-    ): ApiResultV2<DocumentSummaryResponse> {
-        return safeApiVer2(
-            apiCall = {
-                documentApiService.createDocumentSummary(
-                    goalId = goalId,
-                    documentId = documentId
-                )
-            },
-            mapper = { data ->
-                data // ✅ 단건 조회이므로 그대로 반환
-            }
-        ).let { result ->
-            when (result) {
-
-                is ApiResultV2.Success -> {
-                    val summary = result.data
-                        ?: return ApiResultV2.ServerError(
-                            code = "INVALID_DOCUMENT_SUMMARY_RESPONSE",
-                            message = "문서 요약을 생성하지 못했습니다.",
-                            errorType = DomainError.Message("document summary is null")
-                        )
-
-                    ApiResultV2.Success(
-                        message = result.message,
-                        data = summary
-                    )
-                }
-
-                is ApiResultV2.ServerError -> result
-                is ApiResultV2.NetworkError -> result
-                is ApiResultV2.SessionExpired -> result
-                is ApiResultV2.UnknownError -> result
-            }
-        }
-    }
-
-
     override suspend fun getDocuments(
         goalId: Int
     ): ApiResultV2<List<DocumentResponse>> {
@@ -187,35 +146,58 @@ class PdfDocumentRepositoryImpl @Inject constructor(
     }
 
     override suspend fun issuePresignedUrl(
-        fileName: String
+        fileName: String,
+        fileSize: Long
     ): ApiResultV2<PresignedResponse> {
 
         return safeApiVer2<PresignedResponse, PresignedResponse>(
             apiCall = {
                 documentApiService.issuePresignedUrl(
-                    PresignedRequest(fileName = fileName)
+                    PresignedRequest(fileName = fileName, fileSize = fileSize)
                 )
             },
             // 🔹 수정된 부분: 데이터가 null이면 예외를 던져서 safeApiVer2가 에러로 처리하게 함
             mapper = { it ?: error("서버로부터 Presigned 정보를 받지 못했습니다.") }
-
         )
     }
 
+    override suspend fun readFileBytes(uri: Uri): Result<ByteArray> = withContext(Dispatchers.IO) {
+        runCatching {
+            context.contentResolver.openInputStream(uri)
+                ?.readBytes()
+                ?: throw IllegalStateException("파일을 열 수 없습니다.")
+        }
+    }
+
+    override suspend fun getPdfPageCount(uri: Uri): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+                ?: throw IllegalStateException("PDF 파일을 열 수 없습니다.")
+            PdfRenderer(pfd).use { renderer -> renderer.pageCount }
+        }
+    }
 
     override suspend fun uploadFileToS3(
         presignedUrl: String,
-        uri: Uri,
+        bytes: ByteArray,
         mimeType: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
 
-            val inputStream = context.contentResolver.openInputStream(uri)
-                ?: throw IllegalStateException("파일을 열 수 없습니다.")
+            if (BuildConfig.DEBUG) {
+                Log.d("FileSizeDiag", "━━━ [업로드 시점] S3 PUT 요청 ━━━")
+                Log.d("FileSizeDiag", "bytes 크기      : ${bytes.size} bytes (${bytes.size / 1024} KB)")
+            }
 
-            val requestBody = inputStream
-                .readBytes()
-                .toRequestBody(mimeType.toMediaType())
+            val requestBody = bytes.toRequestBody(mimeType.toMediaType())
+
+            if (BuildConfig.DEBUG) {
+                Log.d("FileSizeDiag", "contentLength() : ${requestBody.contentLength()} bytes")
+                if (requestBody.contentLength() == -1L) {
+                    Log.w("FileSizeDiag", "⚠️ contentLength = -1 → Chunked 전송 발생 가능")
+                }
+                Log.d("FileSizeDiag", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            }
 
             val request = Request.Builder()
                 .url(presignedUrl)
@@ -223,6 +205,10 @@ class PdfDocumentRepositoryImpl @Inject constructor(
                 .build()
 
             okHttpClient.newCall(request).execute().use { response ->
+                if (BuildConfig.DEBUG) {
+                    Log.d("FileSizeDiag", "S3 응답 코드: ${response.code}")
+                    Log.d("FileSizeDiag", "S3 응답 메시지: ${response.message}")
+                }
                 if (!response.isSuccessful) {
                     throw IllegalStateException("S3 업로드 실패")
                 }
@@ -250,4 +236,5 @@ class PdfDocumentRepositoryImpl @Inject constructor(
             mapper = { Unit }
         )
     }
+
 }

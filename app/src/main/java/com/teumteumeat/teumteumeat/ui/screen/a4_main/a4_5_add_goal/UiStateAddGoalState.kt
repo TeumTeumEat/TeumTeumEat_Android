@@ -25,6 +25,15 @@ sealed class UiStateAddGoalScreenState {
     data class Error(
         val message: String
     ) : UiStateAddGoalScreenState()
+
+    /** OCR 처리 시간 초과 → 재시도 가능 */
+    data object SseTimeout : UiStateAddGoalScreenState()
+
+    /** OCR 서버 오류 → 에러 리포터 안내 + 카테고리 목표 선택 유도 */
+    data object SseServerError : UiStateAddGoalScreenState()
+
+    /** 암호화(비밀번호 설정) PDF → 다른 파일 선택 안내 */
+    data object SseEncryptedFile : UiStateAddGoalScreenState()
 }
 
 data class UiStateAddGoalState(
@@ -107,6 +116,13 @@ data class UiStateAddGoalState(
     val isCategorySelectionComplete: Boolean = false,
 
     val isSkipTypeSelect: Boolean = false,
+
+    // SSE 문서 처리 진행 상태
+    val isSseStarted: Boolean = false,
+    val sseProgress: Float = 0f,
+    val sseRemainMs: Long? = null,       // 자연 증가 애니메이션 duration 계산용 (Completed 시 0L, Pending 시 null)
+    val sseStatusText: String? = null,   // 시간 텍스트: "N초 남았어요." / "잠시만 기다려주세요"
+    val sseProgressText: String? = null, // 진행률 텍스트: "XX% 완료"
 ){
 /*    val currentPage: Int
         get() = AddGoalFlow.currentPage(currentScreen, goalTypeUiState)

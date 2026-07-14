@@ -24,12 +24,6 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/app_ad_id"/>
 
-        <activity
-            android:name=".ui.screen.a4_main.a4_6_guide_expired_goal.GuideExpiredGoalActivity"
-            android:exported="true"
-            android:label="@string/title_activity_guide_expired_goal"
-            android:theme="@style/Theme.TeumTeumEat" />
-
         <service
             android:name=".utils.firebase.TeumFcmService"
             android:exported="false">

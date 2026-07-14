@@ -5,23 +5,29 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.datastore.GoalTrackingDataStore
+import com.teumteumeat.teumteumeat.data.datastore.LastCompletedGoal
 import com.teumteumeat.teumteumeat.data.network.model.ApiResult
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.DomainError
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.data.network.model_request.CreateGoalRequest
 import com.teumteumeat.teumteumeat.data.network.model_request.UpdateGoalRequest
-import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.domain.model.RequestPromptOption
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetPdfPageCountUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.goal.EmitGoalRefreshUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.goal.UpdateGoalUseCase
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.BottomSheetType
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
@@ -32,6 +38,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -46,11 +53,17 @@ class AddGoalViewModel @Inject constructor(
     private val updateGoalUseCase: UpdateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val getPdfPageCountUseCase: GetPdfPageCountUseCase,
+    private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
+    private val emitGoalRefreshUseCase: EmitGoalRefreshUseCase,
+    private val analyticsLogger: TeumAnalyticsLogger,
+    private val goalTrackingDataStore: GoalTrackingDataStore,
     application: Application,
     val sessionManager: SessionManager,
-    val goalRepository: GoalRepository,
 ) : ViewModel() {
     private val appContext = application.applicationContext
+
+    private var sseInitialRemainMs: Long = 0L
 
     // Flow 값으로 currentPage 읽기
     private val currentPage get() = uiState.value.currentPage
@@ -86,6 +99,52 @@ class AddGoalViewModel @Inject constructor(
         }
     }
 
+    /** GOAL-002 next_course_start 발화용 직전 완주 목표 스냅샷 캐시 */
+    private var lastCompletedGoal: LastCompletedGoal? = null
+
+    /** GOAL-002 next_course_start 중복 발송 방지 플래그 */
+    private var hasNextCourseStartLogged = false
+
+    /**
+     * GOAL-002 next_course_start 트래킹 초기화. Activity onCreate에서 진입 경로와 무관하게 항상 호출한다.
+     * 직전 완주 스냅샷을 조회해 캐시하고, 목표 타입이 이미 정해져 있는 진입(Home "+"·GuideExpiredGoalActivity,
+     * SelectInputMethodScreen을 건너뜀)이면 그 자리에서 바로 발화를 시도한다.
+     */
+    fun initNextCourseStartTracking() {
+        viewModelScope.launch {
+            lastCompletedGoal = goalTrackingDataStore.getLastCompletedGoal()
+            if (_uiState.value.isSkipTypeSelect) {
+                logNextCourseStartIfEligible(_uiState.value.goalTypeUiState)
+            }
+        }
+    }
+
+    /**
+     * 완주 이력(스냅샷)이 있고 nextGoalType이 유효할 때만 next_course_start를 발화한다.
+     * SelectInputMethodScreen "다음" 탭 시 직접 호출되거나, [initNextCourseStartTracking]에서
+     * 타입 사전 지정 진입 시 자동 호출된다. 발화 성공 시 스냅샷을 소비(제거)해 동일 완주 건의
+     * 중복 발화를 막는다 — 타입 미선택 이탈 시에는 소비하지 않아 다음 진짜 시도에서 재시도할 수 있다.
+     */
+    fun logNextCourseStartIfEligible(nextGoalType: GoalTypeUiState) {
+        if (hasNextCourseStartLogged) return
+        val goal = lastCompletedGoal ?: return
+        val nextLearningType = when (nextGoalType) {
+            GoalTypeUiState.CATEGORY -> "category"
+            GoalTypeUiState.DOCUMENT -> "pdf"
+            GoalTypeUiState.NONE -> return
+        }
+
+        hasNextCourseStartLogged = true
+        analyticsLogger.logNextCourseStart(
+            prevGoalId = goal.goalId,
+            prevCategoryId = goal.categoryId,
+            prevLearningType = goal.learningType,
+            nextLearningType = nextLearningType,
+            isFirstComplete = goal.isFirstComplete,
+        )
+        viewModelScope.launch { goalTrackingDataStore.clearLastCompletedGoal() }
+    }
+
     fun selectLearningMethod(type: GoalTypeUiState) {
         _uiState.update {
             it.copy(
@@ -98,41 +157,56 @@ class AddGoalViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 categorySelection = CategorySelectionState(),
+                selectedCategoryId = null,
                 isCategorySelectionComplete = false,
                 targetCategoryPage = 0,
             )
         }
     }
 
-    private fun calculateTargetPageForItemUnChecked(selection: CategorySelectionState): Int =
-        when {
-            selection.depth1 == null -> 0
-            selection.depth2 == null -> 1
-            selection.depth3 == null -> 2
-            else -> 3
+    fun toggleCategory(category: Category, page: Int) {
+        val currentPath = _uiState.value.categorySelection.selectedPath
+        val isUnselecting = currentPath.getOrNull(page)?.id == category.id
+        val isLeaf = !isUnselecting && category.children.isEmpty() && category.serverCategoryId != null
+
+        val newPath = if (isUnselecting) {
+            currentPath.take(page)
+        } else {
+            currentPath.take(page) + category
         }
 
-    fun toggleDepth1(category: Category) {
+        val newTargetPage = when {
+            isUnselecting -> maxOf(0, page - 1)
+            isLeaf -> page
+            else -> page + 1
+        }
+
         _uiState.update { state ->
-            val newSelection =
-                if (state.categorySelection.depth1?.id == category.id) {
-                    CategorySelectionState()
-                } else {
-                    CategorySelectionState(depth1 = category)
-                }
             state.copy(
-                categorySelection = newSelection,
-                isCategorySelectionComplete = false,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+                categorySelection = CategorySelectionState(selectedPath = newPath),
+                selectedCategoryId = if (isLeaf) category.serverCategoryId else null,
+                isCategorySelectionComplete = isLeaf,
+                targetCategoryPage = newTargetPage
             )
         }
+
+        Log.d(
+            "AddGoalVM",
+            "page=$page, category=${category.name}, serverId=${category.serverCategoryId}, " +
+                    "path=${newPath.map { it.name }}"
+        )
     }
 
     fun navigateBackInCategoryDepth() {
         _uiState.update { state ->
-            if (state.targetCategoryPage > 0)
-                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
-            else state
+            if (state.targetCategoryPage <= 0) return@update state
+            val newPath = state.categorySelection.selectedPath.take(state.targetCategoryPage)
+            state.copy(
+                categorySelection = CategorySelectionState(selectedPath = newPath),
+                selectedCategoryId = null,
+                isCategorySelectionComplete = false,
+                targetCategoryPage = state.targetCategoryPage - 1
+            )
         }
     }
 
@@ -261,73 +335,6 @@ class AddGoalViewModel @Inject constructor(
         val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
         _uiState.update { it.copy(promptInput = label) }
         closeBottomSheet()
-    }
-
-    fun toggleDepth2(category: Category) {
-        _uiState.update { state ->
-            val currentDepth2 = state.categorySelection.depth2
-            val isUnselecting = currentDepth2?.id == category.id
-
-            val newSelection = if (isUnselecting) {
-                state.categorySelection.copy(depth2 = null, depth3 = null, depth4 = null)
-            } else {
-                state.categorySelection.copy(depth2 = category, depth3 = null, depth4 = null)
-            }
-
-            state.copy(
-                categorySelection = newSelection,
-                selectedCategoryId = null,
-                isCategorySelectionComplete = false,
-                targetCategoryPage = if (isUnselecting) 0 else 2
-            )
-        }
-    }
-
-    fun toggleDepth3(category: Category) {
-        _uiState.update { state ->
-            val currentDepth3 = state.categorySelection.depth3
-            val isUnselecting = currentDepth3?.id == category.id
-
-            val newDepth3 = if (isUnselecting) null else category
-
-            state.copy(
-                categorySelection = state.categorySelection.copy(depth3 = newDepth3, depth4 = null),
-                selectedCategoryId = null,
-                isCategorySelectionComplete = false,
-                targetCategoryPage = if (isUnselecting) 1 else 3
-            )
-        }
-    }
-
-    fun toggleDepth4(category: Category) {
-        if (category.children.isNotEmpty()) return
-        if (category.serverCategoryId == null) return
-
-        _uiState.update { state ->
-            val currentDepth4 = state.categorySelection.depth4
-            val isUnselecting = currentDepth4?.id == category.id
-
-            val newDepth4 = if (isUnselecting) null else category
-
-            val newTargetCategoryPage = if (isUnselecting) 2 else state.targetCategoryPage
-
-            val isComplete = !isUnselecting
-                    && newDepth4?.serverCategoryId != null
-                    && newTargetCategoryPage == 3
-
-            state.copy(
-                categorySelection = state.categorySelection.copy(depth4 = newDepth4),
-                selectedCategoryId = newDepth4?.serverCategoryId,
-                targetCategoryPage = newTargetCategoryPage,
-                isCategorySelectionComplete = isComplete
-            )
-        }
-
-        Log.d(
-            "OnBoardingVM",
-            "depth4=${_uiState.value.categorySelection.depth4?.name}, " +
-                    "selectedCategoryId=${_uiState.value.selectedCategoryId}"
-        )
     }
 
     fun updateCategorySelectionComplete(isComplete: Boolean) {
@@ -541,8 +548,9 @@ class AddGoalViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // ✅ 생성된 goalId 추출
+                    // ✅ 생성된 goalId 추출 후 uiState에 저장 (재시도 시 재사용)
                     val goalId = createResult.data.toLong()
+                    _uiState.update { it.copy(goalId = goalId.toInt()) }
 
                     // 1-1. 생성한 목표 ID로 수정
                     val updateGoalResult = updateGoalRequest(goalId)
@@ -550,7 +558,6 @@ class AddGoalViewModel @Inject constructor(
                         moveToError(updateGoalResult)
                         return@launch
                     }
-
 
                     // 2. 문서 확인
                     val uri = state.selectedFileUri
@@ -565,7 +572,7 @@ class AddGoalViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // 3. 문서 업로드
+                    // 3. 문서 업로드 (Presigned S3 + 서버 등록)
                     val uploadDocumentResult = uploadDocumentInternal(
                         goalId = goalId.toInt(),
                         uri = state.selectedFileUri,
@@ -577,12 +584,18 @@ class AddGoalViewModel @Inject constructor(
                         return@launch
                     }
 
-                    // 4. 문서 등록
+                    // 4. documentId 조회 후 uiState에 저장
                     val fetchDocumentResult = fetchCompletedDocument(goalId.toInt())
                     if (fetchDocumentResult !is ApiResultV2.Success) {
-                        moveToError(uploadDocumentResult)
+                        moveToError(fetchDocumentResult)
                         return@launch
                     }
+
+                    val documentId = _uiState.value.documentId.toLong()
+
+                    // 5. SSE로 처리 상태 모니터링 (Success/Error 전환은 내부에서 처리)
+                    connectDocumentSSE(goalId, documentId)
+                    return@launch
                 }
 
                 GoalTypeUiState.CATEGORY -> {
@@ -605,6 +618,7 @@ class AddGoalViewModel @Inject constructor(
 
                 GoalTypeUiState.NONE -> {
                     moveToFrontError("목표 타입이 선택되지 않았습니다.")
+                    return@launch
                 }
             }
 
@@ -613,7 +627,7 @@ class AddGoalViewModel @Inject constructor(
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
-            goalRepository.emitRefreshSignal()
+            emitGoalRefreshUseCase()
             _mainState.value = UiStateAddGoalScreenState.Success
 
         }
@@ -705,6 +719,11 @@ class AddGoalViewModel @Inject constructor(
         mimeType: String
     ): ApiResultV2<Unit> {
 
+        // 📊 ONB-PDF-1: pdf_upload_start 이벤트 + pdf_upload_attempt_count User Property
+        val fileSizeKb = _uiState.value.selectedFileSize / 1024
+        val pageCount = getPdfPageCountUseCase(uri).getOrDefault(0)
+        analyticsLogger.logPdfUploadStart(fileSizeKb = fileSizeKb, pageCount = pageCount)
+
         return when (
             val result = uploadDocumentUseCase(
                 goalId = goalId,
@@ -772,6 +791,83 @@ class AddGoalViewModel @Inject constructor(
             is ApiResultV2.ServerError -> result
             is ApiResultV2.NetworkError -> result
             is ApiResultV2.UnknownError -> result
+        }
+    }
+
+    private suspend fun connectDocumentSSE(goalId: Long, documentId: Long) {
+        sseInitialRemainMs = 0L
+        _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseStatusText = null) }
+
+        streamDocumentProcessingUseCase(goalId, documentId)
+            .catch { e ->
+                Log.e("SSE_LIFECYCLE", "Flow 예외 전파: ${e.javaClass.simpleName}(${e.message})")
+                _mainState.value = UiStateAddGoalScreenState.Error(
+                    e.message ?: "알 수 없는 오류가 발생했습니다."
+                )
+            }
+            .collect { event ->
+            when (event) {
+                is DocumentProcessingEvent.Connected -> {
+                    _uiState.update { it.copy(isSseStarted = true) }
+                }
+                is DocumentProcessingEvent.Pending -> {
+                    _uiState.update { it.copy(isSseStarted = true, sseProgress = 0.05f, sseRemainMs = null) }
+                }
+                is DocumentProcessingEvent.Processing -> {
+                    val remainMs = event.remainMs
+                    if (sseInitialRemainMs == 0L && remainMs > 0L) {
+                        sseInitialRemainMs = remainMs
+                    }
+                    val progress = when {
+                        remainMs <= 0L -> 0.99f
+                        sseInitialRemainMs > 0L ->
+                            (0.05f + (1f - remainMs.toFloat() / sseInitialRemainMs) * 0.94f)
+                                .coerceIn(0.05f, 0.99f)
+                        else -> 0.05f
+                    }
+                    val statusText = if (remainMs <= 0L) "잠시만 기다려주세요"
+                        else "${(remainMs + 999L) / 1000L}초 남았어요."
+                    val progressText = if (remainMs > 0L) "${(progress * 100).toInt()}% 완료" else null
+                    _uiState.update { it.copy(sseProgress = progress, sseRemainMs = remainMs, sseStatusText = statusText, sseProgressText = progressText) }
+                }
+                is DocumentProcessingEvent.Completed -> {
+                    Log.d("SSE_LIFECYCLE", "OCR 처리 완료 → SSE 연결 정상 종료")
+                    _uiState.update { it.copy(sseProgress = 1.0f, sseRemainMs = 0L, sseStatusText = null) }
+                    delay(600L)
+                    emitGoalRefreshUseCase()
+                    _mainState.value = UiStateAddGoalScreenState.Success
+                }
+                is DocumentProcessingEvent.Failed -> {
+                    _mainState.value = when (event.reason) {
+                        DocumentProcessingEvent.FailureReason.TIMEOUT ->
+                            UiStateAddGoalScreenState.SseTimeout
+                        DocumentProcessingEvent.FailureReason.SERVER_ERROR ->
+                            UiStateAddGoalScreenState.SseServerError
+                        DocumentProcessingEvent.FailureReason.ENCRYPTED_FILE ->
+                            UiStateAddGoalScreenState.SseEncryptedFile
+                        DocumentProcessingEvent.FailureReason.UNKNOWN ->
+                            UiStateAddGoalScreenState.Error("알 수 없는 오류가 발생했습니다.")
+                    }
+                }
+                is DocumentProcessingEvent.StreamError -> {
+                    _mainState.value = UiStateAddGoalScreenState.Error(
+                        event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
+                    )
+                }
+            }
+        }
+    }
+
+    fun retryDocumentSSE() {
+        viewModelScope.launch {
+            sseInitialRemainMs = 0L
+            _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseRemainMs = null, sseStatusText = null) }
+            _mainState.value = UiStateAddGoalScreenState.Loading
+
+            val goalId = _uiState.value.goalId.toLong()
+            val documentId = _uiState.value.documentId.toLong()
+
+            connectDocumentSSE(goalId, documentId)
         }
     }
 

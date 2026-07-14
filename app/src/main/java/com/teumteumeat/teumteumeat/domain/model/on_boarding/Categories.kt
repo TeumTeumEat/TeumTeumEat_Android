@@ -22,33 +22,18 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
             .split("/")
             .filter { it.isNotBlank() }
 
-        // ❌ 4뎁스 규칙 위반 (path 3 초과 → leaf 포함 시 5뎁스)
-        if (segments.size > 3) {
-            return@forEach
-        }
-
         var currentLevel = root
 
-        // 1️⃣ path 기반 depth 생성 (최대 3뎁스)
         segments.forEach { segment ->
-
             currentLevel = currentLevel
-                .getOrPut(segment) {
-                    MutableCategory(
-                        id = segment,
-                        name = segment
-                    )
-                }
+                .getOrPut(segment) { MutableCategory(id = segment, name = segment) }
                 .children
         }
 
-        // 2️⃣ leaf (항상 4뎁스)
-        var leaf = currentLevel[dto.name]
+        val leaf = currentLevel[dto.name]
         if (leaf != null) {
-            // 이미 존재하면 serverCategoryId만 세팅
             leaf.serverCategoryId = dto.categoryId
         } else {
-            // 없으면 새로 생성
             currentLevel[dto.name] = MutableCategory(
                 id = dto.name,
                 name = dto.name,
@@ -58,6 +43,11 @@ fun List<CategoryDto>.toDomainCategoryTree(): List<Category> {
     }
 
     return root.values.map { it.toImmutable() }
+}
+
+fun List<Category>.maxDepth(): Int {
+    if (isEmpty()) return 0
+    return 1 + (maxOfOrNull { it.children.maxDepth() } ?: 0)
 }
 
 fun String.toDepth1CategoryLabel(): String = when (this) {

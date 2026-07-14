@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -61,7 +63,11 @@ import kotlinx.coroutines.flow.first
 import kotlin.jvm.java
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.runtime.mutableLongStateOf
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
@@ -70,6 +76,7 @@ import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import kotlinx.coroutines.flow.collectLatest
 import androidx.hilt.navigation.compose.hiltViewModel
 
+private val DebugSkyBlue = Color(0xFF56CCF2)
 
 @Composable
 fun MainCompositionProvider(
@@ -93,7 +100,7 @@ fun MainCompositionProvider(
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
         }
     }
 
@@ -285,6 +292,65 @@ fun MainCompositionProvider(
                     message = homeUiState.loadingMessage,
                     progress = homeUiState.processingState?.progress
                 )
+            }
+
+            // [DEBUG 전용] 테스트용 플로팅 버튼 묶음
+            if (BuildConfig.DEBUG) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                        .padding(bottom = 100.dp, start = 16.dp),
+                    contentAlignment = Alignment.BottomStart
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.alpha(0.5f),
+                    ) {
+                        ExtendedFloatingActionButton(
+                            onClick = { homeViewModel.resetGoal() },
+                            containerColor = DebugSkyBlue,
+                            contentColor = Color.White,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = null,
+                                )
+                            },
+                            text = {
+                                Text(text = "목표 초기화")
+                            },
+                        )
+                        ExtendedFloatingActionButton(
+                            onClick = { homeViewModel.resetAdReward() },
+                            containerColor = DebugSkyBlue,
+                            contentColor = Color.White,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = null,
+                                )
+                            },
+                            text = {
+                                Text(text = "쿠폰 초기화")
+                            },
+                        )
+                        ExtendedFloatingActionButton(
+                            onClick = { homeViewModel.addTestQuizCount() },
+                            containerColor = DebugSkyBlue,
+                            contentColor = Color.White,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = null,
+                                )
+                            },
+                            text = {
+                                Text(text = "풀이 횟수 +1")
+                            },
+                        )
+                    }
+                }
             }
 
         }

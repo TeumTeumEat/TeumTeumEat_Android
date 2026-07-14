@@ -1,7 +1,6 @@
 package com.teumteumeat.teumteumeat.domain.repository.pff_document
 
 import android.net.Uri
-import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
@@ -16,8 +15,16 @@ interface PdfDocumentRepository {
      * - 성공 시 presigned 정보 반환
      */
     suspend fun issuePresignedUrl(
-        fileName: String
+        fileName: String,
+        fileSize: Long
     ): ApiResultV2<PresignedResponse>
+
+    /**
+     * 1.5️⃣ URI → ByteArray 읽기
+     * - ContentProvider에서 파일 바이트를 한 번만 읽어 반환
+     * - presigned URL 발급 전 호출하여 fileSize 확정에 사용
+     */
+    suspend fun readFileBytes(uri: Uri): Result<ByteArray>
 
     /**
      * 2️⃣ S3 presigned PUT 업로드
@@ -26,7 +33,7 @@ interface PdfDocumentRepository {
      */
     suspend fun uploadFileToS3(
         presignedUrl: String,
-        uri: Uri,
+        bytes: ByteArray,
         mimeType: String
     ): Result<Unit>
 
@@ -53,11 +60,7 @@ interface PdfDocumentRepository {
         goalId: Int,
         documentId: Int,
     ): ApiResultV2<PdfDocumentSummary>
-
-    suspend fun createDocumentSummary(
-        goalId: Int,
-        documentId: Int,
-    ): ApiResultV2<DocumentSummaryResponse>
-
+    
+    suspend fun getPdfPageCount(uri: Uri): Result<Int>
 
 }

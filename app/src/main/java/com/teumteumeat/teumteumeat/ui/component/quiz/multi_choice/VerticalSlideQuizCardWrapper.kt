@@ -1,11 +1,11 @@
 package com.teumteumeat.teumteumeat.ui.component.quiz.multi_choice
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -13,13 +13,11 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun VerticalSlideQuizCardWrapper(
-    key: Any,
+    offsetY: Animatable<Float, AnimationVector1D>,
     onSelectAnswer: (String) -> Unit,
     content: @Composable (triggerSelect: (String) -> Unit) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
-    // Y축 이동을 위한 Animatable
-    val offsetY = remember(key) { Animatable(0f) }
 
     // 🔹 아래로 날려보내고 정답을 제출하는 함수
     val animateAndSubmit: suspend (String) -> Unit = { answer ->

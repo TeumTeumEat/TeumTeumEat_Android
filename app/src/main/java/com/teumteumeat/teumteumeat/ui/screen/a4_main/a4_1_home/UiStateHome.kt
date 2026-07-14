@@ -21,11 +21,12 @@ data class UiStateHome(
     val canIssueCoupon: Boolean = false,
     val dailyAdRewardCount: Int = 0,
 
-    /** ✅ 오늘 퀴즈를 풀었는지 확인하는 변수값 (기본값 false) */
+    /** ✅ 오늘 요약글을 한번이라도 생성하였는지 확인하는 변수값 (기본값 false) */
     val hasCreatedToday: Boolean = false,
 
     /** 앱이 백그라운드로 전환됬을 때 날짜를 확인용 상태 값 */
     val lastCheckedDate: String? = null, // 추가: "2023-10-27" 형태의 날짜 저장
+    /** ✅ 오늘 퀴즈를 한번이라도 풀었는지 확인하는 변수값 (기본값 false) */
     val hasSolvedToday: Boolean = false,
     val isFirstTime: Boolean = false,
 
@@ -49,7 +50,10 @@ data class UiStateHome(
     // 현재 선택된 랜덤 음식 리소스 ID (기본값 설정 가능)
     val selectedFoodRes: Int = R.drawable.food_rice,
 
-    val isShowGoalExpiredDialog: Boolean = false,
+    val isShowNewGoalGuideDialog: Boolean = false,
+
+    /** 목표 완료 시 홈 진입 안내 팝업 */
+    val isShowGoalCompletedDialog: Boolean = false,
 
     val errorMessage: String? = null,
     val toastMessage: String? = null,
@@ -87,7 +91,7 @@ data class SummaryQuery(
 
 sealed class SnackState {
 
-    /** ✅ 지금 간식 사용 가능 → 퀴즈 가능 */
+    /** ✅ 지금 간식 사용 가능 → 요약글 생성 or 조회 가능 */
     data object Available : SnackState()
 
     /** ❌ 오늘 이미 사용함 */
@@ -97,9 +101,6 @@ sealed class SnackState {
 
     /** 목표 완료 */
     data object Completed : SnackState()
-
-    /** 🚫 기간 종료 */
-    data object Expired : SnackState()
 }
 
 

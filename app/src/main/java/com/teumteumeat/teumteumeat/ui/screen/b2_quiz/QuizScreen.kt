@@ -17,10 +17,7 @@ import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.header.ProgressHeader
 import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
 import com.teumteumeat.teumteumeat.ui.component.quiz.QuizCompleteCard
-import com.teumteumeat.teumteumeat.ui.component.quiz.multi_choice.QuizMultiChoiceCard
-import com.teumteumeat.teumteumeat.ui.component.quiz.ox.CardStatus
 import com.teumteumeat.teumteumeat.ui.component.quiz.ox.QuizCardStack
-import com.teumteumeat.teumteumeat.ui.component.quiz.ox.QuizOXCard
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
@@ -105,12 +102,6 @@ fun QuizScreen(
                                 currentIndex = uiState.currentIndex,
                                 onAnswerSubmitted = onSelectAnswer,
                             )
-                            /*QuizCardSection(
-                                modifier = Modifier.align(Alignment.Center),
-                                quiz = uiState.currentQuiz!!,
-                                questionIndex = uiState.currentIndex + 1,
-                                onSelectAnswer = onSelectAnswer
-                            )*/
                         }
 
                         // 🔴 퇴장 확인 팝업 (가장 상단에 위치하도록 Box 마지막에 배치)
@@ -158,45 +149,4 @@ fun QuizScreen(
         }
     }
 }
-
-@Composable
-fun QuizCardSection(
-    quiz: QuizCardUiState,
-    questionIndex: Int,
-    onSelectAnswer: (String) -> Unit,
-    modifier: Modifier
-) {
-    when (quiz.type) {
-
-        QuizType.OX -> {
-            QuizOXCard(
-                modifier = modifier,
-                questionIndex = questionIndex,
-                question = quiz.question,
-                isCardStatus = CardStatus.Default,
-                onYes = { },
-                onNo = { }
-            )
-        }
-
-        QuizType.MCQ -> {
-            QuizMultiChoiceCard(
-                modifier = modifier,
-                questionIndex = questionIndex,
-                question = quiz.question,
-                options = quiz.options,
-                selectedIndex = quiz.selectedAnswer
-                    ?.let { quiz.options.indexOf(it) },
-                onSelect = { index ->
-                    onSelectAnswer(quiz.options[index])
-                },
-                onPass = {
-                    onSelectAnswer("")
-                }
-            )
-        }
-    }
-}
-
-
 

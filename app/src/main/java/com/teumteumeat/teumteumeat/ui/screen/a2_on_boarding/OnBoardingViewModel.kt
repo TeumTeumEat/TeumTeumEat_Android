@@ -20,9 +20,12 @@ import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.TimeState
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
+import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetPdfPageCountUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.CreateGoalUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetCategoriesUseCase
@@ -33,6 +36,9 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
+import androidx.lifecycle.SavedStateHandle
+import com.teumteumeat.teumteumeat.ui.component.AmPm
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
@@ -40,6 +46,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -52,6 +59,7 @@ sealed interface UiEffect {
 
 @HiltViewModel
 class OnBoardingViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
     val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     val registerUserNameUseCase: RegisterUserNameUseCase,
     private val getUserNameUseCase: GetUserNameUseCase,
@@ -60,23 +68,47 @@ class OnBoardingViewModel @Inject constructor(
     private val createGoalUseCase: CreateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val getPdfPageCountUseCase: GetPdfPageCountUseCase,
+    private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
     @ApplicationContext private val context: Context,
     application: Application,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
 
-    // 이름 입력 제약조건 부분
+    /**
+     * Process Death 복원용 SavedStateHandle 키.
+     * 저장 대상: 사용자가 직접 입력·선택한 값만 (대용량·임시 데이터 제외).
+     */
     companion object {
         private const val MIN_LENGTH = 1
         private const val MAX_LENGTH = 10
         private val ALLOWED_REGEX = Regex("^[가-힣a-zA-Z0-9]*$")
+
+        private const val KEY_SCREEN         = "ssh_screen_route"
+        private const val KEY_NAME           = "ssh_char_name"
+        private const val KEY_WORK_IN_H      = "ssh_work_in_hour"
+        private const val KEY_WORK_IN_M      = "ssh_work_in_min"
+        private const val KEY_WORK_IN_AP     = "ssh_work_in_ampm"
+        private const val KEY_WORK_OUT_H     = "ssh_work_out_hour"
+        private const val KEY_WORK_OUT_M     = "ssh_work_out_min"
+        private const val KEY_WORK_OUT_AP    = "ssh_work_out_ampm"
+        private const val KEY_QUESTION_CNT   = "ssh_question_cnt"
+        private const val KEY_GOAL_TYPE      = "ssh_goal_type"
+        private const val KEY_DIFFICULTY     = "ssh_difficulty"
+        private const val KEY_STUDY_PERIOD   = "ssh_study_period"   // -1 = null
+        private const val KEY_CATEGORY_ID   = "ssh_category_id"    // -1 = null
+        private const val KEY_PROMPT_INPUT   = "ssh_prompt_input"
+        private const val KEY_AGREEMENT      = "ssh_agreement"
     }
 
     // Flow 값으로 currentPage 읽기
     private val currentPage get() = uiState.value.currentPage
     private val totalPage get() = uiState.value.totalPage
+
+    private var sseInitialRemainMs: Long = 0L
 
     private val _uiState = MutableStateFlow<UiStateOnboardingState>(UiStateOnboardingState())
     val uiState = _uiState.asStateFlow()
@@ -92,7 +124,63 @@ class OnBoardingViewModel @Inject constructor(
     val effect: SharedFlow<UiEffect> = _effect
 
     init {
+        // 📊 ONB-002: 온보딩 첫 화면 진입
+        // KEY_SCREEN이 없는 경우 = 최초 진입 (Process Death 복원 시 이미 값이 저장되어 있음)
+        val isProcessDeathRestore = savedStateHandle.contains(KEY_SCREEN)
+        restoreFromSavedState()
+        if (!isProcessDeathRestore) {
+            analyticsLogger.logOnboardingStart()
+        }
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
+    }
+
+    /**
+     * Process Death 후 SavedStateHandle에서 사용자 입력값을 복원한다.
+     * NavController backstack은 Activity Bundle로 자동 복원되므로 여기서는 ViewModel 데이터만 처리.
+     */
+    private fun restoreFromSavedState() {
+        val route = savedStateHandle.get<String>(KEY_SCREEN) ?: return
+
+        val restoredScreen = OnBoardingScreens.fromRoute(route) ?: return
+
+        val workInTime = TimeState(
+            hour   = savedStateHandle.get<Int>(KEY_WORK_IN_H)  ?: 8,
+            minute = savedStateHandle.get<Int>(KEY_WORK_IN_M)  ?: 0,
+            amPm   = savedStateHandle.get<String>(KEY_WORK_IN_AP)
+                ?.let { runCatching { AmPm.valueOf(it) }.getOrNull() }
+                ?: AmPm.AM
+        )
+        val workOutTime = TimeState(
+            hour   = savedStateHandle.get<Int>(KEY_WORK_OUT_H)  ?: 6,
+            minute = savedStateHandle.get<Int>(KEY_WORK_OUT_M)  ?: 0,
+            amPm   = savedStateHandle.get<String>(KEY_WORK_OUT_AP)
+                ?.let { runCatching { AmPm.valueOf(it) }.getOrNull() }
+                ?: AmPm.PM
+        )
+
+        _uiState.update {
+            it.copy(
+                currentScreen      = restoredScreen,
+                charName           = savedStateHandle.get<String>(KEY_NAME)          ?: it.charName,
+                workInTime         = workInTime,
+                workOutTime        = workOutTime,
+                selectedQuestionCnt = savedStateHandle.get<Int>(KEY_QUESTION_CNT)    ?: it.selectedQuestionCnt,
+                goalTypeUiState    = savedStateHandle.get<String>(KEY_GOAL_TYPE)
+                    ?.let { s -> runCatching { GoalTypeUiState.valueOf(s) }.getOrNull() }
+                    ?: it.goalTypeUiState,
+                difficulty         = savedStateHandle.get<String>(KEY_DIFFICULTY)
+                    ?.let { s -> runCatching { Difficulty.valueOf(s) }.getOrNull() }
+                    ?: it.difficulty,
+                studyPeriod        = savedStateHandle.get<Int>(KEY_STUDY_PERIOD)
+                    ?.takeIf { v -> v != -1 },
+                selectedCategoryId = savedStateHandle.get<Int>(KEY_CATEGORY_ID)
+                    ?.takeIf { v -> v != -1 },
+                promptInput        = savedStateHandle.get<String>(KEY_PROMPT_INPUT)  ?: it.promptInput,
+                isCheckedAgreement = savedStateHandle.get<Boolean>(KEY_AGREEMENT)    ?: it.isCheckedAgreement,
+            )
+        }
+
+        Log.d("OnBoardingVM", "♻️ Process Death 복원 완료 → screen=${restoredScreen.route}")
     }
 
     fun submitOnBoarding() {
@@ -132,6 +220,12 @@ class OnBoardingViewModel @Inject constructor(
             if (pushSettingResult !is ApiResultV2.Success) {
                 moveToError(pushSettingResult)
                 return@launch
+            }
+
+            // 서버에서 닉네임 조회 (실패해도 온보딩 완료를 막지 않음)
+            when (val nameResult = getUserNameUseCase()) {
+                is ApiResultV2.Success -> _uiState.update { it.copy(serverNickname = nameResult.data.name) }
+                else -> Unit
             }
 
             // 5. 문서 업로드 documentID 생성
@@ -175,6 +269,12 @@ class OnBoardingViewModel @Inject constructor(
                         moveToError(fetchDocumentResult)
                         return@launch
                     }
+
+                    // 5-5. SSE로 처리 상태 모니터링 (Success/Error 전환은 내부에서 처리)
+                    val goalId = _uiState.value.goalId.toLong()
+                    val documentId = _uiState.value.documentId.toLong()
+                    connectDocumentSSE(goalId, documentId)
+                    return@launch
                 }
 
                 GoalTypeUiState.CATEGORY -> {
@@ -190,19 +290,90 @@ class OnBoardingViewModel @Inject constructor(
                 GoalTypeUiState.NONE -> {}
             }
 
-            // 서버에서 닉네임 조회 (실패해도 온보딩 완료를 막지 않음)
-            when (val nameResult = getUserNameUseCase()) {
-                is ApiResultV2.Success -> _uiState.update { it.copy(serverNickname = nameResult.data.name) }
-                else -> Unit
-            }
-
-            // 🔹 최소 로딩 1.8초 보장
+            // 🔹 최소 로딩 1.8초 보장 (CATEGORY / NONE 플로우만 도달)
             val elapsed = System.currentTimeMillis() - startTime
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
+            // 📊 ONB-011: 온보딩 최종 완료 이벤트 + User Property 등록
+            analyticsLogger.logOnboardingComplete()
             _mainState.value = UiStateOnboardingScreenState.Success
         }
+    }
+
+    /**
+     * PDF 문서 처리 상태를 SSE로 구독해 진행률을 갱신하고,
+     * 완료/실패 시 [mainState]를 최종 전환한다.
+     */
+    private suspend fun connectDocumentSSE(goalId: Long, documentId: Long) {
+        sseInitialRemainMs = 0L
+        _uiState.update { it.copy(isSseStarted = false, sseProgress = 0f, sseRemainMs = null, sseStatusText = null) }
+
+        streamDocumentProcessingUseCase(goalId, documentId)
+            .catch { e ->
+                Log.e("SSE_LIFECYCLE", "Flow 예외 전파: ${e.javaClass.simpleName}(${e.message})")
+                _mainState.value = UiStateOnboardingScreenState.Error(
+                    e.message ?: "알 수 없는 오류가 발생했습니다."
+                )
+            }
+            .collect { event ->
+                when (event) {
+                    is DocumentProcessingEvent.Connected -> {
+                        _uiState.update { it.copy(isSseStarted = true) }
+                    }
+                    is DocumentProcessingEvent.Pending -> {
+                        _uiState.update { it.copy(isSseStarted = true, sseProgress = 0.05f, sseRemainMs = null) }
+                    }
+                    is DocumentProcessingEvent.Processing -> {
+                        val remainMs = event.remainMs
+                        if (sseInitialRemainMs == 0L && remainMs > 0L) {
+                            sseInitialRemainMs = remainMs
+                        }
+                        val progress = when {
+                            remainMs <= 0L -> 0.99f
+                            sseInitialRemainMs > 0L ->
+                                (0.05f + (1f - remainMs.toFloat() / sseInitialRemainMs) * 0.94f)
+                                    .coerceIn(0.05f, 0.99f)
+                            else -> 0.05f
+                        }
+                        val statusText = if (remainMs <= 0L) "잠시만 기다려주세요"
+                            else "${(remainMs + 999L) / 1000L}초 남았어요."
+                        val progressText = if (remainMs > 0L) "${(progress * 100).toInt()}% 완료" else null
+                        _uiState.update {
+                            it.copy(
+                                sseProgress = progress,
+                                sseRemainMs = remainMs,
+                                sseStatusText = statusText,
+                                sseProgressText = progressText
+                            )
+                        }
+                    }
+                    is DocumentProcessingEvent.Completed -> {
+                        Log.d("SSE_LIFECYCLE", "OCR 처리 완료 → SSE 연결 정상 종료")
+                        _uiState.update { it.copy(sseProgress = 1.0f, sseRemainMs = 0L, sseStatusText = null) }
+                        delay(600L)
+                        _mainState.value = UiStateOnboardingScreenState.Success
+                    }
+                    is DocumentProcessingEvent.Failed -> {
+                        val message = when (event.reason) {
+                            DocumentProcessingEvent.FailureReason.TIMEOUT ->
+                                "문서 처리 시간이 초과되었어요. 다시 시도해주세요."
+                            DocumentProcessingEvent.FailureReason.SERVER_ERROR ->
+                                "서버 처리 중 오류가 발생했어요. 다시 시도해주세요."
+                            DocumentProcessingEvent.FailureReason.ENCRYPTED_FILE ->
+                                "암호화된 PDF 파일은 처리할 수 없어요. 다른 파일을 선택해주세요."
+                            DocumentProcessingEvent.FailureReason.UNKNOWN ->
+                                "알 수 없는 오류가 발생했습니다."
+                        }
+                        _mainState.value = UiStateOnboardingScreenState.Error(message)
+                    }
+                    is DocumentProcessingEvent.StreamError -> {
+                        _mainState.value = UiStateOnboardingScreenState.Error(
+                            event.throwable.message ?: "알 수 없는 오류가 발생했습니다."
+                        )
+                    }
+                }
+            }
     }
 
     private suspend fun createGoalAndSaveId(): ApiResultV2<Int> {
@@ -358,7 +529,13 @@ class OnBoardingViewModel @Inject constructor(
         mimeType: String
     ): ApiResultV2<Unit> {
 
-        val goalId = _uiState.value.goalId
+        val state = _uiState.value
+        val goalId = state.goalId
+
+        // 📊 ONB-PDF-1: pdf_upload_start 이벤트 + pdf_upload_attempt_count User Property
+        val fileSizeKb = state.selectedFileSize / 1024
+        val pageCount = getPdfPageCountUseCase(uri).getOrDefault(0)
+        analyticsLogger.logPdfUploadStart(fileSizeKb = fileSizeKb, pageCount = pageCount)
 
         return when (
             val result = uploadDocumentUseCase(
@@ -535,6 +712,7 @@ class OnBoardingViewModel @Inject constructor(
         val formattedEndDate = endDate.format(formatter)
 
         // 🔹 4. UI 상태 업데이트
+        savedStateHandle[KEY_STUDY_PERIOD] = week
         _uiState.update {
             it.copy(
                 studyPeriod = week,
@@ -617,6 +795,7 @@ class OnBoardingViewModel @Inject constructor(
 
 
     fun onDifficultySelected(difficulty: Difficulty) {
+        savedStateHandle[KEY_DIFFICULTY] = difficulty.name
         _uiState.update {
             it.copy(
                 difficulty = difficulty,
@@ -695,157 +874,45 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    private fun calculateTargetPageForItemUnChecked(
-        selection: CategorySelectionState
-    ): Int {
-        return when {
-            selection.depth1 == null -> 0
-            selection.depth2 == null -> 1
-            selection.depth3 == null -> 2
-            else -> 3
+    fun toggleCategory(category: Category, page: Int) {
+        val currentPath = _uiState.value.categorySelection.selectedPath
+        val isUnselecting = currentPath.getOrNull(page)?.id == category.id
+        val isLeaf = !isUnselecting && category.children.isEmpty() && category.serverCategoryId != null
+
+        val newPath = if (isUnselecting) {
+            currentPath.take(page)
+        } else {
+            currentPath.take(page) + category
         }
-    }
 
-
-    fun toggleDepth1(category: Category) {
-        _uiState.update { state ->
-            val newSelection =
-                if (state.categorySelection.depth1?.id == category.id) {
-                    CategorySelectionState() // 전체 해제
-                } else {
-                    CategorySelectionState(depth1 = category)
-                }
-
-            state.copy(
-                categorySelection = newSelection,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
-            )
+        val newTargetPage = when {
+            isUnselecting -> maxOf(0, page - 1)
+            isLeaf -> page
+            else -> page + 1
         }
-    }
-
-
-    fun toggleDepth2(category: Category) {
-        _uiState.update { state ->
-            val currentDepth2 = state.categorySelection.depth2
-            val isUnselecting = currentDepth2?.id == category.id
-
-            val newSelection = if (isUnselecting) {
-                // 🔁 2뎁스 해제 → 하위 전부 해제
-                state.categorySelection.copy(
-                    depth2 = null,
-                    depth3 = null,
-                    depth4 = null
-                )
-            } else {
-                // ✅ 2뎁스 선택 → 하위 초기화
-                state.categorySelection.copy(
-                    depth2 = category,
-                    depth3 = null,
-                    depth4 = null
-                )
-            }
-
-            state.copy(
-                categorySelection = newSelection,
-                selectedCategoryId = null,
-
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    0 // 1뎁스 페이지로 복귀
-                } else {
-                    2 // 3뎁스 페이지
-                }
-            )
-        }
-    }
-
-    fun toggleDepth3(category: Category) {
-        Log.d(
-            "OnBoardingVM",
-            "toggleDepth3 input → " +
-                    "name=${category.name}, " +
-                    "serverId=${category.serverCategoryId}, " +
-                    "children=${category.children.size}"
-        )
 
         _uiState.update { state ->
-            val currentDepth3 = state.categorySelection.depth3
-            val isUnselecting = currentDepth3?.id == category.id
-
-            val newDepth3 = if (isUnselecting) null else category
-
             state.copy(
-                categorySelection = state.categorySelection.copy(
-                    depth3 = newDepth3,
-                    depth4 = null // ⭐ 3뎁스 변경 시 4뎁스 초기화
-                ),
-                selectedCategoryId = null,
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    1 // 2뎁스 페이지로 복귀
-                } else {
-                    3 // 4뎁스 페이지
-                }
+                categorySelection = CategorySelectionState(selectedPath = newPath),
+                selectedCategoryId = if (isLeaf) category.serverCategoryId else null,
+                targetCategoryPage = newTargetPage
             )
         }
-    }
 
-    fun toggleDepth4(category: Category) {
-        if (category.children.isNotEmpty()) return
-        if (category.serverCategoryId == null) return
-
-        _uiState.update { state ->
-            val currentDepth4 = state.categorySelection.depth4
-            val isUnselecting = currentDepth4?.id == category.id
-
-            val newDepth4 = if (isUnselecting) null else category
-
-            state.copy(
-                categorySelection = state.categorySelection.copy(
-                    depth4 = newDepth4
-                ),
-
-                selectedCategoryId = newDepth4?.serverCategoryId,
-
-                // ⭐ 핵심 규칙
-                targetCategoryPage = if (isUnselecting) {
-                    2 // 3뎁스 페이지로 복귀
-                } else {
-                    state.targetCategoryPage // ❗ 페이지 유지
-                }
-            )
+        if (isLeaf) {
+            savedStateHandle[KEY_CATEGORY_ID] = _uiState.value.selectedCategoryId ?: -1
         }
 
         Log.d(
             "OnBoardingVM",
-            "depth4=${_uiState.value.categorySelection.depth4?.name}, " +
-                    "selectedCategoryId=${_uiState.value.selectedCategoryId}"
+            "page=$page, category=${category.name}, serverId=${category.serverCategoryId}, " +
+                    "path=${newPath.map { it.name }}"
         )
     }
-
 
     fun resetCategorySelection() {
         _uiState.update { state ->
             state.copy(
-                categorySelection = CategorySelectionState(), // depth1,2,3 전부 초기화
-                selectedCategoryId = null,
-                targetCategoryPage = 0 // ⭐ 1뎁스 페이지로 이동
-            )
-        }
-    }
-
-
-    fun navigateBackInCategoryDepth() {
-        _uiState.update { state ->
-            if (state.targetCategoryPage > 0)
-                state.copy(targetCategoryPage = state.targetCategoryPage - 1)
-            else state
-        }
-    }
-
-    fun clearDepth1() {
-        _uiState.update {
-            it.copy(
                 categorySelection = CategorySelectionState(),
                 selectedCategoryId = null,
                 targetCategoryPage = 0
@@ -853,34 +920,18 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    fun clearDepth2() {
+    fun navigateBackInCategoryDepth() {
         _uiState.update { state ->
-            val newSelection = state.categorySelection.copy(
-                depth2 = null,
-                depth3 = null,
-                depth4 = null,
-            )
+            if (state.targetCategoryPage <= 0) return@update state
+            val newPath = state.categorySelection.selectedPath.take(state.targetCategoryPage)
             state.copy(
-                categorySelection = newSelection,
+                categorySelection = CategorySelectionState(selectedPath = newPath),
                 selectedCategoryId = null,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
+                targetCategoryPage = state.targetCategoryPage - 1
             )
         }
     }
 
-    fun clearDepth3() {
-        _uiState.update { state ->
-            val newSelection = state.categorySelection.copy(
-                depth3 = null,
-                depth4 = null,
-            )
-            state.copy(
-                categorySelection = newSelection,
-                selectedCategoryId = null,
-                targetCategoryPage = calculateTargetPageForItemUnChecked(newSelection)
-            )
-        }
-    }
 
 
     fun onFileDeleted(
@@ -984,6 +1035,7 @@ class OnBoardingViewModel @Inject constructor(
 
     fun issuePresignedUrl() {
         val fileName = _uiState.value.selectedFileName
+        val fileSize = _uiState.value.selectedFileSize
         if (fileName.isBlank()) return
 
         viewModelScope.launch {
@@ -994,7 +1046,7 @@ class OnBoardingViewModel @Inject constructor(
                 )
             }
 
-            val result = issuePresignedUrlUseCase(fileName)
+            val result = issuePresignedUrlUseCase(fileName, fileSize)
 
             handlePresignedResult(result)
         }
@@ -1048,15 +1100,74 @@ class OnBoardingViewModel @Inject constructor(
 
 
     fun selectLearningMethod(type: GoalTypeUiState) {
+        savedStateHandle[KEY_GOAL_TYPE] = type.name
         _uiState.update {
             it.copy(goalTypeUiState = type)
         }
     }
 
+    /**
+     * ONB-006 — SelectLearningMethodScreen "다음으로" 버튼 처리
+     *
+     * 학습 방식 선택 완료 이벤트와 User Property를 로깅합니다.
+     * 실제 NavController 이동은 [SelectLearningMethodScreen]에서 담당합니다.
+     */
+    fun onLearningMethodNextClicked() {
+        analyticsLogger.logLearningTypeSelect(_uiState.value.goalTypeUiState)
+    }
+
+    /**
+     * ONB-010 — OptimizeDataScreen "다음으로" 버튼 처리
+     *
+     * 난이도 선택 완료 이벤트와 User Property를 로깅합니다.
+     * 실제 NavController 이동은 [OptimizeDataScreen]에서 담당합니다.
+     */
+    fun onDifficultyNextClicked() {
+        analyticsLogger.logDifficultySelect(_uiState.value.difficulty)
+    }
+
+    /**
+     * ONB-007 — CategorySelectScreen "다음으로" 버튼 처리
+     *
+     * selectedPath에 depth1·depth2·depth3가 모두 선택된 상태에서만 이벤트와 User Property를 로깅합니다.
+     * 경로가 3뎁스 미만이면 early return — isCategorySelectionComplete 보장 후 호출 권장.
+     * 실제 NavController 이동은 [CategorySelectScreen]에서 담당합니다.
+     */
+    fun onCategoryNextClicked() {
+        val selectedPath = _uiState.value.categorySelection.selectedPath
+        val depth1 = selectedPath.getOrNull(0)?.name ?: return
+        val depth2 = selectedPath.getOrNull(1)?.name ?: return
+        val depth3 = selectedPath.getOrNull(2)?.name ?: return
+        analyticsLogger.logCategorySelect(depth1, depth2, depth3)
+    }
+
     fun onQuestionCntSelected(questionCnt: Int) {
+        savedStateHandle[KEY_QUESTION_CNT] = questionCnt
         _uiState.update {
             it.copy(selectedQuestionCnt = questionCnt)
         }
+    }
+
+    /**
+     * ONB-003 + ONB-004 — SetRoutineScreen "다음으로" 버튼 처리
+     *
+     * 출퇴근 시간(ONB-004)과 퀴즈 수(ONB-003) 이벤트를 로깅하고,
+     * 다음 화면으로 네비게이션 상태를 전환합니다.
+     * 실제 NavController 이동은 [OnBoardingNavHost]에서 담당합니다.
+     */
+    fun onSetRoutineCompleted() {
+        val state = _uiState.value
+        // 📊 ONB-004: 출퇴근 시간 이벤트 + User Property 등록 ("HH:mm" 포맷)
+        val firstTime = state.workInTime.toServerTime().removeSuffix(":00")
+        val secondTime = state.workOutTime.toServerTime().removeSuffix(":00")
+        analyticsLogger.logCommuteTimeSet(firstTime, secondTime)
+        // 📊 ONB-003: 선택한 퀴즈 수 이벤트 + User Property 등록
+        analyticsLogger.logQuizCountSet(state.selectedQuestionCnt)
+        // 📊 ONB-005: 디바이스 알림 권한 허용 상태에서만 이벤트 + User Property 등록
+        if (state.isNotificationGranted) {
+            analyticsLogger.logEnableNotifyPermission()
+        }
+        navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
     }
 
     // 문제 수(3,5,7,10) → 서버 전송용 분(5,7,10,15) 임시 변환 함수
@@ -1227,6 +1338,7 @@ class OnBoardingViewModel @Inject constructor(
      * ----------------------------- */
 
     fun onAgreementCheckedChange(checked: Boolean) {
+        savedStateHandle[KEY_AGREEMENT] = checked
         _uiState.update {
             it.copy(isCheckedAgreement = checked)
         }
@@ -1340,7 +1452,15 @@ class OnBoardingViewModel @Inject constructor(
             }
         }
 
+        // 확정된 시간을 SavedStateHandle에 영속화 (Process Death 복원용)
         val after = uiState.value
+        savedStateHandle[KEY_WORK_IN_H]  = after.workInTime.hour
+        savedStateHandle[KEY_WORK_IN_M]  = after.workInTime.minute
+        savedStateHandle[KEY_WORK_IN_AP] = after.workInTime.amPm.name
+        savedStateHandle[KEY_WORK_OUT_H]  = after.workOutTime.hour
+        savedStateHandle[KEY_WORK_OUT_M]  = after.workOutTime.minute
+        savedStateHandle[KEY_WORK_OUT_AP] = after.workOutTime.amPm.name
+
         println("🟡 [confirmTime] END")
         println("🟡 workInTime(after) = ${after.workInTime}")
         println("🟡 workOutTime(after) = ${after.workOutTime}")
@@ -1425,6 +1545,7 @@ class OnBoardingViewModel @Inject constructor(
             }
 
 
+            savedStateHandle[KEY_NAME] = input  // 키 입력 즉시 영속화
             _uiState.update {
                 it.copy(
                     charName = input,
@@ -1516,6 +1637,7 @@ class OnBoardingViewModel @Inject constructor(
     }
 
     fun navigateTo(screen: OnBoardingScreens) {
+        savedStateHandle[KEY_SCREEN] = screen.route  // Process Death 대응: 화면 위치 영속화
         val before = _uiState.value.currentScreen
         Log.d("OnBoardingNav", "navigateTo: ${before::class.simpleName}(page=${OnBoardingFlow.currentPage(before)}) → ${screen::class.simpleName}(page=${OnBoardingFlow.currentPage(screen)})")
         _uiState.update { it.copy(currentScreen = screen) }
@@ -1574,6 +1696,7 @@ class OnBoardingViewModel @Inject constructor(
     fun onConfirmPromptOption() {
         val state = _uiState.value
         val label = state.promptOptions.find { it.id == state.selectedPromptId }?.label ?: ""
+        savedStateHandle[KEY_PROMPT_INPUT] = label
         _uiState.update { it.copy(promptInput = label) }
         closeBottomSheet()
     }

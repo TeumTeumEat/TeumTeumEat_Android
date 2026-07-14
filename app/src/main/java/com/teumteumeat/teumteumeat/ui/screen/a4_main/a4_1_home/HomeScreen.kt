@@ -40,8 +40,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -54,12 +52,12 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
-import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
+import com.teumteumeat.teumteumeat.ui.component.modal.GoalCompletedDialog
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
+import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
-import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
@@ -126,6 +124,7 @@ fun HomeScreen(
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
                     viewModel.checkDateChangeOnResume()
+                    viewModel.loadHomeState(showLoading = false)
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
@@ -161,7 +160,7 @@ fun HomeScreen(
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
         }
     }
 
@@ -305,6 +304,9 @@ fun HomeScreen(
                             ) {
 
                                 BouncingImage(foodRes) {
+                                    // 간식 탭 이벤트 (홈→퀴즈 전환율 측정, 매 탭 발화)
+                                    viewModel.onSnackTapped()
+
                                     val latestQuery = currentUiState.summaryQuery
                                     when (uiState.snackState) {
                                         SnackState.Available -> {
@@ -328,22 +330,14 @@ fun HomeScreen(
                                                     SummaryArgs.KEY_CATEGORY_ID,
                                                     latestQuery.categoryId
                                                 )
+                                                // 항상 SSE 생성 요청 — 에러 시 SummaryActivity 내부에서 GET 폴백
+                                                putExtra(SummaryArgs.KEY_FORCE_STREAM, true)
                                             }
                                             activity.startActivity(intent)
                                         }
 
                                         is SnackState.Consumed -> {
-                                            if (uiState.canIssueCoupon || uiState.cupponCount > 0) {
-                                                viewModel.openAdModal()
-                                            }
-                                        }
-
-                                        SnackState.Expired -> {
-                                            Toast.makeText(
-                                                activity,
-                                                "학습 기간이 만료된 목표입니다.",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                            viewModel.openAdModal()
                                         }
 
                                         SnackState.Completed -> {
@@ -379,14 +373,6 @@ fun HomeScreen(
 
                                     Text(
                                         message,
-                                        style = MaterialTheme.appTypography.titleBold22,
-                                        textAlign = TextAlign.Center,
-                                    )
-                                }
-
-                                is SnackState.Expired -> {
-                                    Text(
-                                        "학습 목표 기간이 종료되었어요",
                                         style = MaterialTheme.appTypography.titleBold22,
                                         textAlign = TextAlign.Center,
                                     )
@@ -445,6 +431,20 @@ fun HomeScreen(
                     }
 
                     // 이전에 만든 모달 UI를 Dialog 안에 배치합니다.
+                    GoalCompletedDialog(
+                        showDialog = uiState.isShowGoalCompletedDialog,
+                        hasRunningGoal = uiState.hasRunningGoal,
+                        onStartNewGoal = {
+                            viewModel.dismissGoalCompletedDialog()
+                            activity.startActivity(Intent(activity, AddGoalActivity::class.java))
+                        },
+                        onSelectRunningGoal = {
+                            viewModel.dismissGoalCompletedDialog()
+                            activity.startActivity(Intent(activity, GoalListActivity::class.java))
+                        },
+                        onDismiss = { viewModel.dismissGoalCompletedDialog() }
+                    )
+
                     AdCouponDialog(
                         showDialog = uiState.isShowAdModalDialog,
                         couponCount = uiState.cupponCount,
@@ -465,10 +465,7 @@ fun HomeScreen(
                              * 2. ViewModel의 useCoupon을 호출하여 서버에 오늘의 요약글 생성을 요청합니다.
                              */
                             viewModel.useCoupon(
-                                onSuccess = { latestQuery ->
-                                    /*
-                                     * 3. 성공 시: 생성된 최신 요약글 정보(latestQuery)를 Intent에 담아 요약글 화면(SummaryActivity)으로 이동합니다.
-                                     */
+                                onSuccess = { latestQuery, forceStream ->
                                     val intent = Intent(
                                         activity,
                                         SummaryActivity::class.java
@@ -486,6 +483,8 @@ fun HomeScreen(
                                             SummaryArgs.KEY_CATEGORY_ID,
                                             latestQuery.categoryId
                                         )
+                                        // 첫 진입: SSE 스트리밍 생성 / 재진입: GET 조회
+                                        putExtra(SummaryArgs.KEY_FORCE_STREAM, forceStream)
                                     }
                                     activity.startActivity(intent)
 
@@ -520,49 +519,6 @@ fun HomeScreen(
                         isAdLoading = uiState.isAdLoading
                     )
 
-                    // 🔹 목표 만료 알림 모달
-                    if (uiState.isShowGoalExpiredDialog) {
-                        // 배경을 어둡게 처리하거나 다이얼로그 형태로 띄우기 위해
-                        // 일반적으로 Box나 Dialog 컴포넌트 내부에서 호출합니다.
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Dialog(
-                                onDismissRequest = {
-                                    // viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                },
-                                properties = DialogProperties(
-                                    usePlatformDefaultWidth = false,
-                                    dismissOnBackPress = false, // 뒤로가기 버튼으로도 닫히지 않게 하려면 false
-                                    dismissOnClickOutside = false // 외부 터치 시 닫히지 않게 설정
-                                )
-                            ) {
-
-                                BaseModal(
-                                    title = "풀고 있는 틈틈잇이 없어요",
-                                    body = "먹을 간식이 없어요!\n새로운 지식을 먹여줄래요?",
-                                    primaryButtonText = "진행중인 틈틈잇 선택하기",
-                                    isPrimaryBtnEnabled = uiState.hasRunningGoal,
-                                    secondaryButtonText = "새로운 틈틈잇 시작하기",
-                                    isVerticalButtons = true,
-                                    onPrimaryClick = {
-                                        viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                        // 학습 주제 설정 화면(GoalListActivity)으로 이동
-                                        val intent = Intent(activity, GoalListActivity::class.java)
-                                        activity.startActivity(intent)
-                                    },
-                                    onSecondaryClick = {
-                                        viewModel.dismissGoalExpiredDialog() // 모달 닫기
-                                        // 새로운 목표 설정 화면(AddGoalActivity)으로 이동
-                                        // KEY_GOAL_TYPE을 넘기지 않음으로써 목표 방식 선택 화면이 첫 화면이 되도록 함
-                                        val intent = Intent(activity, AddGoalActivity::class.java)
-                                        activity.startActivity(intent)
-                                    }
-                                )
-                            }
-                        }
-                    }
                 }
 
             }

@@ -81,7 +81,7 @@ class MyPageActivity : BaseActivity() {
                     // 🔥 전역 세션 이벤트 감지
                     LaunchedEffect(Unit) {
                         sessionManager.sessionEvent.collectLatest {
-                            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+                            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
                         }
                     }
 
@@ -96,9 +96,11 @@ class MyPageActivity : BaseActivity() {
                         onLogoutClick = {
                             viewModel.logout(
                                 onSuccess = {
+                                    // 로그아웃 후 뒤로가기로 홈 화면에 돌아가지 못하도록 태스크 초기화
                                     Utils.UxUtils.moveActivity(
                                         activity,
                                         LoginActivity::class.java,
+                                        clearTask = true,
                                     )
                                 },
                                 onError = { message ->

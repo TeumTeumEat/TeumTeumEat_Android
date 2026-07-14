@@ -7,7 +7,6 @@ data class UserGoal(
     val type: DomainGoalType,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    val isExpired: Boolean,
     val isCompleted: Boolean,
     val studyPeriod: String,
     val difficulty: Difficulty,
