@@ -8,7 +8,6 @@ data class UserGoalResponse(
     val type: DomainGoalType,
     val startDate: String,
     val endDate: String,
-    val isExpired: Boolean,
     val isCompleted: Boolean,
     val studyPeriod: String,
     val difficulty: String,

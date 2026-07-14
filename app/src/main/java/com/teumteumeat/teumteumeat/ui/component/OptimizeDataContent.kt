@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -96,8 +95,7 @@ fun OptimizeDataContent(
                             .align(Alignment.BottomCenter)
                             .fillMaxWidth()
                             .windowInsetsPadding(WindowInsets.ime)
-                            .navigationBarsPadding()
-                            .padding(bottom = 16.dp)
+                            .padding(bottom = 32.dp)
                             .padding(horizontal = 20.dp),
                     ) {
                         BaseFillButton(

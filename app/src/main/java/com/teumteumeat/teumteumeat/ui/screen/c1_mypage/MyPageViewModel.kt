@@ -360,7 +360,9 @@ class MyPageViewModel @Inject constructor(
                     DomainGoalType.CATEGORY -> {
                         _uiState.update { state ->
                             state.copy(
-                                selectedTopic = userGoal.category?.path!!,
+                                selectedTopic = userGoal.category!!.let {
+                                    Utils.TypeUtils.formatCategoryPath(it.path, it.name)
+                                },
                                 topicDescription = userGoal.prompt ?: "",
                                 goalWeek = userGoal.studyPeriod,
                                 goalDifficulty = userGoal.difficulty.toLable()
@@ -400,7 +402,7 @@ class MyPageViewModel @Inject constructor(
 
                 GoalTypeUiState.CATEGORY -> {
                     val category = goal.category
-                    (category?.path ?: "미설정") to
+                    (category?.let { Utils.TypeUtils.formatCategoryPath(it.path, it.name) } ?: "미설정") to
                         (goal.prompt ?: "")
                 }
 

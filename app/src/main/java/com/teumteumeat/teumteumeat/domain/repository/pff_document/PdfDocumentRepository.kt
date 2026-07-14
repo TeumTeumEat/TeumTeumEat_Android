@@ -1,7 +1,6 @@
 package com.teumteumeat.teumteumeat.domain.repository.pff_document
 
 import android.net.Uri
-import com.teumteumeat.teumteumeat.data.document.response.DocumentSummaryResponse
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model_response.DocumentResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.PresignedResponse
@@ -61,16 +60,7 @@ interface PdfDocumentRepository {
         goalId: Int,
         documentId: Int,
     ): ApiResultV2<PdfDocumentSummary>
-
-    suspend fun createDocumentSummary(
-        goalId: Int,
-        documentId: Int,
-    ): ApiResultV2<DocumentSummaryResponse>
-
-    /**
-     * URI로부터 PDF 페이지 수를 반환합니다.
-     * - IO 스레드에서 실행되며, 실패 시 [Result.failure]를 반환합니다.
-     */
+    
     suspend fun getPdfPageCount(uri: Uri): Result<Int>
 
 }
