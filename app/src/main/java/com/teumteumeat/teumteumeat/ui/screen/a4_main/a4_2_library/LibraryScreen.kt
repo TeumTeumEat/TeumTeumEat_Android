@@ -29,6 +29,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -88,6 +89,20 @@ fun LibraryScreen(
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
             Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+        }
+    }
+
+    // 📊 LIB-001/LIB-004 히스토리 화면 진입 이벤트 — 하단 탭 재방문 시에도 재실행되도록
+    // Composable 진입마다 호출하되, 화면 회전 등 Activity 재생성 시에는 미발화.
+    // 탭을 실제로 떠날 때(dispose && !isChangingConfigurations)만 플래그를 리셋한다.
+    // ⚠️ isLoading 조기 return보다 반드시 위에 위치해야 함 —
+    //    아래에 두면 로딩 중 Composition에서 제외되어 진입 이벤트가 미발화된다.
+    DisposableEffect(Unit) {
+        viewModel.onLibraryScreenEntered()
+        onDispose {
+            if (!activity.isChangingConfigurations) {
+                viewModel.onLibraryScreenExited()
+            }
         }
     }
 
@@ -171,9 +186,9 @@ fun LibraryScreen(
                                 viewModel.onCalendarMonthChanged(yearMonth)
                             },
 
-                            // ✅ 날짜 클릭 시
+                            // ✅ 날짜 클릭 시 — LIB-002 발화 포함 유저 탭 전용 진입점
                             onDateClick = { date ->
-                                viewModel.onCalendarDateSelected(date)
+                                viewModel.onCalendarDateTapped(date)
                             }
                         )
 
@@ -209,6 +224,8 @@ fun LibraryScreen(
                                         .format(DateTimeFormatter.ofPattern("MM.dd")),
                                     domainGoalTypeV1 = item.type,   // ✅ Domain → UI 그대로 전달
                                     onClick = {
+                                        // 📊 LIB-003 — 일자별 학습 기록 재조회 이벤트 (주제별 탭 경로는 미발화)
+                                        viewModel.onDailyLearningRecordTapped(item)
                                         val intent = Intent(
                                             activity,
                                             DailySummaryActivity::class.java
@@ -366,6 +383,12 @@ fun LibraryScreen(
                                                             dateText = history.dateText,
                                                             domainGoalTypeV1 = history.domainGoalTypeV1,
                                                             onClick = {
+                                                                // 📊 LIB-005 — 주제별 학습 기록 재조회 이벤트 (날짜별 탭 경로는 LIB-003)
+                                                                viewModel.onTopicLearningRecordTapped(
+                                                                    categoryName = category.categoryName,
+                                                                    history = history,
+                                                                )
+
                                                                 val intent = Intent(
                                                                     activity,
                                                                     DailySummaryActivity::class.java

@@ -26,6 +26,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState.Error
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import com.teumteumeat.teumteumeat.utils.manager.ad.RewardedAdManager
 import com.teumteumeat.teumteumeat.utils.monitor.NetworkConnection
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,6 +55,7 @@ class HomeViewModel @Inject constructor(
     private val adManager: RewardedAdManager,
     private val networkConnection: NetworkConnection,
     private val savedStateHandle: SavedStateHandle, // 프로세스 죽음 대비
+    private val analyticsLogger: TeumAnalyticsLogger,
     private val homePreference: HomePreference,
 ) : ViewModel() {
 
@@ -77,6 +79,10 @@ class HomeViewModel @Inject constructor(
     // 중복 로드 방지 — 새 요청이 들어오면 진행 중인 이전 로드를 취소한다
     private var loadJob: Job? = null
 
+
+    // home_view 이벤트 발화 날짜 기록: 같은 날 loadHomeState() 재호출(목표 변경 signal 등) 시
+    // 중복 발화를 막고, 자정을 넘겨 사용하는 경우에는 새 날짜로 재발화한다 (DAU 측정 기준)
+    private var lastLoggedHomeViewDate: String? = null
 
     init {
         // 강제 종료 후 복귀 시에도 저장된 음식 즉시 복원 (API 응답 전 기본값 노출 방지)
@@ -129,6 +135,44 @@ class HomeViewModel @Inject constructor(
 
         // (선택) 광고 매니저의 상태도 초기화하여 꼬이지 않게 방지
         adManager.clearAd()
+    }
+
+    /**
+     * 홈화면 진입 이벤트(home_view)를 날짜별 1회 발화합니다.
+     *
+     * 퀴즈 상태가 서버 응답 후에만 정확하므로 init이 아닌 퀴즈 상태 조회 완료 시점에 호출합니다.
+     *
+     * @param quizDoneToday    당일 퀴즈 완료 여부 — "true" | "false" | 조회 실패 시 "unknown"
+     * @param summaryDoneToday 당일 요약 생성 여부 — "true" | "false" | 조회 실패 시 "unknown"
+     */
+    private fun logHomeViewIfNeeded(quizDoneToday: String, summaryDoneToday: String) {
+        val today = LocalDate.now().toString()
+        if (lastLoggedHomeViewDate == today) return
+        lastLoggedHomeViewDate = today
+        analyticsLogger.logHomeView(
+            quizDoneToday = quizDoneToday,
+            summaryDoneToday = summaryDoneToday,
+            date = today,
+        )
+    }
+
+    /**
+     * '오늘의 간식' 오브젝트 탭 이벤트(snack_tap)를 발화합니다 — 홈→퀴즈 전환율 측정용.
+     *
+     * 퍼널 이벤트이므로 발화 횟수를 제한하지 않고 탭할 때마다 매번 호출합니다.
+     * 어떤 snackState에서든 발화하며, 전환율 계산 시 snack_state == "available"만 분모로 사용합니다.
+     */
+    fun onSnackTapped() {
+        val state = _uiState.value
+        val snackStateName = when (state.snackState) {
+            SnackState.Available -> "available"
+            is SnackState.Consumed -> "consumed"
+            SnackState.Completed -> "completed"
+        }
+        analyticsLogger.logSnackTap(
+            quizDoneToday = state.hasSolvedToday.toString(),
+            snackState = snackStateName,
+        )
     }
 
     private fun observeAdStatus() {
@@ -453,6 +497,13 @@ class HomeViewModel @Inject constructor(
                         is ApiResultV2.Success -> {
                             val quizStatus = quizResult.data
 
+                            // 홈화면 진입 이벤트 (DAU 측정 기준, 날짜별 1회)
+                            logHomeViewIfNeeded(
+                                quizDoneToday = quizStatus.hasSolvedToday.toString(),
+                                summaryDoneToday = quizStatus.hasCreatedToday.toString(),
+                            )
+
+                            // 현재 날짜 가져오기 (예: "2023-10-27")
                             val today = LocalDate.now().toString()
 
                             // 목표완료 팝업의 [진행중인 틈틈잇 선택하기] 버튼 활성화 여부 판단용
@@ -513,6 +564,11 @@ class HomeViewModel @Inject constructor(
                         is ApiResultV2.ServerError,
                         is ApiResultV2.NetworkError,
                         is ApiResultV2.UnknownError -> {
+                            // 퀴즈 상태 조회 실패 시에도 DAU 누락 방지를 위해 "unknown"으로 발화
+                            logHomeViewIfNeeded(
+                                quizDoneToday = "unknown",
+                                summaryDoneToday = "unknown",
+                            )
                             _screenState.value = Error(quizResult.uiMessage)
                         }
 

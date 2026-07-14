@@ -15,6 +15,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.UpdateCommuteTimeU
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.NameViolation
 import com.teumteumeat.teumteumeat.utils.Utils.TimeUtil.fromServerTime
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24Hour
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +29,7 @@ class EditUserInfoViewModel @Inject constructor(
     private val registerUserNameUseCase: RegisterUserNameUseCase,
     private val updateCommuteTimeUseCase: UpdateCommuteTimeUseCase,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
     companion object {
         private const val MIN_LENGTH = 1
@@ -96,6 +98,10 @@ class EditUserInfoViewModel @Inject constructor(
     }
 
     fun saveUserInfo(){
+        // 저장 클릭 직후 Activity가 finish되어 viewModelScope가 취소될 수 있으므로
+        // 코루틴 진입 전에 동기적으로 발화한다 (settings_change)
+        logSettingsChangeIfChanged()
+
         viewModelScope.launch {
             val nameResult = setUserNameInternal()
             if (nameResult !is ApiResultV2.Success) {
@@ -110,6 +116,32 @@ class EditUserInfoViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * 원본(original*) 대비 실제 변경된 설정 항목만 settings_change 이벤트로 발화합니다.
+     * 변경된 항목이 없으면 발화하지 않습니다.
+     */
+    private fun logSettingsChangeIfChanged() {
+        val state = _uiState.value
+
+        val nicknameChanged = state.charName != state.originalCharName
+        // TimeState 전체 비교는 isSelected 플래그 차이로 오판할 수 있어 수집 표현("HH:mm")끼리 비교한다
+        val commuteFrom = "${state.originalWorkInTime.toHHmm()}-${state.originalWorkOutTime.toHHmm()}"
+        val commuteTo = "${state.workInTime.toHHmm()}-${state.workOutTime.toHHmm()}"
+        val commuteChanged = commuteFrom != commuteTo
+        val quizChanged = state.useMinutes != state.originalUseMinutes
+
+        analyticsLogger.logSettingsChange(
+            nicknameChanged = nicknameChanged,
+            commuteTimeFrom = if (commuteChanged) commuteFrom else null,
+            commuteTimeTo = if (commuteChanged) commuteTo else null,
+            quizCountFrom = if (quizChanged) state.originalUseMinutes else null,
+            quizCountTo = if (quizChanged) state.useMinutes else null,
+        )
+    }
+
+    // Analytics용 "HH:mm" 표기 — toServerTime()의 "HH:mm:00"에서 초 제거
+    private fun TimeState.toHHmm(): String = toServerTime().take(5)
 
 
     // 서버 전송용: 문제 수(3,5,7,10) → 분(5,7,10,15)

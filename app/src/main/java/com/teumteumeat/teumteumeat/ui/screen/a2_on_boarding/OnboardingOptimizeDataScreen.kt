@@ -43,6 +43,7 @@ fun OptimizeDataScreen(
         onConfirmPrompt = onConfirmPrompt,
         onPromptSelected = viewModel::onPromptSelected,
         onNext = {
+            viewModel.onDifficultyNextClicked()
             viewModel.setUserName()
             onNext()
         },

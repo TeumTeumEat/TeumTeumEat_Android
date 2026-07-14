@@ -23,6 +23,7 @@ import com.teumteumeat.teumteumeat.domain.model.on_boarding.toServerTime
 import com.teumteumeat.teumteumeat.domain.model.sse.DocumentProcessingEvent
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.GetDocumentsUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.document.GetPdfPageCountUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.IssuePresignedUrlUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.StreamDocumentProcessingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.document.UploadDocumentUseCase
@@ -35,6 +36,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
 import com.teumteumeat.teumteumeat.utils.Utils.UiUtils.to24HourString
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import androidx.lifecycle.SavedStateHandle
 import com.teumteumeat.teumteumeat.ui.component.AmPm
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,12 +68,14 @@ class OnBoardingViewModel @Inject constructor(
     private val createGoalUseCase: CreateGoalUseCase,
     val uploadDocumentUseCase: UploadDocumentUseCase,
     val getDocumentsUseCase: GetDocumentsUseCase,
+    private val getPdfPageCountUseCase: GetPdfPageCountUseCase,
     private val streamDocumentProcessingUseCase: StreamDocumentProcessingUseCase,
     private val notificationRepository: NotificationRepository,
     private val userRepository: UserRepository,
     @ApplicationContext private val context: Context,
     application: Application,
     val sessionManager: SessionManager,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
 
     /**
@@ -120,7 +124,13 @@ class OnBoardingViewModel @Inject constructor(
     val effect: SharedFlow<UiEffect> = _effect
 
     init {
+        // 📊 ONB-002: 온보딩 첫 화면 진입
+        // KEY_SCREEN이 없는 경우 = 최초 진입 (Process Death 복원 시 이미 값이 저장되어 있음)
+        val isProcessDeathRestore = savedStateHandle.contains(KEY_SCREEN)
         restoreFromSavedState()
+        if (!isProcessDeathRestore) {
+            analyticsLogger.logOnboardingStart()
+        }
         Log.e("OnBoardingVM", "🔥 ViewModel CREATED ${this.hashCode()}")
     }
 
@@ -285,6 +295,8 @@ class OnBoardingViewModel @Inject constructor(
             val remain = 1800L - elapsed
             if (remain > 0) delay(remain)
 
+            // 📊 ONB-011: 온보딩 최종 완료 이벤트 + User Property 등록
+            analyticsLogger.logOnboardingComplete()
             _mainState.value = UiStateOnboardingScreenState.Success
         }
     }
@@ -517,7 +529,13 @@ class OnBoardingViewModel @Inject constructor(
         mimeType: String
     ): ApiResultV2<Unit> {
 
-        val goalId = _uiState.value.goalId
+        val state = _uiState.value
+        val goalId = state.goalId
+
+        // 📊 ONB-PDF-1: pdf_upload_start 이벤트 + pdf_upload_attempt_count User Property
+        val fileSizeKb = state.selectedFileSize / 1024
+        val pageCount = getPdfPageCountUseCase(uri).getOrDefault(0)
+        analyticsLogger.logPdfUploadStart(fileSizeKb = fileSizeKb, pageCount = pageCount)
 
         return when (
             val result = uploadDocumentUseCase(
@@ -1088,11 +1106,68 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
+    /**
+     * ONB-006 — SelectLearningMethodScreen "다음으로" 버튼 처리
+     *
+     * 학습 방식 선택 완료 이벤트와 User Property를 로깅합니다.
+     * 실제 NavController 이동은 [SelectLearningMethodScreen]에서 담당합니다.
+     */
+    fun onLearningMethodNextClicked() {
+        analyticsLogger.logLearningTypeSelect(_uiState.value.goalTypeUiState)
+    }
+
+    /**
+     * ONB-010 — OptimizeDataScreen "다음으로" 버튼 처리
+     *
+     * 난이도 선택 완료 이벤트와 User Property를 로깅합니다.
+     * 실제 NavController 이동은 [OptimizeDataScreen]에서 담당합니다.
+     */
+    fun onDifficultyNextClicked() {
+        analyticsLogger.logDifficultySelect(_uiState.value.difficulty)
+    }
+
+    /**
+     * ONB-007 — CategorySelectScreen "다음으로" 버튼 처리
+     *
+     * selectedPath에 depth1·depth2·depth3가 모두 선택된 상태에서만 이벤트와 User Property를 로깅합니다.
+     * 경로가 3뎁스 미만이면 early return — isCategorySelectionComplete 보장 후 호출 권장.
+     * 실제 NavController 이동은 [CategorySelectScreen]에서 담당합니다.
+     */
+    fun onCategoryNextClicked() {
+        val selectedPath = _uiState.value.categorySelection.selectedPath
+        val depth1 = selectedPath.getOrNull(0)?.name ?: return
+        val depth2 = selectedPath.getOrNull(1)?.name ?: return
+        val depth3 = selectedPath.getOrNull(2)?.name ?: return
+        analyticsLogger.logCategorySelect(depth1, depth2, depth3)
+    }
+
     fun onQuestionCntSelected(questionCnt: Int) {
         savedStateHandle[KEY_QUESTION_CNT] = questionCnt
         _uiState.update {
             it.copy(selectedQuestionCnt = questionCnt)
         }
+    }
+
+    /**
+     * ONB-003 + ONB-004 — SetRoutineScreen "다음으로" 버튼 처리
+     *
+     * 출퇴근 시간(ONB-004)과 퀴즈 수(ONB-003) 이벤트를 로깅하고,
+     * 다음 화면으로 네비게이션 상태를 전환합니다.
+     * 실제 NavController 이동은 [OnBoardingNavHost]에서 담당합니다.
+     */
+    fun onSetRoutineCompleted() {
+        val state = _uiState.value
+        // 📊 ONB-004: 출퇴근 시간 이벤트 + User Property 등록 ("HH:mm" 포맷)
+        val firstTime = state.workInTime.toServerTime().removeSuffix(":00")
+        val secondTime = state.workOutTime.toServerTime().removeSuffix(":00")
+        analyticsLogger.logCommuteTimeSet(firstTime, secondTime)
+        // 📊 ONB-003: 선택한 퀴즈 수 이벤트 + User Property 등록
+        analyticsLogger.logQuizCountSet(state.selectedQuestionCnt)
+        // 📊 ONB-005: 디바이스 알림 권한 허용 상태에서만 이벤트 + User Property 등록
+        if (state.isNotificationGranted) {
+            analyticsLogger.logEnableNotifyPermission()
+        }
+        navigateTo(OnBoardingScreens.SelectLearningMethodScreen)
     }
 
     // 문제 수(3,5,7,10) → 서버 전송용 분(5,7,10,15) 임시 변환 함수

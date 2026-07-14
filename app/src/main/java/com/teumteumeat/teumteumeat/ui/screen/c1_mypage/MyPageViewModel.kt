@@ -26,6 +26,7 @@ import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenStore
 import com.teumteumeat.teumteumeat.utils.Utils.InfoUtil.getAppVersion
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -50,6 +52,8 @@ class MyPageViewModel @Inject constructor(
 
     // + UseCase 주입 추가
     private val getPushNotificationStatusUseCase: GetPushNotificationStatusUseCase,
+
+    private val analyticsLogger: TeumAnalyticsLogger,
 
 ) : ViewModel() {
 
@@ -71,6 +75,8 @@ class MyPageViewModel @Inject constructor(
     private val appContext = application.applicationContext
 
     init {
+        // 마이페이지 진입 이벤트 — LocalDate ISO 출력이 "yyyy-MM-dd" 포맷과 동일
+        analyticsLogger.logMyPageView(date = LocalDate.now().toString())
         loadMyPageData()
     }
 
@@ -202,6 +208,7 @@ class MyPageViewModel @Inject constructor(
             when (result) {
                 is ApiResultV2.Success -> {
                     _uiState.update { it.copy(isAlarmEnabled = isAlarmEnabled) }
+                    analyticsLogger.logPushToggle(enabled = isAlarmEnabled)
                 }
 
                 is ApiResultV2.SessionExpired -> {

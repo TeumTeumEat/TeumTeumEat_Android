@@ -10,6 +10,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -46,6 +49,17 @@ fun SummaryScreen(
     val viewModel = LocalViewModelContext.current as SummaryViewModel
     val context = LocalActivityContext.current as SummaryActivity
     val screenState = LocalScreenState.current
+
+    val scrollState = rememberScrollState()
+    val isAtBottom by remember {
+        derivedStateOf { scrollState.value >= scrollState.maxValue && scrollState.maxValue > 0 }
+    }
+
+    LaunchedEffect(isAtBottom) {
+        if (isAtBottom && screenState is UiScreenState.Success) {
+            viewModel.logSummaryViewComplete()
+        }
+    }
 
     BackHandler {
         onBackClick()
@@ -98,7 +112,7 @@ fun SummaryScreen(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .verticalScroll(rememberScrollState())
+                                        .verticalScroll(scrollState)
                                         .padding(horizontal = 20.dp)
                                 ) {
 
