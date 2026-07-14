@@ -34,7 +34,6 @@ class MyApplication : Application() {
      */
     @Inject
     lateinit var analyticsLogger: TeumAnalyticsLogger
-class MyApplication : Application(){
 
     @Inject
     @IoDispatcher
