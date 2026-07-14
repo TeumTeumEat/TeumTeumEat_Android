@@ -322,6 +322,23 @@ object TeumAnalyticsEvent {
 
         /** 가장 최근 완주한 목표의 기간(주 단위) — [CourseComplete] 발화 시 설정 */
         const val GOAL_WEEKS = "goal_weeks"  // "2", "4", ...
+
+        /**
+         * 누적 스탬프 수 — 스탬프 획득([StampEarned] 발화) 시마다 갱신,
+         * 메인 진입 시 1일 1회 최신화 ([TeumAnalyticsLogger.updateStampUserProperties])
+         *
+         * 스탬프 구간(0/5/10/30)별 리텐션 분석용
+         */
+        const val TOTAL_STAMPS = "total_stamps"  // "0", "5", "10", ...
+
+        /**
+         * 현재 스트릭 일수 — 메인 진입 시 1일 1회 갱신([TeumAnalyticsLogger.updateStampUserProperties])
+         * + 스탬프 획득([StampEarned] 발화) 시 최신화
+         *
+         * 스트릭 구간(0/3/7/30)별 이탈 예측용. 값은 서버 계산(getCalendarHistory.currentStreak)이므로
+         * 스트릭이 끊긴 유저도 다음 앱 실행 시 0으로 반영된다.
+         */
+        const val STREAK_COUNT = "streak_count"  // "0", "3", "7", ...
     }
 
     /**
@@ -528,6 +545,7 @@ object TeumAnalyticsEvent {
      * - content_id별 스탬프 적립 횟수로 콘텐츠 학습 관심도 파악
      * - streak_count 분포로 리텐션 패턴 분석
      * - total_stamps/monthly_stamps 추이로 누적 학습량 파악
+     * - 발화 시 User Property([UserProperties.TOTAL_STAMPS], [UserProperties.STREAK_COUNT])도 최신값으로 갱신
      *
      * ## 발생 조건 (변경 감지 방식)
      * - 퀴즈 진입 전 `user-quizzes/status`의 hasSolvedToday(before)가 false였고,

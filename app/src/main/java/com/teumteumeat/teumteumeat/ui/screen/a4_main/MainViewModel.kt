@@ -16,6 +16,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.date.ObserveDateChangeUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,6 +35,7 @@ class MainViewModel @Inject constructor(
     private val dateChangeReceiver: DateChangeReceiver, // Singleton 리시버 주입
     @ApplicationContext private val context: Context, // 등록/해제를 위한 컨텍스트
     private val observeDateChangeUseCase: ObserveDateChangeUseCase,
+    private val analyticsLogger: TeumAnalyticsLogger,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiStateMain>(UiStateMain())
@@ -165,6 +167,14 @@ class MainViewModel @Inject constructor(
                             monthStampCount = data.monthlyStamps,
                         )
                     }
+
+                    // total_stamps/streak_count User Property 1일 1회 갱신 —
+                    // 메인 진입·날짜 변경 시 항상 호출되는 지점이라 학습하지 않은 날에도
+                    // 서버 계산 최신 스트릭이 반영된다 (게이트는 로거 내부에서 처리)
+                    analyticsLogger.updateStampUserProperties(
+                        totalStamps = data.totalStamps.toLong(),
+                        streakCount = data.currentStreak.toLong(),
+                    )
                 }
 
                 is ApiResultV2.SessionExpired -> {
