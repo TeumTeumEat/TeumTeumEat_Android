@@ -143,10 +143,12 @@ fun OnBoardingCompositionProvider(
                 OnBoardingSuccessScreen(
                     nickname = uiState.serverNickname.ifEmpty { uiState.charName },
                     onStartClick = {
+                        // 홈에서 뒤로가기 한 번에 앱이 종료되도록 태스크 초기화
                         Utils.UxUtils.moveActivity(
                             activity,
                             MainActivity::class.java,
-                            exitFlag = true
+                            exitFlag = true,
+                            clearTask = true
                         )
                     }
                 )

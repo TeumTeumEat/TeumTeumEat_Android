@@ -78,18 +78,30 @@ fun LoginScreen(
 
                 LoginUiEvent.NavigateToOnboarding -> {
                     Log.d("Login", "navigate onboarding")
-                    moveActivity(activity, OnBoardingActivity::class.java, exitFlag = true)
+                    // 온보딩에서 뒤로가기 시 로그인 화면이 다시 노출되지 않도록 태스크 초기화
+                    moveActivity(
+                        activity,
+                        OnBoardingActivity::class.java,
+                        exitFlag = true,
+                        clearTask = true
+                    )
                 }
 
                 LoginUiEvent.NavigateToMain -> {
                     Log.d("Login", "navigate Main")
-                    moveActivity(activity, MainActivity::class.java, exitFlag = true)
+                    // 홈에서 뒤로가기 시 로그인 화면이 다시 노출되지 않도록 태스크 초기화
+                    moveActivity(
+                        activity,
+                        MainActivity::class.java,
+                        exitFlag = true,
+                        clearTask = true
+                    )
                 }
 
                 // 세션 만료 또는 로그아웃 시 LoginActivity 재시작 (백스택 초기화)
                 LoginUiEvent.NavigateToLogin -> {
                     Log.d("Login", "session expired → restart LoginActivity")
-                    moveActivity(activity, LoginActivity::class.java)
+                    moveActivity(activity, LoginActivity::class.java, clearTask = true)
                 }
             }
         }
