@@ -10,6 +10,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,6 +34,11 @@ class TeumAnalyticsLogger @Inject constructor(
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+
+    // total_stamps/streak_count User Property를 마지막으로 갱신한 날짜("yyyy-MM-dd").
+    // [updateStampUserProperties]의 1일 1회 게이트용 — home_view의 인메모리 날짜 게이트와 동일한 접근.
+    // 프로세스 재시작 시 같은 날 재설정될 수 있으나 멱등이라 무해하다.
+    private var lastStampPropertiesUpdatedDate: String? = null
 
     init {
         logAppInstallOrUpdateIfNeeded()
@@ -452,6 +458,10 @@ class TeumAnalyticsLogger @Inject constructor(
     /**
      * STAMP-001 — 스탬프 적립 이벤트를 로깅합니다.
      * 오늘 하루 중 첫 퀴즈 완료로 hasSolvedToday가 false → true로 바뀐 경우에만 호출된다.
+     *
+     * 이벤트와 함께 User Property([TeumAnalyticsEvent.UserProperties.TOTAL_STAMPS],
+     * [TeumAnalyticsEvent.UserProperties.STREAK_COUNT])도 등록합니다 — 스탬프 획득 시점이
+     * 두 값이 실제로 변하는 순간이므로 1일 1회 게이트와 무관하게 항상 최신값으로 갱신한다.
      */
     fun logStampEarned(
         contentId: String,
@@ -459,6 +469,8 @@ class TeumAnalyticsLogger @Inject constructor(
         totalStamps: Long,
         monthlyStamps: Long,
     ) {
+        setStampUserProperties(totalStamps = totalStamps, streakCount = streakCount)
+
         val params = Bundle().apply {
             putString(TeumAnalyticsEvent.StampEarned.PARAM_CONTENT_ID, contentId)
             putLong(TeumAnalyticsEvent.StampEarned.PARAM_STREAK_COUNT, streakCount)
@@ -466,6 +478,36 @@ class TeumAnalyticsLogger @Inject constructor(
             putLong(TeumAnalyticsEvent.StampEarned.PARAM_MONTHLY_STAMPS, monthlyStamps)
         }
         analytics.logEvent(TeumAnalyticsEvent.StampEarned.NAME, params)
+    }
+
+    /**
+     * User Property([TeumAnalyticsEvent.UserProperties.TOTAL_STAMPS],
+     * [TeumAnalyticsEvent.UserProperties.STREAK_COUNT])를 1일 1회 갱신합니다.
+     *
+     * 메인 화면 진입·날짜 변경 시 getCalendarHistory 성공 콜백에서 호출되어,
+     * 학습하지 않은 날에도 서버가 계산한 최신 스트릭(끊겼으면 0)이 반영되도록 한다.
+     * 같은 날 이미 갱신했으면(스탬프 획득 포함) 아무 것도 하지 않는다.
+     *
+     * @param totalStamps 누적 스탬프 수 — getCalendarHistory.totalStamps
+     * @param streakCount 현재 스트릭 일수 — getCalendarHistory.currentStreak
+     */
+    fun updateStampUserProperties(totalStamps: Long, streakCount: Long) {
+        val today = LocalDate.now().toString()
+        if (lastStampPropertiesUpdatedDate == today) return
+        setStampUserProperties(totalStamps = totalStamps, streakCount = streakCount)
+    }
+
+    /** total_stamps/streak_count User Property 등록 및 갱신 날짜 기록 공통 처리 */
+    private fun setStampUserProperties(totalStamps: Long, streakCount: Long) {
+        analytics.setUserProperty(
+            TeumAnalyticsEvent.UserProperties.TOTAL_STAMPS,
+            totalStamps.toString()
+        )
+        analytics.setUserProperty(
+            TeumAnalyticsEvent.UserProperties.STREAK_COUNT,
+            streakCount.toString()
+        )
+        lastStampPropertiesUpdatedDate = LocalDate.now().toString()
     }
 
     /**
