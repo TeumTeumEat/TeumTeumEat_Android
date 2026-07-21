@@ -6,6 +6,9 @@ description: |
   말하면 반드시 이 스킬을 사용한다.
   현재 브랜치의 커밋 내역과 변경 파일을 분석하여 정해진 목차 구조의 PR을 생성하고,
   사용자 승인 후 GitHub에 PR을 올린다.
+  main 브랜치로 PR을 올릴 때는 versionName(자동 증가/직접 입력 선택) 및 versionCode(자동 +1)
+  갱신 여부를 먼저 확인하고, y 키 승인 후 버전 커밋을 생성한 뒤 이전 버전부터의 PR 내역을
+  요약한 릴리즈 노트 제목을 출력하고 본문을 클립보드에 복사한다.
 ---
 
 # teum-pr-creator 스킬
@@ -66,7 +69,101 @@ PR을 어느 브랜치로 올릴까요?
 사용자가 브랜치를 선택하면 이후 모든 단계에서 해당 브랜치를 베이스 브랜치(`BASE_BRANCH`)로 사용한다.
 `main` 브랜치를 현재 작업 브랜치로 직접 PR하려는 경우 경고 후 재확인한다.
 
-이후 선택된 `BASE_BRANCH`를 기준으로 커밋·diff를 수집한다.
+### STEP 1.5 — 버전 정보 갱신 (`BASE_BRANCH`가 `main`일 때만)
+
+`BASE_BRANCH`가 `main`인 경우에만 아래 절차를 수행하고, 그 외 브랜치가 대상이면 이 단계 전체를 건너뛴다.
+
+**1) 현재 버전 확인**
+
+```bash
+grep -E "versionCode|versionName" app/build.gradle.kts
+```
+
+**2) 버전 갱신 방식 확인**
+
+`versionName`의 마지막 숫자(patch)를 자동으로 1 증가시킬지, 사용자가 새 버전을 직접 입력할지 확인한다.
+
+```
+현재 버전: versionName "1.1.6" (versionCode 17)
+
+버전을 어떻게 갱신할까요?
+
+  1. 자동 증가 — "1.1.6" → "1.1.7" (마지막 자리 +1)
+  2. 직접 입력 — 새 versionName을 입력해주세요 (예: 1.2.0)
+
+번호를 입력하거나 버전명을 직접 입력해주세요. (기본값: 1. 자동 증가)
+```
+
+- `1` 선택 또는 미입력(기본값): `versionName`의 마지막 `.` 뒤 숫자를 1 증가시킨다.
+- `2` 선택 또는 `X.Y.Z` 형식 문자열 직접 입력: 입력값을 그대로 새 `versionName`으로 사용한다. 형식이 맞지 않으면 재입력을 요청한다.
+- `versionCode`는 선택과 무관하게 **항상 현재 값 +1**.
+
+**3) 변경 사항 승인 요청 (y 키)**
+
+파일을 수정하기 전에 반드시 아래 형식으로 확인하고, `y` 입력을 받은 뒤에만 다음 단계로 진행한다.
+
+```
+아래와 같이 버전을 갱신하고 커밋할까요?
+
+  versionName : 1.1.6 → 1.1.7
+  versionCode : 17 → 18
+  파일        : app/build.gradle.kts
+
+[y] 승인   |   수정할 값을 입력하면 반영 후 재확인합니다.
+```
+
+`y` 이외의 입력이 오면 해당 값(versionName 또는 versionCode)을 반영해 같은 형식으로 다시 확인한다.
+
+**4) 파일 수정 및 커밋 (승인 시에만)**
+
+```bash
+# app/build.gradle.kts의 versionCode, versionName 값 치환
+sed -i '' "s/versionCode = ${CURRENT_VERSION_CODE}/versionCode = ${NEW_VERSION_CODE}/" app/build.gradle.kts
+sed -i '' "s/versionName = \"${CURRENT_VERSION_NAME}\"/versionName = \"${NEW_VERSION_NAME}\"/" app/build.gradle.kts
+
+git add app/build.gradle.kts
+git commit -m "chore(gradle): 앱 버전 업데이트 (${CURRENT_VERSION_CODE} → ${NEW_VERSION_CODE}) v${CURRENT_VERSION_NAME} → v${NEW_VERSION_NAME}"
+```
+
+커밋 메시지는 기존 히스토리 컨벤션(`chore(gradle): 앱 버전 업데이트 (N → N+1) vX.Y.Z → vX.Y.Z'`)을 그대로 따른다.
+
+**5) 릴리즈 노트 초안 생성 (커밋 완료 후에만)**
+
+버전 갱신 커밋이 완료되면, 직전 버전부터 현재까지 병합된 PR 내역을 요약해 릴리즈 노트를 작성한다.
+
+```bash
+# 직전 버전 태그 확인 (예: v1.1.6). 태그가 없으면 가장 최근 "버전 업데이트" 커밋을 기준으로 사용
+PREV_TAG=$(git tag --list "v*" --sort=-creatordate | head -1)
+
+# 직전 버전 이후 병합된 PR(머지 커밋) 목록
+git log ${PREV_TAG}..HEAD --merges --oneline
+
+# 필요 시 각 PR 상세 내용 보강
+gh pr view {PR번호} --json title,body --jq '.'
+```
+
+- 각 병합 PR의 제목·본문을 바탕으로 "새로운 기능 / 개선 사항 / 버그 수정" 등 사용자 관점의 카테고리로 재분류해 요약한다.
+- 내부 리팩터링·테스트 전용 PR처럼 사용자에게 노출할 필요가 없는 변경은 생략한다.
+
+릴리즈 노트 본문 전체는 클립보드에 복사하고, 제목만 터미널에 출력한다. 본문을 터미널에 다시 출력하지 않는다.
+
+```bash
+cat <<'EOF' | pbcopy
+[릴리즈 노트 본문 전체]
+EOF
+```
+
+출력 형식:
+```
+릴리즈 노트 제목:
+v1.1.7 업데이트 안내 — 2026.07.21
+
+본문 전체가 클립보드에 복사되었습니다. 스토어 릴리즈 노트 작성란에 붙여넣어 주세요.
+```
+
+---
+
+이후 선택된 `BASE_BRANCH`를 기준으로 커밋·diff를 수집한다. (STEP 1.5에서 생성한 버전 갱신 커밋이 있다면 아래 목록에 함께 포함된다.)
 
 ```bash
 # BASE_BRANCH 대비 커밋 목록
