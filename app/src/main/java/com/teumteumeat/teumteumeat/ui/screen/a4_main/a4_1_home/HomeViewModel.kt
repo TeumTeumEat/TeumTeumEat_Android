@@ -638,9 +638,9 @@ class HomeViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         try {
-            context.unregisterReceiver(dateChangeReceiver)
+            // context.unregisterReceiver(dateChangeReceiver)
         } catch (e: Exception) {
-            Log.e("HomeViewModel", "Receiver unregister error", e)
+            // Log.e("HomeViewModel", "Receiver unregister error", e)
         }
     }
 
