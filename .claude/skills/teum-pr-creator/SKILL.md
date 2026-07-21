@@ -7,8 +7,8 @@ description: |
   현재 브랜치의 커밋 내역과 변경 파일을 분석하여 정해진 목차 구조의 PR을 생성하고,
   사용자 승인 후 GitHub에 PR을 올린다.
   main 브랜치로 PR을 올릴 때는 versionName(자동 증가/직접 입력 선택) 및 versionCode(자동 +1)
-  갱신 여부를 먼저 확인하고, y 키 승인 후 버전 커밋을 생성한 뒤 이전 버전부터의 PR 내역을
-  요약한 릴리즈 노트 제목을 출력하고 본문을 클립보드에 복사한다.
+  갱신 여부를 먼저 확인하고, y 키 승인 후 버전 커밋과 릴리즈 태그(vX.Y.Z)를 생성·push한 뒤
+  이전 버전부터의 PR 내역을 요약한 릴리즈 노트 제목을 출력하고 본문을 클립보드에 복사한다.
 ---
 
 # teum-pr-creator 스킬
@@ -103,11 +103,12 @@ grep -E "versionCode|versionName" app/build.gradle.kts
 파일을 수정하기 전에 반드시 아래 형식으로 확인하고, `y` 입력을 받은 뒤에만 다음 단계로 진행한다.
 
 ```
-아래와 같이 버전을 갱신하고 커밋할까요?
+아래와 같이 버전을 갱신하고 커밋 + 태그를 생성할까요?
 
   versionName : 1.1.6 → 1.1.7
   versionCode : 17 → 18
   파일        : app/build.gradle.kts
+  태그        : v1.1.7 (생성 후 origin에 push)
 
 [y] 승인   |   수정할 값을 입력하면 반영 후 재확인합니다.
 ```
@@ -127,15 +128,30 @@ git commit -m "chore(gradle): 앱 버전 업데이트 (${CURRENT_VERSION_CODE} �
 
 커밋 메시지는 기존 히스토리 컨벤션(`chore(gradle): 앱 버전 업데이트 (N → N+1) vX.Y.Z → vX.Y.Z'`)을 그대로 따른다.
 
-**5) 릴리즈 노트 초안 생성 (커밋 완료 후에만)**
+**5) 릴리즈 태그 생성 (커밋 완료 후에만)**
 
-버전 갱신 커밋이 완료되면, 직전 버전부터 현재까지 병합된 PR 내역을 요약해 릴리즈 노트를 작성한다.
+버전 커밋이 완료되면 새 버전에 해당하는 태그를 생성하고 원격에 push한다. 태그명은 기존 컨벤션(`vX.Y.Z`)을 따른다.
+**새 태그를 만들기 전에 직전 태그(`PREV_TAG`)를 먼저 기록해 둔다** — 그래야 다음 단계(릴리즈 노트)에서 정확한 "직전 버전" 기준점을 사용할 수 있다.
 
 ```bash
-# 직전 버전 태그 확인 (예: v1.1.6). 태그가 없으면 가장 최근 "버전 업데이트" 커밋을 기준으로 사용
+# 릴리즈 노트 집계에 쓸 직전 태그를 새 태그 생성 전에 기록
 PREV_TAG=$(git tag --list "v*" --sort=-creatordate | head -1)
 
-# 직전 버전 이후 병합된 PR(머지 커밋) 목록
+# 동일 태그가 이미 존재하는지 확인 (재실행 등으로 인한 중복 방지)
+if git rev-parse "v${NEW_VERSION_NAME}" >/dev/null 2>&1; then
+  echo "태그 v${NEW_VERSION_NAME}이 이미 존재합니다. 덮어쓰지 않고 사용자에게 알린다."
+else
+  git tag -a "v${NEW_VERSION_NAME}" -m "v${NEW_VERSION_NAME} (versionCode ${NEW_VERSION_CODE})"
+  git push origin "v${NEW_VERSION_NAME}"
+fi
+```
+
+**6) 릴리즈 노트 초안 생성 (태그 생성 후에만)**
+
+버전 갱신 커밋과 태그 생성이 완료되면, 5)에서 기록해 둔 `PREV_TAG`부터 현재까지 병합된 PR 내역을 요약해 릴리즈 노트를 작성한다.
+
+```bash
+# PREV_TAG 이후 병합된 PR(머지 커밋) 목록
 git log ${PREV_TAG}..HEAD --merges --oneline
 
 # 필요 시 각 PR 상세 내용 보강
