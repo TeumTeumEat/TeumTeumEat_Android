@@ -75,56 +75,58 @@ fun GuideScreen(
                 .fillMaxSize()
                 .background(theme.backSurface),
             content = { padding ->
-                BoxWithConstraints(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .systemBarsPadding()
                 ) {
-                    // 홈 화면과 동일한 로티 컴포지션: w=360, h=572 (home_eat_before.json)
-                    // card 레이어: rect=[303.234, 442.253], transform scale=[98.257%, 98.837%]
-                    // card 중심 (컴포지션 좌표): x=180(수평 중앙), y=286+21.512=307.512
-                    val lottieRenderScale = minOf(
-                        maxWidth.value / 360f,
-                        maxHeight.value / 572f
-                    )
-                    val cardRenderedW = (303.234f * 0.98257f * lottieRenderScale).dp
-                    val cardRenderedH = (442.253f * 0.98837f * lottieRenderScale).dp
-                    val cardOffsetY = (21.512f * lottieRenderScale).dp
-
-                    // 홈 화면과 동일한 냠냠지식 캐릭터 로티 애니메이션을 배경으로 사용
-                    LottieAnimation(
-                        composition = backComposition,
-                        progress = { progress },
-                        modifier = Modifier.fillMaxSize()
+                    /**
+                     * 타이틀 바
+                     */
+                    TitleBar(
+                        title = "오늘의 냠냠지식",
+                        onBackClick = { onBackClick() }
                     )
 
-                    Column(
+                    // 타이틀 바 아래 남은 영역에만 배경 애니메이션과 카드를 배치
+                    BoxWithConstraints(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .systemBarsPadding()
+                            .fillMaxWidth()
+                            .weight(1f)
                     ) {
-                        /**
-                         * 타이틀 바
-                         */
-                        TitleBar(
-                            title = "오늘의 냠냠지식",
-                            onBackClick = { onBackClick() }
+                        // 홈 화면과 동일한 로티 컴포지션: w=360, h=572 (home_eat_before.json)
+                        // card 레이어: rect=[303.234, 442.253], transform scale=[98.257%, 98.837%]
+                        // card 중심 (컴포지션 좌표): x=180(수평 중앙), y=286+21.512=307.512
+                        val lottieRenderScale = minOf(
+                            maxWidth.value / 360f,
+                            maxHeight.value / 572f
                         )
-                    }
+                        val cardRenderedW = (303.234f * 0.98257f * lottieRenderScale).dp
+                        val cardRenderedH = (442.253f * 0.98837f * lottieRenderScale).dp
+                        val cardOffsetY = (21.512f * lottieRenderScale).dp
 
-                    // 로티 애니메이션의 카드 사각형 영역에 맞춰 기존 컨텐츠를 정렬
-                    Box(
-                        modifier = Modifier
-                            .width(cardRenderedW)
-                            .height(cardRenderedH)
-                            .align(Alignment.Center)
-                            .offset(y = cardOffsetY),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        QuizGuideCard(
-                            isDontShowChecked = isChecked,
-                            onCheckedChange = onCheckedChange,
-                            onQuizClick = onQuizClick
+                        // 홈 화면과 동일한 냠냠지식 캐릭터 로티 애니메이션을 배경으로 사용
+                        LottieAnimation(
+                            composition = backComposition,
+                            progress = { progress },
+                            modifier = Modifier.fillMaxSize()
                         )
+
+                        // 로티 애니메이션의 카드 사각형 영역에 맞춰 기존 컨텐츠를 정렬
+                        Box(
+                            modifier = Modifier
+                                .width(cardRenderedW)
+                                .height(cardRenderedH)
+                                .align(Alignment.Center)
+                                .offset(y = cardOffsetY),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            QuizGuideCard(
+                                isDontShowChecked = isChecked,
+                                onCheckedChange = onCheckedChange,
+                                onQuizClick = onQuizClick
+                            )
+                        }
                     }
                 }
             },
@@ -190,7 +192,12 @@ fun QuizGuideCard(
 
             QuizGuideBulletList(3)
 
-            Spacer(modifier = Modifier.height(40.dp))
+            // 카드 높이가 줄어들 때 이 간격만 우선적으로 줄여 하단 버튼이 잘리지 않도록 함
+            Spacer(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .height(40.dp)
+            )
 
             Column(
                 modifier = Modifier
