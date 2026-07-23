@@ -1,6 +1,5 @@
 package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
-import GlowingSpeechBubble
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
@@ -53,6 +52,7 @@ import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.GoalCompletedDialog
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.HomeSpeechBubble
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
@@ -391,7 +391,7 @@ fun HomeScreen(
 
                         if (isConsumedTodayGoal && bubbleScale > 0f && uiState.processingState == null) {
                             val canPlayMore = uiState.canIssueCoupon || uiState.cupponCount > 0
-                            GlowingSpeechBubble(
+                            HomeSpeechBubble(
                                 modifier = Modifier
                                     .align(Alignment.TopStart)
                                     .fillMaxWidth()

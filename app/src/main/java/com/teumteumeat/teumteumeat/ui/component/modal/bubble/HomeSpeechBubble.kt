@@ -1,18 +1,33 @@
-import android.widget.Toast
-import androidx.compose.animation.core.*
+package com.teumteumeat.teumteumeat.ui.component.modal.bubble
+
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -21,7 +36,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,11 +50,11 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 
 @Preview(showBackground = true, backgroundColor = 0xFFF3F4F6)
 @Composable
-fun PreviewMainScreenWithBubble() {
+fun PreviewHomeSpeechBubble() {
     var isQuizCompleted by remember { mutableStateOf(false) }
 
     val bubbleScale by animateFloatAsState(
-        targetValue = if (isQuizCompleted) 1.0f else 0f, // 크기는 이제 1.0에서 멈춥니다 (테두리가 애니메이션 되므로)
+        targetValue = if (isQuizCompleted) 1.0f else 0f,
         animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
         label = "bubble_grow_animation"
     )
@@ -86,8 +100,8 @@ fun PreviewMainScreenWithBubble() {
                                 alpha = if (bubbleScale > 0.3f) 1f else 0f
                             }
                     ) {
-                        GlowingSpeechBubble(
-                            text = "음냐냐.. 퀴즈 더 풀고 싶다아~ Click!",
+                        HomeSpeechBubble(
+                            text = "음냐냐.. 퀴즈 더 풀고 싶다아.. Click!",
                             onClick = {}
                         )
                     }
@@ -176,37 +190,31 @@ class SpeechBubbleShape(
     }
 }
 
+/**
+ * 홈 화면 카드 위에 표시되는 말풍선.
+ * 텍스트가 1줄을 넘어가면 폭에 맞을 때까지 글자 크기를 자동으로 줄인다.
+ */
 @Composable
-fun GlowingSpeechBubble(
+fun HomeSpeechBubble(
     modifier: Modifier = Modifier,
     text: String,
-    backgroundColor: Color = MaterialTheme.extendedColors.btnFillDisabled,
-    glowColor: Color = Color(0xFFFFD700), // 테두리 네온 색상
-    cornerRadius: Dp = 20.dp,
+    backgroundColor: Color = MaterialTheme.extendedColors.backgroundW100,
+    shadowElevation: Dp = 6.dp,
+    cornerRadius: Dp = 16.dp,
     tailWidth: Dp = 19.dp,
     tailHeight: Dp = 14.dp,
     tailPaddingEnd: Dp = 32.dp,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val theme = MaterialTheme.extendedColors
-
-    // 💡 테두리 투명도를 조절하는 숨쉬기(Pulse) 애니메이션
-    val infiniteTransition = rememberInfiniteTransition(label = "glow_transition")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.0f, // 가장 어두울 때의 투명도
-        targetValue = 1.0f,  // 가장 밝을 때의 투명도
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500, easing = LinearOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse // 밝아졌다 어두워졌다 반복
-        ),
-        label = "glow_alpha"
-    )
-
     val interactionSource = remember { MutableInteractionSource() }
 
     // 위에서 만든 커스텀 도형 객체 생성
     val bubbleShape = SpeechBubbleShape(cornerRadius, tailWidth, tailHeight, tailPaddingEnd)
+
+    val baseStyle = MaterialTheme.appTypography.bodyMedium14.copy(color = theme.textPrimary)
+    var textStyle by remember(text) { mutableStateOf(baseStyle) }
+    var readyToDraw by remember(text) { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -217,12 +225,8 @@ fun GlowingSpeechBubble(
                     onClick()
                 }
             )
-            // 🌟 이 도형의 외곽선(꼬리 포함)을 따라 빛나는 테두리를 그립니다.
-            .border(
-                width = 2.dp, // 테두리 두께 조절
-                color = glowColor.copy(alpha = glowAlpha), // 애니메이션되는 투명도 적용
-                shape = bubbleShape
-            )
+            // 🌟 말풍선 도형(꼬리 포함) 모양 그대로 드롭 섀도우를 그립니다.
+            .shadow(elevation = shadowElevation, shape = bubbleShape, clip = false)
             // 같은 도형으로 배경색 칠하기
             .background(color = backgroundColor, shape = bubbleShape)
             // 내용물이 꼬리 영역을 침범하지 않도록 상단에 패딩 추가
@@ -232,9 +236,20 @@ fun GlowingSpeechBubble(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.appTypography.bodyMedium14
-                .copy(color = theme.textOnPrimary),
-            textAlign = TextAlign.Center
+            style = textStyle,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.drawWithContent { if (readyToDraw) drawContent() },
+            onTextLayout = { result ->
+                if (result.didOverflowWidth && textStyle.fontSize > MIN_BUBBLE_FONT_SIZE) {
+                    textStyle = textStyle.copy(fontSize = textStyle.fontSize * 0.95f)
+                } else {
+                    readyToDraw = true
+                }
+            }
         )
     }
 }
+
+private val MIN_BUBBLE_FONT_SIZE = 10.sp
