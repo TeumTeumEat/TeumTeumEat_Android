@@ -129,7 +129,7 @@ fun ExpandableAddMenu(
 
             FloatingActionItem(
                 iconRes = R.drawable.icon_upload_file,
-                label = "자료 올리기",
+                label = "올리기",
                 onClick = onAddDocument
             )
         }
