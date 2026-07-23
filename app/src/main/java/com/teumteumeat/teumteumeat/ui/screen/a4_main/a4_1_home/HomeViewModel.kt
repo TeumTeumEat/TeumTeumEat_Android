@@ -420,15 +420,16 @@ class HomeViewModel @Inject constructor(
 
     /**
      * [쿠폰 사용] 버튼 클릭 시 호출됩니다.
-     * Consumed 상태를 유지한 채 SummaryActivity로 이동합니다(forceStream=true).
-     * SummaryActivity 내부에서 에러 시 GET으로 폴백합니다.
+     * Consumed → Available로 전환해 홈 화면에 간식을 다시 등장시킵니다.
+     * 실제 요약본 진입은 유저가 간식을 탭했을 때 이루어집니다 (SnackState.Available 탭 핸들러).
      */
-    fun useCoupon(
-        onSuccess: (SummaryQuery, Boolean) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        val query = _uiState.value.summaryQuery
-        onSuccess(query, true)
+    fun useCoupon() {
+        _uiState.update {
+            it.copy(
+                snackState = SnackState.Available,
+                cupponCount = (it.cupponCount - 1).coerceAtLeast(0),
+            )
+        }
     }
 
     // 테스트에서 감시(Spy)하기 위해 open 또는 internal로 선언
