@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.component.quiz.result
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,9 +59,9 @@ fun QuizResultCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
-        shadowElevation = 8.dp
+        border = BorderStroke(2.dp, theme.btnGray200)
     ) {
         Column(
             modifier = Modifier.padding(24.dp),

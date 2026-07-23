@@ -32,6 +32,7 @@ fun TitleBar(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconSize: Int = 56,
+    showDivider: Boolean = true,
 ) {
     val theme = MaterialTheme.extendedColors
 
@@ -39,13 +40,15 @@ fun TitleBar(
         modifier = modifier
             .fillMaxWidth()
             .drawBehind {
-                val strokeWidth = 1.dp.toPx()
-                drawLine(
-                    color = theme.unableContainer,
-                    start = Offset(0f, size.height - strokeWidth),
-                    end = Offset(size.width, size.height - strokeWidth),
-                    strokeWidth = strokeWidth
-                )
+                if (showDivider) {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = theme.unableContainer,
+                        start = Offset(0f, size.height - strokeWidth),
+                        end = Offset(size.width, size.height - strokeWidth),
+                        strokeWidth = strokeWidth
+                    )
+                }
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
