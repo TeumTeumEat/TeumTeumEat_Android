@@ -108,17 +108,25 @@ android {
 
         }
         release {
-            isMinifyEnabled = false
+            // Enables code optimizations.
+            isMinifyEnabled = true
+
+            // Enables resource shrinking.
+            isShrinkResources = true
+
             signingConfig = signingConfigs.getByName("release")
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
             buildConfigField(
                 "String",
                 "BASE_DOMAIN",
                 "\"https://api.teumteumeat.co.kr/\"",
             )
+
             buildConfigField(
                 "String",
                 "ONESIGNAL_APP_ID",
