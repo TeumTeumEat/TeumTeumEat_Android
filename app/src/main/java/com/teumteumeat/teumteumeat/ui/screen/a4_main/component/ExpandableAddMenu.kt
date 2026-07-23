@@ -48,10 +48,10 @@ fun ExpandableAddMenuOverlay(
     val density = LocalDensity.current
     var menuHeightPx by remember { mutableStateOf(0) } // ⭐ 핵심
 
-    // ⭐ 최종 위치 미세 조정값
-    val finalAdjustPx = with(density) { -20.dp.toPx() }
-
-
+    // ⭐ 확장 메뉴 컬럼 하단과 + 버튼 사이 간격 (16dp)
+    // 메뉴가 열리면 홈 아이템이 80dp → 52dp로 줄어들며 + 버튼의 실제 렌더링 위치가
+    // onPlusPositioned가 넘겨주는 값보다 약 16dp 아래로 이동하므로 추가 보정 포함
+    val finalAdjustPx = with(density) { -48.dp.toPx() }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -64,8 +64,8 @@ fun ExpandableAddMenuOverlay(
                 .graphicsLayer { clip = false } // ✅ 중요
                 .offset {
                     IntOffset(
-                        // ✅ X: 메뉴를 버튼 중앙에 정렬
-                        x = (offset.x - with(density) { 28.dp.toPx() }).roundToInt(),
+                        // ✅ X: 메뉴를 버튼 중앙에 정렬 (FloatingActionItem 크기의 절반)
+                        x = (offset.x - with(density) { (FloatingActionItemSize / 2).toPx() }).roundToInt(),
 
                         // ⭐ Y: 메뉴 하단이 + 버튼 상단에 오도록
                         y = (offset.y - menuHeightPx + finalAdjustPx).roundToInt()
@@ -123,11 +123,13 @@ fun ExpandableAddMenu(
 
             FloatingActionItem(
                 iconRes = R.drawable.icon_search_category,
+                label = "주제 찾기",
                 onClick = onAddCategory
             )
 
             FloatingActionItem(
                 iconRes = R.drawable.icon_upload_file,
+                label = "올리기",
                 onClick = onAddDocument
             )
         }

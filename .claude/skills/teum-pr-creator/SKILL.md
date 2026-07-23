@@ -151,15 +151,20 @@ fi
 버전 갱신 커밋과 태그 생성이 완료되면, 5)에서 기록해 둔 `PREV_TAG`부터 현재까지 병합된 PR 내역을 요약해 릴리즈 노트를 작성한다.
 
 ```bash
-# PREV_TAG 이후 병합된 PR(머지 커밋) 목록
+# PREV_TAG 이후 병합된 PR(머지 커밋) 목록 — 머지 커밋 메시지의 "Merge pull request #123"에서 PR 번호 추출
 git log ${PREV_TAG}..HEAD --merges --oneline
 
+# 저장소 URL (PR 링크 생성용, .git 접미사 제거)
+REPO_URL=$(git remote get-url origin | sed -E 's/\.git$//; s#^git@github.com:#https://github.com/#')
+
 # 필요 시 각 PR 상세 내용 보강
-gh pr view {PR번호} --json title,body --jq '.'
+gh pr view {PR번호} --json title,body,url --jq '.'
 ```
 
 - 각 병합 PR의 제목·본문을 바탕으로 "새로운 기능 / 개선 사항 / 버그 수정" 등 사용자 관점의 카테고리로 재분류해 요약한다.
 - 내부 리팩터링·테스트 전용 PR처럼 사용자에게 노출할 필요가 없는 변경은 생략한다.
+- **각 항목 끝에 해당 PR 링크를 반드시 첨부한다.** `gh pr view --json url`로 얻거나, `REPO_URL`과 머지 커밋에서 추출한 PR 번호로 `{REPO_URL}/pull/{PR번호}` 형태로 직접 구성한다.
+  형식: `- [요약 문장] ([#{PR번호}]({PR URL}))`
 
 릴리즈 노트 본문 전체는 클립보드에 복사하고, 제목만 터미널에 출력한다. 본문을 터미널에 다시 출력하지 않는다.
 
