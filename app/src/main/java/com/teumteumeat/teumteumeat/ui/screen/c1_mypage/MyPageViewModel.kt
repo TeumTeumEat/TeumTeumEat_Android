@@ -365,7 +365,7 @@ class MyPageViewModel @Inject constructor(
                                 },
                                 topicDescription = userGoal.prompt ?: "",
                                 goalWeek = userGoal.studyPeriod,
-                                goalDifficulty = userGoal.difficulty.toLable()
+                                goalDifficulty = "난이도 ${userGoal.difficulty.toLable()}"
                             )
                         }
                     }
@@ -375,7 +375,7 @@ class MyPageViewModel @Inject constructor(
                                 selectedTopic = userGoal.fileName!!,
                                 topicDescription = userGoal.prompt ?: "",
                                 goalWeek = userGoal.studyPeriod,
-                                goalDifficulty = userGoal.difficulty.toLable()
+                                goalDifficulty = "난이도 ${userGoal.difficulty.toLable()}"
                             )
                         }
                     }
