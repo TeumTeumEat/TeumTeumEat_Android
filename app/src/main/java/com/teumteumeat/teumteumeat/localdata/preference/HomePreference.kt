@@ -17,6 +17,7 @@ class HomePreference @Inject constructor(
         private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
         private const val KEY_SELECTED_FOOD_RES = "selected_food_res"
         private const val KEY_SELECTED_FOOD_DATE = "selected_food_date"
+        private const val KEY_COUPON_ACTIVE_GOAL_ID = "coupon_active_goal_id"
     }
 
     private val prefs: SharedPreferences =
@@ -67,6 +68,32 @@ class HomePreference @Inject constructor(
         prefs.edit()
             .putString(KEY_SELECTED_FOOD_DATE, LocalDate.now().toString())
             .putInt(KEY_SELECTED_FOOD_RES, foodRes)
+            .apply()
+    }
+
+    /**
+     * 쿠폰 사용으로 임시 활성화(Available)된 목표 id를 저장합니다.
+     * 요약글 조회 후 퀴즈를 풀기 전 홈으로 돌아와도 이 목표에 한해 활성화 상태를 유지하기 위함입니다.
+     */
+    fun saveCouponActiveGoalId(goalId: Long) {
+        prefs.edit()
+            .putLong(KEY_COUPON_ACTIVE_GOAL_ID, goalId)
+            .apply()
+    }
+
+    /**
+     * 쿠폰으로 활성화된 목표 id. 저장된 적 없으면 null.
+     */
+    fun getCouponActiveGoalId(): Long? =
+        if (prefs.contains(KEY_COUPON_ACTIVE_GOAL_ID)) prefs.getLong(KEY_COUPON_ACTIVE_GOAL_ID, -1L)
+        else null
+
+    /**
+     * 쿠폰 활성화 상태를 해제합니다. (목표 변경 감지 시, 또는 퀴즈 완료 시 호출)
+     */
+    fun clearCouponActiveGoalId() {
+        prefs.edit()
+            .remove(KEY_COUPON_ACTIVE_GOAL_ID)
             .apply()
     }
 

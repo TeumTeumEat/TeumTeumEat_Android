@@ -422,8 +422,15 @@ class HomeViewModel @Inject constructor(
      * [쿠폰 사용] 버튼 클릭 시 호출됩니다.
      * Consumed → Available로 전환해 홈 화면에 간식을 다시 등장시킵니다.
      * 실제 요약본 진입은 유저가 간식을 탭했을 때 이루어집니다 (SnackState.Available 탭 핸들러).
+     *
+     * 쿠폰으로 활성화한 목표 id를 함께 저장해 둔다. 요약글 조회 후 퀴즈를 풀기 전에
+     * 홈으로 돌아와 loadHomeState()가 재호출되어도(hasSolvedToday=true인 채로) 같은 목표라면
+     * Available 상태를 유지할 수 있도록 하기 위함이다.
      */
     fun useCoupon() {
+        cachedGoal?.goalId?.let { goalId ->
+            homePreference.saveCouponActiveGoalId(goalId)
+        }
         _uiState.update {
             it.copy(
                 snackState = SnackState.Available,
@@ -492,6 +499,16 @@ class HomeViewModel @Inject constructor(
                     // (다른 화면 이동 후 재진입한 경우에도 다시 보여야 하므로 세션 단위로 dedup하지 않는다)
                     _uiState.update { it.copy(isShowGoalCompletedDialog = goal.isCompleted) }
 
+                    // 쿠폰으로 활성화해 둔 목표와 지금 목표가 다르면(=목표 변경) 활성화 상태를 해제한다.
+                    // ⚠️ 의도적인 동작: 목표를 변경하면 새 목표에서도 다시 쿠폰을 사용할 수 있어야 하므로,
+                    // 이전 목표에 대해 저장해 둔 쿠폰 활성화 상태는 더 이상 유효하지 않은 것으로 간주해 폐기한다.
+                    val couponActiveGoalId = homePreference.getCouponActiveGoalId()
+                    if (couponActiveGoalId != null && couponActiveGoalId != goal.goalId) {
+                        homePreference.clearCouponActiveGoalId()
+                    }
+                    val isCouponActiveForCurrentGoal =
+                        homePreference.getCouponActiveGoalId() == goal.goalId
+
                     // 2️⃣ 오늘 퀴즈 상태 조회
                     when (val quizResult = quizRepository.getUserQuizStatus()) {
 
@@ -537,6 +554,7 @@ class HomeViewModel @Inject constructor(
                                     snackState = resolveSnackState(
                                         goal = goal,
                                         hasSolvedToday = quizStatus.hasSolvedToday,
+                                        isCouponActive = isCouponActiveForCurrentGoal,
                                     ),
                                     currentGoalCompleted = goal.isCompleted,
                                     summaryQuery = buildSummaryQuery(goal),
@@ -596,10 +614,13 @@ class HomeViewModel @Inject constructor(
 
     /**
      * 음식(Snack) 상태의 단일 결정 함수
+     * @param isCouponActive 쿠폰 사용으로 현재 목표가 임시 활성화된 상태인지 여부.
+     *                        true면 오늘 이미 풀이를 완료했더라도(hasSolvedToday) Available을 유지한다.
      */
     private fun resolveSnackState(
         goal: UserGoal,
-        hasSolvedToday: Boolean
+        hasSolvedToday: Boolean,
+        isCouponActive: Boolean,
     ): SnackState {
 
         if (goal.isCompleted) {
@@ -608,7 +629,8 @@ class HomeViewModel @Inject constructor(
 
         // 2️⃣ 오늘 이미 소비
         // 빌드 타입이 DEBUG가 아니고(Release), 오늘 이미 해결했다면 Consumed 상태 반환
-        if (hasSolvedToday) {
+        // 단, 쿠폰으로 활성화된 상태(isCouponActive)라면 퀴즈를 풀기 전까지 Available을 유지한다.
+        if (hasSolvedToday && !isCouponActive) {
             return SnackState.Consumed(
                 nextArrivalTime = "00:00"
             )
