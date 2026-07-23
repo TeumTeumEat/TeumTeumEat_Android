@@ -13,6 +13,7 @@ import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.localdata.preference.HomePreference
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +36,7 @@ class QuizViewModel @Inject constructor(
     private val quizTrackingDataStore: QuizTrackingDataStore,
     private val analyticsLogger: TeumAnalyticsLogger,
     val sessionManager: SessionManager,
+    private val homePreference: HomePreference,
 ) : ViewModel() {
 
     // Intent로 전달된 값을 가져옵니다. (SummaryActivity에서 넣은 Key와 일치해야 함)
@@ -101,13 +103,18 @@ class QuizViewModel @Inject constructor(
 
     /**
      * 퀴즈 완료 API 호출 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가.
-     * 성공 후 emitRefreshSignal() → HomeViewModel이 couponSummaryCreated=false 처리.
+     * 성공 후 emitRefreshSignal() → HomeViewModel이 서버 기준(hasSolvedToday=true)으로 재조회.
+     *
+     * 퀴즈를 실제로 다 풀었으므로 쿠폰으로 임시 활성화해 둔 상태(HomePreference의
+     * couponActiveGoalId)는 그 역할을 다한 것이다. 여기서 해제해야 다음에 홈으로 돌아왔을 때
+     * (같은 목표라도) 서버 기준 hasSolvedToday=true에 따라 정상적으로 Consumed 상태가 표시된다.
      */
     private suspend fun completeCurrentQuizSet() {
         when (val response = quizRepository.submitCompleteQuizSet()) {
             is ApiResultV2.Success -> {
                 Log.d("QuizViewModel", "completeCurrentQuizSet success")
                 quizTrackingDataStore.markQuizCompleted(documentId.toString())
+                homePreference.clearCouponActiveGoalId()
 
                 val quizCount = uiState.value.totalSteps
                 val scoreRate = if (quizCount > 0) {

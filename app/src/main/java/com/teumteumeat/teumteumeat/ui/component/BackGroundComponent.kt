@@ -41,6 +41,34 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
+// 🔹 Figma 정의: background_gradient_blue, Linear Gradient (0%→#EDF0FF, 66%→#FFFFFF, 100%는 66% 값 유지)
+val backgroundGradientBlue = Brush.verticalGradient(
+    colorStops = arrayOf(
+        0f to Color(0xFFEDF0FF),
+        0.66f to Color(0xFFFFFFFF),
+        1f to Color(0xFFFFFFFF),
+    )
+)
+
+// 🔹 Figma 정의: 하단 버튼 영역 스크림, White 고정 / alpha만 변화 (0%→0%, 70%→100%, 100%→100%)
+val bottomButtonScrimGradient = Brush.verticalGradient(
+    colorStops = arrayOf(
+        0f to Color.White.copy(alpha = 0f),
+        0.7f to Color.White.copy(alpha = 1f),
+        1f to Color.White.copy(alpha = 1f),
+    )
+)
+
+// 🔹 bottomButtonScrimGradient와 동일 정의를 방향만 반전(top→bottom 기준 0%→100%, 30%→100%, 100%→0%)
+// 리스트 상단이 배경 위로 자연스럽게 사라지도록 하는 용도
+val topScrimGradient = Brush.verticalGradient(
+    colorStops = arrayOf(
+        0f to Color.White.copy(alpha = 1f),
+        0.3f to Color.White.copy(alpha = 1f),
+        1f to Color.White.copy(alpha = 0f),
+    )
+)
+
 @Composable
 fun RoundedCornerColumn(
     modifier: Modifier,

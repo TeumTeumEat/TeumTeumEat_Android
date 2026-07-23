@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.core.view.WindowCompat
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 
@@ -12,6 +13,9 @@ import com.teumteumeat.teumteumeat.utils.LocalActivityContext
  */
 @Composable
 fun ForceLightStatusBarIcons() {
+    // ⚠️ Preview는 LocalActivityContext를 제공하지 않아 .current 접근 시 크래시하므로 건너뜀
+    if (LocalInspectionMode.current) return
+
     val activity = LocalActivityContext.current
     DisposableEffect(activity) {
         val controller = WindowCompat.getInsetsController(activity.window, activity.window.decorView)

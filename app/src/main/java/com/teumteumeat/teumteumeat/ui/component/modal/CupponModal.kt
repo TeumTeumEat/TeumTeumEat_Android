@@ -214,8 +214,10 @@ fun AdCouponModal(
                                 }
                                 append("으로 하루 한번만 가능했던\n틈틈잇 퀴즈를 추가로 풀 수 있어요!")
                             },
-                            style = MaterialTheme.appTypography.lableMedium12_h14,
-                            color = theme.textPrimary
+                            style = MaterialTheme.appTypography.lableMedium12_h14.copy(
+                                lineHeight = 16.sp
+                            ),
+                            color = theme.textPrimary,
                         )
                     }
                 }
@@ -225,7 +227,7 @@ fun AdCouponModal(
                 // 🔹 3. 불렛 포인트 리스트
                 val bulletText = """
                     • 하루 최대 10번 사용 가능해요.
-                    • 광고로 받은 쿠폰은 당일까지 사용 가능
+                    • 광고로 받은 쿠폰은 당일까지 사용할 수 있어요.
                 """.trimIndent()
 
                 Row(

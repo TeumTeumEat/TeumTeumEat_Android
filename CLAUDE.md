@@ -62,6 +62,7 @@ Lint:     ./gradlew lintDebug
 | Room 스키마 변경 | `teum-room-migration` |
 | ViewModel 테스트 작성 | `teum-viewmodel-test` |
 | Pull Request 생성 | `teum-pr-creator` |
+| main PR 병합 후 스토어용 3줄 릴리즈 노트 요약 | `teum-store-release-note` |
 
 ## 민감 파일 (읽기·수정 금지)
 `google-services.json` · `local.properties` · `*.keystore` · `*.jks`
