@@ -453,51 +453,17 @@ fun HomeScreen(
                         onDismiss = { viewModel.closeAdModal() },
                         onUseCoupon = {
                             /*
-                             * 1. 방어 로직: 이미 오늘 목표를 모두 완료한 상태라면 쿠폰 사용을 막고 알림을 띄웁니다.
-                             *    (SummaryActivity로 넘어가더라도 목표가 완료된 상태면 진행이 안 될 수 있기 때문)
+                             * 방어 로직: 이미 오늘 목표를 모두 완료한 상태라면 쿠폰 사용을 막고 알림을 띄웁니다.
                              */
                             if (uiState.currentGoalCompleted) {
                                 Toast.makeText(activity, "이미 완료된 목표입니다.", Toast.LENGTH_SHORT).show()
                                 return@AdCouponDialog
                             }
 
-                            /*
-                             * 2. ViewModel의 useCoupon을 호출하여 서버에 오늘의 요약글 생성을 요청합니다.
-                             */
-                            viewModel.useCoupon(
-                                onSuccess = { latestQuery, forceStream ->
-                                    val intent = Intent(
-                                        activity,
-                                        SummaryActivity::class.java
-                                    ).apply {
-                                        putExtra(SummaryArgs.KEY_GOAL_ID, latestQuery.goalId)
-                                        putExtra(
-                                            SummaryArgs.KEY_GOAL_TYPE,
-                                            latestQuery.goalType.name
-                                        )
-                                        putExtra(
-                                            SummaryArgs.KEY_DOCUMENT_ID,
-                                            latestQuery.documentId
-                                        )
-                                        putExtra(
-                                            SummaryArgs.KEY_CATEGORY_ID,
-                                            latestQuery.categoryId
-                                        )
-                                        // 첫 진입: SSE 스트리밍 생성 / 재진입: GET 조회
-                                        putExtra(SummaryArgs.KEY_FORCE_STREAM, forceStream)
-                                    }
-                                    activity.startActivity(intent)
-
-                                    // 화면 전환 후에는 광고 모달을 닫아줍니다.
-                                    viewModel.closeAdModal()
-                                },
-                                onError = { message ->
-                                    /*
-                                     * 4. 실패 시: 사용자에게 에러 메시지를 Toast로 보여줍니다.
-                                     */
-                                    // Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
-                                }
-                            )
+                            // 모달을 닫고 snackState를 Available로 되돌려 홈 화면에 간식을 다시 등장시킵니다.
+                            // 요약본 진입은 유저가 간식을 탭했을 때 BouncingImage의 Available 분기에서 처리됩니다.
+                            viewModel.useCoupon()
+                            viewModel.closeAdModal()
                         },
                         onChargeCoupon = {
                             // 광고 시청 로직 구현
