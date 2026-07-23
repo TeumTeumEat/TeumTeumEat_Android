@@ -42,7 +42,6 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 // 🔹 Figma 정의: background_gradient_blue, Linear Gradient (0%→#EDF0FF, 66%→#FFFFFF, 100%는 66% 값 유지)
-// 방향(각도) 정보가 이미지에 없어 top→bottom(verticalGradient)으로 우선 구현. 추후 Figma 각도 확인 필요.
 val backgroundGradientBlue = Brush.verticalGradient(
     colorStops = arrayOf(
         0f to Color(0xFFEDF0FF),
@@ -52,7 +51,6 @@ val backgroundGradientBlue = Brush.verticalGradient(
 )
 
 // 🔹 Figma 정의: 하단 버튼 영역 스크림, White 고정 / alpha만 변화 (0%→0%, 70%→100%, 100%→100%)
-// 방향(각도) 정보가 이미지에 없어 top→bottom(verticalGradient)으로 우선 구현. 추후 Figma 각도 확인 필요.
 val bottomButtonScrimGradient = Brush.verticalGradient(
     colorStops = arrayOf(
         0f to Color.White.copy(alpha = 0f),
