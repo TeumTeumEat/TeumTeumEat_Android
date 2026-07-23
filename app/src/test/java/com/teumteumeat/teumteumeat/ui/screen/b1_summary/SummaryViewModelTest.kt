@@ -16,6 +16,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.document.StreamPdfSummaryUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.summary.StreamDailySummaryUseCase
 import com.teumteumeat.teumteumeat.data.network.model_response.UserQuiz
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import com.teumteumeat.teumteumeat.ui.screen.b2_quiz.QuizType
 import com.teumteumeat.teumteumeat.util.MainDispatcherRule
 import io.mockk.coEvery
@@ -50,6 +51,7 @@ class SummaryViewModelTest {
     private lateinit var quizRepository: QuizRepository
     private lateinit var streamDailySummaryUseCase: StreamDailySummaryUseCase
     private lateinit var streamPdfSummaryUseCase: StreamPdfSummaryUseCase
+    private lateinit var analyticsLogger: TeumAnalyticsLogger
     private lateinit var viewModel: SummaryViewModel
 
     private val goalId = 10L
@@ -89,6 +91,7 @@ class SummaryViewModelTest {
         quizRepository = mockk(relaxed = true)
         streamDailySummaryUseCase = mockk(relaxed = true)
         streamPdfSummaryUseCase = mockk(relaxed = true)
+        analyticsLogger = mockk(relaxed = true)
 
         coEvery { quizRepository.getUserQuizStatus() } returns
                 ApiResultV2.Success(message = null, data = dummyQuizStatus)
@@ -108,6 +111,7 @@ class SummaryViewModelTest {
             streamPdfSummaryUseCase = streamPdfSummaryUseCase,
             application = ApplicationProvider.getApplicationContext<Application>(),
             sessionManager = mockk<SessionManager>(relaxed = true),
+            analyticsLogger = analyticsLogger,
         )
     }
 
