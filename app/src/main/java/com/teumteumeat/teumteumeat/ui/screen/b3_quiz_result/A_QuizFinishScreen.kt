@@ -25,6 +25,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.ForceLightStatusBarIcons
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
+import com.teumteumeat.teumteumeat.ui.component.backgroundGradientBlue
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
@@ -76,7 +77,7 @@ fun QuizFinishScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.White)
+                            .background(backgroundGradientBlue)
                             .systemBarsPadding()
                     ) {
 

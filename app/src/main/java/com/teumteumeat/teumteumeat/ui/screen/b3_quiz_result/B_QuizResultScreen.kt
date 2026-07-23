@@ -1,13 +1,17 @@
 package com.teumteumeat.teumteumeat.ui.screen.b3_quiz_result
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.ui.component.backgroundGradientBlue
+import com.teumteumeat.teumteumeat.ui.component.bottomButtonScrimGradient
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.quiz.result.QuizResultBody
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -24,34 +28,48 @@ fun QuizResultScreen(
 ) {
     val uiState = LocalQuizResultUiState.current
 
-    QuizResultBody(
-        title = "오늘의 정답 확인",
-        quizzes = uiState.quizzes,
-        onBackClick = onBack,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundGradientBlue)
     ) {
-        /** 🔹 하단 버튼 영역 */
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-                .align(Alignment.BottomCenter),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        QuizResultBody(
+            title = "오늘의 정답 확인",
+            quizzes = uiState.quizzes,
+            onBackClick = onBack,
+            backgroundColor = Color.Transparent,
         ) {
-            BaseFillButton(
+            /** 🔹 하단 버튼 영역 (32dp 위/아래 스크림, 좌우 패딩 없음) */
+            Box(
                 modifier = Modifier
-                    .weight(1f),
-                onClick = onShowSummary,
-                text = "글보기",
-                btnContainerColor = MaterialTheme.extendedColors.btnFillSecondary,
-                btnContentColor = MaterialTheme.extendedColors.textPointBlue
-            )
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(bottomButtonScrimGradient)
+                    .padding(vertical = 32.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    BaseFillButton(
+                        modifier = Modifier
+                            .weight(1f),
+                        onClick = onShowSummary,
+                        text = "요약 글 보기",
+                        btnContainerColor = MaterialTheme.extendedColors.btnFillSecondary,
+                        btnContentColor = MaterialTheme.extendedColors.textPointBlue
+                    )
 
-            BaseFillButton(
-                modifier = Modifier
-                    .weight(1f),
-                onClick = goEndScreen,
-                text = "다음으로"
-            )
+                    BaseFillButton(
+                        modifier = Modifier
+                            .weight(1f),
+                        onClick = goEndScreen,
+                        text = "다음으로"
+                    )
+                }
+            }
         }
     }
 }

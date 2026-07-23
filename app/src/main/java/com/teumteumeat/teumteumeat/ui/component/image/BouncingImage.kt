@@ -6,8 +6,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
@@ -23,6 +25,11 @@ fun BouncingImage(
     // 1. 애니메이션을 위한 scale 상태값 (초기값 1.0)
     val scale = remember { Animatable(1f) }
     val coroutineScope = rememberCoroutineScope()
+
+    // pointerInput(Unit)의 제스처 감지 코루틴은 최초 1회만 launch되어 재시작되지 않으므로,
+    // onTab을 직접 캡처하면 이후 recomposition에서 바뀐 콜백(예: snackState 변화)이 반영되지 않는다.
+    // rememberUpdatedState로 항상 최신 콜백을 참조하도록 한다.
+    val currentOnTab by rememberUpdatedState(onTab)
 
     Image(
         painter = painterResource(id = foodRes),
@@ -49,7 +56,7 @@ fun BouncingImage(
                         }
                     },
                     onTap = {
-                        onTab()
+                        currentOnTab()
                     }
                 )
             },
