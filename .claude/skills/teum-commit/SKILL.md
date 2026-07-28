@@ -25,7 +25,7 @@ description: |
 [footer - 조건부]
 ```
 
-### type 목록 (5종)
+### type 목록 (6종)
 | type     | 사용 기준                              |
 |----------|--------------------------------------|
 | feat     | 새 파일·기능 추가                        |
@@ -33,22 +33,25 @@ description: |
 | refactor | 로직 변경 없이 구조·네이밍 개선             |
 | chore    | build.gradle, libs.versions.toml, 설정 |
 | test     | *Test.kt, *Spec.kt 파일 변경            |
+| hotfix   | 프로덕션 긴급 수정 (`hotfix/*` 브랜치의 커밋) |
 
 ### scope — 파일 경로 기준 매핑
-| 변경 파일 경로 키워드              | scope         |
-|-------------------------------|---------------|
-| ui/screen/a0_splash           | splash        |
-| ui/screen/a1_login            | login         |
-| ui/screen/a2_on_boarding      | onboarding    |
-| ui/screen/a4_main             | main          |
-| ui/screen/b1_summary          | summary       |
-| ui/screen/b2_quiz             | quiz          |
-| ui/screen/b3_quiz_result      | quiz-result   |
-| ui/screen/c1_mypage           | mypage        |
-| ui/screen/c2_goal_list        | goal          |
-| utils/firebase                | notification  |
-| build.gradle.kts / libs.versions.toml | gradle |
-| 여러 경로에 걸친 공통 변경          | core          |
+| 변경 파일 경로 키워드                    | scope       |
+|--------------------------------------|-------------|
+| ui/screen/a0_splash                  | splash      |
+| ui/screen/a1_login                   | login       |
+| ui/screen/a2_on_boarding             | onboarding  |
+| ui/screen/a4_main                    | main        |
+| ui/screen/b1_summary                 | summary     |
+| ui/screen/b2_quiz                    | quiz        |
+| ui/screen/b3_quiz_result             | quiz-result |
+| ui/screen/c1_mypage                  | mypage      |
+| ui/screen/c2_goal_list, c3_edit_user_info | goal   |
+| domain/, usecase/                    | domain      |
+| data/, repository/, db/              | data        |
+| utils/firebase                       | notification |
+| build.gradle.kts / libs.versions.toml | gradle     |
+| 여러 레이어·경로에 걸친 공통 변경          | core        |
 
 ### subject 규칙
 - 영어 type + 한국어 subject 혼용

@@ -36,3 +36,6 @@ app/src/test/java/com/teumteumeat/teumteumeat/test_log
 
 # Release build artifacts
 app/release/
+
+# Claude Code 로컬 실행 설정 (머신별 절대 경로를 포함하므로 공유하지 않는다)
+.claude/launch.json

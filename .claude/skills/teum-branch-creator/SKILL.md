@@ -32,20 +32,22 @@ description: |
 | hotfix     | 프로덕션 긴급 수정                      |
 
 ### scope — 화면·도메인 기준
-| 화면 / 영역                     | scope          |
-|-------------------------------|----------------|
-| a0_splash                     | splash         |
-| a1_login                      | login          |
-| a2_on_boarding                | onboarding     |
-| a4_main                       | main           |
-| b1_summary                    | summary        |
-| b2_quiz / b3_quiz_result      | quiz           |
-| c1_mypage                     | mypage         |
-| c2_goal_list / c3_edit_*      | goal           |
-| domain / usecase              | domain         |
-| data / repository / db        | data           |
-| build.gradle / libs.versions  | gradle         |
-| 여러 레이어에 걸친 변경           | core           |
+| 화면 / 영역                        | scope       |
+|-----------------------------------|-------------|
+| a0_splash                         | splash      |
+| a1_login                          | login       |
+| a2_on_boarding                    | onboarding  |
+| a4_main                           | main        |
+| b1_summary                        | summary     |
+| b2_quiz                           | quiz        |
+| b3_quiz_result                    | quiz-result |
+| c1_mypage                         | mypage      |
+| c2_goal_list / c3_edit_user_info  | goal        |
+| domain / usecase                  | domain      |
+| data / repository / db            | data        |
+| utils/firebase                    | notification |
+| build.gradle / libs.versions      | gradle      |
+| 여러 레이어에 걸친 변경              | core        |
 
 ### short-description 규칙
 - 소문자 + 하이픈(`-`) 구분
