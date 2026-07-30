@@ -25,7 +25,7 @@ description: |
 [footer - 조건부]
 ```
 
-### type 목록 (5종)
+### type 목록 (6종)
 | type     | 사용 기준                              |
 |----------|--------------------------------------|
 | feat     | 새 파일·기능 추가                        |
@@ -33,22 +33,25 @@ description: |
 | refactor | 로직 변경 없이 구조·네이밍 개선             |
 | chore    | build.gradle, libs.versions.toml, 설정 |
 | test     | *Test.kt, *Spec.kt 파일 변경            |
+| hotfix   | 프로덕션 긴급 수정 (`hotfix/*` 브랜치의 커밋) |
 
 ### scope — 파일 경로 기준 매핑
-| 변경 파일 경로 키워드              | scope         |
-|-------------------------------|---------------|
-| ui/screen/a0_splash           | splash        |
-| ui/screen/a1_login            | login         |
-| ui/screen/a2_on_boarding      | onboarding    |
-| ui/screen/a4_main             | main          |
-| ui/screen/b1_summary          | summary       |
-| ui/screen/b2_quiz             | quiz          |
-| ui/screen/b3_quiz_result      | quiz-result   |
-| ui/screen/c1_mypage           | mypage        |
-| ui/screen/c2_goal_list        | goal          |
-| utils/firebase                | notification  |
-| build.gradle.kts / libs.versions.toml | gradle |
-| 여러 경로에 걸친 공통 변경          | core          |
+| 변경 파일 경로 키워드                    | scope       |
+|--------------------------------------|-------------|
+| ui/screen/a0_splash                  | splash      |
+| ui/screen/a1_login                   | login       |
+| ui/screen/a2_on_boarding             | onboarding  |
+| ui/screen/a4_main                    | main        |
+| ui/screen/b1_summary                 | summary     |
+| ui/screen/b2_quiz                    | quiz        |
+| ui/screen/b3_quiz_result             | quiz-result |
+| ui/screen/c1_mypage                  | mypage      |
+| ui/screen/c2_goal_list, c3_edit_user_info | goal   |
+| domain/, usecase/                    | domain      |
+| data/, repository/, db/              | data        |
+| utils/firebase                       | notification |
+| build.gradle.kts / libs.versions.toml | gradle     |
+| 여러 레이어·경로에 걸친 공통 변경          | core        |
 
 ### subject 규칙
 - 영어 type + 한국어 subject 혼용
@@ -67,6 +70,49 @@ description: |
 ---
 
 ## 실행 절차
+
+### STEP 0 — 보호 브랜치 게이트 (현재 브랜치가 `main` / `develop` / `release`일 때만)
+
+```bash
+git rev-parse --abbrev-ref HEAD
+```
+
+`main`(배포) · `release`(QA 검증) · `develop`(통합·빌드) 세 브랜치는
+**실제 소스 수정·개발을 직접 진행하지 않는 것이 원칙**이다. 모든 변경은 `feature`/`hotfix`
+브랜치를 거쳐 병합으로만 반영한다. 현재 브랜치가 이 셋에 해당하지 않으면 이 단계 전체를
+건너뛰고 STEP 1로 이동한다.
+
+불가피하게 위 세 브랜치 중 하나에 직접 커밋해야 한다면 아래 순서로 확인하고,
+하나라도 통과하지 못하면 커밋을 중단하고 `teum-branch-creator`로 기능 브랜치를 만들어 작업하도록 안내한다.
+
+**1) 진행 여부 확인**
+
+```
+현재 브랜치가 <main|develop|release> 입니다. 이 브랜치는 직접 소스 수정·개발을
+진행하지 않는 것이 원칙이며, 모든 변경은 feature/hotfix 브랜치의 병합으로만 반영됩니다.
+
+정말 <브랜치명>에 바로 커밋하시겠습니까?
+
+[y] 진행   |   [n] 취소
+```
+
+`n` 또는 거부 응답 시 커밋을 중단하고 기능 브랜치로 전환할 것을 안내한다.
+
+**2) 작업 이유 확인**
+
+```
+<브랜치명>에 직접 커밋해야 하는 이유를 알려주세요.
+```
+
+**3) 타당성 검증**
+
+아래에 해당하는 경우에만 타당한 것으로 판단한다.
+
+- 프로젝트 담당자가 배포 관리 목적(예: 버전·태그 관련 메타데이터)으로 진행하는 경우
+- 그 외 기능 개발·버그 수정 성격의 변경은 타당하지 않음 → 기능 브랜치로 전환 안내 후 중단
+
+**타당하지 않다고 판단되면** 판단 근거를 설명하고 커밋을 중단한다.
+**타당하다고 판단되면** 판단 근거를 사용자에게 알리고 STEP 1로 진행한다.
 
 ### STEP 1 — 변경 파일 탐색
 ```bash
@@ -120,6 +166,7 @@ git log --oneline -1
 - `build/`, `.gradle/` 디렉토리 → 커밋 금지
 - `git status`에서 untracked 파일 발견 시 → 사용자에게 포함 여부 확인
 - 커밋 전 `./gradlew test` 통과 여부 → 사용자에게 확인 후 진행
+- 현재 브랜치가 `main`/`develop`/`release`인 경우 → STEP 0 게이트(진행 여부·사유 확인 → 타당성 검증) 통과 전까지 커밋 금지
 
 ---
 
