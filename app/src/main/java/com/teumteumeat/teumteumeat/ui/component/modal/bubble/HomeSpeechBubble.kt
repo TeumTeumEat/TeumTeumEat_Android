@@ -192,7 +192,7 @@ class SpeechBubbleShape(
 
 /**
  * 홈 화면 카드 위에 표시되는 말풍선.
- * 텍스트가 1줄을 넘어가면 폭에 맞을 때까지 글자 크기를 자동으로 줄인다.
+ * 최대 2줄까지 표시하며, 2줄 안에 다 들어가지 않으면 글자 크기를 자동으로 줄인다.
  */
 @Composable
 fun HomeSpeechBubble(
@@ -212,7 +212,7 @@ fun HomeSpeechBubble(
     // 위에서 만든 커스텀 도형 객체 생성
     val bubbleShape = SpeechBubbleShape(cornerRadius, tailWidth, tailHeight, tailPaddingEnd)
 
-    val baseStyle = MaterialTheme.appTypography.bodyMedium14.copy(color = theme.textPrimary)
+    val baseStyle = MaterialTheme.appTypography.bodyMedium16_h22.copy(color = theme.textPrimary)
     var textStyle by remember(text) { mutableStateOf(baseStyle) }
     var readyToDraw by remember(text) { mutableStateOf(false) }
 
@@ -238,11 +238,11 @@ fun HomeSpeechBubble(
             text = text,
             style = textStyle,
             textAlign = TextAlign.Center,
-            maxLines = 1,
-            softWrap = false,
+            maxLines = BUBBLE_MAX_LINES,
+            softWrap = true,
             modifier = Modifier.drawWithContent { if (readyToDraw) drawContent() },
             onTextLayout = { result ->
-                if (result.didOverflowWidth && textStyle.fontSize > MIN_BUBBLE_FONT_SIZE) {
+                if (result.hasVisualOverflow && textStyle.fontSize > MIN_BUBBLE_FONT_SIZE) {
                     textStyle = textStyle.copy(fontSize = textStyle.fontSize * 0.95f)
                 } else {
                     readyToDraw = true
@@ -252,4 +252,5 @@ fun HomeSpeechBubble(
     }
 }
 
-private val MIN_BUBBLE_FONT_SIZE = 10.sp
+private const val BUBBLE_MAX_LINES = 2
+private val MIN_BUBBLE_FONT_SIZE = 12.sp
