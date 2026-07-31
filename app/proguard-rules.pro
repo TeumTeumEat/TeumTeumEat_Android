@@ -123,3 +123,20 @@
 -keep class com.teumteumeat.teumteumeat.localdata.work_manager.ResetSnackWorker {
     public <init>(...);
 }
+
+# ============================================================================
+# Kakao SDK (v2-user 2.20.0, v2-common 전이 의존성)
+# ----------------------------------------------------------------------------
+# SDK 가 번들한 consumer proguard.txt 는 AppLifecycleObserver 만 keep 하며
+# com.kakao.sdk.common.model.ClientErrorCause 같은 내부 enum/모델은 보호하지 않는다.
+# R8 full mode 가 이 enum 의 상수 필드명(예: TokenNotFound)을 난독화하면
+# SDK 내부의 문자열 기반 필드 조회(Class.getField)가
+# NoSuchFieldException 으로 실패해 앱이 크래시한다.
+# (release v1.1.9, mapping.txt 에서 TokenNotFound -> C 로 확인됨)
+# ============================================================================
+-keep class com.kakao.sdk.** { *; }
+-keepclassmembers class com.kakao.sdk.** {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+-dontwarn com.kakao.sdk.**
