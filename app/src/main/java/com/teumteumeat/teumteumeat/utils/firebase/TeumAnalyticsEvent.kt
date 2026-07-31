@@ -16,18 +16,26 @@ object TeumAnalyticsEvent {
     /**
      * 소셜 로그인 성공
      *
-     * | 파라미터         | 타입   | 예시   | 목적                         |
-     * |----------------|--------|--------|------------------------------|
-     * | method         | String | kakao  | 로그인 방식별 전환율          |
-     * | is_first_login | String | true   | 앱 설치 후 첫 번째 로그인 여부 |
+     * | 파라미터         | 타입   | 예시     | 목적                         |
+     * |----------------|--------|----------|------------------------------|
+     * | method         | String | kakao    | 로그인 방식별 전환율          |
+     * | is_first_login | String | true     | 앱 설치 후 첫 번째 로그인 여부 |
+     * | login_type     | String | manual   | 로그인 경로 구분              |
      *
      * - `is_first_login`은 "true" | "false" 문자열로 저장 (Firebase Analytics Boolean 미지원)
      * - 재설치·데이터 삭제 시 플래그 초기화 → "true" 재발생
+     * - `login_type`: "manual"(소셜 로그인 버튼 클릭) | "auto"(토큰 기반 자동 로그인)
+     *   자동 로그인은 앱을 열 때마다 발생하므로 [TeumAnalyticsLogger.logLoginComplete]에서
+     *   하루 1회로 발송을 제한한다. 수동 로그인은 제한하지 않는다.
      */
     object LoginComplete {
         const val NAME = "login_complete"
         const val PARAM_METHOD = "method"           // "kakao" | "google"
         const val PARAM_IS_FIRST_LOGIN = "is_first_login" // "true" | "false"
+        const val PARAM_LOGIN_TYPE = "login_type"   // "manual" | "auto"
+
+        const val LOGIN_TYPE_MANUAL = "manual"
+        const val LOGIN_TYPE_AUTO = "auto"
     }
 
     /**
