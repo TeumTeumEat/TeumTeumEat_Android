@@ -17,6 +17,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompl
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -135,7 +136,15 @@ class SplashViewModel @Inject constructor(
                     analyticsLogger.setOsType()
                     val storedProvider = tokenLocalDataSource.getProvider()
                     if (storedProvider != null) {
-                        analyticsLogger.setLoginMethod(storedProvider.lowercase())
+                        val method = storedProvider.lowercase()
+                        analyticsLogger.setLoginMethod(method)
+                        // 📊 login_complete: 자동 로그인 — 재방문은 정의상 isFirstLogin=false,
+                        // 하루 1회 게이트는 TeumAnalyticsLogger.logLoginComplete 내부에서 처리
+                        analyticsLogger.logLoginComplete(
+                            method = method,
+                            isFirstLogin = false,
+                            loginType = TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO,
+                        )
                     } else {
                         syncLoginMethodFromServer()
                     }
@@ -167,6 +176,13 @@ class SplashViewModel @Inject constructor(
                     val providerStr = provider.name.lowercase()
                     tokenLocalDataSource.saveProvider(providerStr)
                     analyticsLogger.setLoginMethod(providerStr)
+                    // 📊 login_complete: 자동 로그인 — storedProvider가 없어 서버 동기화로 provider를
+                    // 받아온 경로도 동일하게 발화 (하루 1회 게이트는 로거 내부에서 처리)
+                    analyticsLogger.logLoginComplete(
+                        method = providerStr,
+                        isFirstLogin = false,
+                        loginType = TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO,
+                    )
                 }
             }
             else -> { /* Analytics 실패는 앱 흐름에 영향 없음 */ }

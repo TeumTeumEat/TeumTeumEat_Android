@@ -16,6 +16,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -213,7 +214,11 @@ class LoginViewModel @Inject constructor(
                 // 📊 login_complete: 소셜 로그인 성공
                 // isFirstLogin: 플래그가 아직 저장되지 않은 경우가 첫 번째 로그인
                 val isFirstLogin = !PrefsUtil.isFirstLoginCompleted(context)
-                analyticsLogger.logLoginComplete(method = method, isFirstLogin = isFirstLogin)
+                analyticsLogger.logLoginComplete(
+                    method = method,
+                    isFirstLogin = isFirstLogin,
+                    loginType = TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL,
+                )
                 analyticsLogger.setLoginMethod(method)
                 analyticsLogger.setOsType()
                 if (isFirstLogin) PrefsUtil.markFirstLoginCompleted(context)

@@ -57,6 +57,13 @@ class TeumAnalyticsLogger @Inject constructor(
 
         /** PDF 업로드 시도 횟수 누적값 — 0부터 시작, [logPdfUploadStart] 호출 시마다 +1 */
         private const val KEY_PDF_UPLOAD_ATTEMPT_COUNT = "pdf_upload_attempt_count"
+
+        /**
+         * 자동 로그인 [TeumAnalyticsEvent.LoginComplete] 마지막 발송 날짜("yyyy-MM-dd").
+         * 자동 로그인은 앱을 열 때마다 발생하므로 같은 날 재발송을 막는 게이트로 사용한다.
+         * 수동 로그인([TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL])은 이 게이트 대상이 아니다.
+         */
+        private const val KEY_LAST_AUTO_LOGIN_COMPLETE_DATE = "last_auto_login_complete_date"
     }
 
     /**
@@ -800,19 +807,35 @@ class TeumAnalyticsLogger @Inject constructor(
     /**
      * 소셜 로그인 성공 이벤트 로깅 ([TeumAnalyticsEvent.LoginComplete])
      *
+     * `loginType`이 [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO]인 경우, 자동 로그인은
+     * 앱을 열 때마다 발생하므로 SharedPreferences(`analytics_prefs`)에 저장된 마지막 발송 날짜
+     * 기준으로 같은 날이면 발송을 건너뜁니다. `loginType`이
+     * [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL]인 경우에는 이 게이트를 적용하지
+     * 않습니다 — 수동 로그인은 하루 여러 번 발생하지 않고, 신규 가입 직후 최초 로그인을
+     * 놓치면 안 되기 때문입니다.
+     *
      * @param method       로그인 방식 — "kakao" 또는 "google"
      * @param isFirstLogin 앱 설치 후 첫 번째 로그인 여부
      *   - `true`  : 최초 로그인 (재설치·데이터 삭제 후 포함)
-     *   - `false` : 재로그인
+     *   - `false` : 재로그인 (자동 로그인은 정의상 항상 `false`)
      *   Firebase Analytics는 Boolean 타입을 지원하지 않으므로 "true"/"false" 문자열로 저장합니다.
+     * @param loginType    로그인 경로 — [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL] |
+     *   [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO]
      */
-    fun logLoginComplete(method: String, isFirstLogin: Boolean) {
+    fun logLoginComplete(method: String, isFirstLogin: Boolean, loginType: String) {
+        if (loginType == TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO) {
+            val today = LocalDate.now().toString()
+            if (prefs.getString(KEY_LAST_AUTO_LOGIN_COMPLETE_DATE, null) == today) return
+            prefs.edit { putString(KEY_LAST_AUTO_LOGIN_COMPLETE_DATE, today) }
+        }
+
         val params = Bundle().apply {
             putString(TeumAnalyticsEvent.LoginComplete.PARAM_METHOD, method)
             putString(
                 TeumAnalyticsEvent.LoginComplete.PARAM_IS_FIRST_LOGIN,
                 isFirstLogin.toString()
             )
+            putString(TeumAnalyticsEvent.LoginComplete.PARAM_LOGIN_TYPE, loginType)
         }
         analytics.logEvent(TeumAnalyticsEvent.LoginComplete.NAME, params)
     }
