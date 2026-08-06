@@ -17,7 +17,9 @@ import com.teumteumeat.teumteumeat.localdata.preference.HomePreference
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -88,29 +90,59 @@ class QuizViewModel @Inject constructor(
         MutableStateFlow<UiScreenState>(UiScreenState.Idle)
     val screenState = _screenState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<QuizUiEvent>(
+        replay = 0,
+        extraBufferCapacity = 1
+    )
+    val uiEvent = _uiEvent.asSharedFlow()
+
     /**
      * 채점하러가기 버튼 클릭 시 호출.
-     * /api/v1/user-quizzes/complete-set 응답이 온 뒤 refreshSignal을 방출해야
-     * HomeViewModel이 hasSolvedToday=true 상태를 정확히 반영할 수 있다.
+     *
+     * ⚠️ complete-set API 응답(및 quiz_complete/stamp_earned 로깅, refreshSignal 방출)이
+     * 모두 끝난 뒤에만 [QuizUiEvent.NavigateToResult]를 방출한다. 예전에는 호출부(Activity)가
+     * 이 완료를 기다리지 않고 곧바로 화면을 전환 + finish()하여, API 응답 전에 Activity가
+     * 종료되면 viewModelScope가 취소되면서 완료 요청 자체와 quiz_complete/stamp_earned 로깅이
+     * 유실될 수 있었다 — 그 레이스 컨디션을 막기 위한 구조다.
+     * 이미 처리 중(isCompleting=true)이면 중복 탭을 무시한다.
      */
     fun completeQuiz() {
+        if (_uiState.value.isCompleting) return
+
         viewModelScope.launch {
-            completeCurrentQuizSet()
-            // API 완료 후 방출 — suspend 순서 보장
-            goalRepository.emitRefreshSignal()
+            _uiState.update { it.copy(isCompleting = true) }
+
+            val isSuccess = completeCurrentQuizSet()
+
+            _uiState.update { it.copy(isCompleting = false) }
+
+            if (isSuccess) {
+                // API 완료 후 방출 — suspend 순서 보장
+                goalRepository.emitRefreshSignal()
+                _uiEvent.emit(
+                    QuizUiEvent.NavigateToResult(
+                        documentId = documentId,
+                        topic = topic,
+                        entryType = resolvedEntryType,
+                    )
+                )
+            }
         }
     }
 
     /**
      * 퀴즈 완료 API 호출 - 유저 쿠폰수 차감 및 퀴즈 풀이 횟수 1증가.
-     * 성공 후 emitRefreshSignal() → HomeViewModel이 서버 기준(hasSolvedToday=true)으로 재조회.
+     * 성공 후 completeQuiz()에서 emitRefreshSignal() → HomeViewModel이 서버 기준
+     * (hasSolvedToday=true)으로 재조회.
      *
      * 퀴즈를 실제로 다 풀었으므로 쿠폰으로 임시 활성화해 둔 상태(HomePreference의
      * couponActiveGoalId)는 그 역할을 다한 것이다. 여기서 해제해야 다음에 홈으로 돌아왔을 때
      * (같은 목표라도) 서버 기준 hasSolvedToday=true에 따라 정상적으로 Consumed 상태가 표시된다.
+     *
+     * @return 완료 API 성공 여부. 실패 시 결과 화면으로 전환하지 않는다(호출부 참고).
      */
-    private suspend fun completeCurrentQuizSet() {
-        when (val response = quizRepository.submitCompleteQuizSet()) {
+    private suspend fun completeCurrentQuizSet(): Boolean {
+        return when (val response = quizRepository.submitCompleteQuizSet()) {
             is ApiResultV2.Success -> {
                 Log.d("QuizViewModel", "completeCurrentQuizSet success")
                 quizTrackingDataStore.markQuizCompleted(documentId.toString())
@@ -133,8 +165,12 @@ class QuizViewModel @Inject constructor(
                 )
 
                 logStampEarnedIfSolvedTodayChanged()
+                true
             }
-            else -> { moveToError(response) }
+            else -> {
+                moveToError(response)
+                false
+            }
         }
     }
 
@@ -420,6 +456,11 @@ class QuizViewModel @Inject constructor(
 
     }
 
+    /** 완료 API 실패 시 화면에 노출한 errorMessage를 토스트 표시 후 비운다 (QuizScreen에서 호출) */
+    fun clearErrorMessage() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
     /**
      * QUIZ-003 — 화면 이탈 감지. QuizActivity가 finish()될 때 ViewModel도 clear되므로
      * 이 시점에서 세션 내 제출 수가 전체 문항 수보다 적으면 미완료 이탈로 간주한다.
@@ -436,4 +477,13 @@ class QuizViewModel @Inject constructor(
             )
         }
     }
+}
+
+sealed class QuizUiEvent {
+    /** complete-set API 성공 후에만 방출 — QuizActivity는 이 이벤트를 받은 뒤에만 결과 화면으로 전환한다 */
+    data class NavigateToResult(
+        val documentId: Long,
+        val topic: String,
+        val entryType: String,
+    ) : QuizUiEvent()
 }
