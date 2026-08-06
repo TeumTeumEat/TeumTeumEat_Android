@@ -99,12 +99,33 @@ class QuizActivity : BaseActivity() {
                         }
                     }
 
+                    // 🔥 complete-set API 성공 후에만 결과 화면으로 전환 (완료 전 finish() 방지)
+                    LaunchedEffect(Unit) {
+                        viewModel.uiEvent.collectLatest { event ->
+                            when (event) {
+                                is QuizUiEvent.NavigateToResult -> {
+                                    activity.startActivity(
+                                        QuizResultActivity.newIntent(
+                                            activity,
+                                            event.documentId,
+                                            event.topic,
+                                            event.entryType,
+                                        )
+                                    )
+                                    finish()
+                                }
+                            }
+                        }
+                    }
+
                     // 🔹 최초 진입 시 퀴즈 목록 조회
                     LaunchedEffect(Unit) {
                         viewModel.loadQuizzes(documentId, GoalTypeUiState.fromString(goalType))
                     }
 
-                    BackHandler {
+                    // 채점(complete-set API) 처리 중에는 백버튼을 막는다 — 완료 오버레이의
+                    // pointerInput이 터치는 막아주지만, 백버튼은 별도 경로이므로 명시적으로 가드한다.
+                    BackHandler(enabled = !uiState.isCompleting) {
                         when(screenState){
                             UiScreenState.Success -> {
                                 viewModel.prevQuiz()
@@ -129,17 +150,9 @@ class QuizActivity : BaseActivity() {
                             viewModel.loadQuizzes(documentId, GoalTypeUiState.fromString(goalType))
                         },
                         onCompleteQuiz = {
-                            val documentId = viewModel.documentId
-                            val topic = viewModel.topic
-                            val entryType = viewModel.resolvedEntryType
-
+                            // 화면 전환은 viewModel.uiEvent(QuizUiEvent.NavigateToResult)를 통해
+                            // complete-set API 성공 후에만 이루어진다 (위 LaunchedEffect 참고)
                             viewModel.completeQuiz()
-
-                            activity.startActivity(
-                                QuizResultActivity.newIntent(activity, documentId, topic, entryType)
-                            )
-
-                            finish()
                         },
                         onDismissExitDialog = { viewModel.dismissExitDialog() },
                         onDestroyActivity = { finish() },

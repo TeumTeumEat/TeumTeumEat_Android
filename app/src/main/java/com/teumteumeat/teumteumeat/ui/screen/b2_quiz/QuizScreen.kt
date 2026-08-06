@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.b2_quiz
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,6 +24,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
+import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 
 @Composable
 fun QuizScreen(
@@ -36,6 +39,15 @@ fun QuizScreen(
 ) {
 
     val activity = LocalActivityContext.current as QuizActivity
+    val viewModel = LocalViewModelContext.current as QuizViewModel
+
+    // 채점(complete-set) 실패 시 errorMessage가 채워지면 토스트로 안내하고 비운다 (HomeScreen과 동일 패턴)
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearErrorMessage()
+        }
+    }
 
 
     // 🔴 에러 화면 (핵심)
@@ -133,16 +145,18 @@ fun QuizScreen(
             }
         }
 
-        // 🔄 정답 제출 중 오버레이
-        if (uiState.currentQuiz?.isSubmitting == true) {
+        // 🔄 정답 제출 중 / 채점 처리 중 오버레이
+        // (isCompleting: complete-set API 응답 대기 — 응답 전까지는 결과 화면으로 넘어가지 않는다)
+        if (uiState.currentQuiz?.isSubmitting == true || uiState.isCompleting) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.25f)),
+                    .background(Color.Black.copy(alpha = 0.25f))
+                    .pointerInput(Unit) {}, // 처리 중 중복 탭 방지
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "제출 중...",
+                    text = if (uiState.isCompleting) "채점 중..." else "제출 중...",
                     color = Color.White
                 )
             }
