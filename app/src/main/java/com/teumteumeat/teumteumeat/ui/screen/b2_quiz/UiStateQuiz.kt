@@ -15,7 +15,10 @@ data class UiStateQuiz(
     val errorMessage: String? = null,
 
     val isCompleted: Boolean = false,
-    
+
+    // 채점(complete-set API) 처리 중 여부 — API 응답 전 화면 전환·중복 탭을 막는 데 사용
+    val isCompleting: Boolean = false,
+
     val errorState: ErrorState = ErrorState(
         title = "",
         description = "",
