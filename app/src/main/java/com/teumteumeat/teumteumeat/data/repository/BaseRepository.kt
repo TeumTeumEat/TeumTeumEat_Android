@@ -327,6 +327,17 @@ abstract class BaseRepository(
 
         } catch (e: CancellationException) {
             throw e
+        } catch (e: retrofit2.HttpException) {
+            if (e.code() == 401) {
+                handleUnauthorized(apiCall, mapper)
+            } else {
+                val errorResponse = parseErrorResponse(e)
+                ApiResult.ServerError(
+                    code = errorResponse?.code ?: e.code().toString(),
+                    message = errorResponse?.message ?: "서버 오류가 발생했습니다.",
+                    details = null
+                )
+            }
         } catch (e: UnauthorizedException) {
             handleUnauthorized(apiCall, mapper)
 
