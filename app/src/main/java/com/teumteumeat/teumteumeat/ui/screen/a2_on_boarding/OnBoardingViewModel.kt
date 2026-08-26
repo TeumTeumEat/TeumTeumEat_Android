@@ -1052,7 +1052,7 @@ class OnBoardingViewModel @Inject constructor(
         }
     }
 
-    private fun handlePresignedResult(
+    private suspend fun handlePresignedResult(
         result: ApiResultV2<PresignedResponse>
     ) {
         when (result) {
@@ -1083,7 +1083,7 @@ class OnBoardingViewModel @Inject constructor(
                         pageErrorMessage = result.message
                     )
                 }
-                // TODO 로그인 이동
+                sessionManager.expireSession()
             }
 
             is ApiResultV2.NetworkError,
