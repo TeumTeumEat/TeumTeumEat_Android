@@ -2,6 +2,9 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,11 +39,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.LeagueSpeechBubble
+import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -78,6 +91,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 private val DebugSkyBlue = Color(0xFF56CCF2)
 
+// 프로세스 생존 기간 동안만 유지되는 플래그 — 앱 프로세스가 종료되었다가
+// 새로 포그라운드 진입할 때만 리그 말풍선의 등장 애니메이션을 재생하기 위함.
+// (프로세스가 살아있는 동안의 화면 회전·탭 이동 등에서는 다시 재생되지 않는다.)
+private object LeagueBubbleEntranceState {
+    var hasAnimatedThisProcess = false
+}
+
 @Composable
 fun MainCompositionProvider(
     viewModel: MainViewModel,
@@ -94,6 +114,29 @@ fun MainCompositionProvider(
 
     val theme = MaterialTheme.extendedColors
     var isNavReady by remember { mutableStateOf(false) }
+
+    // 🏆 리그 진입 말풍선 — 스트릭 표시 영역 하단 좌표(화면 루트 기준)
+    var streakAnchor by remember { mutableStateOf<Offset?>(null) }
+    // 말풍선을 실제로 배치할 Box 자신의 화면 루트 기준 원점
+    // (Scaffold 등 상위 레이아웃이 암묵적으로 추가하는 오프셋과 무관하게, 항상 같은 좌표계에서 계산하기 위함)
+    var overlayBoxOrigin by remember { mutableStateOf(Offset.Zero) }
+
+    // 이 프로세스에서 처음 보여지는 경우에만 등장 애니메이션 재생
+    val alreadyAnimatedLeagueBubble = remember { LeagueBubbleEntranceState.hasAnimatedThisProcess }
+    var showLeagueBubbleAnimation by remember { mutableStateOf(alreadyAnimatedLeagueBubble) }
+
+    LaunchedEffect(Unit) {
+        if (!alreadyAnimatedLeagueBubble) {
+            showLeagueBubbleAnimation = true
+            LeagueBubbleEntranceState.hasAnimatedThisProcess = true
+        }
+    }
+
+    val leagueBubbleScale by animateFloatAsState(
+        targetValue = if (showLeagueBubbleAnimation) 1f else 0f,
+        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
+        label = "league_bubble_grow",
+    )
 
     val sessionManager = viewModel.sessionManager // 세션메니저 정의
 
@@ -175,7 +218,11 @@ fun MainCompositionProvider(
                     .fillMaxSize(),
                 content = { padding ->
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .onGloballyPositioned { overlayBoxOrigin = it.positionInRoot() }
+                    ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -193,7 +240,8 @@ fun MainCompositionProvider(
                                         MyPageActivity::class.java,
                                         exitFlag = false,
                                     )
-                                }
+                                },
+                                onStreakAnchorPositioned = { streakAnchor = it },
                             )
 
                             Box(
@@ -212,6 +260,58 @@ fun MainCompositionProvider(
                             }
 
 
+                        }
+
+                        // 🏆 리그 진입 말풍선 — 꼬리 끝이 스트릭 숫자 중앙 위에 오도록 정렬하고,
+                        // 스트릭 표시 하단 6dp 아래에 배치. 다른 콘텐츠 위·팝업류 아래(zIndex).
+                        val anchor = streakAnchor
+                        if (anchor != null && leagueBubbleScale > 0f) {
+                            val density = LocalDensity.current
+                            val gapPx = with(density) { 6.dp.toPx() }
+                            val tailWidthDp = 14.dp
+                            val tailPaddingEndDp = 24.dp
+                            val tailWidthPx = with(density) { tailWidthDp.toPx() }
+                            val tailPaddingEndPx = with(density) { tailPaddingEndDp.toPx() }
+                            // anchor는 화면 루트 기준 좌표이므로, 실제 배치되는 이 Box의 루트 기준
+                            // 원점(overlayBoxOrigin)만큼 빼서 Box 로컬 좌표로 변환한다.
+                            val targetTailTipX = anchor.x - overlayBoxOrigin.x
+                            val targetTopY = anchor.y - overlayBoxOrigin.y + gapPx
+
+                            LeagueSpeechBubble(
+                                tailWidth = tailWidthDp,
+                                tailPaddingEnd = tailPaddingEndDp,
+                                modifier = Modifier
+                                    .layout { measurable, constraints ->
+                                        val placeable = measurable.measure(constraints)
+                                        // 꼬리 끝(tailTip)이 targetTailTipX(스트릭 숫자 중앙)에 오도록
+                                        // 배치 x좌표를 말풍선의 실제 측정 너비 기준으로 역산한다.
+                                        val x = (
+                                            targetTailTipX + tailPaddingEndPx + tailWidthPx / 2f -
+                                                placeable.width
+                                            ).roundToInt()
+                                        val y = targetTopY.roundToInt()
+                                        layout(placeable.width, placeable.height) {
+                                            placeable.placeRelative(x, y)
+                                        }
+                                    }
+                                    .zIndex(1f)
+                                    .graphicsLayer {
+                                        scaleX = leagueBubbleScale
+                                        scaleY = leagueBubbleScale
+                                        // 꼬리가 붙어있는 지점을 피벗으로 삼아 아래로 자연스럽게 펼쳐지도록 설정
+                                        val tailFractionX = if (size.width > 0f) {
+                                            ((size.width - tailPaddingEndPx - tailWidthPx / 2f) / size.width)
+                                                .coerceIn(0f, 1f)
+                                        } else {
+                                            0.8f
+                                        }
+                                        transformOrigin = TransformOrigin(tailFractionX, 0f)
+                                        alpha = if (leagueBubbleScale > 0.3f) 1f else 0f
+                                    },
+                                onClick = {
+                                    // TODO: 리그 화면 이동 연결
+                                },
+                            )
                         }
                     }
                 },
