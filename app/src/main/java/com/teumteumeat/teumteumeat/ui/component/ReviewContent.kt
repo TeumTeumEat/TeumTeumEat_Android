@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -72,7 +72,7 @@ fun ReviewContent(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SpeechBubble(text = speechBubbleText)
+                    OnboardingSpeechBubble(text = speechBubbleText)
                     Spacer(modifier = Modifier.height(12.dp))
                     Image(
                         painter = painterResource(R.drawable.char_onboarding_five_five),

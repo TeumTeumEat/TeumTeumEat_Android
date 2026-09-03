@@ -33,7 +33,7 @@ import com.teumteumeat.teumteumeat.domain.model.defaultRequestPromptOptions
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.radio_group.DifficultyRadioGroup
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.DifficultyOption
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -120,7 +120,7 @@ fun OptimizeDataContent(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        SpeechBubble(text = speechBubbleText)
+                        OnboardingSpeechBubble(text = speechBubbleText)
                         Image(
                             painter = painterResource(R.drawable.char_onboarding_five_three),
                             contentDescription = "앞을 보는 캐릭터",

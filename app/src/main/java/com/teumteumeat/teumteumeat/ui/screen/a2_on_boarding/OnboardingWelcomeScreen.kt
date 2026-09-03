@@ -28,7 +28,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -71,7 +71,7 @@ fun OnBoardingWelcomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    SpeechBubble(
+                    OnboardingSpeechBubble(
                         text = "나만의 AI 일일 퀴즈 서비스\n틈틈잇!",
                         textStyle = MaterialTheme.appTypography.btnSemiBold18_h24
                     )

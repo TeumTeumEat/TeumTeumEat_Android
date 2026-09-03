@@ -37,7 +37,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.NoLableTextField
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 
 
@@ -86,7 +86,7 @@ fun OnboardingSetUserNickNameScreen(
                 ) {
                     Spacer(modifier = Modifier.height(23.dp))
 
-                    SpeechBubble(
+                    OnboardingSpeechBubble(
                         text = "뭐라고 불러 드릴까요?"
                     )
                     Spacer(modifier = Modifier.height(20.dp))
