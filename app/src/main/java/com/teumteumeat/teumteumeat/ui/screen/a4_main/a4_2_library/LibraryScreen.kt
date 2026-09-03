@@ -43,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import com.teumteumeat.teumteumeat.domain.model.history.CategoryHistoryUiModel
 import com.teumteumeat.teumteumeat.domain.model.history.LearningHistoryUiModel
+import com.teumteumeat.teumteumeat.ui.component.Banner.LeagueEntryBanner
 import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.card.CalendarDailyLearningCard
@@ -144,7 +145,15 @@ fun LibraryScreen(
                             .padding(horizontal = 22.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Spacer(Modifier.height(32.dp))
+                        Spacer(Modifier.height(33.25.dp))
+
+                        LeagueEntryBanner(
+                            onClick = {
+                                // TODO: 리그 화면 이동 연결
+                            },
+                        )
+
+                        Spacer(Modifier.height(20.dp))
 
                         MotivationCard(
                             uiState = mapStreakToMotivationUiState(
