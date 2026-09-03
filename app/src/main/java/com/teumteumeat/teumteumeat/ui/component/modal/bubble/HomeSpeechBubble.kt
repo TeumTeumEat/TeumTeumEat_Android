@@ -121,7 +121,6 @@ class SpeechBubbleShape(
 ) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
         return Outline.Generic(Path().apply {
-            val cr = with(density) { cornerRadius.toPx() }
             val tw = with(density) { tailWidth.toPx() }
             val th = with(density) { tailHeight.toPx() }
             val tpe = with(density) { tailPaddingEnd.toPx() }
@@ -133,6 +132,12 @@ class SpeechBubbleShape(
             val bodyBottom = size.height
             val bodyLeft = 0f
             val bodyRight = size.width
+
+            // Figma의 corner radius "999" 트릭과 동일하게, 본체의 짧은 변 절반을 넘지 않도록
+            // clamp하여 큰 값을 넣으면 항상 완전한 필(pill) 모양이 되도록 만듭니다.
+            val cr = with(density) { cornerRadius.toPx() }
+                .coerceAtMost((bodyBottom - bodyTop) / 2f)
+                .coerceAtMost((bodyRight - bodyLeft) / 2f)
 
             val tailTipX = bodyRight - tpe - (tw / 2f)
             val tailLeftX = bodyRight - tpe - tw
