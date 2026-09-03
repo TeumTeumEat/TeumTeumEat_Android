@@ -262,13 +262,16 @@ fun MainCompositionProvider(
 
                         }
 
-                        // 🏆 리그 진입 말풍선 — 꼬리 끝이 스트릭 숫자 중앙 위에 오도록 정렬하고,
+                        // 🏆 리그 진입 말풍선 — 홈 탭에서만 표시(라이브러리 탭에서는 숨김).
+                        // 꼬리 끝이 스트릭 숫자 중앙 위에 오도록 정렬하고,
                         // 스트릭 표시 하단 6dp 아래에 배치. 다른 콘텐츠 위·팝업류 아래(zIndex).
                         val anchor = streakAnchor
-                        if (anchor != null && leagueBubbleScale > 0f) {
+                        val isHomeTab = currentRoute == BottomNavItem.Home.route
+                        if (anchor != null && leagueBubbleScale > 0f && isHomeTab) {
                             val density = LocalDensity.current
                             val gapPx = with(density) { 6.dp.toPx() }
                             val tailWidthDp = 14.dp
+                            val tailHeightDp = 8.dp
                             val tailPaddingEndDp = 24.dp
                             val tailWidthPx = with(density) { tailWidthDp.toPx() }
                             val tailPaddingEndPx = with(density) { tailPaddingEndDp.toPx() }
@@ -279,6 +282,7 @@ fun MainCompositionProvider(
 
                             LeagueSpeechBubble(
                                 tailWidth = tailWidthDp,
+                                tailHeight = tailHeightDp,
                                 tailPaddingEnd = tailPaddingEndDp,
                                 modifier = Modifier
                                     .layout { measurable, constraints ->
