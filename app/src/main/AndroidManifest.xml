@@ -80,10 +80,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.screen.a1_login.webView.KakaoLoginWebViewActivity"
-            android:exported="true"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-        <activity
             android:name=".ui.screen.a2_on_boarding.OnBoardingActivity"
             android:exported="true"
             android:label="@string/title_activity_on_boarding"
