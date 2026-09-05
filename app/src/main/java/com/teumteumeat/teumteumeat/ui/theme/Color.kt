@@ -56,3 +56,5 @@ val BlackTrp15 = Color(0x26000000)
 
 val White10 = Color(0xFFF8F9F7)
 val White100 = Color(0xFFFFFFFF)
+
+val Yellow200 = Color(0xFFFAFFD2)
