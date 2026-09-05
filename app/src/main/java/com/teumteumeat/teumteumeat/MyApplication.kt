@@ -1,6 +1,8 @@
 package com.teumteumeat.teumteumeat
 
+import android.app.Activity
 import android.app.Application
+import android.os.Bundle
 import android.util.Log
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.Firebase
@@ -13,6 +15,7 @@ import com.teumteumeat.teumteumeat.di.IoDispatcher
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenSyncUtil
 import com.teumteumeat.teumteumeat.utils.firebase.FcmTokenInitializer
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
+import com.teumteumeat.teumteumeat.utils.firebase.TeumCrashlyticsLogger
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +39,9 @@ class MyApplication : Application() {
     lateinit var analyticsLogger: TeumAnalyticsLogger
 
     @Inject
+    lateinit var crashlyticsLogger: TeumCrashlyticsLogger
+
+    @Inject
     @IoDispatcher
     lateinit var ioDispatcher: CoroutineDispatcher
 
@@ -45,6 +51,25 @@ class MyApplication : Application() {
         super.onCreate()
         // Enable verbose logging for debugging (remove in production)
         if(BuildConfig.DEBUG) OneSignal.Debug.logLevel = LogLevel.VERBOSE
+
+        // ✅ 크래시 발생 시 "로그 및 탐색경로" 탭에서 화면 이동 순서를 볼 수 있도록 전 화면 공통 브레드크럼 등록
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                val screenName = activity::class.simpleName ?: "Unknown"
+                crashlyticsLogger.setCustomKey(KEY_CURRENT_SCREEN, screenName)
+                crashlyticsLogger.log("onCreate: $screenName")
+            }
+
+            override fun onActivityResumed(activity: Activity) {
+                crashlyticsLogger.log("onResume: ${activity::class.simpleName ?: "Unknown"}")
+            }
+
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
 
         // ✅ 각 SDK 초기화는 개별 방어 — 한 SDK 실패가 앱 전체를 죽이지 않도록 함
         // Initialize with your OneSignal App ID
@@ -85,5 +110,6 @@ class MyApplication : Application() {
 
     companion object {
         private const val TAG = "MyApplication"
+        private const val KEY_CURRENT_SCREEN = "current_screen"
     }
 }

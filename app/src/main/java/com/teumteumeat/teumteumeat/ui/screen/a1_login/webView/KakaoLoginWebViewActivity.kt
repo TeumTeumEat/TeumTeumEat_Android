@@ -12,16 +12,32 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
+import com.teumteumeat.teumteumeat.utils.firebase.TeumCrashlyticsLogger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class KakaoLoginWebViewActivity : AppCompatActivity() {
 
     private val viewModel: KakaoLoginViewModel by viewModels()
 
+    @Inject
+    lateinit var crashlyticsLogger: TeumCrashlyticsLogger
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 🔐 안전성 체크 — "url" extra 없이 진입하면 로그인을 진행할 수 없으므로 원인 기록 후 종료
+        val url = intent.getStringExtra(EXTRA_URL)
+        if (url == null) {
+            crashlyticsLogger.log("KakaoLoginWebViewActivity '$EXTRA_URL' extra 누락으로 진입 차단")
+            crashlyticsLogger.recordNonFatal(
+                IllegalStateException("KakaoLoginWebViewActivity launched without '$EXTRA_URL' intent extra")
+            )
+            finish()
+            return
+        }
 
         val webView = WebView(this)
 
@@ -30,9 +46,7 @@ class KakaoLoginWebViewActivity : AppCompatActivity() {
         observeUiState()
         setupWebView(webView)
 
-        webView.loadUrl(
-            intent.getStringExtra("url")!!
-        )
+        webView.loadUrl(url)
     }
 
     private fun setupWebView(webView: WebView) {
@@ -106,4 +120,7 @@ class KakaoLoginWebViewActivity : AppCompatActivity() {
         finish()
     }
 
+    companion object {
+        private const val EXTRA_URL = "url"
+    }
 }

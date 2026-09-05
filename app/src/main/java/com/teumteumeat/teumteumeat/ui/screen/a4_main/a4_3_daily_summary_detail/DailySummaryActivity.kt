@@ -21,42 +21,58 @@ import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import com.teumteumeat.teumteumeat.utils.LocalViewModelContext
 import com.teumteumeat.teumteumeat.utils.Utils.DailySummaryArgs
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.moveScreenWithDailyItem
+import com.teumteumeat.teumteumeat.utils.firebase.TeumCrashlyticsLogger
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class DailySummaryActivity : ComponentActivity() {
 
+    @Inject
+    lateinit var crashlyticsLogger: TeumCrashlyticsLogger
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // ✅ super.onCreate()는 항상 가장 먼저 호출한다 — 아래에서 finish()로 조기 반환하더라도
+        // 이 호출이 누락되면 SuperNotCalledException으로 크래시가 발생한다.
+        super.onCreate(savedInstanceState)
 
         val id = intent.getLongExtra(
             DailySummaryArgs.KEY_ID,
             -1L
         )
 
-        val type = intent.getStringExtra(
-            DailySummaryArgs.KEY_TYPE
-        )?.let {
-            DomainGoalType.valueOf(it)
+        val rawType = intent.getStringExtra(DailySummaryArgs.KEY_TYPE)
+        val type = rawType?.let {
+            runCatching { DomainGoalType.valueOf(it) }.getOrNull()
         }
 
-        val date = intent.getStringExtra(
-            DailySummaryArgs.KEY_DATE
-        )?.let {
-            LocalDate.parse(it)
+        val rawDate = intent.getStringExtra(DailySummaryArgs.KEY_DATE)
+        val date = rawDate?.let {
+            runCatching { LocalDate.parse(it) }.getOrNull()
         }
 
 
         // 🔐 안전성 체크
         if (id == -1L || type == null || date == null) {
+            // ✅ 실사용자 발생 시 Crashlytics 대시보드(키/로그 탭)에서 원인 추적이 가능하도록 기록
+            crashlyticsLogger.setCustomKey(KEY_EXTRA_ID, id)
+            crashlyticsLogger.setCustomKey(KEY_EXTRA_TYPE, rawType ?: "null")
+            crashlyticsLogger.setCustomKey(KEY_EXTRA_DATE, rawDate ?: "null")
+            crashlyticsLogger.log("DailySummaryActivity 잘못된 intent extra로 진입 차단")
+            crashlyticsLogger.recordNonFatal(
+                IllegalStateException(
+                    "DailySummaryActivity invalid intent extras: id=$id, type=$rawType, date=$rawDate"
+                )
+            )
+
             Toast.makeText(applicationContext, "id=${id}, type=${type}, date=${date} null 값이 있스니다.",
                 Toast.LENGTH_SHORT).show()
             finish() // 잘못된 진입 방지
             return
         }
 
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             TeumTeumEatTheme {
@@ -107,5 +123,11 @@ class DailySummaryActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val KEY_EXTRA_ID = "daily_summary_extra_id"
+        private const val KEY_EXTRA_TYPE = "daily_summary_extra_type"
+        private const val KEY_EXTRA_DATE = "daily_summary_extra_date"
     }
 }
