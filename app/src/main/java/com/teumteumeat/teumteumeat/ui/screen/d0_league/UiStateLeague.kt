@@ -19,6 +19,8 @@ data class UiStateLeague(
     // 상위 3명(포디움) + 4위 이하 랭킹 리스트
     val rankers: List<LeagueRankerUiModel> = emptyList(),
 
+    // 내 랭킹 카드에 항상 표시할 닉네임 — 이번 주 랭킹에 아직 등록되지 않아 [myRanker]가 null이어도 보여준다.
+    val myNickname: String = "",
     val myRanker: LeagueRankerUiModel? = null,
     val myTodaySnackCount: Int = 0,
 

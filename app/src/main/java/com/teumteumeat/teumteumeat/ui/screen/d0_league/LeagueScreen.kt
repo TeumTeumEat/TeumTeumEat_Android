@@ -13,8 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,8 +49,8 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
-import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeaguePodiumItem
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueRankRow
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueTop3Item
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -161,10 +162,7 @@ private fun LeagueContent(
             }
 
             items(uiState.restRankers, key = { it.rank * 1_000 + it.nickname.hashCode() }) { ranker ->
-                LeagueRankRow(
-                    ranker = ranker,
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                )
+                LeagueRankRow(ranker = ranker)
             }
         }
 
@@ -272,7 +270,7 @@ private fun LeagueTitlePodiumSection(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(31.dp))
 
         // 🔹 포디움(상위 3명) — 2등, 1등, 3등 순서로 배치해 1등이 가운데 오도록 함
         val podium = uiState.podiumRankers
@@ -283,18 +281,19 @@ private fun LeagueTitlePodiumSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+                .padding(horizontal = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
+            // 2등:1등:3등 = 3:4:3 비율로 좌우 18dp를 뺀 가용 폭 전체를 나눠 채운다.
             second?.let {
-                LeaguePodiumItem(ranker = it)
+                LeagueTop3Item(modifier = Modifier.weight(3f), ranker = it)
             }
             first?.let {
-                LeaguePodiumItem(ranker = it, isFirstPlace = true)
+                LeagueTop3Item(modifier = Modifier.weight(4f), ranker = it, isFirstPlace = true)
             }
             third?.let {
-                LeaguePodiumItem(ranker = it)
+                LeagueTop3Item(modifier = Modifier.weight(3f), ranker = it)
             }
         }
     }
@@ -313,43 +312,100 @@ private fun LeagueFooterSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(theme.backgroundBlack100)
+            .background(
+                color = theme.backgroundBlack100,
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            )
             .navigationBarsPadding(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "리그 리셋까지 ${formatCountdown(uiState.resetRemainingSeconds)}",
-            style = typo.captionRegular14.copy(color = Color.White),
-            textAlign = TextAlign.Center,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(vertical = 8.dp),
+        ) {
+            Text(
+                text = "리그 리셋까지",
+                style = typo.bodyMedium14_20.copy(color = Color.White),
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = formatCountdown(uiState.resetRemainingSeconds),
+                style = typo.subtitleSemiBold16.copy(color = Color.White),
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        // 이번 주 랭킹에 아직 등록되지 않아 myRanker가 null이어도(=아직 퀴즈를 안 풀었어도) 행 자체는
+        // 항상 표시하고, 등수 자리만 "-"로 대신한다.
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-        )
-
-        if (myRanker != null) {
+                .background(color = Color.White)
+                .padding(bottom = 8.dp),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(color = Color.White, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = "${myRanker.rank}",
+                    text = myRanker?.rank?.toString() ?: "-",
+                    textAlign = TextAlign.Center,
                     style = typo.subtitleSemiBold16,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.widthIn(min = 24.dp),
                 )
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = myRanker.nickname, style = typo.subtitleSemiBold16)
-                    Text(
-                        text = "오늘 ${uiState.myTodaySnackCount}스낵 총 ${myRanker.snackCount}스낵",
-                        style = typo.captionRegular12,
-                    )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.SpaceAround
+                )
+                {
+                    Text(text = uiState.myNickname, style = typo.subtitleSemiBold18)
+                    Spacer(Modifier.height(4.dp))
+                    val totalSnackCount = myRanker?.snackCount ?: 0
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = buildAnnotatedString {
+                                append("오늘 ")
+                                withStyle(
+                                    SpanStyle(
+                                        color = if (uiState.myTodaySnackCount == 0) theme.textGhost else theme.textPointBlue,
+                                    ),
+                                ) {
+                                    append("${uiState.myTodaySnackCount}")
+                                }
+                                append("스낵")
+                            },
+                            style = typo.bodyMedium14_20,
+                        )
+                        Text(
+                            text = buildAnnotatedString {
+                                append("총 ")
+                                withStyle(
+                                    SpanStyle(
+                                        color = if (totalSnackCount == 0) theme.textGhost else theme.textPointBlue,
+                                    ),
+                                ) {
+                                    append("$totalSnackCount")
+                                }
+                                append("스낵")
+                            },
+                            style = typo.bodyMedium14_20,
+                        )
+                    }
                 }
 
                 BaseFillSmallButton(
                     text = "순위 올리기",
                     onClick = onRaiseRankClick,
+                    minWidth = 115.dp,
+                    minHeight = 50.dp,
+                    conerRadius = 16.dp,
+                    textStyle = typo.btnSemiBold18_h24.copy(color = theme.backgroundW100),
                 )
             }
         }
@@ -357,10 +413,15 @@ private fun LeagueFooterSection(
 }
 
 private fun formatCountdown(totalSeconds: Long): String {
-    val hours = totalSeconds / 3600
+    val days = totalSeconds / 86_400
+    val hours = (totalSeconds % 86_400) / 3600
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
-    return "%02d:%02d:%02d".format(hours, minutes, seconds)
+    return if (days > 0) {
+        "%d일 %02d:%02d:%02d".format(days, hours, minutes, seconds)
+    } else {
+        "%02d:%02d:%02d".format(hours, minutes, seconds)
+    }
 }
 
 @Preview(showBackground = true)

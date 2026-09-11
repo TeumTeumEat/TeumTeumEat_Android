@@ -85,6 +85,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import kotlinx.coroutines.flow.collectLatest
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -313,7 +314,7 @@ fun MainCompositionProvider(
                                         alpha = if (leagueBubbleScale > 0.3f) 1f else 0f
                                     },
                                 onClick = {
-                                    // TODO: 리그 화면 이동 연결
+                                    activity.startActivity(LeagueActivity.newIntent(activity))
                                 },
                             )
                         }
