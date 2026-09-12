@@ -86,8 +86,7 @@ fun LeagueTop3Item(
                 .padding(top = topReserve)
                 .aspectRatio(CardAspectRatio)
                 .border(1.dp, theme.btnGray200, RoundedCornerShape(CardCornerRadius))
-                .background(color = theme.backgroundW100, shape = RoundedCornerShape(CardCornerRadius))
-                .padding(horizontal = 6.dp),
+                .background(color = theme.backgroundW100, shape = RoundedCornerShape(CardCornerRadius)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {

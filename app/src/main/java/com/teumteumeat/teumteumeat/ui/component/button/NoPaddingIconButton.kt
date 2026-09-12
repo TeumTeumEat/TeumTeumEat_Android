@@ -9,9 +9,12 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 
 private val NoPaddingIconButtonSize = 24.dp
@@ -42,6 +45,28 @@ fun NoPaddingIconButton(
     }
 }
 
+/** 프로젝트에 등록된 아이콘 이미지([Painter])로 표시하는 [NoPaddingIconButton]. */
+@Composable
+fun NoPaddingIconButton(
+    onClick: () -> Unit,
+    painter: Painter,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier.size(NoPaddingIconButtonSize),
+    ) {
+        Icon(
+            painter = painter,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(NoPaddingIconButtonSize),
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun PreviewNoPaddingIconButton() {
@@ -50,6 +75,18 @@ private fun PreviewNoPaddingIconButton() {
             onClick = {},
             imageVector = Icons.Rounded.Info,
             contentDescription = "정보",
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewNoPaddingIconButtonWithPainter() {
+    TeumTeumEatTheme {
+        NoPaddingIconButton(
+            onClick = {},
+            painter = painterResource(R.drawable.icon_keboard_arrow_left),
+            contentDescription = "이전 화면",
         )
     }
 }
