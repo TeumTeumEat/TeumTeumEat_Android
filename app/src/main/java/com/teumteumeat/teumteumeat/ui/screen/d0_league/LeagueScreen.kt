@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +35,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +43,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.component.button.NoPaddingIconButton
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -209,17 +210,16 @@ private fun LeagueTopBar(
     ) {
         NoPaddingIconButton(
             onClick = onBackClick,
-            imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
+            painter = painterResource(R.drawable.icon_keboard_arrow_left),
             contentDescription = "이전 화면",
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
             NoPaddingIconButton(
                 onClick = onShareClick,
                 imageVector = Icons.Rounded.Share,
                 contentDescription = "리그 공유하기",
             )
-            Spacer(modifier = Modifier.height(11.dp))
             NoPaddingIconButton(
                 onClick = onInfoClick,
                 imageVector = Icons.Rounded.Info,
