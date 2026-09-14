@@ -729,33 +729,6 @@ class Utils {
         private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
 
-        // 앱 설치 후 최초 로그인 완료 여부 (Analytics is_first_login 파라미터 관리)
-        private const val KEY_FIRST_LOGIN_COMPLETED = "first_login_completed"
-
-
-        /**
-         * 앱 설치 후 첫 번째 로그인 성공 여부 확인
-         *
-         * - 기본값 `false` → 로그인 성공 전까지 첫 로그인으로 간주
-         * - [markFirstLoginCompleted] 호출 후 `true` 반환
-         * - 앱 재설치·데이터 삭제 시 자동 초기화 → 다시 `false`
-         */
-        fun isFirstLoginCompleted(context: Context): Boolean {
-            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            return prefs.getBoolean(KEY_FIRST_LOGIN_COMPLETED, false)
-        }
-
-        /**
-         * 첫 번째 로그인 완료 플래그 저장
-         *
-         * 로그인 성공 이벤트 전송 직후 호출하여,
-         * 이후 로그인부터 is_first_login = "false"가 전송되도록 합니다.
-         */
-        fun markFirstLoginCompleted(context: Context) {
-            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_FIRST_LOGIN_COMPLETED, true).apply()
-        }
-
         /**
          * 온보딩 완료 상태 저장
          */
