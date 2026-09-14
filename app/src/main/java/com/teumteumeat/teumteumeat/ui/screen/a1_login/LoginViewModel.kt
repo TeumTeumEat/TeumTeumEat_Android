@@ -212,8 +212,8 @@ class LoginViewModel @Inject constructor(
                 }
 
                 // 📊 login_complete: 소셜 로그인 성공
-                // isFirstLogin: 플래그가 아직 저장되지 않은 경우가 첫 번째 로그인
-                val isFirstLogin = !PrefsUtil.isFirstLoginCompleted(context)
+                // isFirstLogin: 서버가 계정 생성 시점 기준으로 판정한 신규가입 여부 (SCRUM-155)
+                val isFirstLogin = data.isNewUser
                 analyticsLogger.logLoginComplete(
                     method = method,
                     isFirstLogin = isFirstLogin,
@@ -221,7 +221,6 @@ class LoginViewModel @Inject constructor(
                 )
                 analyticsLogger.setLoginMethod(method)
                 analyticsLogger.setOsType()
-                if (isFirstLogin) PrefsUtil.markFirstLoginCompleted(context)
 
                 saveAuthToken(data)
 
