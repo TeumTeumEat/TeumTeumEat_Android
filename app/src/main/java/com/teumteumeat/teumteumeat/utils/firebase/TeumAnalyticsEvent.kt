@@ -23,7 +23,8 @@ object TeumAnalyticsEvent {
      * | login_type     | String | manual   | 로그인 경로 구분              |
      *
      * - `is_first_login`은 "true" | "false" 문자열로 저장 (Firebase Analytics Boolean 미지원)
-     * - 재설치·데이터 삭제 시 플래그 초기화 → "true" 재발생
+     * - 서버가 계정 생성 시점 기준으로 판정해 내려주는 `isNewUser` 값을 그대로 사용 (SCRUM-155)
+     *   → 재설치·멀티기기 여부와 무관하게 계정 기준으로 정확함
      * - `login_type`: "manual"(소셜 로그인 버튼 클릭) | "auto"(토큰 기반 자동 로그인)
      *   자동 로그인은 앱을 열 때마다 발생하므로 [TeumAnalyticsLogger.logLoginComplete]에서
      *   하루 1회로 발송을 제한한다. 수동 로그인은 제한하지 않는다.
