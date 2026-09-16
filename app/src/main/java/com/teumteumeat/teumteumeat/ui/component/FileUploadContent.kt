@@ -40,7 +40,7 @@ import androidx.core.net.toUri
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.ContentSelectableBoxButton
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
 import com.teumteumeat.teumteumeat.utils.Utils.UxUtils.extractFileName
@@ -130,7 +130,7 @@ fun FileUploadContent(
                 ) {
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    SpeechBubble(text = "공부하고 싶은 PDF 자료를\n선택해 주세요!")
+                    OnboardingSpeechBubble(text = "공부하고 싶은 PDF 자료를\n선택해 주세요!")
                     Image(
                         painter = painterResource(R.drawable.char_onboarding_five_two),
                         contentDescription = "앞을 보는 케릭터",

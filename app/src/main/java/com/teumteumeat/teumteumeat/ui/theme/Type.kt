@@ -31,6 +31,7 @@ data class AppTypography(
     val titleBold20: TextStyle,
 
     // subtitle
+    val subtitleSemiBold24: TextStyle,
     val subtitleSemiBold20: TextStyle,
     val subtitleSemiBold18: TextStyle,
     val subtitleSemiBold16: TextStyle,
@@ -113,6 +114,11 @@ val DefaultAppTypography = AppTypography(
     ),
 
     // subtitle
+    subtitleSemiBold24 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+        lineHeight = 24.sp,
+    ),
     subtitleSemiBold20 = BaseTextStyle.copy(
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,

@@ -27,7 +27,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.ForceLightStatusBarIcons
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
@@ -73,7 +73,7 @@ fun OnBoardingSuccessScreen(
             Spacer(modifier = Modifier.height(80.dp))
 
             // 🗨️ 말풍선 이미지
-            SpeechBubble(
+            OnboardingSpeechBubble(
                 text = "모든 준비 끝!\n매일 배달될 틈틈잇을 확인해 보세요.",
                 textStyle = MaterialTheme.appTypography.subtitleSemiBold20.copy(
                     lineHeight = 28.sp

@@ -135,6 +135,11 @@
             android:exported="true"
             android:label="DailySummaryDetailActivity"
             android:theme="@style/Theme.TeumTeumEat" />
+        <activity
+            android:name=".ui.screen.d0_league.LeagueActivity"
+            android:exported="true"
+            android:label="LeagueActivity"
+            android:theme="@style/Theme.TeumTeumEat" />
     </application>
 
 </manifest>

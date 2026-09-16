@@ -53,6 +53,9 @@ data class ExtendedColors(
     val textGraySelcted: Color,
     val btnFillDisabledColor: Color,
     val btnFillDisabledColorGhoast: Color,
+    val backgroundBlack100: Color,
+    val backGroundYellow200: Color,
+    val backGroundYellow300: Color,
 
     )
 
@@ -105,6 +108,9 @@ val LightExtendedColors = ExtendedColors(
     backgroundDefault = BtnGray10,
     background = White10,
     backgroundW100 = White100,
+    backgroundBlack100 = Black100,
+    backGroundYellow200 = Yellow200,
+    backGroundYellow300 = Yellow300,
     viewBackgroundGray200 = backgorundGray200,
     viewBackgroundGray500 = backgorundGray500,
 )
