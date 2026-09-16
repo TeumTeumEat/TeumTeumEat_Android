@@ -54,7 +54,7 @@ import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.TimeSliderWithPickTime
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.BaseOutlineButton
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.radio_group.QuestionCountRadioGroup
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
@@ -167,7 +167,7 @@ private fun OnBoardingSetRoutineScreenContent(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SpeechBubble(
+                    OnboardingSpeechBubble(
                         text = "나만의 퀴즈 루틴을 만들어요!\n몇 문제를 몇 시에 풀지 정해볼까요?",
                     )
                     Image(

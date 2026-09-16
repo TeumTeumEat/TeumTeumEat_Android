@@ -19,10 +19,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,7 +47,21 @@ fun MainTopBar(
     currentStreak: Int,
     stampCount: Int,
     onClickSetting: () -> Unit,
+    // 리그 진입 말풍선 앵커 좌표(화면 루트 기준): x = 스트릭 숫자 텍스트의 가로 중앙(꼬리가 가리킬 지점),
+    // y = 스트릭 표시 Row의 하단(말풍선을 그 아래에 배치하는 기준선).
+    onStreakAnchorPositioned: (Offset) -> Unit = {},
 ) {
+    var streakRowBottom by remember { mutableStateOf<Float?>(null) }
+    var streakNumberCenterX by remember { mutableStateOf<Float?>(null) }
+
+    val bottom = streakRowBottom
+    val centerX = streakNumberCenterX
+    LaunchedEffect(bottom, centerX) {
+        if (bottom != null && centerX != null) {
+            onStreakAnchorPositioned(Offset(centerX, bottom))
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -63,7 +85,11 @@ fun MainTopBar(
 
         // 🔥 중앙 1: 연속 학습 스탬프
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.onGloballyPositioned { coordinates ->
+                val position = coordinates.positionInRoot()
+                streakRowBottom = position.y + coordinates.size.height
+            }
         ) {
             Image(
                 painter = painterResource(R.drawable.icon_fire_fill),
@@ -83,6 +109,10 @@ fun MainTopBar(
             Text(
                 text = currentStreak.toString(),
                 style = MaterialTheme.appTypography.titleBold20,
+                modifier = Modifier.onGloballyPositioned { coordinates ->
+                    val position = coordinates.positionInRoot()
+                    streakNumberCenterX = position.x + coordinates.size.width / 2f
+                }
             )
         }
 
