@@ -55,6 +55,8 @@ fun QuizResultCard(
         QuizResultType.WRONG -> "오답"
     }
 
+    val bodyTextColor = theme.textPrimary
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -87,7 +89,7 @@ fun QuizResultCard(
                     Text(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                         text = badgeText,
-                        style = MaterialTheme.appTypography.captionSemiBold16,
+                        style = MaterialTheme.appTypography.subtitleSemiBold16,
                         color = accentColor
                     )
                 }
@@ -96,22 +98,22 @@ fun QuizResultCard(
             // 🔹 질문 제목
             Text(
                 text = title,
-                style = MaterialTheme.appTypography.titleBold24,
-                color = Color.Black
+                style = MaterialTheme.appTypography.subtitleSemiBold18,
+                color = bodyTextColor
             )
 
             // 🔹 정답 표시
             Text(
                 text = "정답 : $answer",
-                style = MaterialTheme.appTypography.bodySemiBold18,
-                color = accentColor
+                style = MaterialTheme.appTypography.subtitleSemiBold16,
+                color = bodyTextColor
             )
 
             // 🔹 해설
             Text(
                 text = explanation,
-                style = MaterialTheme.appTypography.bodyMedium14Reg,
-                color = Color.Black
+                style = MaterialTheme.appTypography.captionRegular14,
+                color = bodyTextColor
             )
         }
     }
