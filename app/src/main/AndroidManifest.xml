@@ -135,11 +135,32 @@
             android:exported="true"
             android:label="DailySummaryDetailActivity"
             android:theme="@style/Theme.TeumTeumEat" />
+        <!-- singleTask: 배너 연타 등 반복 진입 시 LeagueActivity 인스턴스가 중복으로 쌓이는 것을 방지 -->
         <activity
             android:name=".ui.screen.d0_league.LeagueActivity"
             android:exported="true"
             android:label="LeagueActivity"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.TeumTeumEat" />
+        <!-- 리그 공유 딥링크(App Links) 착지점. host는 utils/DeepLinkConstants.kt의 LEAGUE_HOST와 반드시 동일하게 유지 -->
+        <activity
+            android:name=".ui.screen.deeplink.DeepLinkRouterActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="teum-teum-eat-lab.vercel.app"
+                    android:pathPrefix="/league" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
