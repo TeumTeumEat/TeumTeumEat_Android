@@ -36,7 +36,8 @@ private fun secondsUntilNextWeeklyReset(): Long {
 private const val MOCK_MY_NICKNAME = "이영여민"
 
 // 랭킹 리스트(포디움 + 4위 이하)는 공개 영역이므로 원본 닉네임을 [toMaskedNickname]으로 마스킹해
-// 노출한다. 스크롤 영역이 실제로 동작하는지 확인할 수 있도록 20등까지 채운 목업 데이터.
+// 노출하되, 본인(isMe) 행은 마스킹하지 않고 원본 그대로 노출한다.
+// 스크롤 영역이 실제로 동작하는지 확인할 수 있도록 20등까지 채운 목업 데이터.
 private val MOCK_RANKERS = listOf(
     LeagueRankerUiModel(rank = 1, nickname = "틈틈틈틈틈잇틈잇".toMaskedNickname(), snackCount = 12),
     LeagueRankerUiModel(rank = 2, nickname = "김로로로롤로민".toMaskedNickname(), snackCount = 10),
@@ -46,7 +47,7 @@ private val MOCK_RANKERS = listOf(
     LeagueRankerUiModel(rank = 5, nickname = "임도현".toMaskedNickname(), snackCount = 7),
     LeagueRankerUiModel(rank = 5, nickname = "강민수".toMaskedNickname(), snackCount = 7),
     LeagueRankerUiModel(rank = 7, nickname = "이빈".toMaskedNickname(), snackCount = 6),
-    LeagueRankerUiModel(rank = 8, nickname = MOCK_MY_NICKNAME.toMaskedNickname(), snackCount = 5, isMe = true),
+    LeagueRankerUiModel(rank = 8, nickname = MOCK_MY_NICKNAME, snackCount = 5, isMe = true),
     LeagueRankerUiModel(rank = 9, nickname = "김하주".toMaskedNickname(), snackCount = 4),
     LeagueRankerUiModel(rank = 10, nickname = "박지훈".toMaskedNickname(), snackCount = 4),
     LeagueRankerUiModel(rank = 11, nickname = "최서아".toMaskedNickname(), snackCount = 3),
