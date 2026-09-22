@@ -44,7 +44,7 @@
         -->
         <activity
             android:name=".ui.screen.a4_main.a4_5_add_goal.AddGoalActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_add_category_goal"
             android:theme="@style/Theme.TeumTeumEat"
             android:windowSoftInputMode="adjustResize" /> <!-- 카카오 앱 키 -->
@@ -60,6 +60,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity> <!-- a1 - 로그인 화면 -->
+        <!-- TODO: 리그 공유 딥링크 비로그인 진입 시 착지점(feat/league-ranking-usecase). 해당 기능 브랜치 테스트 완료 후 exported=false 전환 검토 -->
         <activity
             android:name=".ui.screen.a1_login.LoginActivity"
             android:exported="true" />
@@ -81,60 +82,61 @@
         </activity>
         <activity
             android:name=".ui.screen.a1_login.webView.KakaoLoginWebViewActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <activity
             android:name=".ui.screen.a2_on_boarding.OnBoardingActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_on_boarding"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.screen.unused_welcome.WelcomeActivity"
-            android:exported="true" />
+            android:exported="false" />
         <activity
             android:name=".ui.screen.a4_main.MainActivity"
             android:exported="true"
             android:label="@string/title_activity_home"></activity> <!-- b-1 퀴즈플로우 - 요약 화면 -->
         <activity
             android:name=".ui.screen.b1_summary.SummaryActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_summary"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
             android:name=".ui.screen.b2_quiz.QuizActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_quiz"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
             android:name=".ui.screen.b3_quiz_result.QuizResultActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_quiz_finish"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
             android:name=".ui.screen.c1_mypage.MyPageActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="MyPageActivity"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
             android:name=".ui.screen.c2_goal_list.GoalListActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="GoalDetailActivity"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
             android:name=".ui.screen.c3_edit_user_info.EditUserInfoActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="EditUserInfoActivity"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
             android:name=".ui.screen.a4_main.a4_3_daily_summary_detail.DailySummaryActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="DailySummaryDetailActivity"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
             android:name=".ui.screen.a4_main.a4_4_daily_quiz_result.DailyQuizResultActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="DailySummaryDetailActivity"
             android:theme="@style/Theme.TeumTeumEat" />
+        <!-- TODO: 리그 공유 딥링크 착지점(feat/league-ranking-usecase). 해당 기능 브랜치 테스트 완료 후 exported=false 전환 검토 -->
         <activity
             android:name=".ui.screen.d0_league.LeagueActivity"
             android:exported="true"
