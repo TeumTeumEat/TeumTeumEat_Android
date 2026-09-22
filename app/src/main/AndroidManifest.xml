@@ -80,6 +80,11 @@
                     android:scheme="kakao2d5b8758966c24367eebd1926dd090bf" />
             </intent-filter>
         </activity>
+        <!-- 미사용 카카오 배송지 선택 기능 컴포넌트 제거: 앱이 호출하지 않는데도 매니페스트 병합으로만 노출되어
+             비정상 explicit intent 진입 시 ClassNotFoundException 크래시(Crashlytics) 유발 -->
+        <activity
+            android:name="com.kakao.sdk.user.ShippingAddressesHandlerActivity"
+            tools:node="remove" />
         <activity
             android:name=".ui.screen.a1_login.webView.KakaoLoginWebViewActivity"
             android:exported="false"
