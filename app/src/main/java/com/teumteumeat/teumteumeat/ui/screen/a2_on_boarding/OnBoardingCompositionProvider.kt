@@ -144,6 +144,7 @@ fun OnBoardingCompositionProvider(
                     nickname = uiState.serverNickname.ifEmpty { uiState.charName },
                     onStartClick = {
                         // 홈에서 뒤로가기 한 번에 앱이 종료되도록 태스크 초기화
+                        // 리그 공유 딥링크로 진입했더라도 온보딩을 마친 유저는 메인 화면으로 이동한다
                         Utils.UxUtils.moveActivity(
                             activity,
                             MainActivity::class.java,
