@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.utils.DeepLinkConstants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -65,10 +68,22 @@ class LeagueViewModel @Inject constructor(
     private val _screenState = MutableStateFlow<UiScreenState>(UiScreenState.Idle)
     val screenState = _screenState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<LeagueUiEvent>(
+        replay = 0,              // 재전달 ❌
+        extraBufferCapacity = 1  // 순간 이벤트 유실 방지
+    )
+    val uiEvent = _uiEvent.asSharedFlow()
+
     private var countdownJob: Job? = null
 
     init {
         loadLeague()
+    }
+
+    fun requestShare() {
+        viewModelScope.launch {
+            _uiEvent.emit(LeagueUiEvent.ShareLeague())
+        }
     }
 
     fun loadLeague() {
@@ -112,4 +127,8 @@ class LeagueViewModel @Inject constructor(
         super.onCleared()
         countdownJob?.cancel()
     }
+}
+
+sealed class LeagueUiEvent {
+    data class ShareLeague(val shareText: String = DeepLinkConstants.LEAGUE_SHARE_MESSAGE) : LeagueUiEvent()
 }

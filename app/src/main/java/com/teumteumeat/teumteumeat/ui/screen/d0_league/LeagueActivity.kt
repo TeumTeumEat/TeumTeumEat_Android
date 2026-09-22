@@ -51,13 +51,25 @@ class LeagueActivity : ComponentActivity() {
                     }
                 }
 
+                LaunchedEffect(Unit) {
+                    viewModel.uiEvent.collectLatest { event ->
+                        when (event) {
+                            is LeagueUiEvent.ShareLeague -> {
+                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, event.shareText)
+                                }
+                                startActivity(Intent.createChooser(sendIntent, null))
+                            }
+                        }
+                    }
+                }
+
                 LeagueScreen(
                     uiState = uiState,
                     screenState = screenState,
                     onBackClick = { finish() },
-                    onShareClick = {
-                        // TODO: 리그 결과 공유 기능 연동
-                    },
+                    onShareClick = { viewModel.requestShare() },
                     onInfoClick = {
                         // TODO: 리그 안내(정책) 모달 연동
                     },
