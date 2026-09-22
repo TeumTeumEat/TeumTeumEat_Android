@@ -3,6 +3,9 @@ package com.teumteumeat.teumteumeat.ui.screen.d0_league
 /**
  * 리그 랭킹에 표시되는 한 유저의 항목.
  * 순위(rank)는 동점자 처리(공동 순위) 시 다음 순위를 건너뛰는 방식(4, 5, 5, 7...)을 따른다.
+ * [nickname]은 랭킹 리스트(포디움 + 4위 이하)라는 공개 영역에 노출되므로 항상
+ * [com.teumteumeat.teumteumeat.utils.toMaskedNickname]으로 마스킹된 값을 담는다 — isMe여도 예외 없음.
+ * 본인의 마스킹되지 않은 전체 닉네임은 [UiStateLeague.myNickname](풋터 전용)을 사용한다.
  */
 data class LeagueRankerUiModel(
     val rank: Int,

@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.component.button.NoPaddingIconButton
+import com.teumteumeat.teumteumeat.ui.component.text.AutoSizeText
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
@@ -364,7 +365,13 @@ private fun LeagueFooterSection(
                     verticalArrangement = Arrangement.SpaceAround
                 )
                 {
-                    Text(text = uiState.myNickname, style = typo.subtitleSemiBold18)
+                    AutoSizeText(
+                        text = uiState.myNickname,
+                        modifier = Modifier.fillMaxWidth(),
+                        baseStyle = typo.subtitleSemiBold18,
+                        textAlign = TextAlign.Start,
+                        maxLines = 1,
+                    )
                     Spacer(Modifier.height(4.dp))
                     val totalSnackCount = myRanker?.snackCount ?: 0
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

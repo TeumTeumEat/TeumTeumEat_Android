@@ -30,6 +30,7 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueRankerUiModel
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
+import com.teumteumeat.teumteumeat.utils.capNicknameDisplayLength
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 // 카드 너비는 이 컴포넌트가 정하지 않는다 — 호출부(Row)에서 Modifier.weight(3f/4f/3f)로
@@ -91,7 +92,9 @@ fun LeagueTop3Item(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = ranker.nickname,
+                // 카드 폭이 좁아 닉네임이 길면(마스킹된 상태 기준 5자 초과) 영역을 넘칠 수 있어
+                // 카드 안에서는 최대 5자("이***이" 형식)까지만 줄여서 보여준다.
+                text = ranker.nickname.capNicknameDisplayLength(),
                 style = if (isFirstPlace) typo.subtitleSemiBold24 else typo.subtitleSemiBold18,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
@@ -181,7 +184,7 @@ private fun PreviewLeagueTop3Row() {
             )
             LeagueTop3Item(
                 modifier = Modifier.weight(4f),
-                ranker = LeagueRankerUiModel(rank = 1, nickname = "틈*잇", snackCount = 12),
+                ranker = LeagueRankerUiModel(rank = 1, nickname = "틈틈틈틈틈틈틈잇", snackCount = 12),
                 isFirstPlace = true,
             )
             LeagueTop3Item(
