@@ -418,6 +418,36 @@ class Utils {
             }
         }
 
+        /**
+         * [destinationActivity] 를 실행하되, 그 아래 [backStackRootActivity] 가 백스택에 남도록
+         * 합성 백스택을 구성합니다. 딥링크 등으로 중간 화면에 바로 진입해도 뒤로가기 시
+         * 자연스럽게 [backStackRootActivity] 로 돌아가야 할 때 사용합니다.
+         *
+         * @param context 현재 컨텍스트 (보통 `Activity`)
+         * @param backStackRootActivity 백스택 가장 아래(새 태스크의 루트)에 둘 액티비티
+         * @param destinationActivity 실제로 화면에 보여줄(최상단) 액티비티
+         * @param exitFlag `true`이면 현재 액티비티를 종료 (기본값: `true`)
+         */
+        fun moveActivityWithBackStack(
+            context: Context,
+            backStackRootActivity: Class<out Activity>,
+            destinationActivity: Class<out Activity>,
+            exitFlag: Boolean = true,
+        ) {
+            if (context is Activity && context.isFinishing) return
+
+            val rootIntent = Intent(context, backStackRootActivity).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            val destinationIntent = Intent(context, destinationActivity)
+
+            context.startActivities(arrayOf(rootIntent, destinationIntent))
+
+            if (exitFlag && context is Activity) {
+                context.finish()
+            }
+        }
+
         fun isNotificationPermissionRequired(): Boolean {
             return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         }
