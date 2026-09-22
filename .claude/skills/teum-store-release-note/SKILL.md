@@ -81,8 +81,12 @@ main으로의 PR이 병합되었습니다.
 
 이 결과물은 짧으므로(최대 6줄) PR 본문과 달리 **터미널에 그대로 출력**하고, 동시에 클립보드에도 복사한다.
 
+`pbcopy`는 이 환경에서 로케일(LANG/LC_ALL) 처리 이슈로 한글·이모지가 깨져서 복사될 수 있다.
+반드시 파일에 UTF-8로 저장한 뒤 `osascript`로 인코딩을 명시해 클립보드에 설정한다.
+
 ```bash
-cat <<'EOF' | pbcopy
+BODY_FILE=$(mktemp /tmp/teumteum_store_note.XXXXXX.md)
+cat > "$BODY_FILE" <<'EOF'
 <ko-KR>
 🆕 ...
 🔧 ...
@@ -94,6 +98,9 @@ cat <<'EOF' | pbcopy
 🐛 ...
 </en-US>
 EOF
+osascript -e 'on run argv' \
+  -e 'set the clipboard to (read (POSIX file (item 1 of argv)) as «class utf8»)' \
+  -e 'end run' "$BODY_FILE"
 ```
 
 출력 후 아래 안내를 덧붙인다.

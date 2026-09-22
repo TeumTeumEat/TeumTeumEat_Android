@@ -215,10 +215,17 @@ gh pr view {PR번호} --json title,body,url --jq '.'
 
 릴리즈 노트 본문 전체는 클립보드에 복사하고, 제목만 터미널에 출력한다. 본문을 터미널에 다시 출력하지 않는다.
 
+`pbcopy`는 이 환경에서 로케일(LANG/LC_ALL) 처리 이슈로 한글이 깨져서 복사될 수 있다.
+반드시 파일에 UTF-8로 저장한 뒤 `osascript`로 인코딩을 명시해 클립보드에 설정한다.
+
 ```bash
-cat <<'EOF' | pbcopy
+BODY_FILE=$(mktemp /tmp/teumteum_release_note.XXXXXX.md)
+cat > "$BODY_FILE" <<'EOF'
 [릴리즈 노트 본문 전체]
 EOF
+osascript -e 'on run argv' \
+  -e 'set the clipboard to (read (POSIX file (item 1 of argv)) as «class utf8»)' \
+  -e 'end run' "$BODY_FILE"
 ```
 
 출력 형식:
@@ -443,10 +450,17 @@ PR 생성 요청 시 사용자가 아래 내용을 제공했는지 확인한다.
 
 초안이 완성되면 먼저 PR 본문 전체를 클립보드에 복사한다. 본문을 터미널에 다시 출력하지 않는다.
 
+`pbcopy`는 이 환경에서 로케일(LANG/LC_ALL) 처리 이슈로 한글이 깨져서 복사될 수 있다.
+반드시 파일에 UTF-8로 저장한 뒤 `osascript`로 인코딩을 명시해 클립보드에 설정한다.
+
 ```bash
-cat <<'EOF' | pbcopy
+BODY_FILE=$(mktemp /tmp/teumteum_pr_body.XXXXXX.md)
+cat > "$BODY_FILE" <<'EOF'
 [PR 본문 전체]
 EOF
+osascript -e 'on run argv' \
+  -e 'set the clipboard to (read (POSIX file (item 1 of argv)) as «class utf8»)' \
+  -e 'end run' "$BODY_FILE"
 ```
 
 복사 후 아래 형식으로만 출력하고 승인 대기한다.
@@ -462,7 +476,7 @@ EOF
 [y] 확정   |   수정할 내용을 입력하면 반영 후 재확인합니다.
 ```
 
-수정 요청이 들어오면 본문을 다시 생성하고, 클립보드 복사(pbcopy)부터 다시 수행한 뒤 동일한 형식으로 재확인한다.
+수정 요청이 들어오면 본문을 다시 생성하고, 클립보드 복사(파일 저장 + osascript)부터 다시 수행한 뒤 동일한 형식으로 재확인한다.
 
 ---
 
