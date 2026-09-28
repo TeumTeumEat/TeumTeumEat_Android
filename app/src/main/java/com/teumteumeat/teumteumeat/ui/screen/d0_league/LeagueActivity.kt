@@ -12,6 +12,8 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainArgs
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
@@ -74,7 +76,15 @@ class LeagueActivity : ComponentActivity() {
                         // TODO: 리그 안내(정책) 모달 연동
                     },
                     onRaiseRankClick = {
-                        // TODO: 순위 올리기(퀴즈 이동 등) 플로우 연동
+                        // 홈으로 이동 — 홈에 간식이 없는 상태(SnackState.Available 아님)라면
+                        // 이동 직후 쿠폰 충전 팝업을 바로 띄운다 (MainCompositionProvider에서 처리).
+                        Utils.UxUtils.moveActivity(
+                            context = this@LeagueActivity,
+                            destinationActivity = MainActivity::class.java,
+                            extras = Bundle().apply {
+                                putBoolean(MainArgs.KEY_OPEN_COUPON_ON_NO_SNACK, true)
+                            },
+                        )
                     },
                     onRetryApi = { viewModel.loadLeague() },
                 )

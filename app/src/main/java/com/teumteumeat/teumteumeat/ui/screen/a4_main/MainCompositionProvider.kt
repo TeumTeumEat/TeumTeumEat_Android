@@ -83,6 +83,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.HomeViewModel
+import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.SnackState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
@@ -104,10 +105,26 @@ fun MainCompositionProvider(
     viewModel: MainViewModel,
     context: Context,
     activity: MainActivity,
+    openCouponOnNoSnack: Boolean = false,
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel(activity)
     val homeUiState by homeViewModel.uiState.collectAsStateWithLifecycle()
     val homeScreenState by homeViewModel.screenState.collectAsStateWithLifecycle()
+
+    // 🍬 리그 화면의 "순위 올리기"처럼 간식이 없을 때 쿠폰 충전을 유도하고 싶은 진입점에서
+    // openCouponOnNoSnack=true로 넘어온 경우, 홈 데이터 로딩이 끝난 뒤 간식이 없는 상태(Available이
+    // 아님)라면 쿠폰 충전 팝업을 자동으로 띄운다. 이후 홈 화면 안에서 상태가 다시 바뀌어도
+    // (예: 유저가 팝업을 닫고 다시 진입) 반복해서 뜨지 않도록 최초 1회만 처리한다.
+    var hasHandledCouponAutoOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(openCouponOnNoSnack, homeScreenState, homeUiState.snackState) {
+        if (!openCouponOnNoSnack || hasHandledCouponAutoOpen) return@LaunchedEffect
+        if (homeScreenState !is UiScreenState.Success) return@LaunchedEffect
+
+        hasHandledCouponAutoOpen = true
+        if (homeUiState.snackState !is SnackState.Available) {
+            homeViewModel.openAdModal()
+        }
+    }
 
     val mainUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navHostController = rememberNavController()
