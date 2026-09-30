@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,7 +28,6 @@ import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.common.model.KakaoSdkError
 import com.kakao.sdk.user.UserApiClient
 import com.teumteumeat.teumteumeat.R
-import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.ui.aa0_base.BaseActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.AuthBlockingOverlay
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -72,6 +70,7 @@ class LoginActivity : BaseActivity()  {
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.google_web_client_id))
+            .requestServerAuthCode(getString(R.string.google_web_client_id))
             .requestEmail()
             .build()
         googleClient = GoogleSignIn.getClient(this, gso)
@@ -93,15 +92,17 @@ class LoginActivity : BaseActivity()  {
 
             try {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                Log.d("GoogleLogin", "task=$task")
 
                 val account = task.getResult(ApiException::class.java)
-                Log.d("GoogleLogin", "account=$account")
 
                 val idToken = account.idToken
-                Log.d("GoogleLogin", "idToken=$idToken")
+                if (idToken == null) {
+                    showToast("로그인에 실패했어요. 다시 시도해주세요")
+                    return@registerForActivityResult
+                }
 
-                viewModel.loginWithGoogle(idToken.toString())
+                // 서버가 구글 연동 해제에 사용할 1회용 authCode (획득 실패 시 null로 진행)
+                viewModel.loginWithGoogle(idToken, account.serverAuthCode)
 
             } catch (e: ApiException) {
                 Log.e("GoogleLogin", "ApiException code=${e.statusCode}", e)
@@ -136,12 +137,8 @@ class LoginActivity : BaseActivity()  {
                                 viewModel.startAuthBlocking()
                                 loginWithKakao(
                                     context = this@LoginActivity,
-                                    onSuccess = { idToken, authCode ->
-                                        Log.d(
-                                            "kakao 로그인",
-                                            "idToken: ${idToken}, authCode: ${authCode}"
-                                        )
-                                        viewModel.loginWithKakaoServer(idToken, authCode)
+                                    onSuccess = { idToken ->
+                                        viewModel.loginWithKakaoServer(idToken)
                                     },
                                     onError = { error ->
                                         viewModel.endAuthBlocking()
@@ -191,12 +188,12 @@ class LoginActivity : BaseActivity()  {
 
     fun loginWithKakao(
         context: Context,
-        onSuccess: (idToken: String, authCode: String?) -> Unit,
+        onSuccess: (idToken: String) -> Unit,
         onError: (KakaoLoginError) -> Unit
     ) {
         val callback: (OAuthToken?, Throwable?) -> Unit =
             callback@{ token, error ->
-                Log.d("KakaoRedirect", "callback entered. token=$token, error=$error")
+                Log.d("KakaoRedirect", "callback entered. error=$error")
                 // ⭐⭐⭐ 핵심: 인증 종료 → UI 잠금 해제
                 viewModel.endAuthBlocking()
 
@@ -244,7 +241,6 @@ class LoginActivity : BaseActivity()  {
                 // 2️⃣ 토큰 성공
                 if (token != null) {
                     val idToken = token.idToken
-                    Log.d("kakaologin", "idToken: ${idToken}")
 
                     // ⚠️ OIDC 미설정 등으로 idToken 이 없는 경우
                     if (idToken.isNullOrEmpty()) {
@@ -252,10 +248,7 @@ class LoginActivity : BaseActivity()  {
                         return@callback
                     }
 
-                    onSuccess(
-                        idToken,
-                        token.accessToken // 서버에서 authCode 대용
-                    )
+                    onSuccess(idToken)
                 } else {
                     onError(KakaoLoginError.AuthFailed)
                 }
