@@ -1,10 +1,12 @@
 package com.teumteumeat.teumteumeat.ui.screen.d0_league.component
 
+import androidx.annotation.RawRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,18 +58,44 @@ import kotlin.math.acos
 private const val CardAspectRatio = 10f / 8f
 private val CardCornerRadius = 16.dp
 
-// 1등 로티(lottie_league_rank1_in_progress.json) 캔버스 비율(w=123, h=153) 및 그 안에서
-// "league_card" 도형 레이어가 차지하는 상대 위치/크기. 이 도형은 텍스트 레이어가 아니라
-// 빈 카드 모양(흰 배경)이므로, 닉네임/스낵 텍스트와 테두리를 이 비율로 계산한 위치에
-// Compose로 직접 오버레이해서 매핑한다.
-// league_card 도형의 위치(p)와 경로(v) 좌표를 그대로 계산한 값 — JSON이 바뀌면 다시 계산해야 한다.
+/**
+ * 1등 카드 로티 한 종류의 캔버스 비율과, 그 안에서 "league_card" 도형 레이어가 차지하는 상대 위치/크기.
+ * 이 도형은 텍스트 레이어가 아니라 빈 카드 모양(흰 배경)이므로, 닉네임/스낵 텍스트와 테두리를
+ * 이 비율로 계산한 위치에 Compose로 직접 오버레이해서 매핑한다.
+ * 값은 league_card 도형의 위치(p)와 경로(v) 좌표를 그대로 계산한 것 — JSON이 바뀌면 다시 계산해야 한다.
+ */
+private class RankOneLottieSpec(
+    @RawRes val rawRes: Int,
+    val canvasAspectRatio: Float,
+    val cardLeftFraction: Float,
+    val cardTopFraction: Float,
+    val cardWidthFraction: Float,
+    val cardHeightFraction: Float,
+)
+
+// lottie_league_rank1_in_progress.json (실제 1등이 있을 때), 캔버스 123x153
 //   position = [61.4946, 101.7934], path v 범위: x[-59.4, 59.4], y[-49.4, 49.4]
-//   → x:[2.0946, 120.8946] (폭 118.8), y:[52.3934, 151.1934] (높이 98.8), 캔버스 123x153 기준
-private const val LottieCanvasAspectRatio = 123f / 153f
-private const val LottieCardLeftFraction = 0.01703f
-private const val LottieCardTopFraction = 0.34244f
-private const val LottieCardWidthFraction = 0.96585f
-private const val LottieCardHeightFraction = 0.64575f
+//   → x:[2.0946, 120.8946] (폭 118.8), y:[52.3934, 151.1934] (높이 98.8)
+private val RankOneInProgressSpec = RankOneLottieSpec(
+    rawRes = R.raw.lottie_league_rank1_in_progress,
+    canvasAspectRatio = 123f / 153f,
+    cardLeftFraction = 0.01703f,
+    cardTopFraction = 0.34244f,
+    cardWidthFraction = 0.96585f,
+    cardHeightFraction = 0.64575f,
+)
+
+// lottie_league_rank1_unfilled.json (주간 랭킹 초기화 직후 1위 미등록), 캔버스 130x161
+//   position = [61.9312, 109.6394], path v 범위: x[-59.4, 59.4], y[-49.4, 49.4]
+//   → x:[2.5312, 121.3312] (폭 118.8), y:[60.2394, 159.0394] (높이 98.8)
+private val RankOneUnfilledSpec = RankOneLottieSpec(
+    rawRes = R.raw.lottie_league_rank1_unfilled,
+    canvasAspectRatio = 130f / 161f,
+    cardLeftFraction = 0.01947f,
+    cardTopFraction = 0.37416f,
+    cardWidthFraction = 0.91385f,
+    cardHeightFraction = 0.61366f,
+)
 
 // 2·3등 왕관 크기 — 왕관 하단 [OtherCrownCardOverlap]만큼 카드 위에 겹쳐서(카드보다 위에) 그려진다.
 private val OtherCrownSize = 32.dp
@@ -140,6 +168,109 @@ private fun Modifier.cardBorderWithTopGap(
 }
 
 /**
+ * 1등 로티 + 카드 영역 테두리 오버레이. [content]는 카드 도형 영역 안에 그려진다.
+ * 로티 안의 카드 테두리는 카드 크기에 비례해 늘어나 화면마다 굵기가 달라지므로 제거했다.
+ * 2·3등과 동일하게 항상 고정된 물리적 1dp 테두리를 여기서 직접 그리되, 마스코트의
+ * 팔·입이 걸쳐 있는 상단은 [cardBorderWithTopGap]으로 비워 테두리가 그 위를 지나지 않게 한다.
+ */
+@Composable
+private fun RankOneLottieCard(
+    spec: RankOneLottieSpec,
+    modifier: Modifier = Modifier,
+    showCardBorder: Boolean = true,
+    content: @Composable BoxScope.() -> Unit = {},
+) {
+    val theme = MaterialTheme.extendedColors
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(spec.rawRes))
+    val lottieProgress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+    )
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(spec.canvasAspectRatio),
+    ) {
+        LottieAnimation(
+            composition = composition,
+            progress = { lottieProgress },
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        Box(
+            modifier = Modifier
+                .offset(x = maxWidth * spec.cardLeftFraction, y = maxHeight * spec.cardTopFraction)
+                .size(maxWidth * spec.cardWidthFraction, maxHeight * spec.cardHeightFraction)
+                .then(
+                    if (showCardBorder) Modifier.cardBorderWithTopGap(1.dp, theme.btnGray200, CardCornerRadius)
+                    else Modifier,
+                ),
+            content = content,
+        )
+    }
+}
+
+/**
+ * 카드에 표시할 닉네임. 빈 자리([LeagueRankerUiModel.isEmpty])의 "-"는 1글자라 [capNicknameDisplayLength]를
+ * 거치면 "*"로 마스킹되므로 그대로 노출한다.
+ */
+private fun LeagueRankerUiModel.cardNickname(): String =
+    if (isEmpty) nickname else nickname.capNicknameDisplayLength()
+
+/** 1등 카드 안에 표시하는 닉네임 + 스낵 수. */
+@Composable
+private fun RankOneCardContent(ranker: LeagueRankerUiModel) {
+    val theme = MaterialTheme.extendedColors
+    val typo = MaterialTheme.appTypography
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            // 카드 폭이 좁아 닉네임이 길면(마스킹된 상태 기준 5자 초과) 영역을 넘칠 수 있어
+            // 카드 안에서는 최대 5자("이***이" 형식)까지만 줄여서 보여준다.
+            text = ranker.cardNickname(),
+            style = typo.subtitleSemiBold24,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+
+        Spacer(Modifier.height(2.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = ranker.snackCountText,
+                style = typo.subtitleSemiBold24,
+                color = theme.textPointBlue,
+            )
+            Spacer(Modifier.width(2.dp))
+            Text(
+                text = "스낵",
+                style = typo.bodyMedium14.copy(fontSize = 19.2.sp),
+                color = theme.textGhost,
+            )
+        }
+    }
+}
+
+/**
+ * 주간 랭킹이 초기화되어 아직 1위가 없을 때 1등 자리에 표시하는 카드.
+ * 닉네임/스낵 수는 "-"로 표시하고, 회색 카드 테두리는 그리지 않는다.
+ */
+@Composable
+fun LeagueFirstPlacePlaceholder(modifier: Modifier = Modifier) {
+    RankOneLottieCard(modifier = modifier, spec = RankOneUnfilledSpec, showCardBorder = false) {
+        RankOneCardContent(LeagueRankerUiModel.empty(rank = 1))
+    }
+}
+
+/**
  * 리그 상위 3명(Top3)의 한 명을 표시하는 항목.
  * 카드 너비는 이 컴포넌트 자신이 아니라 호출부가 [modifier]로 넘기는 값(예: `Modifier.weight(3f)`)이
  * 정하며, 여기서는 그 폭을 그대로 채운다. 각 카드는 가로:세로 10:8 비율을 유지한다.
@@ -156,69 +287,9 @@ fun LeagueTop3Item(
 
     if (isFirstPlace) {
         // 로티 애니메이션(마스코트+왕관+카드) 자체에 텍스트 레이어가 없으므로, 카드 도형이
-        // 차지하는 영역(LottieCard*Fraction)을 계산해 그 위에 닉네임/스낵 텍스트를 오버레이한다.
-        val composition by rememberLottieComposition(
-            LottieCompositionSpec.RawRes(R.raw.lottie_league_rank1_in_progress),
-        )
-        val lottieProgress by animateLottieCompositionAsState(
-            composition = composition,
-            iterations = LottieConstants.IterateForever,
-        )
-
-        BoxWithConstraints(
-            modifier = modifier
-                .fillMaxWidth()
-                .aspectRatio(LottieCanvasAspectRatio),
-        ) {
-            LottieAnimation(
-                composition = composition,
-                progress = { lottieProgress },
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            // 로티 안의 카드 테두리는 카드 크기에 비례해 늘어나 화면마다 굵기가 달라지므로 제거했다.
-            // 2·3등과 동일하게 항상 고정된 물리적 1dp 테두리를 여기서 직접 그리되, 마스코트의
-            // 팔·입이 걸쳐 있는 상단은 [cardBorderOpenTop]으로 비워 테두리가 그 위를 지나지 않게 한다.
-            Box(
-                modifier = Modifier
-                    .offset(x = maxWidth * LottieCardLeftFraction, y = maxHeight * LottieCardTopFraction)
-                    .size(maxWidth * LottieCardWidthFraction, maxHeight * LottieCardHeightFraction)
-                    .cardBorderWithTopGap(1.dp, theme.btnGray200, CardCornerRadius),
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        // 카드 폭이 좁아 닉네임이 길면(마스킹된 상태 기준 5자 초과) 영역을 넘칠 수 있어
-                        // 카드 안에서는 최대 5자("이***이" 형식)까지만 줄여서 보여준다.
-                        text = ranker.nickname.capNicknameDisplayLength(),
-                        style = typo.subtitleSemiBold24,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                    )
-
-                    Spacer(Modifier.height(2.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "${ranker.snackCount}",
-                            style = typo.subtitleSemiBold24,
-                            color = theme.textPointBlue,
-                        )
-                        Spacer(Modifier.width(2.dp))
-                        Text(
-                            text = "스낵",
-                            style = typo.bodyMedium14.copy(fontSize = 19.2.sp),
-                            color = theme.textGhost,
-                        )
-                    }
-                }
-            }
+        // 차지하는 영역을 계산해 그 위에 닉네임/스낵 텍스트를 오버레이한다.
+        RankOneLottieCard(modifier = modifier, spec = RankOneInProgressSpec) {
+            RankOneCardContent(ranker)
         }
         return
     }
@@ -244,7 +315,7 @@ fun LeagueTop3Item(
             Text(
                 // 카드 폭이 좁아 닉네임이 길면(마스킹된 상태 기준 5자 초과) 영역을 넘칠 수 있어
                 // 카드 안에서는 최대 5자("이***이" 형식)까지만 줄여서 보여준다.
-                text = ranker.nickname.capNicknameDisplayLength(),
+                text = ranker.cardNickname(),
                 style = typo.subtitleSemiBold18,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
@@ -257,7 +328,7 @@ fun LeagueTop3Item(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "${ranker.snackCount}",
+                    text = ranker.snackCountText,
                     style = typo.subtitleSemiBold16,
                     color = theme.textPointBlue,
                 )

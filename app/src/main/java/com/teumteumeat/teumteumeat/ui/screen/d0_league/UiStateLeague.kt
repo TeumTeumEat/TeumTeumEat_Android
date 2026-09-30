@@ -3,6 +3,9 @@ package com.teumteumeat.teumteumeat.ui.screen.d0_league
 // 리그 랭킹 화면에는 상위 10위까지만 노출한다.
 private const val MAX_DISPLAYED_RANK = 10
 
+// 포디움(1~3위)을 제외한 리스트 영역(4~10위)의 행 수. 데이터가 부족하면 빈 행으로 채워 보여준다.
+private const val REST_ROW_COUNT = MAX_DISPLAYED_RANK - 3
+
 /**
  * 리그 랭킹에 표시되는 한 유저의 항목.
  * 순위(rank)는 동점자 처리(공동 순위) 시 다음 순위를 건너뛰는 방식(4, 5, 5, 7...)을 따른다.
@@ -16,7 +19,16 @@ data class LeagueRankerUiModel(
     val nickname: String,
     val snackCount: Int,
     val isMe: Boolean = false,
-)
+    // 아직 해당 순위에 유저가 등록되지 않은 자리 — 닉네임/스낵 수를 "-"로 표시한다.
+    val isEmpty: Boolean = false,
+) {
+    val snackCountText: String
+        get() = if (isEmpty) "-" else "$snackCount"
+
+    companion object {
+        fun empty(rank: Int) = LeagueRankerUiModel(rank = rank, nickname = "-", snackCount = 0, isEmpty = true)
+    }
+}
 
 data class UiStateLeague(
     val isLoading: Boolean = false,
@@ -46,4 +58,20 @@ data class UiStateLeague(
 
     val restRankers: List<LeagueRankerUiModel>
         get() = displayedRankers.drop(3)
+
+    // 4~10위 리스트 — 등록된 유저가 부족한 순위는 빈 행(isEmpty)으로 채워 데이터가 들어올 자리를 보여준다.
+    val restRowsWithPlaceholder: List<LeagueRankerUiModel>
+        get() {
+            val rest = restRankers
+            val lastRank = rest.lastOrNull()?.rank ?: 3
+            val padding = (1..(REST_ROW_COUNT - rest.size).coerceAtLeast(0))
+                .map { lastRank + it }
+                .filter { it <= MAX_DISPLAYED_RANK }
+                .map { LeagueRankerUiModel.empty(it) }
+            return rest + padding
+        }
+
+    // 주간 랭킹 초기화 직후처럼 1위가 아직 등록되지 않았는지 판단하는 기준 — 1등 자리에 미등록 카드를 보여준다.
+    val hasFirstPlace: Boolean
+        get() = displayedRankers.any { it.rank == 1 }
 }

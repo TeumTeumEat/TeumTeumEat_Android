@@ -35,6 +35,10 @@ private fun secondsUntilNextWeeklyReset(): Long {
 // 표시할 닉네임 — 풋터는 본인의 닉네임이므로 마스킹 없이 원본 그대로 노출한다.
 private const val MOCK_MY_NICKNAME = "이영여민"
 
+// TODO: 실기기 확인용 임시 플래그 — 커밋 전에 false로 되돌리거나 제거할 것.
+// true면 주간 랭킹 초기화 직후(1위 미등록) 상태를 재현한다.
+private const val MOCK_NO_FIRST_PLACE = false
+
 // 랭킹 리스트(포디움 + 4위 이하)는 공개 영역이므로 원본 닉네임을 [toMaskedNickname]으로 마스킹해
 // 노출하되, 본인(isMe) 행은 마스킹하지 않고 원본 그대로 노출한다.
 // 스크롤 영역이 실제로 동작하는지 확인할 수 있도록 20등까지 채운 목업 데이터.
@@ -95,12 +99,13 @@ class LeagueViewModel @Inject constructor(
         _screenState.value = UiScreenState.Loading
 
         // TODO: 실제 API 연동 시 Repository 조회 결과로 교체
-        val myRanker = MOCK_RANKERS.firstOrNull { it.isMe }
+        val rankers = if (MOCK_NO_FIRST_PLACE) emptyList() else MOCK_RANKERS
+        val myRanker = rankers.firstOrNull { it.isMe }
 
         _uiState.update {
             it.copy(
                 isLoading = false,
-                rankers = MOCK_RANKERS,
+                rankers = rankers,
                 myNickname = MOCK_MY_NICKNAME,
                 myRanker = myRanker,
                 myTodaySnackCount = if (myRanker != null) 1 else 0,

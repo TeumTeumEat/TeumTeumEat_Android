@@ -51,6 +51,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueFirstPlacePlaceholder
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueRankRow
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueTop3Item
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -163,7 +164,7 @@ private fun LeagueContent(
                 LeagueTitlePodiumSection(uiState = uiState)
             }
 
-            items(uiState.restRankers, key = { it.rank * 1_000 + it.nickname.hashCode() }) { ranker ->
+            items(uiState.restRowsWithPlaceholder, key = { it.rank * 1_000 + it.nickname.hashCode() }) { ranker ->
                 LeagueRankRow(ranker = ranker)
             }
         }
@@ -274,10 +275,12 @@ private fun LeagueTitlePodiumSection(
         Spacer(Modifier.height(31.dp))
 
         // 🔹 포디움(상위 3명) — 2등, 1등, 3등 순서로 배치해 1등이 가운데 오도록 함
+        // 1위가 없으면(주간 랭킹 초기화 직후) 1등 자리에 미등록 카드를, 2·3등 자리에는 빈 카드("-")를 보여준다.
         val podium = uiState.podiumRankers
-        val second = podium.getOrNull(1)
-        val first = podium.getOrNull(0)
-        val third = podium.getOrNull(2)
+        val hasFirstPlace = uiState.hasFirstPlace
+        val second = podium.getOrNull(1).takeIf { hasFirstPlace } ?: LeagueRankerUiModel.empty(rank = 2)
+        val first = podium.getOrNull(0).takeIf { hasFirstPlace }
+        val third = podium.getOrNull(2).takeIf { hasFirstPlace } ?: LeagueRankerUiModel.empty(rank = 3)
 
         Row(
             modifier = Modifier
@@ -287,15 +290,13 @@ private fun LeagueTitlePodiumSection(
             verticalAlignment = Alignment.Bottom,
         ) {
             // 2등:1등:3등 = 3:4:3 비율로 좌우 18dp를 뺀 가용 폭 전체를 나눠 채운다.
-            second?.let {
-                LeagueTop3Item(modifier = Modifier.weight(3f), ranker = it)
+            LeagueTop3Item(modifier = Modifier.weight(3f), ranker = second)
+            if (first != null) {
+                LeagueTop3Item(modifier = Modifier.weight(4f), ranker = first, isFirstPlace = true)
+            } else {
+                LeagueFirstPlacePlaceholder(modifier = Modifier.weight(4f))
             }
-            first?.let {
-                LeagueTop3Item(modifier = Modifier.weight(4f), ranker = it, isFirstPlace = true)
-            }
-            third?.let {
-                LeagueTop3Item(modifier = Modifier.weight(3f), ranker = it)
-            }
+            LeagueTop3Item(modifier = Modifier.weight(3f), ranker = third)
         }
     }
 }
@@ -380,7 +381,7 @@ private fun LeagueFooterSection(
                                 append("오늘 ")
                                 withStyle(
                                     SpanStyle(
-                                        color = if (uiState.myTodaySnackCount == 0) theme.textGhost else theme.textPointBlue,
+                                        color = theme.textPointBlue,
                                     ),
                                 ) {
                                     append("${uiState.myTodaySnackCount}")
@@ -394,7 +395,7 @@ private fun LeagueFooterSection(
                                 append("총 ")
                                 withStyle(
                                     SpanStyle(
-                                        color = if (totalSnackCount == 0) theme.textGhost else theme.textPointBlue,
+                                        color = theme.textPointBlue,
                                     ),
                                 ) {
                                     append("$totalSnackCount")
