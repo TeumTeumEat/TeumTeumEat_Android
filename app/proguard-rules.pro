@@ -140,3 +140,8 @@
     public static ** valueOf(java.lang.String);
 }
 -dontwarn com.kakao.sdk.**
+
+# ===== 릴리즈 로그 제거 =====
+# VERBOSE/DEBUG/INFO 수준 android.util.Log 호출을 릴리즈에서 제거한다 (WARN/ERROR 유지).
+# 토큰·authCode 등 민감 값이 logcat에 남는 것을 방지한다.
+-maximumremovedandroidloglevel 4

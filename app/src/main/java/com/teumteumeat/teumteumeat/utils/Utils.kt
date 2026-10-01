@@ -569,7 +569,7 @@ class Utils {
         private const val KEY_FCM_TOKEN = "key_fcm_token"
 
         fun save(context: Context, token: String) {
-            Log.e("FCM_TOKEN_TRACE", "💾 토큰 저장 = $token")
+            Log.d("FCM_TOKEN_TRACE", "💾 토큰 저장")
 
             context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .edit {
@@ -583,7 +583,7 @@ class Utils {
                 .getSharedPreferences("fcm_token_pref", Context.MODE_PRIVATE)
                 .getString("key_fcm_token", null)
 
-            Log.e("FCM_TOKEN_TRACE", "📤 저장된 토큰 조회 = $token")
+            Log.d("FCM_TOKEN_TRACE", "📤 저장된 토큰 조회")
 
             return token
         }
@@ -643,9 +643,6 @@ class Utils {
                 .addOnSuccessListener { latestToken ->
 
                     val savedToken = FcmTokenStore.get(context)
-
-                    Log.d("FCM_SYNC", "🚀 AppStart token(latest)=$latestToken")
-                    Log.d("FCM_SYNC", "🚀 AppStart token(saved)=$savedToken")
 
                     if (latestToken.isNullOrBlank()) return@addOnSuccessListener
 

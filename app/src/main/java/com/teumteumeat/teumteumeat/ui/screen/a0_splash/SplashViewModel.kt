@@ -132,7 +132,6 @@ class SplashViewModel @Inject constructor(
 
             when (val result = autoLoginUseCase()) {
                 is AutoLogin.Success -> {
-                    Log.d("SplshVM", "리프래쉬 토큰 확인: ${tokenLocalDataSource.getRefreshToken()}")
                     analyticsLogger.setOsType()
                     val storedProvider = tokenLocalDataSource.getProvider()
                     if (storedProvider != null) {

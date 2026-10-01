@@ -71,7 +71,7 @@ class TeumFcmService : FirebaseMessagingService() {
 fun logCurrentFcmToken() {
     FirebaseMessaging.getInstance().token
         .addOnSuccessListener { token ->
-            Log.e("FCM_TOKEN_TRACE", "🔥 Firebase 발급 토큰 = $token")
+            Log.d("FCM_TOKEN_TRACE", "🔥 Firebase 발급 토큰 수신")
         }
         .addOnFailureListener { e ->
             Log.e("FCM_TOKEN_TRACE", "❌ 토큰 발급 실패", e)
