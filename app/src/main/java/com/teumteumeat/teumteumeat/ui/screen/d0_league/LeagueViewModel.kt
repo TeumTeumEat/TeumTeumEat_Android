@@ -2,7 +2,13 @@ package com.teumteumeat.teumteumeat.ui.screen.d0_league
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.domain.model.league.isLeagueWeekFinished
+import com.teumteumeat.teumteumeat.domain.model.league.secondsUntilNextLeagueReset
+import com.teumteumeat.teumteumeat.domain.model.league.toLeagueWeekLabel
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.league.GetPendingLeagueResultUseCase
+import com.teumteumeat.teumteumeat.domain.usecase.league.MarkLeagueResultSeenUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.DeepLinkConstants
 import com.teumteumeat.teumteumeat.utils.toMaskedNickname
@@ -15,21 +21,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
-import java.time.Duration
+import java.time.LocalDate
+import java.time.Clock
 import java.time.LocalDateTime
-import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
-
-// 리그는 매주 월요일 00:00에 초기화된다. 다음 초기화 시점까지 남은 초를 매번 현재 시각 기준으로 계산한다.
-// TODO: 실제 리그 API가 준비되면 서버가 내려주는 초기화 시각/카운트를 사용하도록 교체
-private fun secondsUntilNextWeeklyReset(): Long {
-    val now = LocalDateTime.now()
-    val nextReset = now.toLocalDate()
-        .with(TemporalAdjusters.next(DayOfWeek.MONDAY))
-        .atStartOfDay()
-    return Duration.between(now, nextReset).seconds
-}
 
 // 이번 주 랭킹에 아직 등록되지 않았어도(=MOCK_RANKERS에 isMe 항목이 없어도) 내 랭킹 카드(풋터)에
 // 표시할 닉네임 — 풋터는 본인의 닉네임이므로 마스킹 없이 원본 그대로 노출한다.
@@ -69,6 +64,9 @@ private val MOCK_RANKERS = listOf(
 @HiltViewModel
 class LeagueViewModel @Inject constructor(
     val sessionManager: SessionManager,
+    private val getPendingLeagueResult: GetPendingLeagueResultUseCase,
+    private val markLeagueResultSeen: MarkLeagueResultSeenUseCase,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateLeague())
@@ -84,6 +82,9 @@ class LeagueViewModel @Inject constructor(
     val uiEvent = _uiEvent.asSharedFlow()
 
     private var countdownJob: Job? = null
+
+    // 이번 화면 세션에서 닫은 결과 주차 — '확인함' 기록이 실패해도 같은 세션에서 다시 띄우지 않는다.
+    private val dismissedResultWeeks = mutableSetOf<LocalDate>()
 
     init {
         loadLeague()
@@ -109,12 +110,54 @@ class LeagueViewModel @Inject constructor(
                 myNickname = MOCK_MY_NICKNAME,
                 myRanker = myRanker,
                 myTodaySnackCount = if (myRanker != null) 1 else 0,
-                resetRemainingSeconds = secondsUntilNextWeeklyReset(),
+                resetRemainingSeconds = secondsUntilNextLeagueReset(LocalDateTime.now(clock)),
             )
         }
         _screenState.value = UiScreenState.Success
 
         startCountdown()
+        loadPendingResult()
+    }
+
+    /**
+     * 리그 종료 후 첫 진입 시 보여줄 결과를 조회한다.
+     * 결과가 없거나 조회에 실패하면 모달 없이 기존 화면을 그대로 유지한다.
+     */
+    private fun loadPendingResult() {
+        viewModelScope.launch {
+            when (val result = getPendingLeagueResult()) {
+                is ApiResultV2.Success -> {
+                    val pending = result.data ?: return@launch
+                    if (pending.weekStart in dismissedResultWeeks || _uiState.value.resultModal != null) return@launch
+                    // 리그가 아직 초기화되지 않은(진행 중인) 주의 결과는 모달을 띄우지 않는다.
+                    if (!isLeagueWeekFinished(pending.weekStart, LocalDateTime.now(clock))) return@launch
+                    _uiState.update {
+                        it.copy(
+                            resultModal = LeagueResultModalUi(
+                                tier = pending.tier,
+                                rank = pending.rank,
+                                snackCount = pending.snackCount,
+                                // 제목은 결과가 속한 주가 아니라 '현재 일자' 기준 월/주차를 표시한다 (9월 → 9월 5주차, 10월 → 10월 1주차)
+                                weekLabel = LocalDate.now(clock).toLeagueWeekLabel(),
+                                weekStart = pending.weekStart,
+                            )
+                        )
+                    }
+                }
+
+                else -> Unit // 실패 시 모달을 띄우지 않고 기존 화면 유지
+            }
+        }
+    }
+
+    /** 결과 모달을 닫는다. 이후 같은 결과가 다시 노출되지 않도록 '확인함'을 기록한다. */
+    fun onResultModalDismiss() {
+        val modal = _uiState.value.resultModal ?: return
+        _uiState.update { it.copy(resultModal = null) }
+        dismissedResultWeeks += modal.weekStart
+        viewModelScope.launch {
+            markLeagueResultSeen(modal.weekStart) // 실패해도 이번 세션에서는 재노출하지 않는다
+        }
     }
 
     private fun startCountdown() {
@@ -126,7 +169,7 @@ class LeagueViewModel @Inject constructor(
                 // 0에 도달하면 다음 주 월요일 00:00까지 남은 초를 다시 계산해 매주 반복되게 한다.
                 _uiState.update {
                     it.copy(
-                        resetRemainingSeconds = if (remaining > 0) remaining else secondsUntilNextWeeklyReset(),
+                        resetRemainingSeconds = if (remaining > 0) remaining else secondsUntilNextLeagueReset(LocalDateTime.now(clock)),
                     )
                 }
             }

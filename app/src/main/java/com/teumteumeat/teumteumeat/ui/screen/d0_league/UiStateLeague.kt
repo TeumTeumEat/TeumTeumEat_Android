@@ -1,5 +1,8 @@
 package com.teumteumeat.teumteumeat.ui.screen.d0_league
 
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueResultTier
+import java.time.LocalDate
+
 // 리그 랭킹 화면에는 상위 10위까지만 노출한다.
 private const val MAX_DISPLAYED_RANK = 10
 
@@ -30,6 +33,18 @@ data class LeagueRankerUiModel(
     }
 }
 
+/**
+ * 리그 종료 후 첫 진입 시 한 번 보여주는 결과 안내 모달의 표시 정보.
+ * [weekStart]는 '확인함' 기록용 주차 식별자, [weekLabel]은 "9월 5주차" 형태의 제목용 라벨이다.
+ */
+data class LeagueResultModalUi(
+    val tier: LeagueResultTier,
+    val rank: Int,
+    val snackCount: Int,
+    val weekLabel: String,
+    val weekStart: LocalDate,
+)
+
 data class UiStateLeague(
     val isLoading: Boolean = false,
     val leagueTitle: String = "주간 리그 OPEN!",
@@ -46,6 +61,9 @@ data class UiStateLeague(
 
     // 리그 리셋까지 남은 시간(초)
     val resetRemainingSeconds: Long = 0L,
+
+    // 리그 결과 안내 모달 — null 이면 노출하지 않는다.
+    val resultModal: LeagueResultModalUi? = null,
 
     val errorMessage: String = "",
 ) {
