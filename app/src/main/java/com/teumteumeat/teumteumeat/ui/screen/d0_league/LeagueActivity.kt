@@ -87,6 +87,8 @@ class LeagueActivity : ComponentActivity() {
                         )
                     },
                     onRetryApi = { viewModel.loadLeague() },
+                    onResultModalDismiss = { viewModel.onResultModalDismiss() },
+                    onResultShareClick = { viewModel.requestShare() },
                 )
             }
         }

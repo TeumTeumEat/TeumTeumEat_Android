@@ -53,6 +53,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueFirstPlacePlaceholder
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueRankRow
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueResultDialog
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueTop3Item
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -70,6 +71,9 @@ fun LeagueScreen(
     onInfoClick: () -> Unit,
     onRaiseRankClick: () -> Unit,
     onRetryApi: () -> Unit,
+    // 리그 결과 안내 모달 — uiState.resultModal 이 있을 때만 노출된다.
+    onResultModalDismiss: () -> Unit = {},
+    onResultShareClick: () -> Unit = {},
 ) {
     BackHandler {
         onBackClick()
@@ -102,6 +106,16 @@ fun LeagueScreen(
                 onShareClick = onShareClick,
                 onInfoClick = onInfoClick,
                 onRaiseRankClick = onRaiseRankClick,
+            )
+        }
+    }
+
+    if (screenState == UiScreenState.Success) {
+        uiState.resultModal?.let { modal ->
+            LeagueResultDialog(
+                modal = modal,
+                onDismiss = onResultModalDismiss,
+                onShare = onResultShareClick,
             )
         }
     }
