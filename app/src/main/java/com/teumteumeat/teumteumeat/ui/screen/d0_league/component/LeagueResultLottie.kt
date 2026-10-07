@@ -26,7 +26,7 @@ private const val LOTTIE_START_DELAY_MS = 300L
 
 /**
  * 순위 구간별 로티 정보.
- * 트로피(1·2위)는 intro(등장 1회) 뒤 loop 구간을 반복하고, 캐릭터(순위권 밖)는 1회 재생 후 마지막 프레임에서 정지한다.
+ * 금트로피(1~10위)는 intro(등장 1회) 뒤 loop 구간을 반복하고, 캐릭터(순위권 밖)는 1회 재생 후 마지막 프레임에서 정지한다.
  * 프레임 값은 JSON 의 markers(intro/loop)와 같다. JSON 을 다시 만들면 함께 갱신해야 한다.
  */
 private data class LeagueResultLottieSpec(
@@ -39,20 +39,19 @@ private data class LeagueResultLottieSpec(
     val stillFrame: Int,
 )
 
-private fun LeagueResultTier.lottieSpec(): LeagueResultLottieSpec = when (this) {
-    LeagueResultTier.FIRST -> LeagueResultLottieSpec(
-        rawRes = R.raw.trophy_league_first, canvasAspectRatio = 280f / 190f, totalFrames = 126,
-        introFrames = 0..36, loopFrames = 36..126, stillFrame = 70,
-    )
+// 1~10위 공통 금트로피 spec. JSON markers: intro 0..36 / loop 36..126
+private val GoldTrophyLottieSpec = LeagueResultLottieSpec(
+    rawRes = R.raw.trophy_gold_league_result, canvasAspectRatio = 280f / 190f, totalFrames = 126,
+    introFrames = 0..36, loopFrames = 36..126, stillFrame = 70,
+)
 
-    LeagueResultTier.SECOND -> LeagueResultLottieSpec(
-        rawRes = R.raw.trophy_league_second, canvasAspectRatio = 280f / 190f, totalFrames = 126,
-        introFrames = 0..36, loopFrames = 36..126, stillFrame = 70,
-    )
+private fun LeagueResultTier.lottieSpec(): LeagueResultLottieSpec = when (this) {
+    // 2~10위도 1위와 같은 금트로피 로티를 쓴다. (문구만 다르다)
+    LeagueResultTier.FIRST, LeagueResultTier.SECOND -> GoldTrophyLottieSpec
 
     LeagueResultTier.OUT_OF_RANK -> LeagueResultLottieSpec(
-        rawRes = R.raw.league_result_disappointed, canvasAspectRatio = 490f / 270f, totalFrames = 262,
-        stillFrame = 262,
+        rawRes = R.raw.league_result_disappointed, canvasAspectRatio = 490f / 270f, totalFrames = 192,
+        stillFrame = 192,
     )
 }
 

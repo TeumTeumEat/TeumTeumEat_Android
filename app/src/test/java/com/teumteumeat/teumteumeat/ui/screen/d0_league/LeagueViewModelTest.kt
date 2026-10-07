@@ -114,7 +114,7 @@ class LeagueViewModelTest {
 
     @Test
     fun `내 순위를 바꾸면 순위별 구간의 결과 모달이 채워진다`() {
-        // 1위 금트로피, 2~10위 은트로피, 11위~ 순위권 밖 연출
+        // 1~10위 금트로피(1위 FIRST / 2~10위 SECOND), 11위~ 순위권 밖 연출
         val cases = (1..13).associateWith { rank ->
             when {
                 rank == 1 -> LeagueResultTier.FIRST
