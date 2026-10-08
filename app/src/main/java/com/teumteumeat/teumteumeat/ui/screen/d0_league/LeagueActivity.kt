@@ -72,9 +72,7 @@ class LeagueActivity : ComponentActivity() {
                     screenState = screenState,
                     onBackClick = { finish() },
                     onShareClick = { viewModel.requestShare() },
-                    onInfoClick = {
-                        // TODO: 리그 안내(정책) 모달 연동
-                    },
+                    onInfoClick = { viewModel.onGuideClick() },
                     onRaiseRankClick = {
                         // 홈으로 이동 — 홈에 간식이 없는 상태(SnackState.Available 아님)라면
                         // 이동 직후 쿠폰 충전 팝업을 바로 띄운다 (MainCompositionProvider에서 처리).
@@ -89,6 +87,7 @@ class LeagueActivity : ComponentActivity() {
                     onRetryApi = { viewModel.loadLeague() },
                     onResultModalDismiss = { viewModel.onResultModalDismiss() },
                     onResultShareClick = { viewModel.requestShare() },
+                    onGuideDismiss = { viewModel.onGuideDismiss() },
                 )
             }
         }

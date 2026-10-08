@@ -150,6 +150,16 @@ class LeagueViewModel @Inject constructor(
         }
     }
 
+    /** 헤더의 안내(i) 버튼 클릭 — 리그 소개 모달을 연다. */
+    fun onGuideClick() {
+        _uiState.update { it.copy(isGuideVisible = true) }
+    }
+
+    /** 리그 소개 모달을 닫는다. 저장하는 상태는 없다. */
+    fun onGuideDismiss() {
+        _uiState.update { it.copy(isGuideVisible = false) }
+    }
+
     /** 결과 모달을 닫는다. 이후 같은 결과가 다시 노출되지 않도록 '확인함'을 기록한다. */
     fun onResultModalDismiss() {
         val modal = _uiState.value.resultModal ?: return

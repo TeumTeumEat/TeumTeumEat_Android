@@ -65,6 +65,9 @@ data class UiStateLeague(
     // 리그 결과 안내 모달 — null 이면 노출하지 않는다.
     val resultModal: LeagueResultModalUi? = null,
 
+    // 리그 소개 안내 모달 — 헤더의 안내(i) 버튼을 눌렀을 때만 true.
+    val isGuideVisible: Boolean = false,
+
     val errorMessage: String = "",
 ) {
     // 10위 밖의 랭커는 화면에 노출하지 않는다. [rankers]는 원본 그대로 두고 표시용으로만 자른다.

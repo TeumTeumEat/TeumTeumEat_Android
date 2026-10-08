@@ -13,8 +13,10 @@ import io.mockk.clearMocks
 import io.mockk.coVerify
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.Clock
@@ -110,6 +112,30 @@ class LeagueViewModelTest {
         viewModel.loadLeague() // 재시도 등으로 다시 불러와도
 
         assertNull(viewModel.uiState.value.resultModal)
+    }
+
+    @Test
+    fun `안내 모달은 진입 시 노출되지 않고 안내 버튼을 눌러야 열린다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+
+        val viewModel = createViewModel()
+        assertFalse(viewModel.uiState.value.isGuideVisible)
+
+        viewModel.onGuideClick()
+        assertTrue(viewModel.uiState.value.isGuideVisible)
+
+        viewModel.onGuideDismiss()
+        assertFalse(viewModel.uiState.value.isGuideVisible)
+    }
+
+    @Test
+    fun `리그를 다시 불러와도 안내 모달은 자동으로 열리지 않는다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+        val viewModel = createViewModel()
+
+        viewModel.loadLeague()
+
+        assertFalse(viewModel.uiState.value.isGuideVisible)
     }
 
     @Test

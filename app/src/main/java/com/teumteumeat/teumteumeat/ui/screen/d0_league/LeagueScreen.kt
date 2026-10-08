@@ -53,6 +53,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueFirstPlacePlaceholder
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueRankRow
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueGuideDialog
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueResultDialog
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueTop3Item
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -74,6 +75,8 @@ fun LeagueScreen(
     // 리그 결과 안내 모달 — uiState.resultModal 이 있을 때만 노출된다.
     onResultModalDismiss: () -> Unit = {},
     onResultShareClick: () -> Unit = {},
+    // 리그 소개 안내 모달 — uiState.isGuideVisible 일 때만 노출된다. ('닫기'는 모달만 닫고, '참여하기'는 [onRaiseRankClick]을 실행한다)
+    onGuideDismiss: () -> Unit = {},
 ) {
     BackHandler {
         onBackClick()
@@ -111,6 +114,17 @@ fun LeagueScreen(
     }
 
     if (screenState == UiScreenState.Success) {
+        if (uiState.isGuideVisible) {
+            LeagueGuideDialog(
+                onDismiss = onGuideDismiss,
+                // '참여하기'는 하단 '순위 올리기'와 같은 동작이다. 모달을 먼저 닫은 뒤 이동한다.
+                onJoin = {
+                    onGuideDismiss()
+                    onRaiseRankClick()
+                },
+            )
+        }
+
         uiState.resultModal?.let { modal ->
             LeagueResultDialog(
                 modal = modal,
