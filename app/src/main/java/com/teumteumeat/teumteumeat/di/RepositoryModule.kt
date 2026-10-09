@@ -56,7 +56,6 @@ abstract class RepositoryModule {
         impl: QuizRepositoryImpl
     ): QuizRepository
 
-    // 주간 랭킹은 서버 연동, 지난주 결과 조회는 아직 Fake 위임 (LeagueRepositoryImpl 내부 TODO 참고)
     @Binds abstract fun bindLeagueRepository(
         impl: LeagueRepositoryImpl
     ): LeagueRepository

@@ -6,7 +6,7 @@ import java.time.LocalDate
 const val LEAGUE_SILVER_TROPHY_MAX_RANK = 10
 
 /**
- * 종료된 주간 리그에서 내가 거둔 결과.
+ * 직전 주 주간 리그에서 내가 거둔 결과.
  * [weekStart]는 해당 리그 주의 시작일(월요일)이며, 결과 안내 모달을 한 번만 보여주기 위한 식별자로도 쓴다.
  */
 data class LeagueResult(

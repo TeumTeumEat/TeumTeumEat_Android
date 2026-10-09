@@ -248,11 +248,7 @@ fun LoginScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-/*            SplashScreen(
-                viewModel = ,
-                onSuccess = TODO(),
-                onFail = TODO()
-            )*/
+
         }
     }
 }

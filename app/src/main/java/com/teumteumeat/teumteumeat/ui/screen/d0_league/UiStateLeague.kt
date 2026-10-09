@@ -34,7 +34,7 @@ data class LeagueRankerUiModel(
 
 /**
  * 리그 종료 후 첫 진입 시 한 번 보여주는 결과 안내 모달의 표시 정보.
- * [weekStart]는 '확인함' 기록용 주차 식별자, [weekLabel]은 "9월 5주차" 형태의 제목용 라벨이다.
+ * [weekStart]는 '확인함' 기록용 주차 식별자, [weekLabel]은 결과 주의 시작일로 만든 "9월 5주차" 형태의 제목용 라벨이다.
  */
 data class LeagueResultModalUi(
     val tier: LeagueResultTier,

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.teumteumeat.teumteumeat.data.datastore.goalTrackingDataStore
+import com.teumteumeat.teumteumeat.data.datastore.leagueResultDataStore
 import com.teumteumeat.teumteumeat.data.datastore.quizTrackingDataStore
 import dagger.Module
 import dagger.Provides
@@ -17,6 +18,11 @@ import javax.inject.Singleton
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class GoalTrackingPreferences
+
+/** [LeagueResultDataStore][com.teumteumeat.teumteumeat.data.datastore.LeagueResultDataStore] 전용 DataStore 바인딩 구분자 */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class LeagueResultPreferences
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -34,4 +40,11 @@ object DataStoreModule {
     fun provideGoalTrackingPreferencesDataStore(
         @ApplicationContext context: Context
     ): DataStore<Preferences> = context.goalTrackingDataStore
+
+    @Provides
+    @Singleton
+    @LeagueResultPreferences
+    fun provideLeagueResultPreferencesDataStore(
+        @ApplicationContext context: Context
+    ): DataStore<Preferences> = context.leagueResultDataStore
 }

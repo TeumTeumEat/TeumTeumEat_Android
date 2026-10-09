@@ -77,7 +77,7 @@ class LeagueViewModelTest {
         assertEquals(LeagueResultTier.FIRST, modal!!.tier)
         assertEquals(1, modal.rank)
         assertEquals(12, modal.snackCount)
-        assertEquals("10월 1주차", modal.weekLabel) // 현재 일자(10/2) 기준
+        assertEquals("9월 4주차", modal.weekLabel) // 서버가 준 결과 주 시작일(9/21) 기준
         assertEquals(weekStart, modal.weekStart)
     }
 

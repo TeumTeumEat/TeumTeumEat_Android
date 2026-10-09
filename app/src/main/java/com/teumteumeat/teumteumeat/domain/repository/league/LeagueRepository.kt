@@ -11,8 +11,13 @@ interface LeagueRepository {
     suspend fun getLeagueRanking(): ApiResultV2<LeagueRanking>
 
     /**
-     * 아직 확인하지 않은 가장 오래된 종료 리그 결과를 반환한다. 없으면 `Success(data = null)`.
-     * 주차를 건너뛰고 진입한 경우에도 확인하지 않은 가장 오래된 주차의 결과가 먼저 내려오는 것을 전제로 한다.
+     * 결과 안내 모달에 보여줄 '직전 주' 리그의 내 최종 순위를 반환한다. 보여줄 결과가 없으면 `Success(data = null)`.
+     *
+     * 서버(GET /api/v1/league/results/latest)는 **직전 주(지난주 월 00:00 ~ 이번 주 월 00:00)만** 조회할 수 있다.
+     * 따라서 아래 경우에는 결과가 없다(`null`).
+     * - 직전 주에 스낵이 0개라 순위가 없는 경우. 예: 리그에 참여한 뒤 한 주를 쉬고 그다음 주에 진입하면,
+     *   마지막으로 활동한 주의 순위는 조회할 수 없어 모달을 띄우지 않는다.
+     * - 현재 계정이 그 주의 결과를 이미 확인한 경우(주당 1회 노출).
      */
     suspend fun getPendingResult(): ApiResultV2<LeagueResult?>
 

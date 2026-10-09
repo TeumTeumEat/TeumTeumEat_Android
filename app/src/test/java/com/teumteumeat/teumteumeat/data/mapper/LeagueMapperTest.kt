@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.data.mapper
 
 import com.google.gson.Gson
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueLatestResultResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueRankingResponse
 import com.google.gson.reflect.TypeToken
 import org.junit.Assert.assertEquals
@@ -77,5 +78,32 @@ class LeagueMapperTest {
         assertTrue(ranking.rankers.isEmpty())
         assertNull(ranking.me)
         assertEquals(0L, ranking.remainingSeconds)
+    }
+
+    // ---- GET /api/v1/league/results/latest ----
+
+    private fun parseLatest(json: String): LeagueLatestResultResponse =
+        Gson().fromJson<ApiResponse<LeagueLatestResultResponse, Any?>>(
+            json, object : TypeToken<ApiResponse<LeagueLatestResultResponse, Any?>>() {}.type,
+        ).data
+
+    @Test
+    fun `지난주 결과 예시가 도메인 모델로 변환된다`() {
+        val result = parseLatest(
+            """{"code":"OK","message":"ok","data":{"weekStartDate":"2026-09-28","rank":1,"weeklySnackCount":42}}"""
+        ).toDomain()
+
+        assertEquals(LocalDate.of(2026, 9, 28), result!!.weekStart)
+        assertEquals(1, result.rank)
+        assertEquals(42, result.snackCount)
+    }
+
+    @Test
+    fun `직전 주 스낵이 0개라 rank 가 null 이면 보여줄 결과가 없다`() {
+        val explicitNull = parseLatest("""{"data":{"weekStartDate":"2026-09-28","rank":null,"weeklySnackCount":0}}""").toDomain()
+        val missingKey = parseLatest("""{"data":{"weekStartDate":"2026-09-28","weeklySnackCount":0}}""").toDomain()
+
+        assertNull(explicitNull)
+        assertNull(missingKey)
     }
 }

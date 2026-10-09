@@ -6,7 +6,6 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanker
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
-import com.teumteumeat.teumteumeat.domain.model.league.isLeagueWeekFinished
 import com.teumteumeat.teumteumeat.domain.model.league.toLeagueWeekLabel
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.league.GetLeagueRankingUseCase
@@ -26,7 +25,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 // 리셋 직후 재조회 — 서버에 새 주 랭킹이 반영되기 전이면 잠시 뒤 다시 시도하고, 끝내 실패하면 로컬 계산으로 폴백한다.
@@ -168,7 +166,9 @@ class LeagueViewModel @Inject constructor(
     }
 
     /**
-     * 리그 종료 후 첫 진입 시 보여줄 결과를 조회한다.
+     * 리그 종료 후 첫 진입 시 보여줄 직전 주 결과를 조회한다.
+     * 서버는 직전(종료된) 주의 결과만 내려주므로 기기 시각으로 종료 여부를 다시 판정하지 않는다.
+     * 직전 주에 랭킹에 참여한 경우에만 모달이 뜨며, 한 주를 쉬고 진입하면(더 이전 주의 순위는 조회 불가) 뜨지 않는다.
      * 결과가 없거나 조회에 실패하면 모달 없이 기존 화면을 그대로 유지한다.
      */
     private fun loadPendingResult() {
@@ -177,16 +177,14 @@ class LeagueViewModel @Inject constructor(
                 is ApiResultV2.Success -> {
                     val pending = result.data ?: return@launch
                     if (pending.weekStart in dismissedResultWeeks || _uiState.value.resultModal != null) return@launch
-                    // 리그가 아직 초기화되지 않은(진행 중인) 주의 결과는 모달을 띄우지 않는다.
-                    if (!isLeagueWeekFinished(pending.weekStart, LocalDateTime.now(clock))) return@launch
                     _uiState.update {
                         it.copy(
                             resultModal = LeagueResultModalUi(
                                 tier = pending.tier,
                                 rank = pending.rank,
                                 snackCount = pending.snackCount,
-                                // 제목은 결과가 속한 주가 아니라 '현재 일자' 기준 월/주차를 표시한다 (9월 → 9월 5주차, 10월 → 10월 1주차)
-                                weekLabel = LocalDate.now(clock).toLeagueWeekLabel(),
+                                // 제목은 서버가 내려준 결과 대상 주의 시작일(weekStartDate) 기준 (예: 9/28 시작 주 → 9월 5주차)
+                                weekLabel = pending.weekStart.toLeagueWeekLabel(),
                                 weekStart = pending.weekStart,
                             )
                         )
@@ -238,7 +236,7 @@ class LeagueViewModel @Inject constructor(
     }
 
     /**
-     * 리그 리셋 직후 새 주 랭킹을 재조회한다.
+     * 리그 리셋 직후 새 주 랭킹을 재조회하고, 새 주로 바뀌면 방금 끝난 주의 결과 모달도 함께 조회한다.
      * 서버에 아직 새 주가 반영되지 않았거나(같은 주 / 남은 시간 0 이하) 실패하면 잠시 뒤 다시 시도하고,
      * 끝내 받지 못하면 기존 목록을 유지한 채 마감 시점을 리셋 주기(7일)만큼 뒤로 밀어 카운트다운을 이어간다.
      * (기기 달력이 아니라 서버가 내려준 마감 시점을 기준으로 하므로 기기 시각·시간대에 영향받지 않는다)
@@ -249,7 +247,10 @@ class LeagueViewModel @Inject constructor(
                 is ApiResultV2.Success -> {
                     val ranking = result.data
                     if (ranking.weekStart != currentWeekStart && ranking.remainingSeconds > 0) {
+                        // applyRanking 이 카운트다운 잡(=지금 이 코루틴)을 취소하므로, 이후 호출은 suspend 지점이 없어야 끝까지 실행된다.
+                        // loadPendingResult 는 viewModelScope.launch 로 독립 실행되기 때문에 안전하다 — suspend 함수로 바꾸지 말 것.
                         applyRanking(ranking)
+                        loadPendingResult() // 화면을 켜 둔 채 리셋을 넘겨도 방금 끝난 주의 결과 모달을 보여준다
                         return
                     }
                 }
