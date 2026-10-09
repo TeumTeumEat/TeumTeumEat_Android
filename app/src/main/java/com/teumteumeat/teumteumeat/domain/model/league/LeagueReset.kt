@@ -1,21 +1,14 @@
 package com.teumteumeat.teumteumeat.domain.model.league
 
 import java.time.DayOfWeek
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
 
 // 리그는 매주 월요일 00:00에 초기화된다.
-// TODO: 실제 리그 API가 준비되면 서버가 내려주는 초기화 시각/카운트를 사용하도록 교체
-
-/** [now] 기준 다음 리그 초기화(다음 월요일 00:00)까지 남은 초. 월요일 00:00:00 정각이면 7일(604800초)이다. */
-fun secondsUntilNextLeagueReset(now: LocalDateTime): Long {
-    val nextReset = now.toLocalDate()
-        .with(TemporalAdjusters.next(DayOfWeek.MONDAY))
-        .atStartOfDay()
-    return Duration.between(now, nextReset).seconds
-}
+// 리셋까지 남은 시간은 서버(GET /api/v1/league 의 remainingSeconds)를 따르므로 여기서 계산하지 않는다.
+// 아래 함수들은 지난주 결과 모달(Fake)이 쓰는 로컬 판정이다.
+// TODO: GET /api/v1/league/results/latest 연동 시 서버 응답 기준으로 교체
 
 /**
  * [today] 기준으로 가장 최근에 '종료된' 리그 주의 시작일(월요일).

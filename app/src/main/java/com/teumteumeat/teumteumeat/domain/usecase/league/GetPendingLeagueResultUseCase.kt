@@ -1,7 +1,7 @@
 package com.teumteumeat.teumteumeat.domain.usecase.league
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
-import com.teumteumeat.teumteumeat.data.repository.league.LeagueRepository
+import com.teumteumeat.teumteumeat.domain.repository.league.LeagueRepository
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueResult
 import javax.inject.Inject
 

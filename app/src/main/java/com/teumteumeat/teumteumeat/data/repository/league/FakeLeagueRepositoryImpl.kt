@@ -1,8 +1,10 @@
 package com.teumteumeat.teumteumeat.data.repository.league
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueResult
 import com.teumteumeat.teumteumeat.domain.model.league.lastFinishedLeagueWeekStart
+import com.teumteumeat.teumteumeat.domain.repository.league.LeagueRepository
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -43,6 +45,11 @@ class FakeLeagueRepositoryImpl(
     constructor(clock: Clock) : this(clock, FAKE_MY_RANK)
 
     private val seenWeeks = mutableSetOf<LocalDate>()
+
+    // 주간 랭킹은 LeagueRepositoryImpl 이 서버와 직접 연동한다. Fake 는 결과 모달 확인용으로만 쓴다.
+    // TODO: GET /league/results/latest 연동 후 이 Fake 와 함께 삭제
+    override suspend fun getLeagueRanking(): ApiResultV2<LeagueRanking> =
+        ApiResultV2.UnknownError(message = "FakeLeagueRepositoryImpl 은 주간 랭킹 조회를 지원하지 않습니다.")
 
     override suspend fun getPendingResult(): ApiResultV2<LeagueResult?> {
         // 가장 최근에 종료된 리그 주(월요일 시작)의 결과 — 월요일 00:00 초기화 시점에 주차가 바뀐다.

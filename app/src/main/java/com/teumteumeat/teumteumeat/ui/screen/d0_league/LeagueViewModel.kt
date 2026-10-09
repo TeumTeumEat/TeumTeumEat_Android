@@ -3,15 +3,18 @@ package com.teumteumeat.teumteumeat.ui.screen.d0_league
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.data.network.model.uiMessage
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanker
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
 import com.teumteumeat.teumteumeat.domain.model.league.isLeagueWeekFinished
-import com.teumteumeat.teumteumeat.domain.model.league.secondsUntilNextLeagueReset
 import com.teumteumeat.teumteumeat.domain.model.league.toLeagueWeekLabel
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
+import com.teumteumeat.teumteumeat.domain.usecase.league.GetLeagueRankingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.league.GetPendingLeagueResultUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.league.MarkLeagueResultSeenUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.utils.DeepLinkConstants
-import com.teumteumeat.teumteumeat.utils.toMaskedNickname
+import com.teumteumeat.teumteumeat.utils.ElapsedTimeSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,52 +24,26 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
-// 이번 주 랭킹에 아직 등록되지 않았어도(=MOCK_RANKERS에 isMe 항목이 없어도) 내 랭킹 카드(풋터)에
-// 표시할 닉네임 — 풋터는 본인의 닉네임이므로 마스킹 없이 원본 그대로 노출한다.
-private const val MOCK_MY_NICKNAME = "이영여민"
+// 리셋 직후 재조회 — 서버에 새 주 랭킹이 반영되기 전이면 잠시 뒤 다시 시도하고, 끝내 실패하면 로컬 계산으로 폴백한다.
+private const val RESET_REFRESH_MAX_ATTEMPTS = 3
+private const val RESET_REFRESH_RETRY_DELAY_MILLIS = 5_000L
 
-// TODO: 실기기 확인용 임시 플래그 — 커밋 전에 false로 되돌리거나 제거할 것.
-// true면 주간 랭킹 초기화 직후(1위 미등록) 상태를 재현한다.
-private const val MOCK_NO_FIRST_PLACE = false
-
-// 랭킹 리스트(포디움 + 4위 이하)는 공개 영역이므로 원본 닉네임을 [toMaskedNickname]으로 마스킹해
-// 노출하되, 본인(isMe) 행은 마스킹하지 않고 원본 그대로 노출한다.
-// 스크롤 영역이 실제로 동작하는지 확인할 수 있도록 20등까지 채운 목업 데이터.
-private val MOCK_RANKERS = listOf(
-    LeagueRankerUiModel(rank = 1, nickname = "틈틈틈틈틈잇틈잇".toMaskedNickname(), snackCount = 12),
-    LeagueRankerUiModel(rank = 2, nickname = "김로로로롤로민".toMaskedNickname(), snackCount = 10),
-    LeagueRankerUiModel(rank = 3, nickname = "이한하하나하나한재".toMaskedNickname(), snackCount = 9),
-    // 닉네임 최대 길이(10자, OnBoardingViewModel.MAX_LENGTH)를 넘지 않는 대표 케이스로 5자 초과 캡 동작을 검증한다.
-    LeagueRankerUiModel(rank = 4, nickname = "김수영하나영수민아라".toMaskedNickname(), snackCount = 8),
-    LeagueRankerUiModel(rank = 5, nickname = "임도현".toMaskedNickname(), snackCount = 7),
-    LeagueRankerUiModel(rank = 5, nickname = "강민수".toMaskedNickname(), snackCount = 7),
-    LeagueRankerUiModel(rank = 7, nickname = "이빈".toMaskedNickname(), snackCount = 6),
-    LeagueRankerUiModel(rank = 8, nickname = MOCK_MY_NICKNAME, snackCount = 5, isMe = true),
-    LeagueRankerUiModel(rank = 9, nickname = "김하주".toMaskedNickname(), snackCount = 4),
-    LeagueRankerUiModel(rank = 10, nickname = "박지훈".toMaskedNickname(), snackCount = 4),
-    LeagueRankerUiModel(rank = 11, nickname = "최서아".toMaskedNickname(), snackCount = 3),
-    LeagueRankerUiModel(rank = 12, nickname = "정민우".toMaskedNickname(), snackCount = 3),
-    LeagueRankerUiModel(rank = 13, nickname = "한소빈".toMaskedNickname(), snackCount = 3),
-    LeagueRankerUiModel(rank = 14, nickname = "오태진".toMaskedNickname(), snackCount = 3),
-    LeagueRankerUiModel(rank = 15, nickname = "서지연".toMaskedNickname(), snackCount = 2),
-    LeagueRankerUiModel(rank = 16, nickname = "황민서".toMaskedNickname(), snackCount = 2),
-    LeagueRankerUiModel(rank = 17, nickname = "윤성호".toMaskedNickname(), snackCount = 2),
-    LeagueRankerUiModel(rank = 18, nickname = "장은희".toMaskedNickname(), snackCount = 2),
-    LeagueRankerUiModel(rank = 19, nickname = "신유아".toMaskedNickname(), snackCount = 1),
-    LeagueRankerUiModel(rank = 20, nickname = "권도수".toMaskedNickname(), snackCount = 1),
-)
+// 리그 리셋 주기(매주). 서버가 새 주를 내려주지 않을 때 마감 시점을 이만큼 뒤로 민다.
+private const val LEAGUE_CYCLE_MILLIS = 7L * 24 * 60 * 60 * 1_000
 
 @HiltViewModel
 class LeagueViewModel @Inject constructor(
     val sessionManager: SessionManager,
+    private val getLeagueRanking: GetLeagueRankingUseCase,
     private val getPendingLeagueResult: GetPendingLeagueResultUseCase,
     private val markLeagueResultSeen: MarkLeagueResultSeenUseCase,
     private val clock: Clock,
+    private val elapsedTimeSource: ElapsedTimeSource,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UiStateLeague())
@@ -82,6 +59,14 @@ class LeagueViewModel @Inject constructor(
     val uiEvent = _uiEvent.asSharedFlow()
 
     private var countdownJob: Job? = null
+
+    // 서버가 내려준 남은 시간(remainingSeconds)을 받은 시점에 '마감 시점(부팅 후 경과 ms)'으로 바꿔 저장한다.
+    // 카운트다운은 값을 깎지 않고 매 tick 마다 (마감 시점 - 현재 경과 시간)으로 계산하므로 오차·백그라운드 지연이 누적되지 않고,
+    // 기기 시각(벽시계)·시간대를 바꿔도 서버가 준 남은 시간 그대로 줄어든다.
+    private var resetDeadlineElapsedMillis: Long = 0L
+
+    // 현재 화면에 표시 중인 리그 주의 시작일 — 리셋 후 재조회 결과가 새 주인지 판별하는 데 쓴다.
+    private var currentWeekStart: LocalDate? = null
 
     // 이번 화면 세션에서 닫은 결과 주차 — '확인함' 기록이 실패해도 같은 세션에서 다시 띄우지 않는다.
     private val dismissedResultWeeks = mutableSetOf<LocalDate>()
@@ -99,24 +84,87 @@ class LeagueViewModel @Inject constructor(
     fun loadLeague() {
         _screenState.value = UiScreenState.Loading
 
-        // TODO: 실제 API 연동 시 Repository 조회 결과로 교체
-        val rankers = if (MOCK_NO_FIRST_PLACE) emptyList() else MOCK_RANKERS
-        val myRanker = rankers.firstOrNull { it.isMe }
+        viewModelScope.launch {
+            when (val result = fetchRanking()) {
+                is ApiResultV2.Success -> {
+                    applyRanking(result.data)
+                    _screenState.value = UiScreenState.Success
 
+                    startCountdown()
+                    loadPendingResult()
+                }
+
+                is ApiResultV2.SessionExpired -> Unit // 로그인 화면으로 이동 중 ([fetchRanking]에서 처리)
+
+                else -> _screenState.value = UiScreenState.Error(result.uiMessage)
+            }
+        }
+    }
+
+    /**
+     * 주간 랭킹을 조회한다. 세션 만료는 여기서 한 번만 처리(로그인 화면 이동)하고 결과는 그대로 돌려주므로,
+     * 호출부는 성공/실패에 따른 화면 정책만 다루면 된다.
+     */
+    private suspend fun fetchRanking(): ApiResultV2<LeagueRanking> {
+        val result = getLeagueRanking()
+        if (result is ApiResultV2.SessionExpired) sessionManager.expireSession()
+        return result
+    }
+
+    /** 서버 랭킹 응답을 화면 상태에 반영하고, 리셋 마감 시각을 새로 잡는다. */
+    private fun applyRanking(ranking: LeagueRanking) {
+        currentWeekStart = ranking.weekStart
+        resetDeadlineElapsedMillis = elapsedTimeSource.elapsedRealtimeMillis() + ranking.remainingSeconds * 1_000
+
+        val me = ranking.me
         _uiState.update {
             it.copy(
                 isLoading = false,
-                rankers = rankers,
-                myNickname = MOCK_MY_NICKNAME,
-                myRanker = myRanker,
-                myTodaySnackCount = if (myRanker != null) 1 else 0,
-                resetRemainingSeconds = secondsUntilNextLeagueReset(LocalDateTime.now(clock)),
+                rankers = ranking.rankers.map { ranker -> ranker.toUiModel() },
+                myNickname = me?.nickname.orEmpty(),
+                // 이번 주 스낵이 0개면 서버가 rank 를 null 로 내려준다 → 아직 랭킹 미등록
+                myRanker = me?.rank?.let { rank ->
+                    LeagueRankerUiModel(
+                        rank = rank,
+                        nickname = me.nickname,
+                        snackCount = me.weeklySnackCount,
+                        isMe = true,
+                    )
+                },
+                myTodaySnackCount = me?.todaySnackCount ?: 0,
+                resetRemainingSeconds = ranking.remainingSeconds,
             )
         }
-        _screenState.value = UiScreenState.Success
+    }
 
-        startCountdown()
-        loadPendingResult()
+    // 닉네임은 서버에서 이미 마스킹돼 내려온다 — 여기서는 그대로 전달하고, 포디움 카드만 표시 직전에 같은 규칙을 적용한다.
+    private fun LeagueRanker.toUiModel() = LeagueRankerUiModel(
+        rank = rank,
+        nickname = nickname,
+        snackCount = snackCount,
+        isMe = isMe,
+    )
+
+    /**
+     * 이미 떠 있는 리그 화면으로 다시 진입했을 때(singleTask 재진입 → onNewIntent) 최신 상태로 갱신한다.
+     * - 정상 상태: 로딩 화면 없이 조용히 재조회하고, 실패하면 기존 화면을 유지한다.
+     * - 에러 상태: 처음부터 다시 불러온다.
+     * - 로딩 중: 이미 불러오는 중이므로 아무것도 하지 않는다. (중복 요청 방지)
+     */
+    fun onReenter() {
+        when (_screenState.value) {
+            UiScreenState.Success -> viewModelScope.launch {
+                val result = fetchRanking()
+                if (result is ApiResultV2.Success) {
+                    applyRanking(result.data)
+                    loadPendingResult()
+                } // 실패해도 기존 화면 유지
+            }
+
+            is UiScreenState.Error -> loadLeague()
+
+            UiScreenState.Idle, UiScreenState.Loading -> Unit
+        }
     }
 
     /**
@@ -175,15 +223,47 @@ class LeagueViewModel @Inject constructor(
         countdownJob = viewModelScope.launch {
             while (true) {
                 delay(1_000)
-                val remaining = _uiState.value.resetRemainingSeconds - 1
-                // 0에 도달하면 다음 주 월요일 00:00까지 남은 초를 다시 계산해 매주 반복되게 한다.
-                _uiState.update {
-                    it.copy(
-                        resetRemainingSeconds = if (remaining > 0) remaining else secondsUntilNextLeagueReset(LocalDateTime.now(clock)),
-                    )
-                }
+                val remaining = remainingSecondsUntilReset()
+                _uiState.update { it.copy(resetRemainingSeconds = remaining) }
+                // 0에 도달하면 새 주 랭킹을 조용히(로딩 화면 없이) 다시 받아온다.
+                if (remaining == 0L) refreshRankingAfterReset()
             }
         }
+    }
+
+    /** 마감 시각까지 남은 초(올림). 올림이라 tick 지터가 있어도 표시 숫자가 건너뛰지 않는다. */
+    private fun remainingSecondsUntilReset(): Long {
+        val remainingMillis = resetDeadlineElapsedMillis - elapsedTimeSource.elapsedRealtimeMillis()
+        return if (remainingMillis <= 0) 0L else (remainingMillis + 999) / 1_000
+    }
+
+    /**
+     * 리그 리셋 직후 새 주 랭킹을 재조회한다.
+     * 서버에 아직 새 주가 반영되지 않았거나(같은 주 / 남은 시간 0 이하) 실패하면 잠시 뒤 다시 시도하고,
+     * 끝내 받지 못하면 기존 목록을 유지한 채 마감 시점을 리셋 주기(7일)만큼 뒤로 밀어 카운트다운을 이어간다.
+     * (기기 달력이 아니라 서버가 내려준 마감 시점을 기준으로 하므로 기기 시각·시간대에 영향받지 않는다)
+     */
+    private suspend fun refreshRankingAfterReset() {
+        repeat(RESET_REFRESH_MAX_ATTEMPTS) { attempt ->
+            when (val result = fetchRanking()) {
+                is ApiResultV2.Success -> {
+                    val ranking = result.data
+                    if (ranking.weekStart != currentWeekStart && ranking.remainingSeconds > 0) {
+                        applyRanking(ranking)
+                        return
+                    }
+                }
+
+                is ApiResultV2.SessionExpired -> return // 로그인 화면으로 이동 중 — 재시도하지 않는다
+
+                else -> Unit
+            }
+            if (attempt < RESET_REFRESH_MAX_ATTEMPTS - 1) delay(RESET_REFRESH_RETRY_DELAY_MILLIS)
+        }
+
+        val now = elapsedTimeSource.elapsedRealtimeMillis()
+        while (resetDeadlineElapsedMillis <= now) resetDeadlineElapsedMillis += LEAGUE_CYCLE_MILLIS
+        _uiState.update { it.copy(resetRemainingSeconds = remainingSecondsUntilReset()) }
     }
 
     override fun onCleared() {

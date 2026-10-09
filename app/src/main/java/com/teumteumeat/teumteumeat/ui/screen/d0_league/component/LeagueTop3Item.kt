@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -46,8 +47,8 @@ import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueRankerUiModel
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
-import com.teumteumeat.teumteumeat.utils.capNicknameDisplayLength
 import com.teumteumeat.teumteumeat.utils.extendedColors
+import com.teumteumeat.teumteumeat.utils.toMaskedNickname
 import kotlin.math.PI
 import kotlin.math.acos
 
@@ -212,11 +213,11 @@ private fun RankOneLottieCard(
 }
 
 /**
- * 카드에 표시할 닉네임. 빈 자리([LeagueRankerUiModel.isEmpty])의 "-"는 1글자라 [capNicknameDisplayLength]를
- * 거치면 "*"로 마스킹되므로 그대로 노출한다.
+ * 카드에 표시할 닉네임. 서버 마스킹과 같은 규칙의 [toMaskedNickname]으로 표시 길이(최대 5자)를 보장한다.
+ * 빈 자리([LeagueRankerUiModel.isEmpty])의 "-"는 마스킹 대상이 아니라 그대로 노출한다.
  */
 private fun LeagueRankerUiModel.cardNickname(): String =
-    if (isEmpty) nickname else nickname.capNicknameDisplayLength()
+    if (isEmpty) nickname else nickname.toMaskedNickname()
 
 /** 1등 카드 안에 표시하는 닉네임 + 스낵 수. */
 @Composable
@@ -230,12 +231,11 @@ private fun RankOneCardContent(ranker: LeagueRankerUiModel) {
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            // 카드 폭이 좁아 닉네임이 길면(마스킹된 상태 기준 5자 초과) 영역을 넘칠 수 있어
-            // 카드 안에서는 최대 5자("이***이" 형식)까지만 줄여서 보여준다.
             text = ranker.cardNickname(),
             style = typo.subtitleSemiBold24,
             textAlign = TextAlign.Center,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
 
         Spacer(Modifier.height(2.dp))
@@ -313,12 +313,11 @@ fun LeagueTop3Item(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                // 카드 폭이 좁아 닉네임이 길면(마스킹된 상태 기준 5자 초과) 영역을 넘칠 수 있어
-                // 카드 안에서는 최대 5자("이***이" 형식)까지만 줄여서 보여준다.
                 text = ranker.cardNickname(),
                 style = typo.subtitleSemiBold18,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
 
             Spacer(Modifier.height(2.dp))

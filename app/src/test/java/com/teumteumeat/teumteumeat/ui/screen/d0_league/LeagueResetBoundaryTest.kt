@@ -4,10 +4,19 @@ import com.teumteumeat.teumteumeat.data.repository.league.FakeLeagueRepositoryIm
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.league.GetPendingLeagueResultUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.league.MarkLeagueResultSeenUseCase
+import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.util.MainDispatcherRule
+import com.teumteumeat.teumteumeat.utils.ElapsedTimeSource
 import com.teumteumeat.teumteumeat.util.SchedulerClock
+import com.teumteumeat.teumteumeat.util.clockAwareRankingUseCase
+import com.teumteumeat.teumteumeat.util.sampleLeagueRanking
+import com.teumteumeat.teumteumeat.util.rankingUseCaseReturning
+import com.teumteumeat.teumteumeat.domain.usecase.league.GetLeagueRankingUseCase
+import io.mockk.coEvery
+import org.junit.Assert.assertTrue
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
-import com.teumteumeat.teumteumeat.data.repository.league.LeagueRepository
+import com.teumteumeat.teumteumeat.domain.repository.league.LeagueRepository
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueResult
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,6 +41,9 @@ class LeagueResetBoundaryTest {
 
     private val dispatcher = UnconfinedTestDispatcher()
 
+    // 코루틴 가상 시간과 함께 흐르는 경과 시간 — 기기 시각(clock)과 별개로 서버가 준 남은 시간을 센다.
+    private val elapsedTimeSource = ElapsedTimeSource { dispatcher.scheduler.currentTime }
+
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule(dispatcher)
 
@@ -42,9 +54,11 @@ class LeagueResetBoundaryTest {
         val repository = FakeLeagueRepositoryImpl(clock, myRank)
         return LeagueViewModel(
             sessionManager = mockk<SessionManager>(relaxed = true),
+            getLeagueRanking = clockAwareRankingUseCase(clock),
             getPendingLeagueResult = GetPendingLeagueResultUseCase(repository),
             markLeagueResultSeen = MarkLeagueResultSeenUseCase(repository),
             clock = clock,
+            elapsedTimeSource = elapsedTimeSource,
         )
     }
 
@@ -76,6 +90,81 @@ class LeagueResetBoundaryTest {
     }
 
     @Test
+    fun `리셋 후 재조회가 계속 실패하면 기존 목록을 유지하고 기기 시각 기준 7일 카운트다운으로 폴백한다`() {
+        val clock = SchedulerClock(sundayBeforeReset, dispatcher.scheduler)
+        val repository = FakeLeagueRepositoryImpl(clock, myRank = 3)
+        var calls = 0
+        val failingAfterReset = mockk<GetLeagueRankingUseCase>()
+        coEvery { failingAfterReset() } answers {
+            if (calls++ == 0) ApiResultV2.Success(null, sampleLeagueRanking(weekStart = LocalDate.of(2026, 9, 28), remainingSeconds = 60))
+            else ApiResultV2.NetworkError("offline")
+        }
+        val viewModel = LeagueViewModel(
+            sessionManager = mockk<SessionManager>(relaxed = true),
+            getLeagueRanking = failingAfterReset,
+            getPendingLeagueResult = GetPendingLeagueResultUseCase(repository),
+            markLeagueResultSeen = MarkLeagueResultSeenUseCase(repository),
+            clock = clock,
+            elapsedTimeSource = elapsedTimeSource,
+        )
+
+        dispatcher.scheduler.advanceTimeBy(70_000) // 00:00:00 재조회 3회(5초 간격) 실패 → 00:00:10 폴백
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(3, viewModel.uiState.value.rankers.size) // 기존 목록 유지
+        assertEquals(UiScreenState.Success, viewModel.screenState.value) // 에러 화면으로 바뀌지 않는다
+        assertEquals(7 * 24 * 3600L - 10, viewModel.uiState.value.resetRemainingSeconds)
+        assertEquals(4, calls) // 최초 1회 + 재조회 3회
+    }
+
+    @Test
+    fun `리셋 직후 서버가 아직 이전 주를 내려주면 5초 뒤 다시 조회해 새 주로 교체한다`() {
+        val clock = SchedulerClock(sundayBeforeReset, dispatcher.scheduler)
+        val repository = FakeLeagueRepositoryImpl(clock, myRank = 3)
+        val oldWeek = sampleLeagueRanking(weekStart = LocalDate.of(2026, 9, 28), remainingSeconds = 60)
+        val newWeek = sampleLeagueRanking(weekStart = LocalDate.of(2026, 10, 5), remainingSeconds = 7 * 24 * 3600L - 5, rankers = emptyList(), me = null)
+        val responses = ArrayDeque(listOf(oldWeek, oldWeek, newWeek)) // 진입, 리셋 직후(아직 이전 주), 5초 뒤(새 주)
+        val useCase = mockk<GetLeagueRankingUseCase>()
+        coEvery { useCase() } answers { ApiResultV2.Success(null, responses.removeFirst()) }
+        val viewModel = LeagueViewModel(
+            sessionManager = mockk<SessionManager>(relaxed = true),
+            getLeagueRanking = useCase,
+            getPendingLeagueResult = GetPendingLeagueResultUseCase(repository),
+            markLeagueResultSeen = MarkLeagueResultSeenUseCase(repository),
+            clock = clock,
+            elapsedTimeSource = elapsedTimeSource,
+        )
+
+        dispatcher.scheduler.advanceTimeBy(65_000)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue(viewModel.uiState.value.rankers.isEmpty()) // 새 주(1위 미등록) 상태로 교체됨
+        assertEquals(7 * 24 * 3600L - 5, viewModel.uiState.value.resetRemainingSeconds)
+    }
+
+    @Test
+    fun `기기 시각이 멈춰 있거나 바뀌어도 카운트다운은 서버가 준 남은 시간만큼 줄어든다`() {
+        val fixedClock = java.time.Clock.fixed(
+            sundayBeforeReset.toInstant(java.time.ZoneOffset.UTC), java.time.ZoneOffset.UTC,
+        ) // 기기 시각은 흐르지 않는다
+        val repository = FakeLeagueRepositoryImpl(fixedClock, myRank = null)
+        val viewModel = LeagueViewModel(
+            sessionManager = mockk<SessionManager>(relaxed = true),
+            getLeagueRanking = rankingUseCaseReturning(sampleLeagueRanking(remainingSeconds = 100)),
+            getPendingLeagueResult = GetPendingLeagueResultUseCase(repository),
+            markLeagueResultSeen = MarkLeagueResultSeenUseCase(repository),
+            clock = fixedClock,
+            elapsedTimeSource = elapsedTimeSource,
+        )
+        assertEquals(100L, viewModel.uiState.value.resetRemainingSeconds)
+
+        dispatcher.scheduler.advanceTimeBy(40_000)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(60L, viewModel.uiState.value.resetRemainingSeconds)
+    }
+
+    @Test
     fun `초기화 직전(10월 4일 일요일 23시 59분)에 진입하면 제목은 10월 1주차다`() {
         val viewModel = createViewModel(sundayBeforeReset)
 
@@ -97,6 +186,8 @@ class LeagueResetBoundaryTest {
 
     /** 서버가 아직 진행 중인 주(9/28~10/4)의 결과를 내려주는 상황을 흉내 내는 Repository. */
     private class CurrentWeekResultRepository : LeagueRepository {
+        override suspend fun getLeagueRanking(): ApiResultV2<LeagueRanking> = ApiResultV2.UnknownError("unused")
+
         override suspend fun getPendingResult(): ApiResultV2<LeagueResult?> =
             ApiResultV2.Success(null, LeagueResult(weekStart = LocalDate.of(2026, 9, 28), rank = 1, snackCount = 12))
 
@@ -108,9 +199,11 @@ class LeagueResetBoundaryTest {
         val repository = CurrentWeekResultRepository()
         return LeagueViewModel(
             sessionManager = mockk<SessionManager>(relaxed = true),
+            getLeagueRanking = clockAwareRankingUseCase(clock),
             getPendingLeagueResult = GetPendingLeagueResultUseCase(repository),
             markLeagueResultSeen = MarkLeagueResultSeenUseCase(repository),
             clock = clock,
+            elapsedTimeSource = elapsedTimeSource,
         )
     }
 
@@ -134,9 +227,11 @@ class LeagueResetBoundaryTest {
         val repository = FakeLeagueRepositoryImpl(clock, myRank = 3) // 공유 Repository: '확인함' 상태가 유지된다
         fun enter() = LeagueViewModel(
             sessionManager = mockk<SessionManager>(relaxed = true),
+            getLeagueRanking = clockAwareRankingUseCase(clock),
             getPendingLeagueResult = GetPendingLeagueResultUseCase(repository),
             markLeagueResultSeen = MarkLeagueResultSeenUseCase(repository),
             clock = clock,
+            elapsedTimeSource = elapsedTimeSource,
         )
 
         val first = enter()                       // 일요일 23:59:00 — 직전 주(9/21 주) 결과

@@ -17,26 +17,6 @@ class LeagueResetTest {
     private val monday = LocalDate.of(2026, 10, 5)
 
     @Test
-    fun `일요일 23시 59분 00초에는 초기화까지 60초가 남는다`() {
-        assertEquals(60L, secondsUntilNextLeagueReset(sunday.atTime(23, 59, 0)))
-    }
-
-    @Test
-    fun `일요일 23시 59분 59초에는 1초가 남는다`() {
-        assertEquals(1L, secondsUntilNextLeagueReset(sunday.atTime(23, 59, 59)))
-    }
-
-    @Test
-    fun `월요일 00시 00분 00초에는 다음 초기화까지 7일이 남는다`() {
-        assertEquals(7 * 24 * 3600L, secondsUntilNextLeagueReset(monday.atStartOfDay()))
-    }
-
-    @Test
-    fun `월요일 00시 00분 01초에는 7일에서 1초 줄어든다`() {
-        assertEquals(7 * 24 * 3600L - 1, secondsUntilNextLeagueReset(LocalDateTime.of(2026, 10, 5, 0, 0, 1)))
-    }
-
-    @Test
     fun `초기화 직전(일요일)에는 직전 주가 종료된 가장 최근 주다`() {
         val weekStart = lastFinishedLeagueWeekStart(sunday)
 
