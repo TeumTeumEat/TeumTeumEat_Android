@@ -24,7 +24,8 @@ private fun LeagueRankerDto.toDomain() = LeagueRanker(
     isMe = isMe,
 )
 
-private fun LeagueMeDto.toDomain() = LeagueMe(
+/** 주간 랭킹의 `me` 와 GET /league/me 응답이 함께 쓰는 변환. */
+fun LeagueMeDto.toDomain() = LeagueMe(
     nickname = name,
     weeklySnackCount = weeklySnackCount,
     todaySnackCount = todaySnackCount,

@@ -1,6 +1,7 @@
 package com.teumteumeat.teumteumeat.util
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueMe
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueResult
 import com.teumteumeat.teumteumeat.domain.repository.league.LeagueRepository
@@ -26,6 +27,9 @@ class FakeLeagueRepository(
 
     override suspend fun getLeagueRanking(): ApiResultV2<LeagueRanking> =
         ApiResultV2.UnknownError(message = "FakeLeagueRepository 는 주간 랭킹 조회를 지원하지 않습니다.")
+
+    override suspend fun getMyLeagueRank(): ApiResultV2<LeagueMe> =
+        ApiResultV2.UnknownError(message = "FakeLeagueRepository 는 내 순위 조회를 지원하지 않습니다.")
 
     override suspend fun getPendingResult(): ApiResultV2<LeagueResult?> {
         val weekStart = previousLeagueWeekStart(LocalDate.now(clock))

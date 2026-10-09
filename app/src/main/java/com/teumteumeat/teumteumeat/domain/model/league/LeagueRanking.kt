@@ -32,7 +32,10 @@ data class LeagueRanker(
     val isMe: Boolean,
 )
 
-/** 내 주간 현황. 이번 주 스낵이 0개면 [rank]는 null(=랭킹 미등록)이다. */
+/**
+ * 내 주간 현황. 이번 주 스낵이 0개면 [rank]는 null(=랭킹 미등록)이다.
+ * 주간 랭킹(GET /league)의 `me` 와 내 순위 조회(GET /league/me) 응답에 함께 쓴다. [nickname]은 서버에서 마스킹돼 내려온다.
+ */
 data class LeagueMe(
     val nickname: String,
     val weeklySnackCount: Int,

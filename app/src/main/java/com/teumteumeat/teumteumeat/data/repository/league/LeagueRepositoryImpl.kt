@@ -7,6 +7,7 @@ import com.teumteumeat.teumteumeat.data.mapper.toDomain
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
 import com.teumteumeat.teumteumeat.data.repository.BaseRepository
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueMe
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueResult
 import com.teumteumeat.teumteumeat.domain.repository.league.LeagueRepository
@@ -16,7 +17,7 @@ import javax.inject.Inject
 
 /**
  * 리그 Repository 실제 구현.
- * 주간 랭킹(GET /api/v1/league)과 직전 주 결과(GET /api/v1/league/results/latest)는 서버와 연동하고,
+ * 주간 랭킹(GET /api/v1/league), 내 순위(GET /api/v1/league/me), 직전 주 결과(GET /api/v1/league/results/latest)는 서버와 연동하고,
  * 결과 모달을 이미 확인했는지는 서버가 모르므로 [resultDataStore] 에 현재 로그인한 계정(토큰의 유저 id) 별로 기록한다.
  *
  * 주의: `/results/latest` 는 이름과 달리 '직전 주' 한정이라 그 이전에 활동한 주의 순위는 받을 수 없다.
@@ -32,6 +33,12 @@ class LeagueRepositoryImpl @Inject constructor(
     override suspend fun getLeagueRanking(): ApiResultV2<LeagueRanking> =
         safeApiVer2(
             apiCall = { leagueApiService.getLeagueRanking() },
+            mapper = { response -> response.requireNotNullOrError().toDomain() },
+        )
+
+    override suspend fun getMyLeagueRank(): ApiResultV2<LeagueMe> =
+        safeApiVer2(
+            apiCall = { leagueApiService.getMyLeagueRank() },
             mapper = { response -> response.requireNotNullOrError().toDomain() },
         )
 

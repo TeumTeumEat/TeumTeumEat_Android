@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.data.mapper
 import com.google.gson.Gson
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueLatestResultResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueMeDto
 import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueRankingResponse
 import com.google.gson.reflect.TypeToken
 import org.junit.Assert.assertEquals
@@ -105,5 +106,33 @@ class LeagueMapperTest {
 
         assertNull(explicitNull)
         assertNull(missingKey)
+    }
+
+    // ---- GET /api/v1/league/me ----
+
+    private fun parseMe(json: String): LeagueMeDto =
+        Gson().fromJson<ApiResponse<LeagueMeDto, Any?>>(
+            json, object : TypeToken<ApiResponse<LeagueMeDto, Any?>>() {}.type,
+        ).data
+
+    @Test
+    fun `내 순위 조회 예시가 도메인 모델로 변환된다`() {
+        val me = parseMe(
+            """{"code":"OK","message":"ok","data":{"rank":15,"name":"김*민","weeklySnackCount":12,"todaySnackCount":3}}"""
+        ).toDomain()
+
+        assertEquals(15, me.rank)
+        assertEquals("김*민", me.nickname)
+        assertEquals(12, me.weeklySnackCount)
+        assertEquals(3, me.todaySnackCount)
+    }
+
+    @Test
+    fun `내 순위 조회에서 이번 주 스낵이 0개라 rank 가 null 이거나 키가 없으면 rank 는 null 이다`() {
+        val explicitNull = parseMe("""{"data":{"rank":null,"name":"김*민","weeklySnackCount":0,"todaySnackCount":0}}""").toDomain()
+        val missingKey = parseMe("""{"data":{"name":"김*민","weeklySnackCount":0,"todaySnackCount":0}}""").toDomain()
+
+        assertNull(explicitNull.rank)
+        assertNull(missingKey.rank)
     }
 }

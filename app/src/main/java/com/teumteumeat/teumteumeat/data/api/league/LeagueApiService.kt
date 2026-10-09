@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.data.api.league
 
 import com.teumteumeat.teumteumeat.data.network.model.ApiResponse
 import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueLatestResultResponse
+import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueMeDto
 import com.teumteumeat.teumteumeat.data.network.model_response.league.LeagueRankingResponse
 import retrofit2.http.GET
 
@@ -17,4 +18,11 @@ interface LeagueApiService {
      */
     @GET("/api/v1/league/results/latest")
     suspend fun getLatestLeagueResult(): ApiResponse<LeagueLatestResultResponse, Any?>
+
+    /**
+     * 이번 주 리그에서 내 순위와 주간/오늘 스낵 수만 조회한다(랭킹 목록 없음).
+     * 리그 화면 밖(홈, FCM 순위 알림 등)에서 내 순위만 필요할 때 쓴다. 순위 기준은 [getLeagueRanking] 과 같다.
+     */
+    @GET("/api/v1/league/me")
+    suspend fun getMyLeagueRank(): ApiResponse<LeagueMeDto, Any?>
 }

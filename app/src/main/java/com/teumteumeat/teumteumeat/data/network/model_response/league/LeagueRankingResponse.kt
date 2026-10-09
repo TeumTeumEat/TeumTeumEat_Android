@@ -18,10 +18,3 @@ data class LeagueRankerDto(
     val weeklySnackCount: Int,
     val isMe: Boolean,
 )
-
-data class LeagueMeDto(
-    val name: String,
-    val weeklySnackCount: Int,
-    val todaySnackCount: Int,
-    val rank: Int?, // 이번 주 스낵이 0개면 null
-)
