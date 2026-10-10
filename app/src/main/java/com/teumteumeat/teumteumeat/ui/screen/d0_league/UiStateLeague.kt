@@ -12,9 +12,8 @@ private const val REST_ROW_COUNT = MAX_DISPLAYED_RANK - 3
 /**
  * 리그 랭킹에 표시되는 한 유저의 항목.
  * 순위(rank)는 동점자 처리(공동 순위) 시 다음 순위를 건너뛰는 방식(4, 5, 5, 7...)을 따른다.
- * [nickname]은 랭킹 리스트(포디움 + 4위 이하)라는 공개 영역에 노출되므로 다른 유저는
- * [com.teumteumeat.teumteumeat.utils.toMaskedNickname]으로 마스킹된 값을 담지만, [isMe]가 true인
- * 본인 항목은 마스킹하지 않고 원본 닉네임을 그대로 담는다.
+ * [nickname]은 랭킹 리스트(포디움 + 4위 이하)라는 공개 영역에 노출되므로 서버가 마스킹해 내려준 값을 담는다.
+ * (폭이 좁은 포디움 카드만 표시 직전에 같은 규칙의 [com.teumteumeat.teumteumeat.utils.toMaskedNickname]을 적용한다)
  * 풋터에 항상 표시할 본인 닉네임([myRanker]가 null이어도 보여줘야 함)은 [UiStateLeague.myNickname]을 사용한다.
  */
 data class LeagueRankerUiModel(
@@ -35,7 +34,7 @@ data class LeagueRankerUiModel(
 
 /**
  * 리그 종료 후 첫 진입 시 한 번 보여주는 결과 안내 모달의 표시 정보.
- * [weekStart]는 '확인함' 기록용 주차 식별자, [weekLabel]은 "9월 5주차" 형태의 제목용 라벨이다.
+ * [weekStart]는 '확인함' 기록용 주차 식별자, [weekLabel]은 결과 주의 시작일로 만든 "9월 5주차" 형태의 제목용 라벨이다.
  */
 data class LeagueResultModalUi(
     val tier: LeagueResultTier,
@@ -48,7 +47,6 @@ data class LeagueResultModalUi(
 data class UiStateLeague(
     val isLoading: Boolean = false,
     val leagueTitle: String = "주간 리그 OPEN!",
-    val maxSnackCount: Int = 77,
 
     // 상위 3명(포디움) + 4위 이하 랭킹 리스트 (원본 전체) — 화면에는 [podiumRankers]/[restRankers]로
     // 상위 10위까지만 노출된다.
@@ -64,6 +62,9 @@ data class UiStateLeague(
 
     // 리그 결과 안내 모달 — null 이면 노출하지 않는다.
     val resultModal: LeagueResultModalUi? = null,
+
+    // 리그 소개 안내 모달 — 헤더의 안내(i) 버튼을 눌렀을 때만 true.
+    val isGuideVisible: Boolean = false,
 
     val errorMessage: String = "",
 ) {

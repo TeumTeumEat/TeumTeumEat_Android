@@ -8,8 +8,8 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepositoryImpl
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepositoryImpl
-import com.teumteumeat.teumteumeat.data.repository.league.FakeLeagueRepositoryImpl
-import com.teumteumeat.teumteumeat.data.repository.league.LeagueRepository
+import com.teumteumeat.teumteumeat.domain.repository.league.LeagueRepository
+import com.teumteumeat.teumteumeat.data.repository.league.LeagueRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
@@ -56,9 +56,8 @@ abstract class RepositoryModule {
         impl: QuizRepositoryImpl
     ): QuizRepository
 
-    // TODO: 리그 결과 API 스펙 확정 후 실제 구현체로 교체
     @Binds abstract fun bindLeagueRepository(
-        impl: FakeLeagueRepositoryImpl
+        impl: LeagueRepositoryImpl
     ): LeagueRepository
 
     @Binds abstract fun bindCategoryRepository(

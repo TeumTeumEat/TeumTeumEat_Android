@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.model.league.LEAGUE_MAX_WEEKLY_SNACK_COUNT
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.component.button.NoPaddingIconButton
 import com.teumteumeat.teumteumeat.ui.component.text.AutoSizeText
@@ -53,6 +54,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueFirstPlacePlaceholder
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueRankRow
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueGuideDialog
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueResultDialog
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueTop3Item
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
@@ -74,6 +76,8 @@ fun LeagueScreen(
     // 리그 결과 안내 모달 — uiState.resultModal 이 있을 때만 노출된다.
     onResultModalDismiss: () -> Unit = {},
     onResultShareClick: () -> Unit = {},
+    // 리그 소개 안내 모달 — uiState.isGuideVisible 일 때만 노출된다. ('닫기'는 모달만 닫고, '참여하기'는 [onRaiseRankClick]을 실행한다)
+    onGuideDismiss: () -> Unit = {},
 ) {
     BackHandler {
         onBackClick()
@@ -111,6 +115,17 @@ fun LeagueScreen(
     }
 
     if (screenState == UiScreenState.Success) {
+        if (uiState.isGuideVisible) {
+            LeagueGuideDialog(
+                onDismiss = onGuideDismiss,
+                // '참여하기'는 하단 '순위 올리기'와 같은 동작이다. 모달을 먼저 닫은 뒤 이동한다.
+                onJoin = {
+                    onGuideDismiss()
+                    onRaiseRankClick()
+                },
+            )
+        }
+
         uiState.resultModal?.let { modal ->
             LeagueResultDialog(
                 modal = modal,
@@ -277,7 +292,7 @@ private fun LeagueTitlePodiumSection(
                 append("다른 유저와 내 기록을 비교해요\n")
                 append("매주 ")
                 withStyle(SpanStyle(color = theme.textPointBlue)) {
-                    append("최대 ${uiState.maxSnackCount}개")
+                    append("최대 ${LEAGUE_MAX_WEEKLY_SNACK_COUNT}개")
                 }
                 append("의 스낵을 모을 수 있어요")
             },

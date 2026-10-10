@@ -69,6 +69,7 @@ data class AppTypography(
     val btnMedium18_h24: TextStyle,
     val btnMedium18_h22: TextStyle,
     val rodies_body_40: TextStyle,
+    val lableMedium12_h16: TextStyle,
 )
 
 private val DefaultTextColor = Black100
@@ -172,6 +173,12 @@ val DefaultAppTypography = AppTypography(
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 14.sp,
+    ),
+
+    lableMedium12_h16 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
     ),
 
     // caption

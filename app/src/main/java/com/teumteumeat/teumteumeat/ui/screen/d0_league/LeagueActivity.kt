@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
@@ -28,6 +30,16 @@ class LeagueActivity : ComponentActivity() {
         }
     }
 
+    // singleTask 라 이미 떠 있는 인스턴스로 재진입하면 onCreate 가 아니라 onNewIntent 로 들어온다.
+    // 그때마다 값을 올려 Compose 쪽(LaunchedEffect)에서 ViewModel 에 재조회를 요청한다.
+    private var reenterCount by mutableIntStateOf(0)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        reenterCount++
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -45,6 +57,11 @@ class LeagueActivity : ComponentActivity() {
                 val viewModel: LeagueViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val screenState by viewModel.screenState.collectAsStateWithLifecycle()
+
+                // 이미 떠 있는 리그 화면으로 재진입(onNewIntent)하면 최신 랭킹으로 갱신한다.
+                LaunchedEffect(reenterCount) {
+                    if (reenterCount > 0) viewModel.onReenter()
+                }
 
                 // 🔥 전역 세션 이벤트 감지
                 LaunchedEffect(Unit) {
@@ -72,9 +89,7 @@ class LeagueActivity : ComponentActivity() {
                     screenState = screenState,
                     onBackClick = { finish() },
                     onShareClick = { viewModel.requestShare() },
-                    onInfoClick = {
-                        // TODO: 리그 안내(정책) 모달 연동
-                    },
+                    onInfoClick = { viewModel.onGuideClick() },
                     onRaiseRankClick = {
                         // 홈으로 이동 — 홈에 간식이 없는 상태(SnackState.Available 아님)라면
                         // 이동 직후 쿠폰 충전 팝업을 바로 띄운다 (MainCompositionProvider에서 처리).
@@ -89,6 +104,7 @@ class LeagueActivity : ComponentActivity() {
                     onRetryApi = { viewModel.loadLeague() },
                     onResultModalDismiss = { viewModel.onResultModalDismiss() },
                     onResultShareClick = { viewModel.requestShare() },
+                    onGuideDismiss = { viewModel.onGuideDismiss() },
                 )
             }
         }

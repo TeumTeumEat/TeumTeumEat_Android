@@ -1,6 +1,8 @@
 package com.teumteumeat.teumteumeat.di
 
 import android.content.Context
+import android.os.SystemClock
+import com.teumteumeat.teumteumeat.utils.ElapsedTimeSource
 import com.teumteumeat.teumteumeat.utils.date_change_reciver.DateChangeReceiver
 import dagger.Module
 import dagger.Provides
@@ -23,4 +25,9 @@ object DateModule {
     @Provides
     @Singleton
     fun provideClock(): Clock = Clock.systemDefaultZone()
+
+    /** 기기 시각과 무관한 경과 시간 소스. 서버가 내려준 남은 시간을 세는 타이머에 쓴다. */
+    @Provides
+    @Singleton
+    fun provideElapsedTimeSource(): ElapsedTimeSource = ElapsedTimeSource { SystemClock.elapsedRealtime() }
 }
