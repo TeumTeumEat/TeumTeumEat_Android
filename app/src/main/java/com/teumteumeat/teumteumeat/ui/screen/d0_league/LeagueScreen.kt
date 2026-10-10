@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.model.league.LEAGUE_MAX_WEEKLY_SNACK_COUNT
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.component.button.NoPaddingIconButton
 import com.teumteumeat.teumteumeat.ui.component.text.AutoSizeText
@@ -291,7 +292,7 @@ private fun LeagueTitlePodiumSection(
                 append("다른 유저와 내 기록을 비교해요\n")
                 append("매주 ")
                 withStyle(SpanStyle(color = theme.textPointBlue)) {
-                    append("최대 ${uiState.maxSnackCount}개")
+                    append("최대 ${LEAGUE_MAX_WEEKLY_SNACK_COUNT}개")
                 }
                 append("의 스낵을 모을 수 있어요")
             },

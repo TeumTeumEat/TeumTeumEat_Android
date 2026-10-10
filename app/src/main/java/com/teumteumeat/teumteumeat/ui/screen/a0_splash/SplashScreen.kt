@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.a0_splash
 
+import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -21,6 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -34,7 +36,9 @@ import com.teumteumeat.teumteumeat.ui.component.modal.ModalOverlay
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.DeepLinkConstants
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.UpdateUtils.moveToPlayStore
@@ -43,6 +47,8 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun SplashScreen(
     viewModel: SplashViewModel = hiltViewModel(),
+    // 리그 딥링크(푸시 등)로 진입했는지. true 면 진행도 분기 결과에 따라 홈 → 리그 / 로그인 후 리그로 이동한다.
+    isLeagueEntry: Boolean = false,
 ) {
     val sessionManager = viewModel.sessionManager // 🔥 ViewModel 통해 접근
 
@@ -78,7 +84,12 @@ fun SplashScreen(
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
+            Utils.UxUtils.moveActivity(
+                activity,
+                LoginActivity::class.java,
+                clearTask = true,
+                extras = leagueRedirectExtras(isLeagueEntry),
+            )
         }
     }
 
@@ -95,10 +106,24 @@ fun SplashScreen(
             Log.d("SplashActivity", "Collected event = $event")
             when (event) {
                 SplashUiEvent.NavigateToLogin ->
-                    Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+                    // 로그인 후 리그로 이동하도록 pending 플래그를 넘긴다 (LoginViewModel 의 기존 처리 재사용)
+                    Utils.UxUtils.moveActivity(
+                        activity,
+                        LoginActivity::class.java,
+                        extras = leagueRedirectExtras(isLeagueEntry),
+                    )
 
                 SplashUiEvent.NavigateToMain ->
-                    Utils.UxUtils.moveActivity(activity, MainActivity::class.java)
+                    if (isLeagueEntry) {
+                        // 홈을 루트로 쌓고 그 위에 리그 — 리그에서 뒤로가기 시 홈으로 돌아온다
+                        Utils.UxUtils.moveActivityWithBackStack(
+                            activity,
+                            backStackRootActivity = MainActivity::class.java,
+                            destinationActivity = LeagueActivity::class.java,
+                        )
+                    } else {
+                        Utils.UxUtils.moveActivity(activity, MainActivity::class.java)
+                    }
 
                 SplashUiEvent.NavigateToOnboarding ->
                     Utils.UxUtils.moveActivity(activity, OnBoardingActivity::class.java)
@@ -211,6 +236,10 @@ fun SplashScreen(
 
 
 
+/** 리그 딥링크 진입이면 로그인 화면에 "로그인 후 리그로 이동" 플래그를 실어 보낸다. 아니면 null. */
+private fun leagueRedirectExtras(isLeagueEntry: Boolean): Bundle? =
+    if (isLeagueEntry) bundleOf(DeepLinkConstants.EXTRA_PENDING_LEAGUE_REDIRECT to true) else null
+
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
@@ -219,11 +248,7 @@ fun LoginScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-/*            SplashScreen(
-                viewModel = ,
-                onSuccess = TODO(),
-                onFail = TODO()
-            )*/
+
         }
     }
 }
