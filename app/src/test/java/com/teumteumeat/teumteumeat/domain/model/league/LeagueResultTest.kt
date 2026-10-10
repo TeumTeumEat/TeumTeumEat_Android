@@ -14,8 +14,8 @@ class LeagueResultTest {
     }
 
     @Test
-    fun `2위부터 10위까지는 금트로피를 쓰는 SECOND 다`() {
-        (2..LEAGUE_GOLD_TROPHY_MAX_RANK).forEach { rank ->
+    fun `2위부터 10위까지는 은트로피 SECOND 다`() {
+        (2..LEAGUE_SILVER_TROPHY_MAX_RANK).forEach { rank ->
             assertEquals("rank=$rank", LeagueResultTier.SECOND, LeagueResultTier.from(rank))
         }
     }

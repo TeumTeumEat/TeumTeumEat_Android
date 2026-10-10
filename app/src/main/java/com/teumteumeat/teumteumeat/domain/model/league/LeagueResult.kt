@@ -2,8 +2,8 @@ package com.teumteumeat.teumteumeat.domain.model.league
 
 import java.time.LocalDate
 
-/** 금트로피 연출을 쓰는 최하위 순위(2~10위, 리그 화면에 노출되는 순위권). 이보다 낮은 11위부터는 순위권 밖 연출을 쓴다. */
-const val LEAGUE_GOLD_TROPHY_MAX_RANK = 10
+/** 은트로피 연출을 쓰는 최하위 순위(2~10위, 리그 화면에 노출되는 순위권). 이보다 낮은 11위부터는 순위권 밖 연출을 쓴다. */
+const val LEAGUE_SILVER_TROPHY_MAX_RANK = 10
 
 /**
  * 직전 주 주간 리그에서 내가 거둔 결과.
@@ -20,7 +20,7 @@ data class LeagueResult(
 
 /**
  * 결과 안내 모달의 연출·문구를 가르는 순위 구간.
- * 1위([FIRST])와 2~10위([SECOND])는 금트로피(문구만 다름), 10위 밖(11위~)은 순위권 밖 연출([OUT_OF_RANK]).
+ * 1위 금트로피([FIRST]), 2~10위 은트로피([SECOND]), 10위 밖(11위~)은 순위권 밖 연출([OUT_OF_RANK]).
  */
 enum class LeagueResultTier {
     FIRST,
@@ -30,7 +30,7 @@ enum class LeagueResultTier {
     companion object {
         fun from(rank: Int): LeagueResultTier = when {
             rank <= 1 -> FIRST
-            rank <= LEAGUE_GOLD_TROPHY_MAX_RANK -> SECOND
+            rank <= LEAGUE_SILVER_TROPHY_MAX_RANK -> SECOND
             else -> OUT_OF_RANK
         }
     }
