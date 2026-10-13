@@ -10,12 +10,17 @@ import java.net.URI
  */
 object DeepLinkRouter {
 
-    fun resolve(uri: Uri?, hasRefreshToken: Boolean): DeepLinkDestination {
+    /**
+     * 리그 공유 링크(App Link)인지 판정한다. 로그인/온보딩 진행도에 따른 분기는 스플래시가 담당한다.
+     */
+    fun resolve(uri: Uri?): DeepLinkDestination {
         if (uri == null) return DeepLinkDestination.Invalid
 
-        if (!matchesLeagueLink(uri.scheme, uri.host, uri.path)) return DeepLinkDestination.Invalid
-
-        return if (hasRefreshToken) DeepLinkDestination.League else DeepLinkDestination.LoginThenLeague
+        return if (matchesLeagueLink(uri.scheme, uri.host, uri.path)) {
+            DeepLinkDestination.League
+        } else {
+            DeepLinkDestination.Invalid
+        }
     }
 
     /**
@@ -28,12 +33,18 @@ object DeepLinkRouter {
         return matchesLeagueLink(uri.scheme, uri.host, uri.path)
     }
 
+    /**
+     * 푸시 알림 탭이 리그 화면 진입인지 판정한다. `link` 가 리그 딥링크이거나 `type` 이 리그 알림이면 true.
+     * 서버가 `link` 없이 `type` 만 보내도 리그로 진입할 수 있다. 알 수 없는 type 은 false (홈 진입).
+     */
+    fun isLeaguePush(link: String?, type: String?): Boolean =
+        isLeagueLink(link) || PushType.fromValue(type)?.opensLeague == true
+
     private fun matchesLeagueLink(scheme: String?, host: String?, path: String?): Boolean =
         scheme == "https" && host == DeepLinkConstants.LEAGUE_HOST && path == DeepLinkConstants.LEAGUE_PATH
 }
 
 sealed class DeepLinkDestination {
     data object League : DeepLinkDestination()
-    data object LoginThenLeague : DeepLinkDestination()
     data object Invalid : DeepLinkDestination()
 }

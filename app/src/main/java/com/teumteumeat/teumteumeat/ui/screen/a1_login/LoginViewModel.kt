@@ -296,11 +296,7 @@ class LoginViewModel @Inject constructor(
             is ApiResultV2.Success -> {
                 if (result.data.completed) {
                     PrefsUtil.setOnboardingCompleted(context, true)
-                    if (_uiState.value.pendingLeagueRedirect) {
-                        _uiEvent.emit(LoginUiEvent.NavigateToLeague)
-                    } else {
-                        _uiEvent.emit(LoginUiEvent.NavigateToMain)
-                    }
+                    _uiEvent.emit(LoginUiEvent.NavigateToMain)
                 } else {
                     _uiEvent.emit(LoginUiEvent.NavigateToOnboarding)
                 }
@@ -379,19 +375,6 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun setPendingLeagueRedirect(pending: Boolean) {
-        _uiState.update {
-            it.copy(
-                pendingLeagueRedirect = pending,
-                showPendingLeagueNotice = pending,
-            )
-        }
-    }
-
-    fun dismissPendingLeagueNotice() {
-        _uiState.update { it.copy(showPendingLeagueNotice = false) }
-    }
-
 }
 
 sealed class LoginUiEvent {
@@ -399,7 +382,6 @@ sealed class LoginUiEvent {
     data object NavigateToMain : LoginUiEvent()
     data object NavigateToOnboarding : LoginUiEvent()
     data object NavigateToLogin : LoginUiEvent()
-    data object NavigateToLeague : LoginUiEvent() // 리그 공유 딥링크로 진입한 로그인 성공 시
 
     // 기타
     data object NeedTermsAgreement : LoginUiEvent()

@@ -11,6 +11,7 @@ import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
 import com.teumteumeat.teumteumeat.di.IoDispatcher
 import com.teumteumeat.teumteumeat.utils.Utils.FcmTokenSyncUtil
+import com.teumteumeat.teumteumeat.ui.screen.deeplink.AppScreenTracker
 import com.teumteumeat.teumteumeat.utils.firebase.FcmTokenInitializer
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.HiltAndroidApp
@@ -43,6 +44,9 @@ class MyApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // 푸시 알림 탭 시 퀴즈/주제 추가/새 목표 설정 중이면 화면을 옮기지 않기 위한 현재 화면 추적
+        AppScreenTracker.register(this)
+
         // Enable verbose logging for debugging (remove in production)
         if(BuildConfig.DEBUG) OneSignal.Debug.logLevel = LogLevel.VERBOSE
 

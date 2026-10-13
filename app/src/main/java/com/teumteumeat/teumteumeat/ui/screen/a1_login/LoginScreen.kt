@@ -42,11 +42,8 @@ import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.loading.FullScreenLoading
 import com.teumteumeat.teumteumeat.ui.component.login.TermsAgreementBottomSheetContent
-import com.teumteumeat.teumteumeat.ui.component.modal.BaseModal
-import com.teumteumeat.teumteumeat.ui.component.modal.ModalOverlay
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
-import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
@@ -82,7 +79,6 @@ fun LoginScreen(
                 LoginUiEvent.NavigateToOnboarding -> {
                     Log.d("Login", "navigate onboarding")
                     // 온보딩에서 뒤로가기 시 로그인 화면이 다시 노출되지 않도록 태스크 초기화
-                    // 리그 공유 딥링크로 진입했더라도 온보딩을 마친 유저는 메인 화면으로 이동한다
                     moveActivity(
                         activity,
                         OnBoardingActivity::class.java,
@@ -106,16 +102,6 @@ fun LoginScreen(
                 LoginUiEvent.NavigateToLogin -> {
                     Log.d("Login", "session expired → restart LoginActivity")
                     moveActivity(activity, LoginActivity::class.java, clearTask = true)
-                }
-
-                LoginUiEvent.NavigateToLeague -> {
-                    Log.d("Login", "navigate League (deeplink pending redirect)")
-                    // 백스택에 MainActivity를 남겨 League에서 뒤로가기 시 메인으로 돌아가도록 한다
-                    UxUtils.moveActivityWithBackStack(
-                        activity,
-                        backStackRootActivity = MainActivity::class.java,
-                        destinationActivity = LeagueActivity::class.java,
-                    )
                 }
             }
         }
@@ -303,17 +289,6 @@ fun LoginScreen(
                 )
             }
 
-            // ✅ 리그 공유 딥링크로 진입했지만 비로그인 상태였을 때: 도착 즉시 안내 팝업
-            if (uiState.showPendingLeagueNotice) {
-                ModalOverlay(onOutsideClick = {}) {
-                    BaseModal(
-                        title = "리그 화면 이용 안내",
-                        body = "로그인 후 리그 화면을 이용할 수 있어요",
-                        primaryButtonText = "확인",
-                        onPrimaryClick = { viewModel.dismissPendingLeagueNotice() },
-                    )
-                }
-            }
 
             // ✅ DEBUG + errorMessage 있을 때만 에러 모달
             /*if (BuildConfig.DEBUG && !uiState.errorMessage.isNullOrBlank()) {

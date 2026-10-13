@@ -52,6 +52,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail.DailySummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTopTab
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.MotivationCard
@@ -150,7 +151,9 @@ fun LibraryScreen(
 
                         LeagueEntryBanner(
                             onClick = {
-                                activity.startActivity(LeagueActivity.newIntent(activity))
+                                activity.startActivity(
+                                    LeagueActivity.newIntent(activity, TeumAnalyticsEvent.LeagueView.SOURCE_HISTORY)
+                                )
                             },
                         )
 
