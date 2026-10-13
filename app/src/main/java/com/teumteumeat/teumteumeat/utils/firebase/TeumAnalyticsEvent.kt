@@ -1002,4 +1002,72 @@ object TeumAnalyticsEvent {
         const val PARAM_SETTING_TYPE = "setting_type" // "nickname" | "commute_time" | "quiz_count"
         const val PARAM_VALUE = "value" // "3 → 5", "08:00-18:00 → 09:00-18:00" (nickname은 미수집)
     }
+
+    /**
+     * 푸시 알림 탭 이벤트 — iOS 와 동일 스키마 (SCRUM-184)
+     *
+     * | 파라미터     | 타입   | 예시              | 목적                                  |
+     * |-------------|--------|-------------------|---------------------------------------|
+     * | push_type   | String | "LEAGUE_RESULT"   | 알림 종류 — 서버 `data.type` 값 그대로  |
+     * | destination | String | "league"          | 알림 탭 후 실제로 도착하는 화면          |
+     *
+     * ## push_type
+     * - 서버 값을 그대로 보낸다 (현재 `DAILY_QUIZ` | `LEAGUE_DEADLINE` | `LEAGUE_RESULT`).
+     *   서버가 새 type 을 추가해도 앱 배포 없이 GA 에 잡히도록 모르는 값도 변환하지 않는다 (100자 초과 시 잘림).
+     * - `data.type` 자체가 없거나 비어 있을 때만 `"unknown"`.
+     *
+     * ## destination
+     * - `"home"` | `"league"` | `"login"` | `"onboarding"` | `"none"`
+     * - `"none"` : 알림을 눌러도 화면을 옮기지 않은 경우 (iOS 와 동일)
+     *   - 퀴즈 / 주제 추가 / 새 목표 설정 중 (Android: QuizActivity, QuizResultActivity, AddGoalActivity)
+     *   - 모르는 type 이거나 type 이 없을 때 (앱이 꺼진 상태에서는 일반 실행처럼 열리지만 `"none"` 으로 기록)
+     *
+     * ## 측정 목적
+     * - 알림 종류별 클릭 수 (클릭률의 분모는 앱이 아니라 서버 발송 건수 — 수신 이벤트는 만들지 않는다)
+     * - 푸시 후 리그 도착률 = `league_view(source=push)` / `push_open(push_type=LEAGUE_*)`
+     *
+     * ## 발생 시점
+     * - 도착 화면이 정해진 뒤 1회 — 스플래시에서 로그인/온보딩 진행도 분기가 끝나 이동 직전에 발화
+     * - 푸시 진입이 아닌 일반 실행, Activity 재생성(savedInstanceState != null)에서는 발화하지 않는다
+     * - 화면을 옮기지 않기로 한 경우(`none`)는 탭 즉시 발화한다
+     * - 강제 업데이트 등으로 이동 자체가 일어나지 않으면 발화하지 않는다
+     */
+    object PushOpen {
+        const val NAME = "push_open"
+        const val PARAM_PUSH_TYPE = "push_type"     // 서버 data.type 그대로 | "unknown"
+        const val PARAM_DESTINATION = "destination" // "home" | "league" | "login" | "onboarding" (| iOS: "none")
+
+        const val PUSH_TYPE_UNKNOWN = "unknown"
+        const val DESTINATION_HOME = "home"
+        const val DESTINATION_LEAGUE = "league"
+        const val DESTINATION_LOGIN = "login"
+        const val DESTINATION_ONBOARDING = "onboarding"
+        const val DESTINATION_NONE = "none"
+    }
+
+    /**
+     * 리그 화면 진입 이벤트 — iOS 와 동일 스키마 (SCRUM-184)
+     *
+     * | 파라미터 | 타입   | 예시      | 목적              |
+     * |---------|--------|-----------|-------------------|
+     * | source  | String | "push"    | 리그 진입 경로     |
+     *
+     * ## source
+     * - `"home"`    : 홈 "1등 도전" 말풍선
+     * - `"history"` : 히스토리(라이브러리) 상단 배너
+     * - `"push"`    : 리그 알림(`LEAGUE_DEADLINE` | `LEAGUE_RESULT`) 탭
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity] 가 새로 생성될 때 1회
+     * - 이미 떠 있는 리그 화면으로 재진입(`onNewIntent`)하거나 Activity 재생성 시에는 발화하지 않는다
+     * - 경로를 알 수 없는 진입(공유 링크 등)은 발화하지 않는다
+     */
+    object LeagueView {
+        const val NAME = "league_view"
+        const val PARAM_SOURCE = "source" // "home" | "history" | "push"
+
+        const val SOURCE_HOME = "home"
+        const val SOURCE_HISTORY = "history"
+        const val SOURCE_PUSH = "push"
+    }
 }

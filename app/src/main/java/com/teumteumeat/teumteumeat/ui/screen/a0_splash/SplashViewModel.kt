@@ -98,6 +98,21 @@ class SplashViewModel @Inject constructor(
     /**
      * 🔥 로티 애니메이션 종료 시 호출
      */
+    // 푸시 진입 1회당 push_open 을 한 번만 기록하기 위한 플래그 (세션 만료 이벤트와 네비게이션 이벤트가 겹쳐도 1회)
+    private var pushOpenLogged = false
+
+    /**
+     * 푸시 알림 탭으로 들어온 경우 도착 화면이 정해진 시점에 [TeumAnalyticsEvent.PushOpen] 을 1회 기록한다.
+     *
+     * @param pushType 서버 data.type 그대로 (없으면 "unknown"). null 이면 푸시 진입이 아니므로 기록하지 않는다.
+     * @param destination 실제 도착 화면 — [TeumAnalyticsEvent.PushOpen] 의 DESTINATION_* 상수
+     */
+    fun logPushOpenOnce(pushType: String?, destination: String) {
+        if (pushType == null || pushOpenLogged) return
+        pushOpenLogged = true
+        analyticsLogger.logPushOpen(pushType, destination)
+    }
+
     fun onAnimationFinished() {
         remoteConfig.fetchAndActivate()
             .addOnCompleteListener { task ->

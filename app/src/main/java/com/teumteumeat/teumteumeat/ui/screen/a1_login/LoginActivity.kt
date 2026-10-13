@@ -33,7 +33,6 @@ import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.ui.aa0_base.BaseActivity
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.AuthBlockingOverlay
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
-import com.teumteumeat.teumteumeat.utils.DeepLinkConstants
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
 import com.teumteumeat.teumteumeat.utils.LocalLoginUiState
@@ -70,10 +69,6 @@ class LoginActivity : BaseActivity()  {
         super.onCreate(savedInstanceState)
         Log.d("KakaoLife", "onCreate")
         enableEdgeToEdge()
-
-        if (intent.getBooleanExtra(DeepLinkConstants.EXTRA_PENDING_LEAGUE_REDIRECT, false)) {
-            viewModel.setPendingLeagueRedirect(true)
-        }
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.google_web_client_id))

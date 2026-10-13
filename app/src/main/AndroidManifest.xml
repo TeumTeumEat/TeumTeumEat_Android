@@ -142,6 +142,13 @@
             android:label="LeagueActivity"
             android:launchMode="singleTask"
             android:theme="@style/Theme.TeumTeumEat" />
+        <!-- 앱이 켜져 있을 때 받은 푸시 알림 탭의 착지점 (이동 여부 판정 후 스플래시로 중계). 외부에서 직접 실행될 필요가 없다 -->
+        <activity
+            android:name=".ui.screen.deeplink.PushRouterActivity"
+            android:exported="false"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <!-- 리그 공유 딥링크(App Links) 착지점. host는 utils/DeepLinkConstants.kt의 LEAGUE_HOST와 반드시 동일하게 유지 -->
         <activity
             android:name=".ui.screen.deeplink.DeepLinkRouterActivity"

@@ -87,6 +87,7 @@ import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home.SnackState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.GoalLoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.utils.LocalScreenState
 import kotlinx.coroutines.flow.collectLatest
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -331,7 +332,9 @@ fun MainCompositionProvider(
                                         alpha = if (leagueBubbleScale > 0.3f) 1f else 0f
                                     },
                                 onClick = {
-                                    activity.startActivity(LeagueActivity.newIntent(activity))
+                                    activity.startActivity(
+                                        LeagueActivity.newIntent(activity, TeumAnalyticsEvent.LeagueView.SOURCE_HOME)
+                                    )
                                 },
                             )
                         }

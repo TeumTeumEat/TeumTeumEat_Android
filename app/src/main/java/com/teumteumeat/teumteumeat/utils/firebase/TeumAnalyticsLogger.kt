@@ -872,4 +872,30 @@ class TeumAnalyticsLogger @Inject constructor(
         }
         analytics.logEvent(TeumAnalyticsEvent.LoginFail.NAME, params)
     }
+
+    /**
+     * 푸시 알림 탭 이벤트를 로깅합니다 ([TeumAnalyticsEvent.PushOpen]).
+     *
+     * @param pushType    서버 `data.type` 값 그대로. 값이 없으면 [TeumAnalyticsEvent.PushOpen.PUSH_TYPE_UNKNOWN]
+     * @param destination 탭 후 실제 도착 화면 — "home" | "league" | "login" | "onboarding"
+     */
+    fun logPushOpen(pushType: String, destination: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.PushOpen.PARAM_PUSH_TYPE, pushType)
+            putString(TeumAnalyticsEvent.PushOpen.PARAM_DESTINATION, destination)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.PushOpen.NAME, params)
+    }
+
+    /**
+     * 리그 화면 진입 이벤트를 로깅합니다 ([TeumAnalyticsEvent.LeagueView]).
+     *
+     * @param source 진입 경로 — "home" | "history" | "push"
+     */
+    fun logLeagueView(source: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.LeagueView.PARAM_SOURCE, source)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.LeagueView.NAME, params)
+    }
 }

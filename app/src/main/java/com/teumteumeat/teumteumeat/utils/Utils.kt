@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
+import com.teumteumeat.teumteumeat.BuildConfig
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -433,13 +434,16 @@ class Utils {
             backStackRootActivity: Class<out Activity>,
             destinationActivity: Class<out Activity>,
             exitFlag: Boolean = true,
+            destinationExtras: Bundle? = null,
         ) {
             if (context is Activity && context.isFinishing) return
 
             val rootIntent = Intent(context, backStackRootActivity).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
-            val destinationIntent = Intent(context, destinationActivity)
+            val destinationIntent = Intent(context, destinationActivity).apply {
+                destinationExtras?.let { putExtras(it) }
+            }
 
             context.startActivities(arrayOf(rootIntent, destinationIntent))
 
@@ -599,7 +603,7 @@ class Utils {
         private const val KEY_FCM_TOKEN = "key_fcm_token"
 
         fun save(context: Context, token: String) {
-            Log.e("FCM_TOKEN_TRACE", "💾 토큰 저장 = $token")
+            if (BuildConfig.DEBUG) Log.d("FCM_TOKEN", "토큰 저장: $token")
 
             context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .edit {
@@ -613,7 +617,7 @@ class Utils {
                 .getSharedPreferences("fcm_token_pref", Context.MODE_PRIVATE)
                 .getString("key_fcm_token", null)
 
-            Log.e("FCM_TOKEN_TRACE", "📤 저장된 토큰 조회 = $token")
+            if (BuildConfig.DEBUG) Log.d("FCM_TOKEN", "저장된 토큰 조회: $token")
 
             return token
         }

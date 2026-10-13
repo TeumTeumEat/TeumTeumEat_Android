@@ -21,7 +21,12 @@ object DeepLinkConstants {
     // 서버(푸시 발송)와 합의된 키여야 한다. 값은 [DeepLinkRouterActivity]가 판정하므로 허용되지 않는 링크는 홈으로 간다.
     const val PUSH_DATA_KEY_LINK = "link"
 
-    // 리그 공유 딥링크로 진입했지만 로그인/온보딩을 마쳐야 하는 유저를 위한 "로그인 후 리그로 이동" 플래그.
-    // LoginActivity, OnBoardingActivity 양쪽에서 공통으로 참조하는 Intent extra 키.
-    const val EXTRA_PENDING_LEAGUE_REDIRECT = "extra_pending_league_redirect"
+    // FCM data payload 에서 알림 종류를 담는 키 (예: {"type": "LEAGUE_RESULT"}). 값은 대문자 문자열이며 PushType 이 해석한다.
+    // 서버는 모든 푸시에 type 을 담아 보내므로 link 가 없어도 type 만으로 목적지를 결정할 수 있어야 한다.
+    const val PUSH_DATA_KEY_TYPE = "type"
+
+    // 리그 공유 링크(App Link)로 진입했음을 스플래시에 알리는 Intent extra 키(Boolean).
+    // 스플래시가 로그인/온보딩 진행도를 확인해, 로그인·온보딩을 마친 유저만 홈 → 리그로 보내고
+    // 미로그인/온보딩 중이면 해당 화면까지만 이동한다 (푸시 알림 진입과 같은 정책, 푸시 GA(push_open)는 기록하지 않는다).
+    const val EXTRA_LEAGUE_DEEPLINK = "extra_league_deeplink"
 }
