@@ -9,6 +9,7 @@ import androidx.core.content.edit
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueResultTier
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import javax.inject.Inject
@@ -897,5 +898,27 @@ class TeumAnalyticsLogger @Inject constructor(
             putString(TeumAnalyticsEvent.LeagueView.PARAM_SOURCE, source)
         }
         analytics.logEvent(TeumAnalyticsEvent.LeagueView.NAME, params)
+    }
+
+    /**
+     * 리그 공유 이벤트를 로깅합니다 ([TeumAnalyticsEvent.LeagueShare]).
+     *
+     * @param source     공유를 시작한 위치 — "header" | "result_modal"
+     * @param resultTier 결과 모달 공유일 때의 결과 구간. 헤더 공유면 null 이며 `result_tier` 파라미터를 담지 않는다
+     */
+    fun logLeagueShare(source: String, resultTier: LeagueResultTier? = null) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.LeagueShare.PARAM_SOURCE, source)
+            resultTier?.let {
+                putString(TeumAnalyticsEvent.LeagueShare.PARAM_RESULT_TIER, it.toAnalyticsValue())
+            }
+        }
+        analytics.logEvent(TeumAnalyticsEvent.LeagueShare.NAME, params)
+    }
+
+    private fun LeagueResultTier.toAnalyticsValue(): String = when (this) {
+        LeagueResultTier.FIRST -> TeumAnalyticsEvent.LeagueShare.RESULT_TIER_FIRST
+        LeagueResultTier.SECOND -> TeumAnalyticsEvent.LeagueShare.RESULT_TIER_TOP_10
+        LeagueResultTier.OUT_OF_RANK -> TeumAnalyticsEvent.LeagueShare.RESULT_TIER_OUT_OF_RANK
     }
 }
