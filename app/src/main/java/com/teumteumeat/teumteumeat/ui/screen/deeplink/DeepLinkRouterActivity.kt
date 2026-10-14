@@ -9,7 +9,7 @@ import com.teumteumeat.teumteumeat.utils.DeepLinkConstants
 import com.teumteumeat.teumteumeat.utils.Utils
 
 /**
- * App Link(https://teum-teum-eat-lab.vercel.app/league)의 유일한 착지점.
+ * App Link(https://teumteumeat.co.kr/league)의 유일한 착지점.
  * 화면을 그리지 않고 URI를 판정해 목적지로 이동시킨 뒤 즉시 종료된다.
  *
  * 리그 링크는 스플래시로 보내 로그인/온보딩 진행도를 확인한다 — 로그인·온보딩을 마친 유저만 홈 → 리그로 이동하고,
