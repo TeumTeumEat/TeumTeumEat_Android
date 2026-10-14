@@ -369,7 +369,7 @@ private fun LeagueFooterSection(
         }
 
         // 이번 주 랭킹에 아직 등록되지 않아 myRanker가 null이어도(=아직 퀴즈를 안 풀었어도) 행 자체는
-        // 항상 표시하고, 등수 자리만 "-"로 대신한다.
+        // 항상 표시하고, 등수 자리는 미등록이거나 10위 밖이면 "-"로 대신한다.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -384,7 +384,7 @@ private fun LeagueFooterSection(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = myRanker?.rank?.toString() ?: "-",
+                    text = uiState.myRankLabel,
                     textAlign = TextAlign.Center,
                     style = typo.subtitleSemiBold16,
                     modifier = Modifier.widthIn(min = 24.dp),

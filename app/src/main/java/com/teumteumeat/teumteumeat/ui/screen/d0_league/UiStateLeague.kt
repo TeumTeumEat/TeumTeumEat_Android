@@ -90,6 +90,10 @@ data class UiStateLeague(
             return rest + padding
         }
 
+    // 풋터 내 순위 표시 — 랭킹 미등록이거나 10위 밖(순위권 미진입)이면 "-"로 표시한다.
+    val myRankLabel: String
+        get() = myRanker?.rank?.takeIf { it <= MAX_DISPLAYED_RANK }?.toString() ?: "-"
+
     // 주간 랭킹 초기화 직후처럼 1위가 아직 등록되지 않았는지 판단하는 기준 — 1등 자리에 미등록 카드를 보여준다.
     val hasFirstPlace: Boolean
         get() = displayedRankers.any { it.rank == 1 }
