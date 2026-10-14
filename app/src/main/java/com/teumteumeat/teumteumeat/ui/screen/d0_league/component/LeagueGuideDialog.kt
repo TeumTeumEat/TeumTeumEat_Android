@@ -1,5 +1,6 @@
 package com.teumteumeat.teumteumeat.ui.screen.d0_league.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,26 +31,24 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.button.FillSecondaryButton
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
 import com.teumteumeat.teumteumeat.utils.extendedColors
 
 // TODO: 안내 문구는 디자인 시안 기준 — 기획 확정 후 변경될 수 있음
 private val GuideBullets = listOf(
-    "퀴즈를 풀수록 점수가 쌓이고\n리그 순위가 올라가요.",
-    "매주 새로운 시작\n한 주 동안 쌓은 점수로 순위가 결정돼요.",
-    "전체 사용자와 경쟁\n더 많이 학습할수록 순위가 올라가요.",
+    "퀴즈를 풀면 점수가 쌓여 리그 순위가 올라가요.",
+    "매주 새로운 리그가 시작돼요.",
+    "틈틈잇 전체 사용자와 점수로 경쟁해요.",
 )
 
 /**
  * 리그 화면 헤더의 안내(i) 버튼을 눌렀을 때 보여주는 리그 소개 모달.
- * [onDismiss]는 '닫기' 버튼·모달 바깥 터치·뒤로가기에서, [onJoin]은 '참여하기' 버튼에서 호출된다.
+ * [onDismiss]는 '확인' 버튼·모달 바깥 터치·뒤로가기에서 호출된다.
  */
 @Composable
 fun LeagueGuideDialog(
     onDismiss: () -> Unit,
-    onJoin: () -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -57,14 +58,13 @@ fun LeagueGuideDialog(
             usePlatformDefaultWidth = false,
         )
     ) {
-        LeagueGuideCard(onDismiss = onDismiss, onJoin = onJoin)
+        LeagueGuideCard(onDismiss = onDismiss)
     }
 }
 
 @Composable
 private fun LeagueGuideCard(
     onDismiss: () -> Unit,
-    onJoin: () -> Unit,
 ) {
     val colors = MaterialTheme.extendedColors
 
@@ -92,16 +92,15 @@ private fun LeagueGuideCard(
                 textAlign = TextAlign.Center,
             )
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = "틈틈잇 리그가 생겼어요!",
-                style = MaterialTheme.appTypography.captionRegular14,
-                color = colors.textSecondary,
-                textAlign = TextAlign.Center,
+            Image(
+                painter = painterResource(id = R.drawable.img_league_trophy_gold),
+                contentDescription = null,
+                modifier = Modifier.size(100.dp),
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             // 점수 규칙 요약 박스 — AdCouponModal 의 회색 안내 박스와 같은 규격
             Surface(
@@ -114,7 +113,7 @@ private fun LeagueGuideCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_coupon),
+                        imageVector = Icons.Default.Info,
                         contentDescription = null,
                         tint = colors.btnGray400,
                         modifier = Modifier.size(24.dp),
@@ -128,7 +127,7 @@ private fun LeagueGuideCard(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
 
             Column(
                 modifier = Modifier
@@ -139,26 +138,17 @@ private fun LeagueGuideCard(
                 GuideBullets.forEach { GuideBulletItem(text = it) }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                FillSecondaryButton(
-                    text = "닫기",
+                BaseFillButton(
+                    text = "확인",
                     textStyle = MaterialTheme.appTypography.btnMedium18_h24,
                     isModalBtn = true,
                     modifier = Modifier.weight(1f),
                     onClick = onDismiss,
-                    conerRadius = 16.dp,
-                )
-                BaseFillButton(
-                    text = "참여하기",
-                    textStyle = MaterialTheme.appTypography.btnMedium18_h24,
-                    isModalBtn = true,
-                    modifier = Modifier.weight(1f),
-                    onClick = onJoin,
                     conerRadius = 16.dp,
                 )
             }
@@ -187,7 +177,7 @@ private fun LeagueGuideCardPreview() {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            LeagueGuideCard(onDismiss = {}, onJoin = {})
+            LeagueGuideCard(onDismiss = {})
         }
     }
 }

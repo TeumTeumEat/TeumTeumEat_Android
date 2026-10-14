@@ -118,11 +118,6 @@ fun LeagueScreen(
         if (uiState.isGuideVisible) {
             LeagueGuideDialog(
                 onDismiss = onGuideDismiss,
-                // '참여하기'는 하단 '순위 올리기'와 같은 동작이다. 모달을 먼저 닫은 뒤 이동한다.
-                onJoin = {
-                    onGuideDismiss()
-                    onRaiseRankClick()
-                },
             )
         }
 
