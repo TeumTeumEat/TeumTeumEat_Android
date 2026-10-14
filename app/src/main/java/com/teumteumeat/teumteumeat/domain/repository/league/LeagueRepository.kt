@@ -34,4 +34,10 @@ interface LeagueRepository {
 
     /** [weekStart] 주차의 결과를 확인했음을 기록해 다음 진입부터 다시 내려오지 않게 한다. */
     suspend fun markResultSeen(weekStart: LocalDate): ApiResultV2<Unit>
+
+    /**
+     * [dev/local 전용] 현재 계정의 '결과 확인함' 기록을 지워 같은 주 결과 모달을 다시 볼 수 있게 한다.
+     * 저장에 실패하면 `UnknownError` 를 돌려준다.
+     */
+    suspend fun clearResultSeen(): ApiResultV2<Unit>
 }

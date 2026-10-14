@@ -3,19 +3,29 @@ package com.teumteumeat.teumteumeat.ui.screen.d0_league
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainArgs
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.debug.LeagueTimeOffsetDebugPanel
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
@@ -100,32 +110,53 @@ class LeagueActivity : ComponentActivity() {
                                 }
                                 startActivity(Intent.createChooser(sendIntent, null))
                             }
+
+                            is LeagueUiEvent.ShowToast ->
+                                Toast.makeText(this@LeagueActivity, event.message, Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
 
-                LeagueScreen(
-                    uiState = uiState,
-                    screenState = screenState,
-                    onBackClick = { finish() },
-                    onShareClick = { viewModel.requestShare() },
-                    onInfoClick = { viewModel.onGuideClick() },
-                    onRaiseRankClick = {
-                        // 홈으로 이동 — 홈에 간식이 없는 상태(SnackState.Available 아님)라면
-                        // 이동 직후 쿠폰 충전 팝업을 바로 띄운다 (MainCompositionProvider에서 처리).
-                        Utils.UxUtils.moveActivity(
-                            context = this@LeagueActivity,
-                            destinationActivity = MainActivity::class.java,
-                            extras = Bundle().apply {
-                                putBoolean(MainArgs.KEY_OPEN_COUPON_ON_NO_SNACK, true)
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LeagueScreen(
+                        uiState = uiState,
+                        screenState = screenState,
+                        onBackClick = { finish() },
+                        onShareClick = { viewModel.requestShare() },
+                        onInfoClick = { viewModel.onGuideClick() },
+                        onRaiseRankClick = {
+                            // 홈으로 이동 — 홈에 간식이 없는 상태(SnackState.Available 아님)라면
+                            // 이동 직후 쿠폰 충전 팝업을 바로 띄운다 (MainCompositionProvider에서 처리).
+                            Utils.UxUtils.moveActivity(
+                                context = this@LeagueActivity,
+                                destinationActivity = MainActivity::class.java,
+                                extras = Bundle().apply {
+                                    putBoolean(MainArgs.KEY_OPEN_COUPON_ON_NO_SNACK, true)
+                                },
+                            )
+                        },
+                        onRetryApi = { viewModel.loadLeague() },
+                        onResultModalDismiss = { viewModel.onResultModalDismiss() },
+                        onResultShareClick = { viewModel.requestShare() },
+                        onGuideDismiss = { viewModel.onGuideDismiss() },
+                    )
+
+                    // [dev/local 전용] 리그 시각 오프셋 테스트 패널 — 디버그 빌드에서만 노출한다.
+                    if (BuildConfig.DEBUG) {
+                        LeagueTimeOffsetDebugPanel(
+                            resetRemainingSeconds = uiState.resetRemainingSeconds,
+                            onOffsetChanged = { viewModel.loadLeague() },
+                            onResultSeenRecordCleared = {
+                                viewModel.resetDismissedResults()
+                                viewModel.loadLeague()
                             },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .statusBarsPadding()
+                                .padding(top = 56.dp, end = 8.dp),
                         )
-                    },
-                    onRetryApi = { viewModel.loadLeague() },
-                    onResultModalDismiss = { viewModel.onResultModalDismiss() },
-                    onResultShareClick = { viewModel.requestShare() },
-                    onGuideDismiss = { viewModel.onGuideDismiss() },
-                )
+                    }
+                }
             }
         }
     }

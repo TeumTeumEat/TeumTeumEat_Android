@@ -31,6 +31,10 @@ import javax.inject.Inject
 private const val RESET_REFRESH_MAX_ATTEMPTS = 3
 private const val RESET_REFRESH_RETRY_DELAY_MILLIS = 5_000L
 
+// [dev/local 전용] X-League-Time-Offset 이 허용 범위를 벗어났을 때 서버(400 INVALID_TIME_OFFSET)가 내려주는 code.
+private const val LEAGUE_ERROR_INVALID_TIME_OFFSET = "LEAGUE-001"
+private const val INVALID_TIME_OFFSET_FALLBACK_MESSAGE = "리그 시각 오프셋이 허용 범위를 벗어났습니다."
+
 // 리그 리셋 주기(매주). 서버가 새 주를 내려주지 않을 때 마감 시점을 이만큼 뒤로 민다.
 private const val LEAGUE_CYCLE_MILLIS = 7L * 24 * 60 * 60 * 1_000
 
@@ -94,7 +98,15 @@ class LeagueViewModel @Inject constructor(
 
                 is ApiResultV2.SessionExpired -> Unit // 로그인 화면으로 이동 중 ([fetchRanking]에서 처리)
 
-                else -> _screenState.value = UiScreenState.Error(result.uiMessage)
+                else -> {
+                    val offsetOutOfRange = notifyIfTimeOffsetOutOfRange(result)
+                    // 오프셋만 잘못된 경우 이미 받아 둔 화면이 있으면 그대로 두고 토스트로만 알린다.
+                    _screenState.value = if (offsetOutOfRange && currentWeekStart != null) {
+                        UiScreenState.Success
+                    } else {
+                        UiScreenState.Error(result.uiMessage)
+                    }
+                }
             }
         }
     }
@@ -107,6 +119,16 @@ class LeagueViewModel @Inject constructor(
         val result = getLeagueRanking()
         if (result is ApiResultV2.SessionExpired) sessionManager.expireSession()
         return result
+    }
+
+    /**
+     * [result] 가 시각 오프셋 허용 범위 초과 에러(LEAGUE-001)면 서버 메시지를 토스트로 알리고 true 를 돌려준다.
+     * 오프셋은 dev/local 테스트용 헤더이므로 사용자에게 보이는 에러 화면 대신 가볍게 안내한다.
+     */
+    private suspend fun notifyIfTimeOffsetOutOfRange(result: ApiResultV2<*>): Boolean {
+        if (result !is ApiResultV2.ServerError || result.code != LEAGUE_ERROR_INVALID_TIME_OFFSET) return false
+        _uiEvent.emit(LeagueUiEvent.ShowToast(result.message.ifBlank { INVALID_TIME_OFFSET_FALLBACK_MESSAGE }))
+        return true
     }
 
     /** 서버 랭킹 응답을 화면 상태에 반영하고, 리셋 마감 시각을 새로 잡는다. */
@@ -156,6 +178,8 @@ class LeagueViewModel @Inject constructor(
                 if (result is ApiResultV2.Success) {
                     applyRanking(result.data)
                     loadPendingResult()
+                } else {
+                    notifyIfTimeOffsetOutOfRange(result)
                 } // 실패해도 기존 화면 유지
             }
 
@@ -176,9 +200,14 @@ class LeagueViewModel @Inject constructor(
             when (val result = getPendingLeagueResult()) {
                 is ApiResultV2.Success -> {
                     val pending = result.data ?: return@launch
-                    if (pending.weekStart in dismissedResultWeeks || _uiState.value.resultModal != null) return@launch
+                    if (pending.weekStart in dismissedResultWeeks) return@launch
+                    // 같은 주 결과가 이미 떠 있으면 다시 만들지 않는다(깜빡임·애니메이션 재시작 방지).
+                    if (_uiState.value.resultModal?.weekStart == pending.weekStart) return@launch
                     _uiState.update {
                         it.copy(
+                            // 결과 모달이 뜰 때는 모달을 항상 1개만 유지한다 — 떠 있던 안내 모달은 닫고,
+                            // 이전 주 결과 모달이 있으면 새 모달로 교체한다.
+                            isGuideVisible = false,
                             resultModal = LeagueResultModalUi(
                                 tier = pending.tier,
                                 rank = pending.rank,
@@ -191,7 +220,7 @@ class LeagueViewModel @Inject constructor(
                     }
                 }
 
-                else -> Unit // 실패 시 모달을 띄우지 않고 기존 화면 유지
+                else -> notifyIfTimeOffsetOutOfRange(result) // 실패 시 모달을 띄우지 않고 기존 화면 유지
             }
         }
     }
@@ -204,6 +233,14 @@ class LeagueViewModel @Inject constructor(
     /** 리그 소개 모달을 닫는다. 저장하는 상태는 없다. */
     fun onGuideDismiss() {
         _uiState.update { it.copy(isGuideVisible = false) }
+    }
+
+    /**
+     * [dev/local 전용] 이번 세션에서 닫은 결과 주차 기록을 비운다. '결과 확인 기록 초기화' 후 같은 주 결과를 다시 띄울 수 있게 한다.
+     * 이어서 [loadLeague] 로 결과를 다시 조회해야 모달이 뜬다.
+     */
+    fun resetDismissedResults() {
+        dismissedResultWeeks.clear()
     }
 
     /** 결과 모달을 닫는다. 이후 같은 결과가 다시 노출되지 않도록 '확인함'을 기록한다. */
@@ -257,7 +294,8 @@ class LeagueViewModel @Inject constructor(
 
                 is ApiResultV2.SessionExpired -> return // 로그인 화면으로 이동 중 — 재시도하지 않는다
 
-                else -> Unit
+                // 재시도마다 토스트가 반복되지 않도록 첫 시도에서만 알린다.
+                else -> if (attempt == 0) notifyIfTimeOffsetOutOfRange(result)
             }
             if (attempt < RESET_REFRESH_MAX_ATTEMPTS - 1) delay(RESET_REFRESH_RETRY_DELAY_MILLIS)
         }
@@ -275,4 +313,7 @@ class LeagueViewModel @Inject constructor(
 
 sealed class LeagueUiEvent {
     data class ShareLeague(val shareText: String = DeepLinkConstants.LEAGUE_SHARE_MESSAGE) : LeagueUiEvent()
+
+    /** 사용자에게 토스트로 안내할 메시지 — 토스트 표시는 Activity 가 맡는다. */
+    data class ShowToast(val message: String) : LeagueUiEvent()
 }

@@ -111,6 +111,23 @@ class LeagueRepositoryImplTest {
         assertTrue(result is ApiResultV2.UnknownError)
     }
 
+    @Test
+    fun `확인 기록을 초기화하면 현재 계정의 기록을 지운다`() = runTest {
+        coEvery { dataStore.clear(any()) } returns true
+
+        val result = repository.clearResultSeen()
+
+        assertTrue(result is ApiResultV2.Success)
+        coVerify { dataStore.clear(userId) }
+    }
+
+    @Test
+    fun `확인 기록 초기화에 실패하면 예외 대신 UnknownError 를 돌려준다`() = runTest {
+        coEvery { dataStore.clear(userId) } returns false
+
+        assertTrue(repository.clearResultSeen() is ApiResultV2.UnknownError)
+    }
+
     // ---- GET /api/v1/league/me ----
 
     private fun me(rank: Int?) = ApiResponse<LeagueMeDto, Any?>(
