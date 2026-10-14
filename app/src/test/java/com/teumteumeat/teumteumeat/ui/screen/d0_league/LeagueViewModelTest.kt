@@ -14,6 +14,7 @@ import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
 import com.teumteumeat.teumteumeat.util.MainDispatcherRule
 import com.teumteumeat.teumteumeat.util.rankingUseCaseReturning
 import com.teumteumeat.teumteumeat.util.sampleLeagueRanking
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import io.mockk.coEvery
 import kotlinx.coroutines.CompletableDeferred
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
@@ -428,6 +429,73 @@ class LeagueViewModelTest {
             viewModel.uiEvent.collect { if (it is LeagueUiEvent.ShowToast) toasts += it.message }
         }
         return toasts
+    }
+
+    /** [viewModel] 의 공유 이벤트를 모으는 수집기를 시작한다. */
+    private fun collectShares(viewModel: LeagueViewModel): MutableList<LeagueUiEvent.ShareLeague> {
+        val shares = mutableListOf<LeagueUiEvent.ShareLeague>()
+        CoroutineScope(UnconfinedTestDispatcher()).launch {
+            viewModel.uiEvent.collect { if (it is LeagueUiEvent.ShareLeague) shares += it }
+        }
+        return shares
+    }
+
+    @Test
+    fun `우상단 공유 버튼은 안내 문구와 header 출처로 공유 이벤트를 낸다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+        val viewModel = createViewModel()
+        val shares = collectShares(viewModel)
+
+        viewModel.requestShare()
+
+        assertEquals(
+            listOf(
+                LeagueUiEvent.ShareLeague(
+                    shareText = LeagueShareMessages.general(),
+                    source = TeumAnalyticsEvent.LeagueShare.SOURCE_HEADER,
+                )
+            ),
+            shares,
+        )
+    }
+
+    @Test
+    fun `결과 모달 공유는 모달에 표시 중인 결과 구간의 문구와 출처로 이벤트를 낸다`() {
+        mapOf(
+            1 to LeagueResultTier.FIRST,
+            2 to LeagueResultTier.SECOND,
+            10 to LeagueResultTier.SECOND,
+            11 to LeagueResultTier.OUT_OF_RANK,
+        ).forEach { (rank, tier) ->
+            coEvery { getPending() } returns pending(rank = rank)
+            val viewModel = createViewModel()
+            val shares = collectShares(viewModel)
+
+            viewModel.requestResultShare()
+
+            assertEquals(
+                "rank=$rank",
+                listOf(
+                    LeagueUiEvent.ShareLeague(
+                        shareText = LeagueShareMessages.forResult(tier),
+                        source = TeumAnalyticsEvent.LeagueShare.SOURCE_RESULT_MODAL,
+                        resultTier = tier,
+                    )
+                ),
+                shares,
+            )
+        }
+    }
+
+    @Test
+    fun `결과 모달이 없으면 결과 공유는 이벤트를 내지 않는다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+        val viewModel = createViewModel()
+        val shares = collectShares(viewModel)
+
+        viewModel.requestResultShare()
+
+        assertTrue(shares.isEmpty())
     }
 
     @Test
