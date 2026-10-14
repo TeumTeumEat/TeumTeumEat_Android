@@ -20,6 +20,10 @@ import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
 import io.mockk.clearMocks
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -37,6 +41,7 @@ import java.time.LocalDate
  * MainDispatcherRule 이 Unconfined 디스패처를 쓰므로 runTest 없이 동기적으로 검증한다
  * (LeagueViewModel 의 카운트다운 무한 루프가 runTest 종료를 막지 않도록).
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class LeagueViewModelTest {
 
     @get:Rule
@@ -274,6 +279,104 @@ class LeagueViewModelTest {
         coVerify(exactly = 2) { getRanking() } // 최초 진입 + 재진입
     }
 
+    private val nextWeekStart = weekStart.plusWeeks(1)
+
+    private fun pendingOf(week: LocalDate, rank: Int = 1) = ApiResultV2.Success<LeagueResult?>(
+        message = null,
+        data = LeagueResult(weekStart = week, rank = rank, snackCount = 12),
+    )
+
+    @Test
+    fun `재진입했을 때 새로 끝난 주의 결과가 있으면 모달이 뜬다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+        val viewModel = createViewModel()
+        assertNull(viewModel.uiState.value.resultModal)
+        coEvery { getPending() } returns pendingOf(weekStart, rank = 2)
+
+        viewModel.onReenter()
+
+        assertEquals(weekStart, viewModel.uiState.value.resultModal?.weekStart)
+        assertEquals(2, viewModel.uiState.value.resultModal?.rank)
+    }
+
+    @Test
+    fun `결과 모달이 떠 있는 동안 새 주의 결과가 오면 이전 모달은 닫고 새 모달 1개만 유지한다`() {
+        coEvery { getPending() } returns pendingOf(weekStart, rank = 1)
+        coEvery { markSeen(any()) } returns ApiResultV2.Success(message = null, data = Unit)
+        val viewModel = createViewModel()
+        assertEquals(weekStart, viewModel.uiState.value.resultModal?.weekStart)
+
+        // 모달을 닫지 않은 채 리셋을 넘겨 서버가 다음 주 결과를 내려주는 상황
+        coEvery { getPending() } returns pendingOf(nextWeekStart, rank = 3)
+        viewModel.onReenter()
+
+        val modal = viewModel.uiState.value.resultModal
+        assertEquals(nextWeekStart, modal?.weekStart) // 이전 주 모달이 새 모달로 교체된다
+        assertEquals(3, modal?.rank)
+
+        viewModel.onResultModalDismiss()
+
+        assertNull(viewModel.uiState.value.resultModal) // 남아 있는 모달 없음
+        coVerify(exactly = 1) { markSeen(nextWeekStart) }
+        coVerify(exactly = 0) { markSeen(weekStart) } // 교체된 이전 모달은 닫힌 것이 아니라 확인 기록을 남기지 않는다
+    }
+
+    @Test
+    fun `안내 모달이 열려 있을 때 결과 모달이 뜨면 안내 모달은 닫힌다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+        val viewModel = createViewModel()
+        viewModel.onGuideClick()
+        assertTrue(viewModel.uiState.value.isGuideVisible)
+        coEvery { getPending() } returns pendingOf(weekStart)
+
+        viewModel.onReenter() // 새로 끝난 주의 결과가 도착
+
+        assertNotNull(viewModel.uiState.value.resultModal)
+        assertFalse(viewModel.uiState.value.isGuideVisible) // 모달은 결과 모달 1개만 남는다
+    }
+
+    @Test
+    fun `결과 모달이 뜨지 않는 재진입에서는 열려 있는 안내 모달을 닫지 않는다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+        val viewModel = createViewModel()
+        viewModel.onGuideClick()
+
+        viewModel.onReenter() // 보여줄 결과 없음
+
+        assertTrue(viewModel.uiState.value.isGuideVisible)
+        assertNull(viewModel.uiState.value.resultModal)
+    }
+
+    @Test
+    fun `떠 있는 모달과 같은 주의 결과가 또 와도 모달을 다시 만들지 않는다`() {
+        coEvery { getPending() } returns pendingOf(weekStart)
+        coEvery { markSeen(any()) } returns ApiResultV2.Success(message = null, data = Unit)
+        val viewModel = createViewModel()
+        val first = viewModel.uiState.value.resultModal
+
+        viewModel.onReenter() // 같은 주 결과를 다시 받는다
+
+        assertEquals(first, viewModel.uiState.value.resultModal)
+        viewModel.onResultModalDismiss()
+        assertNull(viewModel.uiState.value.resultModal)
+        coVerify(exactly = 1) { markSeen(weekStart) }
+    }
+
+    @Test
+    fun `확인 기록을 초기화하면 이번 세션에서 닫은 주의 결과 모달도 다시 뜬다`() {
+        coEvery { getPending() } returns pendingOf(weekStart)
+        coEvery { markSeen(any()) } returns ApiResultV2.Success(message = null, data = Unit)
+        val viewModel = createViewModel()
+        viewModel.onResultModalDismiss()
+        viewModel.loadLeague()
+        assertNull(viewModel.uiState.value.resultModal) // 닫은 주는 같은 세션에서 다시 뜨지 않는다
+
+        viewModel.resetDismissedResults() // 확인 기록 초기화 후
+        viewModel.loadLeague()
+
+        assertEquals(weekStart, viewModel.uiState.value.resultModal?.weekStart)
+    }
+
     @Test
     fun `재진입 재조회가 실패하면 기존 화면을 그대로 유지한다`() {
         coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
@@ -310,5 +413,63 @@ class LeagueViewModelTest {
 
         coVerify(exactly = 1) { getRanking() }
         assertEquals(UiScreenState.Loading, viewModel.screenState.value)
+    }
+
+    private val offsetOutOfRange = ApiResultV2.ServerError(
+        code = "LEAGUE-001",
+        message = "리그 시각 오프셋이 허용 범위를 벗어났습니다.",
+        errorType = DomainError.None,
+    )
+
+    /** [viewModel] 의 토스트 이벤트를 모으는 수집기를 시작한다. (uiEvent 는 replay 가 없어 구독 이후 이벤트만 받는다) */
+    private fun collectToasts(viewModel: LeagueViewModel): MutableList<String> {
+        val toasts = mutableListOf<String>()
+        CoroutineScope(UnconfinedTestDispatcher()).launch {
+            viewModel.uiEvent.collect { if (it is LeagueUiEvent.ShowToast) toasts += it.message }
+        }
+        return toasts
+    }
+
+    @Test
+    fun `오프셋이 허용 범위를 벗어나면(LEAGUE-001) 서버 메시지를 토스트로 알리고 받아 둔 화면은 유지한다`() {
+        coEvery { getPending() } returns ApiResultV2.Success<LeagueResult?>(message = null, data = null)
+        val viewModel = createViewModel() // 최초 조회는 성공 → 표시할 화면이 있다
+        val toasts = collectToasts(viewModel)
+        coEvery { getRanking() } returns offsetOutOfRange
+
+        viewModel.loadLeague()
+
+        assertEquals(listOf("리그 시각 오프셋이 허용 범위를 벗어났습니다."), toasts)
+        assertEquals(UiScreenState.Success, viewModel.screenState.value)
+    }
+
+    @Test
+    fun `표시할 화면이 없을 때 LEAGUE-001 이면 토스트와 함께 에러 화면을 보여준다`() {
+        coEvery { getRanking() } returns offsetOutOfRange
+        val viewModel = createViewModel() // 최초 조회부터 실패
+        val toasts = collectToasts(viewModel)
+
+        viewModel.loadLeague()
+
+        assertEquals(1, toasts.size)
+        assertEquals(
+            UiScreenState.Error("리그 시각 오프셋이 허용 범위를 벗어났습니다."),
+            viewModel.screenState.value,
+        )
+    }
+
+    @Test
+    fun `LEAGUE-001 이 아닌 서버 에러는 토스트를 띄우지 않는다`() {
+        coEvery { getRanking() } returns ApiResultV2.ServerError(
+            code = "USER-001",
+            message = "존재하지 않는 유저입니다.",
+            errorType = DomainError.None,
+        )
+        val viewModel = createViewModel()
+        val toasts = collectToasts(viewModel)
+
+        viewModel.loadLeague()
+
+        assertTrue(toasts.isEmpty())
     }
 }

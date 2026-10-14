@@ -1,7 +1,10 @@
 package com.teumteumeat.teumteumeat.di
 
+import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.network.interceptor.AuthInterceptor
+import com.teumteumeat.teumteumeat.data.network.interceptor.LeagueTimeOffsetInterceptor
 import com.teumteumeat.teumteumeat.data.network.retrofit.NetworkConfig
+import com.teumteumeat.teumteumeat.domain.repository.league.LeagueTimeOffsetRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,15 +33,24 @@ object NetworkModule {
     @Retention(AnnotationRetention.BINARY)
     annotation class SlowClient
 
+    /** [dev/local 전용] 리그 시각 오프셋 헤더 — 릴리즈 빌드에서는 헤더를 싣지 않는다. */
+    @Provides @Singleton
+    fun provideLeagueTimeOffsetInterceptor(
+        leagueTimeOffsetRepository: LeagueTimeOffsetRepository
+    ): LeagueTimeOffsetInterceptor =
+        LeagueTimeOffsetInterceptor(leagueTimeOffsetRepository, isEnabled = BuildConfig.DEBUG)
+
     @Provides @Singleton
     fun provideOkHttpClient(
-        authInterceptor: AuthInterceptor
+        authInterceptor: AuthInterceptor,
+        leagueTimeOffsetInterceptor: LeagueTimeOffsetInterceptor,
     ): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
+            .addInterceptor(leagueTimeOffsetInterceptor)
             .addInterceptor(logging)   // 서버 응답 로그 확인용
             .build()
     }

@@ -69,4 +69,12 @@ class LeagueRepositoryImpl @Inject constructor(
         } else {
             ApiResultV2.UnknownError(message = "리그 결과 확인 기록을 저장하지 못했습니다.")
         }
+
+    /** 현재 계정의 '결과 확인함' 기록을 지운다. 저장에 실패하면 `UnknownError` 로 돌려준다. */
+    override suspend fun clearResultSeen(): ApiResultV2<Unit> =
+        if (resultDataStore.clear(tokenLocalDataSource.getUserId())) {
+            ApiResultV2.Success(message = null, data = Unit)
+        } else {
+            ApiResultV2.UnknownError(message = "리그 결과 확인 기록을 초기화하지 못했습니다.")
+        }
 }

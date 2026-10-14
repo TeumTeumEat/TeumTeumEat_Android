@@ -43,4 +43,9 @@ class FakeLeagueRepository(
         seenWeeks += weekStart
         return ApiResultV2.Success(message = null, data = Unit)
     }
+
+    override suspend fun clearResultSeen(): ApiResultV2<Unit> {
+        seenWeeks.clear()
+        return ApiResultV2.Success(message = null, data = Unit)
+    }
 }
