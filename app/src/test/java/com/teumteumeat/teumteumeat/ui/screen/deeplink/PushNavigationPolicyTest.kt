@@ -6,7 +6,7 @@ import org.junit.Test
 /** 푸시 알림 탭의 이동 정책(iOS 와 동일)을 검증한다. */
 class PushNavigationPolicyTest {
 
-    private val leagueLink = "https://teum-teum-eat-lab.vercel.app/league"
+    private val leagueLink = "https://teumteumeat.co.kr/league"
 
     @Test
     fun `리그 알림은 리그로 이동한다`() {

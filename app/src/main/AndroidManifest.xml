@@ -164,7 +164,7 @@
 
                 <data
                     android:scheme="https"
-                    android:host="teum-teum-eat-lab.vercel.app"
+                    android:host="teumteumeat.co.kr"
                     android:pathPrefix="/league" />
             </intent-filter>
         </activity>

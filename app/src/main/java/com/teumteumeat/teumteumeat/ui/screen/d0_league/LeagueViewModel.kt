@@ -6,14 +6,15 @@ import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.uiMessage
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanker
 import com.teumteumeat.teumteumeat.domain.model.league.LeagueRanking
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueResultTier
 import com.teumteumeat.teumteumeat.domain.model.league.toLeagueWeekLabel
 import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.domain.usecase.league.GetLeagueRankingUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.league.GetPendingLeagueResultUseCase
 import com.teumteumeat.teumteumeat.domain.usecase.league.MarkLeagueResultSeenUseCase
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
-import com.teumteumeat.teumteumeat.utils.DeepLinkConstants
 import com.teumteumeat.teumteumeat.utils.ElapsedTimeSource
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -77,9 +78,29 @@ class LeagueViewModel @Inject constructor(
         loadLeague()
     }
 
+    /** 우상단 공유 버튼 — 안내 문구로 공유 시트를 연다. */
     fun requestShare() {
         viewModelScope.launch {
-            _uiEvent.emit(LeagueUiEvent.ShareLeague())
+            _uiEvent.emit(
+                LeagueUiEvent.ShareLeague(
+                    shareText = LeagueShareMessages.general(),
+                    source = TeumAnalyticsEvent.LeagueShare.SOURCE_HEADER,
+                )
+            )
+        }
+    }
+
+    /** 결과 모달의 '공유하기' — 모달에 표시 중인 결과 구간에 맞는 문구로 공유 시트를 연다. */
+    fun requestResultShare() {
+        val tier = _uiState.value.resultModal?.tier ?: return
+        viewModelScope.launch {
+            _uiEvent.emit(
+                LeagueUiEvent.ShareLeague(
+                    shareText = LeagueShareMessages.forResult(tier),
+                    source = TeumAnalyticsEvent.LeagueShare.SOURCE_RESULT_MODAL,
+                    resultTier = tier,
+                )
+            )
         }
     }
 
@@ -312,7 +333,12 @@ class LeagueViewModel @Inject constructor(
 }
 
 sealed class LeagueUiEvent {
-    data class ShareLeague(val shareText: String = DeepLinkConstants.LEAGUE_SHARE_MESSAGE) : LeagueUiEvent()
+    /** 시스템 공유 시트를 띄운다. [source]·[resultTier] 는 공유 GA 이벤트(`league_share`)용이다. */
+    data class ShareLeague(
+        val shareText: String,
+        val source: String,
+        val resultTier: LeagueResultTier? = null,
+    ) : LeagueUiEvent()
 
     /** 사용자에게 토스트로 안내할 메시지 — 토스트 표시는 Activity 가 맡는다. */
     data class ShowToast(val message: String) : LeagueUiEvent()

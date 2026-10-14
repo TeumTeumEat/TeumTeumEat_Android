@@ -10,13 +10,13 @@ class DeepLinkRouterTest {
 
     @Test
     fun `리그 공유 링크는 리그 딥링크로 인정된다`() {
-        assertTrue(DeepLinkRouter.isLeagueLink("https://teum-teum-eat-lab.vercel.app/league"))
-        assertTrue(DeepLinkRouter.isLeagueLink("  https://teum-teum-eat-lab.vercel.app/league  "))
+        assertTrue(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/league"))
+        assertTrue(DeepLinkRouter.isLeagueLink("  https://teumteumeat.co.kr/league  "))
     }
 
     @Test
     fun `쿼리 문자열이 붙어도 경로가 같으면 인정된다`() {
-        assertTrue(DeepLinkRouter.isLeagueLink("https://teum-teum-eat-lab.vercel.app/league?from=push"))
+        assertTrue(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/league?from=push"))
     }
 
     @Test
@@ -29,10 +29,10 @@ class DeepLinkRouterTest {
 
     @Test
     fun `다른 호스트 스킴 경로는 인정하지 않는다`() {
-        assertFalse(DeepLinkRouter.isLeagueLink("http://teum-teum-eat-lab.vercel.app/league"))
+        assertFalse(DeepLinkRouter.isLeagueLink("http://teumteumeat.co.kr/league"))
         assertFalse(DeepLinkRouter.isLeagueLink("https://evil.example.com/league"))
-        assertFalse(DeepLinkRouter.isLeagueLink("https://teum-teum-eat-lab.vercel.app/leagues"))
-        assertFalse(DeepLinkRouter.isLeagueLink("https://teum-teum-eat-lab.vercel.app/"))
+        assertFalse(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/leagues"))
+        assertFalse(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/"))
     }
 
     @Test
@@ -55,7 +55,7 @@ class DeepLinkRouterTest {
     fun `type 이 학습 알림이어도 link 가 리그 딥링크면 리그 진입이다`() {
         assertTrue(
             DeepLinkRouter.isLeaguePush(
-                link = "https://teum-teum-eat-lab.vercel.app/league",
+                link = "https://teumteumeat.co.kr/league",
                 type = "DAILY_QUIZ",
             )
         )

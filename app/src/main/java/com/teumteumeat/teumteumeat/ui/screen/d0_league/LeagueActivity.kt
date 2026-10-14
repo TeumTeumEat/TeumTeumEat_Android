@@ -104,6 +104,7 @@ class LeagueActivity : ComponentActivity() {
                     viewModel.uiEvent.collectLatest { event ->
                         when (event) {
                             is LeagueUiEvent.ShareLeague -> {
+                                analyticsLogger.logLeagueShare(event.source, event.resultTier)
                                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
                                     putExtra(Intent.EXTRA_TEXT, event.shareText)
@@ -137,7 +138,7 @@ class LeagueActivity : ComponentActivity() {
                         },
                         onRetryApi = { viewModel.loadLeague() },
                         onResultModalDismiss = { viewModel.onResultModalDismiss() },
-                        onResultShareClick = { viewModel.requestShare() },
+                        onResultShareClick = { viewModel.requestResultShare() },
                         onGuideDismiss = { viewModel.onGuideDismiss() },
                     )
 

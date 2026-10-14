@@ -1070,4 +1070,35 @@ object TeumAnalyticsEvent {
         const val SOURCE_HISTORY = "history"
         const val SOURCE_PUSH = "push"
     }
+
+    /**
+     * 리그 공유 이벤트
+     *
+     * | 파라미터     | 타입   | 예시      | 목적                                   |
+     * |-------------|--------|-----------|----------------------------------------|
+     * | source      | String | "header"  | 어느 공유 버튼에서 시작했는지            |
+     * | result_tier | String | "first"   | 결과 모달 공유일 때만, 공유한 결과 구간   |
+     *
+     * ## source
+     * - `"header"`       : 리그 화면 우상단 공유 버튼
+     * - `"result_modal"` : 주간 결과 모달의 '공유하기'
+     *
+     * ## result_tier (source=result_modal 일 때만 포함)
+     * - `"first"` 1위 / `"top10"` 2~10위 / `"out_of_rank"` 순위권 밖
+     *
+     * ## 발생 시점
+     * - 시스템 공유 시트를 띄우는 시점에 1회. 시트에서 실제로 전송까지 마쳤는지는 알 수 없다(공유 시도 기준)
+     */
+    object LeagueShare {
+        const val NAME = "league_share"
+        const val PARAM_SOURCE = "source"             // "header" | "result_modal"
+        const val PARAM_RESULT_TIER = "result_tier"   // "first" | "top10" | "out_of_rank" (result_modal 일 때만)
+
+        const val SOURCE_HEADER = "header"
+        const val SOURCE_RESULT_MODAL = "result_modal"
+
+        const val RESULT_TIER_FIRST = "first"
+        const val RESULT_TIER_TOP_10 = "top10"
+        const val RESULT_TIER_OUT_OF_RANK = "out_of_rank"
+    }
 }
