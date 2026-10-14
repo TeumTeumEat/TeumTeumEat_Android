@@ -449,13 +449,17 @@ private fun LeagueFooterSection(
     }
 }
 
-private fun formatCountdown(totalSeconds: Long): String {
+/**
+ * 리그 리셋까지 남은 시간 표기.
+ * 1일 이상 남았으면 "{n}일 HH:mm"(초 생략, 예: "1일 10:31"), 1일 미만이면 "HH:mm:ss".
+ */
+internal fun formatCountdown(totalSeconds: Long): String {
     val days = totalSeconds / 86_400
     val hours = (totalSeconds % 86_400) / 3600
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
     return if (days > 0) {
-        "%d일 %02d:%02d:%02d".format(days, hours, minutes, seconds)
+        "%d일 %02d:%02d".format(days, hours, minutes)
     } else {
         "%02d:%02d:%02d".format(hours, minutes, seconds)
     }
