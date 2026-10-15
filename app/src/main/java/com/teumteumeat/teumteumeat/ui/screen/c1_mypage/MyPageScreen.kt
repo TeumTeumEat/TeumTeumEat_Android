@@ -68,6 +68,7 @@ fun MyPageScreen(
     onTopicClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onAlarmToggle: (Boolean) -> Unit,
+    onNoticeClick: () -> Unit,
     onTermsClick: () -> Unit,
     onCustomerCenterClick: () -> Unit,
     onWithdrawClick: () -> Unit,
@@ -231,6 +232,10 @@ fun MyPageScreen(
                                 textStyle = MaterialTheme.appTypography.bodySemiBold18
                             )
                             MyPageArrowRow(
+                                title = "공지사항",
+                                onClick = onNoticeClick
+                            )
+                            MyPageArrowRow(
                                 title = "이용약관",
                                 onClick = {
                                     UxUtils.openExternalBrowser(
@@ -370,6 +375,7 @@ fun PreviewMyPageScreenSuccess() {
                 onTopicClick = {},
                 onLogoutClick = {},
                 onAlarmToggle = {},
+                onNoticeClick = {},
                 onTermsClick = {},
                 onCustomerCenterClick = {},
                 onWithdrawClick = {},

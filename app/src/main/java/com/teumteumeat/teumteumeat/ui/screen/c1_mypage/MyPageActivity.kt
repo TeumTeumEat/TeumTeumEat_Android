@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.ui.aa0_base.BaseActivity
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
+import com.teumteumeat.teumteumeat.ui.screen.c4_notice_list.NoticeListActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.LocalAppContext
@@ -110,6 +111,13 @@ class MyPageActivity : BaseActivity() {
                         },
                         onAlarmToggle = {
                             viewModel.toogleAlarm(!uiState.isAlarmEnabled)
+                        },
+                        onNoticeClick = {
+                            Utils.UxUtils.moveActivity(
+                                activity,
+                                NoticeListActivity::class.java,
+                                exitFlag = false,
+                            )
                         },
                         onTermsClick = { },
                         onCustomerCenterClick = { },

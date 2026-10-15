@@ -127,6 +127,11 @@
             android:label="GoalDetailActivity"
             android:theme="@style/Theme.TeumTeumEat" />
         <activity
+            android:name=".ui.screen.c4_notice_list.NoticeListActivity"
+            android:exported="false"
+            android:label="NoticeListActivity"
+            android:theme="@style/Theme.TeumTeumEat" />
+        <activity
             android:name=".ui.screen.c3_edit_user_info.EditUserInfoActivity"
             android:exported="false"
             android:label="EditUserInfoActivity"

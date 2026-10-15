@@ -2,6 +2,7 @@ package com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_1_home
 
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.domain.model.goal.DomainGoalType
+import com.teumteumeat.teumteumeat.ui.component.modal.NoticeModalUiModel
 
 
 data class UiStateHome(
@@ -54,6 +55,9 @@ data class UiStateHome(
 
     /** 목표 완료 시 홈 진입 안내 팝업 */
     val isShowGoalCompletedDialog: Boolean = false,
+
+    /** 홈 진입 시 노출할 공지 모달 (null이면 미노출) */
+    val noticeModal: NoticeModalUiModel? = null,
 
     val errorMessage: String? = null,
     val toastMessage: String? = null,

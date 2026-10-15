@@ -52,10 +52,13 @@ import com.teumteumeat.teumteumeat.ui.component.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.component.image.BouncingImage
 import com.teumteumeat.teumteumeat.ui.component.modal.AdCouponDialog
 import com.teumteumeat.teumteumeat.ui.component.modal.GoalCompletedDialog
+import com.teumteumeat.teumteumeat.ui.component.modal.NoticeModalHost
+import com.teumteumeat.teumteumeat.ui.component.modal.NoticeModalType
 import com.teumteumeat.teumteumeat.ui.component.modal.bubble.HomeSpeechBubble
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_5_add_goal.AddGoalActivity
 import com.teumteumeat.teumteumeat.ui.screen.c2_goal_list.GoalListActivity
+import com.teumteumeat.teumteumeat.ui.screen.c4_notice_list.NoticeListActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryActivity
 import com.teumteumeat.teumteumeat.ui.screen.b1_summary.SummaryArgs
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -443,6 +446,24 @@ fun HomeScreen(
                             activity.startActivity(Intent(activity, GoalListActivity::class.java))
                         },
                         onDismiss = { viewModel.dismissGoalCompletedDialog() }
+                    )
+
+                    NoticeModalHost(
+                        model = uiState.noticeModal,
+                        onContentClick = { notice ->
+                            viewModel.dismissNoticeModal()
+                            when (notice.type) {
+                                NoticeModalType.INSTAGRAM -> notice.linkUrl?.let {
+                                    Utils.UxUtils.openExternalBrowser(activity, it)
+                                }
+
+                                NoticeModalType.GENERAL -> activity.startActivity(
+                                    Intent(activity, NoticeListActivity::class.java)
+                                )
+                            }
+                        },
+                        onSnoozeWeekClick = { viewModel.snoozeNoticeModalForWeek() },
+                        onDismiss = { viewModel.dismissNoticeModal() }
                     )
 
                     AdCouponDialog(

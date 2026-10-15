@@ -33,6 +33,7 @@ fun TitleBar(
     modifier: Modifier = Modifier,
     iconSize: Int = 56,
     showDivider: Boolean = true,
+    rightContent: (@Composable () -> Unit)? = null,
 ) {
     val theme = MaterialTheme.extendedColors
 
@@ -71,7 +72,7 @@ fun TitleBar(
             }
         }
 
-        // 🔹 가운데: 타이틀 (진짜 중앙)
+        // 🔹 가운데: 타이틀 (페이지 제목)
         Box(
             modifier = Modifier
                 .weight(1f),
@@ -83,10 +84,13 @@ fun TitleBar(
             )
         }
 
-        // 🔹 오른쪽: 더미 공간 (중앙 정렬 보정용)
+        // 🔹 오른쪽: [rightContent] 슬롯, 없으면 더미 공간 (중앙 정렬 보정용)
         Box(
-            modifier = Modifier.size(iconSize.dp)
-        )
+            modifier = Modifier.size(iconSize.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            rightContent?.invoke()
+        }
     }
 }
 

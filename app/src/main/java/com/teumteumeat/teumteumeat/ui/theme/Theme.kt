@@ -56,6 +56,7 @@ data class ExtendedColors(
     val backgroundBlack100: Color,
     val backGroundYellow200: Color,
     val backGroundYellow300: Color,
+    val alertPrimary: Color,
 
     )
 
@@ -83,6 +84,8 @@ val LightExtendedColors = ExtendedColors(
     errorSecondary = Red60,
     errorContainer = Red10,
     textOnError = White100,
+
+    alertPrimary = Red90,
 
     btnFillSecondary = Blue10,
     btnGray100 = BtnGray10,

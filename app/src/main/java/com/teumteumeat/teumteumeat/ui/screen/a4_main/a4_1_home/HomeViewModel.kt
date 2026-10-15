@@ -675,6 +675,19 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(isShowGoalCompletedDialog = false) }
     }
 
+    /** 공지 모달을 닫는다. (바깥 터치·뒤로가기·콘텐츠 클릭 후 이동) */
+    fun dismissNoticeModal() {
+        _uiState.update { it.copy(noticeModal = null) }
+    }
+
+    /**
+     * 공지 모달을 닫고 일주일간 다시 노출하지 않는다.
+     * TODO: 노출 정책 확정 후 DataStore에 숨김 만료 시각 저장 (현재는 닫기만 수행)
+     */
+    fun snoozeNoticeModalForWeek() {
+        _uiState.update { it.copy(noticeModal = null) }
+    }
+
     fun clearToastMessage() {
         _uiState.update { it.copy(toastMessage = null) }
     }
