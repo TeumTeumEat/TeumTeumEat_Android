@@ -28,9 +28,6 @@ class NoticeListActivity : BaseActivity() {
                 NoticeListScreen(
                     uiState = uiState,
                     onBackClick = { finish() },
-                    onInfoClick = {
-                        // TODO: 정보 아이콘 동작 미정 (디자인 확인 필요)
-                    },
                     onNoticeClick = {
                         // TODO: 공지 상세 화면 미정 (디자인 확인 필요)
                     },

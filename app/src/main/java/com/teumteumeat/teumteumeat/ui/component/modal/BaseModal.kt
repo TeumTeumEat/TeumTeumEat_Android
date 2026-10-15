@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.button.FillSecondaryButton
@@ -35,6 +36,8 @@ fun BaseModal(
     onSecondaryClick: (() -> Unit)? = null,
     isPrimaryBtnFillSecondary: Boolean = false,
     isVerticalButtons: Boolean = false, // ✅ 버튼 상하 정렬 옵션 추가
+    titleBodySpacing: Dp = 8.dp, // 제목 ↔ 본문 간격 (본문이 있을 때만 적용)
+    bodyButtonSpacing: Dp = 24.dp, // 본문(없으면 제목) ↔ 버튼 간격
 ) {
 
     Surface(
@@ -68,7 +71,7 @@ fun BaseModal(
 
             // 🔹 Body (선택)
             body?.let {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(titleBodySpacing))
                 Text(
                     text = it,
                     style = MaterialTheme.appTypography.bodyMedium14Reg,
@@ -77,7 +80,7 @@ fun BaseModal(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(bodyButtonSpacing))
 
             // 🔹 Buttons
             if (secondaryButtonText != null && onSecondaryClick != null) {

@@ -29,7 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.header.TitleBar
+import com.teumteumeat.teumteumeat.ui.component.modal.NoticeInfoDialog
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
@@ -52,7 +55,6 @@ private const val LOAD_MORE_THRESHOLD = 3
  *
  * @param uiState        목록·로딩 상태
  * @param onBackClick    뒤로가기 클릭
- * @param onInfoClick    우측 상단 정보 아이콘 클릭
  * @param onNoticeClick  공지 항목 클릭 (noticeId 전달)
  * @param onLoadMore     목록 하단 근처 도달 시 다음 페이지 요청
  * @param onRetryClick   첫 페이지 로딩 실패 후 재시도
@@ -61,12 +63,14 @@ private const val LOAD_MORE_THRESHOLD = 3
 fun NoticeListScreen(
     uiState: UiStateNoticeList,
     onBackClick: () -> Unit,
-    onInfoClick: () -> Unit,
     onNoticeClick: (Long) -> Unit,
     onLoadMore: () -> Unit,
     onRetryClick: () -> Unit,
 ) {
     val theme = MaterialTheme.extendedColors
+
+    // 우측 상단 정보(ⓘ) 아이콘 안내 모달 표시 여부 (화면 내부 UI 상태)
+    var showInfoDialog by remember { mutableStateOf(false) }
 
     DefaultMonoBg {
         Scaffold(
@@ -79,7 +83,7 @@ fun NoticeListScreen(
                     onBackClick = onBackClick,
                     rightContent = {
                         IconButton(
-                            onClick = onInfoClick,
+                            onClick = { showInfoDialog = true },
                             modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
@@ -133,6 +137,11 @@ fun NoticeListScreen(
                 }
             }
         }
+
+        NoticeInfoDialog(
+            showDialog = showInfoDialog,
+            onDismiss = { showInfoDialog = false },
+        )
     }
 }
 
@@ -276,7 +285,6 @@ private fun NoticeListScreenPreview() {
                 hasNext = false,
             ),
             onBackClick = {},
-            onInfoClick = {},
             onNoticeClick = {},
             onLoadMore = {},
             onRetryClick = {},
@@ -298,7 +306,6 @@ private fun NoticeListScreenLoadingMorePreview() {
                 ),
             ),
             onBackClick = {},
-            onInfoClick = {},
             onNoticeClick = {},
             onLoadMore = {},
             onRetryClick = {},
@@ -313,7 +320,6 @@ private fun NoticeListScreenEmptyPreview() {
         NoticeListScreen(
             uiState = UiStateNoticeList(isInitialLoading = false, hasNext = false),
             onBackClick = {},
-            onInfoClick = {},
             onNoticeClick = {},
             onLoadMore = {},
             onRetryClick = {},
