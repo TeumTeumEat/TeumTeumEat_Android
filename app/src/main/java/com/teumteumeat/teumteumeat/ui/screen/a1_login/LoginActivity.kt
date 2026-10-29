@@ -24,6 +24,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.AuthError
+import com.kakao.sdk.common.model.AuthErrorCause
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.common.model.KakaoSdkError
@@ -87,9 +88,11 @@ class LoginActivity : BaseActivity()  {
             Log.d("GoogleLogin", "resultCode=${result.resultCode}")
             Log.d("GoogleLogin", "data=${result.data}")
 
-            // 취소이면서 data 도 없으면 상태 코드가 없는 단순 닫기 — 오류 안내 없이 종료
+            // 취소이면서 data 도 없으면 원인 코드를 알 수 없다. 설정 오류가 조용히 묻히지 않도록
+            // 안내 토스트에 구분용 코드(G-NODATA)를 남긴다.
             if (result.resultCode != RESULT_OK && result.data == null) {
                 Log.e("GoogleLogin", "RESULT NOT OK (no data)")
+                showLoginFailToast(code = "G-NODATA")
                 return@registerForActivityResult
             }
 
@@ -254,18 +257,24 @@ class LoginActivity : BaseActivity()  {
                                 ClientErrorCause.IllegalState ->
                                     KakaoLoginError.AuthFailed
 
+                                // 사유(reason)별로 코드를 구분 — 예외 클래스명만으로는 원인을 알 수 없다
                                 else ->
-                                    KakaoLoginError.Unknown(error)
+                                    KakaoLoginError.SdkFailed(code = "K-${error.reason.name}")
                             }
                         }
 
                         // ✅ SDK 내부 오류
                         is KakaoSdkError -> {
-                            // AuthError 는 HTTP 상태 코드(예: 401 키 해시 미등록)를 그대로 코드로 사용
-                            if (error is AuthError) {
-                                KakaoLoginError.SdkFailed(code = "K${error.statusCode}")
-                            } else {
-                                KakaoLoginError.AuthFailed
+                            when {
+                                // 계정 동의 화면에서 사용자가 취소한 경우 — 오류가 아니므로 안내 불필요
+                                error is AuthError && error.reason == AuthErrorCause.AccessDenied ->
+                                    KakaoLoginError.UserCancelled
+
+                                // AuthError 는 HTTP 상태 코드(예: 401 키 해시 미등록)를 그대로 코드로 사용
+                                error is AuthError ->
+                                    KakaoLoginError.SdkFailed(code = "K${error.statusCode}")
+
+                                else -> KakaoLoginError.AuthFailed
                             }
                         }
 
