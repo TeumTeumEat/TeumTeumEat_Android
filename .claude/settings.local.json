@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git diff *)",
+      "Bash(gh pr *)",
+      "Bash(git branch *)",
+      "Bash(brew list *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(./gradlew assembleDebug)",
+      "Read(//Users/gangbyeongsu/.claude/**)",
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"*SummaryStreamRepositoryImplTest\" --tests \"*StreamDailySummaryUseCaseTest\")",
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"*SummaryStreamRepositoryImplTest\" --tests \"*StreamDailySummaryUseCaseTest\" --rerun-tasks)",
+      "Bash(git fetch *)",
+      "Bash(git log *)",
+      "Bash(git cherry-pick *)",
+      "Bash(xargs cat)",
+      "Bash(git checkout *)",
+      "Bash(git push *)",
+      "Bash(git *)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(./gradlew :app:compileDebugKotlin --console=plain)",
+      "Bash(./gradlew assembleDebug --console=plain)",
+      "Bash(grep -nE \"^\\\\s{0,8}\\(data \\)?object [A-Za-z]+|const val NAME\\\\s*=|^\\\\s{0,4}\\(sealed \\)?\\(class|interface\\) \" app/src/main/java/com/teumteumeat/teumteumeat/utils/firebase/TeumAnalyticsEvent.kt)",
+      "Bash(npm --version)",
+      "Bash(pnpm --version)",
+      "Read(//Users/gangbyeongsu/Documents/**)",
+      "mcp__visualize__read_me",
+      "Bash(python3 -)",
+      "Bash(./gradlew assembleDebug -q)"
+    ]
+  }
+}
