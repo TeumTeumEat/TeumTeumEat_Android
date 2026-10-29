@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.AuthError
@@ -85,19 +86,29 @@ class LoginActivity : BaseActivity()  {
 
             Log.d("GoogleLogin", "resultCode=${result.resultCode}")
             Log.d("GoogleLogin", "data=${result.data}")
-            if (result.resultCode != RESULT_OK) {
-                Log.e("GoogleLogin", "RESULT NOT OK")
+
+            // 취소이면서 data 도 없으면 상태 코드가 없는 단순 닫기 — 오류 안내 없이 종료
+            if (result.resultCode != RESULT_OK && result.data == null) {
+                Log.e("GoogleLogin", "RESULT NOT OK (no data)")
                 return@registerForActivityResult
             }
 
+            // RESULT_CANCELED 여도 data 에 GoogleSignInStatus 가 실려 오므로 항상 파싱해 원인 코드를 확인한다.
+            // (사용자 취소 vs SHA-1 미등록(DEVELOPER_ERROR) 등 설정 오류를 구분하기 위함)
             try {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
 
                 val account = task.getResult(ApiException::class.java)
 
+                if (result.resultCode != RESULT_OK) {
+                    Log.e("GoogleLogin", "RESULT NOT OK")
+                    return@registerForActivityResult
+                }
+
                 val idToken = account.idToken
-                if (idToken == null) {
-                    showToast("로그인에 실패했어요. 다시 시도해주세요")
+                if (idToken.isNullOrEmpty()) {
+                    Log.e("GoogleLogin", "idToken is null or empty")
+                    showLoginFailToast(code = "G-TOKEN")
                     return@registerForActivityResult
                 }
 
@@ -105,9 +116,21 @@ class LoginActivity : BaseActivity()  {
                 viewModel.loginWithGoogle(idToken, account.serverAuthCode)
 
             } catch (e: ApiException) {
-                Log.e("GoogleLogin", "ApiException code=${e.statusCode}", e)
-                showToast("로그인에 실패했어요. 다시 시도해주세요")
-                // viewModel.setAuthErrorPage("statusCode: ${e.statusCode}\n message: ${e.message}\n cause: ${e.stackTrace}")
+                Log.e(
+                    "GoogleLogin",
+                    "ApiException code=${e.statusCode} (${GoogleSignInStatusCodes.getStatusCodeString(e.statusCode)})",
+                    e
+                )
+                when (e.statusCode) {
+                    // 사용자가 직접 닫은 경우 — 안내 불필요
+                    GoogleSignInStatusCodes.SIGN_IN_CANCELLED -> Unit
+
+                    GoogleSignInStatusCodes.NETWORK_ERROR ->
+                        showToast("네트워크 상태를 확인해주세요")
+
+                    // 설정 오류(DEVELOPER_ERROR 등)도 사용자가 증상을 전달할 수 있도록 코드를 함께 노출
+                    else -> showLoginFailToast(code = "G${e.statusCode}")
+                }
             }
         }
 
@@ -156,13 +179,19 @@ class LoginActivity : BaseActivity()  {
                                             }
 
                                             KakaoLoginError.AuthFailed -> {
-                                                showToast("로그인에 실패했어요. 다시 시도해주세요")
-                                                // viewModel.setAuthErrorPage(error.toString())
+                                                showLoginFailToast(code = "K-AUTH")
+                                            }
+
+                                            is KakaoLoginError.SdkFailed -> {
+                                                showLoginFailToast(code = error.code)
                                             }
 
                                             is KakaoLoginError.Unknown -> {
                                                 Log.d("Kakao Login: ", "error: ${error.throwable}")
-                                                showToast("알 수 없는 오류가 발생했어요")
+                                                showLoginFailToast(
+                                                    message = "알 수 없는 오류가 발생했어요",
+                                                    code = "K-${error.throwable.javaClass.simpleName}",
+                                                )
                                             }
                                         }
                                     }
@@ -183,6 +212,17 @@ class LoginActivity : BaseActivity()  {
 
     fun showToast(message: String){
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * 로그인 실패 증상 안내 — 오류 코드를 함께 보여줘 문의·QA 시 원인 구분이 가능하게 한다.
+     * 코드는 읽을 시간이 필요하므로 LENGTH_LONG 으로 노출한다.
+     */
+    private fun showLoginFailToast(
+        code: String,
+        message: String = "로그인에 실패했어요. 다시 시도해주세요",
+    ) {
+        Toast.makeText(this, "$message\n(오류 코드: $code)", Toast.LENGTH_LONG).show()
     }
 
 
@@ -221,8 +261,12 @@ class LoginActivity : BaseActivity()  {
 
                         // ✅ SDK 내부 오류
                         is KakaoSdkError -> {
-                            KakaoLoginError.AuthFailed
-
+                            // AuthError 는 HTTP 상태 코드(예: 401 키 해시 미등록)를 그대로 코드로 사용
+                            if (error is AuthError) {
+                                KakaoLoginError.SdkFailed(code = "K${error.statusCode}")
+                            } else {
+                                KakaoLoginError.AuthFailed
+                            }
                         }
 
                         // ✅ 네트워크 계열
