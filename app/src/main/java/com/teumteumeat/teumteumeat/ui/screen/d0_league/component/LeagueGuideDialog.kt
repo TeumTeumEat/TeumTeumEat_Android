@@ -120,7 +120,7 @@ private fun LeagueGuideCard(
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        text = "퀴즈 1회 = 1점\n점수 쌓을수록 → 주간 순위 UP",
+                        text = "퀴즈 1회 = 1스낵 획득!\n퀴즈를 풀고 순위를 높여보세요.",
                         style = MaterialTheme.appTypography.lableMedium12_h16,
                         color = colors.textPrimary,
                     )
