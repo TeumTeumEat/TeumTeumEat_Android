@@ -118,11 +118,6 @@ fun LeagueScreen(
         if (uiState.isGuideVisible) {
             LeagueGuideDialog(
                 onDismiss = onGuideDismiss,
-                // '참여하기'는 하단 '순위 올리기'와 같은 동작이다. 모달을 먼저 닫은 뒤 이동한다.
-                onJoin = {
-                    onGuideDismiss()
-                    onRaiseRankClick()
-                },
             )
         }
 
@@ -369,7 +364,7 @@ private fun LeagueFooterSection(
         }
 
         // 이번 주 랭킹에 아직 등록되지 않아 myRanker가 null이어도(=아직 퀴즈를 안 풀었어도) 행 자체는
-        // 항상 표시하고, 등수 자리만 "-"로 대신한다.
+        // 항상 표시하고, 등수 자리는 미등록이거나 10위 밖이면 "-"로 대신한다.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -384,7 +379,7 @@ private fun LeagueFooterSection(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = myRanker?.rank?.toString() ?: "-",
+                    text = uiState.myRankLabel,
                     textAlign = TextAlign.Center,
                     style = typo.subtitleSemiBold16,
                     modifier = Modifier.widthIn(min = 24.dp),
@@ -449,15 +444,20 @@ private fun LeagueFooterSection(
     }
 }
 
-private fun formatCountdown(totalSeconds: Long): String {
+/**
+ * 리그 리셋까지 남은 시간 표기.
+ * 1일 이상 남았으면 "{n}일 HH : mm"(초 생략, 예: "1일 10 : 31"), 1일 미만이면 "HH : mm : ss".
+ * 콜론(:) 양쪽에는 공백을 둔다 — UI 디자인 개선 목적으로, 숫자 사이를 띄워 가독성을 높인다.
+ */
+internal fun formatCountdown(totalSeconds: Long): String {
     val days = totalSeconds / 86_400
     val hours = (totalSeconds % 86_400) / 3600
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
     return if (days > 0) {
-        "%d일 %02d:%02d:%02d".format(days, hours, minutes, seconds)
+        "%d일 %02d : %02d".format(days, hours, minutes)
     } else {
-        "%02d:%02d:%02d".format(hours, minutes, seconds)
+        "%02d : %02d : %02d".format(hours, minutes, seconds)
     }
 }
 

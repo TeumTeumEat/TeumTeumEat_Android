@@ -44,4 +44,20 @@ class UiStateLeagueTest {
         assertEquals(listOf(4, 5, 5, 7, 8, 9, 10), rows.map { it.rank })
         assertEquals(listOf(false, false, false, false, true, true, true), rows.map { it.isEmpty })
     }
+
+    @Test
+    fun `내 순위가 10위 안이면 순위를 표시한다`() {
+        assertEquals("8", UiStateLeague(myRanker = ranker(8)).myRankLabel)
+        assertEquals("10", UiStateLeague(myRanker = ranker(10)).myRankLabel)
+    }
+
+    @Test
+    fun `내 순위가 10위 밖이면 대시로 표시한다`() {
+        assertEquals("-", UiStateLeague(myRanker = ranker(11)).myRankLabel)
+    }
+
+    @Test
+    fun `랭킹 미등록이면 대시로 표시한다`() {
+        assertEquals("-", UiStateLeague(myRanker = null).myRankLabel)
+    }
 }
