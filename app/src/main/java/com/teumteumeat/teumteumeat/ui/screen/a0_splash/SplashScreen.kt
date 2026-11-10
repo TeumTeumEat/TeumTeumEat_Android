@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -34,7 +35,9 @@ import com.teumteumeat.teumteumeat.ui.component.modal.ModalOverlay
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.OnBoardingActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.utils.LocalActivityContext
 import com.teumteumeat.teumteumeat.utils.Utils
 import com.teumteumeat.teumteumeat.utils.Utils.UpdateUtils.moveToPlayStore
@@ -43,7 +46,20 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun SplashScreen(
     viewModel: SplashViewModel = hiltViewModel(),
+    // 리그 푸시로 진입했는지. true 면 로그인·온보딩을 마친 유저만 홈 → 리그로 이동하고, 미로그인/온보딩 중이면 해당 화면까지만 이동한다.
+    isLeagueEntry: Boolean = false,
+    // 푸시 알림 탭 진입일 때 GA `push_open` 의 push_type 값 (서버 data.type 그대로, 없으면 "unknown").
+    // null 이면 푸시 진입이 아니거나 Activity 재생성이라 기록하지 않는다.
+    pushOpenType: String? = null,
+    // true 면 push_open 의 destination 을 실제 도착 화면과 무관하게 "none" 으로 기록한다 (모르는 type 의 콜드 스타트)
+    pushNoDestination: Boolean = false,
+    // 푸시/공유 링크 진입이면 true — 화면 이동 시 이전 백스택을 비운다
+    clearTaskOnNavigate: Boolean = false,
 ) {
+    // push_open 의 destination — 이동하지 않기로 한 푸시(pushNoDestination)는 도착 화면과 무관하게 none
+    fun pushDestination(actual: String) =
+        if (pushNoDestination) TeumAnalyticsEvent.PushOpen.DESTINATION_NONE else actual
+
     val sessionManager = viewModel.sessionManager // 🔥 ViewModel 통해 접근
 
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -78,7 +94,12 @@ fun SplashScreen(
     // 🔥 전역 세션 이벤트 감지
     LaunchedEffect(Unit) {
         sessionManager.sessionEvent.collectLatest {
-            Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = true)
+            viewModel.logPushOpenOnce(pushOpenType, pushDestination(TeumAnalyticsEvent.PushOpen.DESTINATION_LOGIN))
+            Utils.UxUtils.moveActivity(
+                activity,
+                LoginActivity::class.java,
+                clearTask = true,
+            )
         }
     }
 
@@ -94,14 +115,35 @@ fun SplashScreen(
         viewModel.uiEvent.collect { event ->
             Log.d("SplashActivity", "Collected event = $event")
             when (event) {
-                SplashUiEvent.NavigateToLogin ->
-                    Utils.UxUtils.moveActivity(activity, LoginActivity::class.java)
+                SplashUiEvent.NavigateToLogin -> {
+                    // 푸시 진입이어도 로그인 전에는 로그인 화면까지만 이동한다 (로그인 후 리그로 이어가지 않음)
+                    viewModel.logPushOpenOnce(pushOpenType, pushDestination(TeumAnalyticsEvent.PushOpen.DESTINATION_LOGIN))
+                    Utils.UxUtils.moveActivity(activity, LoginActivity::class.java, clearTask = clearTaskOnNavigate)
+                }
 
                 SplashUiEvent.NavigateToMain ->
-                    Utils.UxUtils.moveActivity(activity, MainActivity::class.java)
+                    if (isLeagueEntry) {
+                        viewModel.logPushOpenOnce(pushOpenType, pushDestination(TeumAnalyticsEvent.PushOpen.DESTINATION_LEAGUE))
+                        // 홈을 루트로 쌓고 그 위에 리그 — 리그에서 뒤로가기 시 홈으로 돌아온다
+                        Utils.UxUtils.moveActivityWithBackStack(
+                            activity,
+                            backStackRootActivity = MainActivity::class.java,
+                            destinationActivity = LeagueActivity::class.java,
+                            // 푸시 알림 탭 진입일 때만 리그가 새로 생성될 때 league_view(source=push) 를 기록한다
+                            // (공유 링크 진입은 source 가 정해지지 않아 기록하지 않는다)
+                            destinationExtras = pushOpenType?.let {
+                                bundleOf(LeagueActivity.EXTRA_SOURCE to TeumAnalyticsEvent.LeagueView.SOURCE_PUSH)
+                            },
+                        )
+                    } else {
+                        viewModel.logPushOpenOnce(pushOpenType, pushDestination(TeumAnalyticsEvent.PushOpen.DESTINATION_HOME))
+                        Utils.UxUtils.moveActivity(activity, MainActivity::class.java, clearTask = clearTaskOnNavigate)
+                    }
 
-                SplashUiEvent.NavigateToOnboarding ->
-                    Utils.UxUtils.moveActivity(activity, OnBoardingActivity::class.java)
+                SplashUiEvent.NavigateToOnboarding -> {
+                    viewModel.logPushOpenOnce(pushOpenType, pushDestination(TeumAnalyticsEvent.PushOpen.DESTINATION_ONBOARDING))
+                    Utils.UxUtils.moveActivity(activity, OnBoardingActivity::class.java, clearTask = clearTaskOnNavigate)
+                }
 
                 is SplashUiEvent.ShowErrorMessage -> {
                 }
@@ -219,11 +261,7 @@ fun LoginScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-/*            SplashScreen(
-                viewModel = ,
-                onSuccess = TODO(),
-                onFail = TODO()
-            )*/
+
         }
     }
 }

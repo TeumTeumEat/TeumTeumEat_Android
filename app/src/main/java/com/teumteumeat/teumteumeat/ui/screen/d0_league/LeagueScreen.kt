@@ -44,13 +44,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
+import com.teumteumeat.teumteumeat.domain.model.league.LEAGUE_MAX_WEEKLY_SNACK_COUNT
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillSmallButton
 import com.teumteumeat.teumteumeat.ui.component.button.NoPaddingIconButton
+import com.teumteumeat.teumteumeat.ui.component.text.AutoSizeText
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.FullScreenErrorModal
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.LoadingScreen
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.UiScreenState
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueFirstPlacePlaceholder
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueRankRow
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueGuideDialog
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueResultDialog
 import com.teumteumeat.teumteumeat.ui.screen.d0_league.component.LeagueTop3Item
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -68,6 +73,11 @@ fun LeagueScreen(
     onInfoClick: () -> Unit,
     onRaiseRankClick: () -> Unit,
     onRetryApi: () -> Unit,
+    // 리그 결과 안내 모달 — uiState.resultModal 이 있을 때만 노출된다.
+    onResultModalDismiss: () -> Unit = {},
+    onResultShareClick: () -> Unit = {},
+    // 리그 소개 안내 모달 — uiState.isGuideVisible 일 때만 노출된다. ('닫기'는 모달만 닫고, '참여하기'는 [onRaiseRankClick]을 실행한다)
+    onGuideDismiss: () -> Unit = {},
 ) {
     BackHandler {
         onBackClick()
@@ -100,6 +110,22 @@ fun LeagueScreen(
                 onShareClick = onShareClick,
                 onInfoClick = onInfoClick,
                 onRaiseRankClick = onRaiseRankClick,
+            )
+        }
+    }
+
+    if (screenState == UiScreenState.Success) {
+        if (uiState.isGuideVisible) {
+            LeagueGuideDialog(
+                onDismiss = onGuideDismiss,
+            )
+        }
+
+        uiState.resultModal?.let { modal ->
+            LeagueResultDialog(
+                modal = modal,
+                onDismiss = onResultModalDismiss,
+                onShare = onResultShareClick,
             )
         }
     }
@@ -162,7 +188,7 @@ private fun LeagueContent(
                 LeagueTitlePodiumSection(uiState = uiState)
             }
 
-            items(uiState.restRankers, key = { it.rank * 1_000 + it.nickname.hashCode() }) { ranker ->
+            items(uiState.restRowsWithPlaceholder, key = { it.rank * 1_000 + it.nickname.hashCode() }) { ranker ->
                 LeagueRankRow(ranker = ranker)
             }
         }
@@ -261,7 +287,7 @@ private fun LeagueTitlePodiumSection(
                 append("다른 유저와 내 기록을 비교해요\n")
                 append("매주 ")
                 withStyle(SpanStyle(color = theme.textPointBlue)) {
-                    append("최대 ${uiState.maxSnackCount}개")
+                    append("최대 ${LEAGUE_MAX_WEEKLY_SNACK_COUNT}개")
                 }
                 append("의 스낵을 모을 수 있어요")
             },
@@ -273,10 +299,12 @@ private fun LeagueTitlePodiumSection(
         Spacer(Modifier.height(31.dp))
 
         // 🔹 포디움(상위 3명) — 2등, 1등, 3등 순서로 배치해 1등이 가운데 오도록 함
+        // 1위가 없으면(주간 랭킹 초기화 직후) 1등 자리에 미등록 카드를, 2·3등 자리에는 빈 카드("-")를 보여준다.
         val podium = uiState.podiumRankers
-        val second = podium.getOrNull(1)
-        val first = podium.getOrNull(0)
-        val third = podium.getOrNull(2)
+        val hasFirstPlace = uiState.hasFirstPlace
+        val second = podium.getOrNull(1).takeIf { hasFirstPlace } ?: LeagueRankerUiModel.empty(rank = 2)
+        val first = podium.getOrNull(0).takeIf { hasFirstPlace }
+        val third = podium.getOrNull(2).takeIf { hasFirstPlace } ?: LeagueRankerUiModel.empty(rank = 3)
 
         Row(
             modifier = Modifier
@@ -286,15 +314,13 @@ private fun LeagueTitlePodiumSection(
             verticalAlignment = Alignment.Bottom,
         ) {
             // 2등:1등:3등 = 3:4:3 비율로 좌우 18dp를 뺀 가용 폭 전체를 나눠 채운다.
-            second?.let {
-                LeagueTop3Item(modifier = Modifier.weight(3f), ranker = it)
+            LeagueTop3Item(modifier = Modifier.weight(3f), ranker = second)
+            if (first != null) {
+                LeagueTop3Item(modifier = Modifier.weight(4f), ranker = first, isFirstPlace = true)
+            } else {
+                LeagueFirstPlacePlaceholder(modifier = Modifier.weight(4f))
             }
-            first?.let {
-                LeagueTop3Item(modifier = Modifier.weight(4f), ranker = it, isFirstPlace = true)
-            }
-            third?.let {
-                LeagueTop3Item(modifier = Modifier.weight(3f), ranker = it)
-            }
+            LeagueTop3Item(modifier = Modifier.weight(3f), ranker = third)
         }
     }
 }
@@ -338,7 +364,7 @@ private fun LeagueFooterSection(
         }
 
         // 이번 주 랭킹에 아직 등록되지 않아 myRanker가 null이어도(=아직 퀴즈를 안 풀었어도) 행 자체는
-        // 항상 표시하고, 등수 자리만 "-"로 대신한다.
+        // 항상 표시하고, 등수 자리는 미등록이거나 10위 밖이면 "-"로 대신한다.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -353,7 +379,7 @@ private fun LeagueFooterSection(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = myRanker?.rank?.toString() ?: "-",
+                    text = uiState.myRankLabel,
                     textAlign = TextAlign.Center,
                     style = typo.subtitleSemiBold16,
                     modifier = Modifier.widthIn(min = 24.dp),
@@ -364,7 +390,13 @@ private fun LeagueFooterSection(
                     verticalArrangement = Arrangement.SpaceAround
                 )
                 {
-                    Text(text = uiState.myNickname, style = typo.subtitleSemiBold18)
+                    AutoSizeText(
+                        text = uiState.myNickname,
+                        modifier = Modifier.fillMaxWidth(),
+                        baseStyle = typo.subtitleSemiBold18,
+                        textAlign = TextAlign.Start,
+                        maxLines = 1,
+                    )
                     Spacer(Modifier.height(4.dp))
                     val totalSnackCount = myRanker?.snackCount ?: 0
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -373,7 +405,7 @@ private fun LeagueFooterSection(
                                 append("오늘 ")
                                 withStyle(
                                     SpanStyle(
-                                        color = if (uiState.myTodaySnackCount == 0) theme.textGhost else theme.textPointBlue,
+                                        color = theme.textPointBlue,
                                     ),
                                 ) {
                                     append("${uiState.myTodaySnackCount}")
@@ -387,7 +419,7 @@ private fun LeagueFooterSection(
                                 append("총 ")
                                 withStyle(
                                     SpanStyle(
-                                        color = if (totalSnackCount == 0) theme.textGhost else theme.textPointBlue,
+                                        color = theme.textPointBlue,
                                     ),
                                 ) {
                                     append("$totalSnackCount")
@@ -412,15 +444,20 @@ private fun LeagueFooterSection(
     }
 }
 
-private fun formatCountdown(totalSeconds: Long): String {
+/**
+ * 리그 리셋까지 남은 시간 표기.
+ * 1일 이상 남았으면 "{n}일 HH : mm"(초 생략, 예: "1일 10 : 31"), 1일 미만이면 "HH : mm : ss".
+ * 콜론(:) 양쪽에는 공백을 둔다 — UI 디자인 개선 목적으로, 숫자 사이를 띄워 가독성을 높인다.
+ */
+internal fun formatCountdown(totalSeconds: Long): String {
     val days = totalSeconds / 86_400
     val hours = (totalSeconds % 86_400) / 3600
     val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
     return if (days > 0) {
-        "%d일 %02d:%02d:%02d".format(days, hours, minutes, seconds)
+        "%d일 %02d : %02d".format(days, hours, minutes)
     } else {
-        "%02d:%02d:%02d".format(hours, minutes, seconds)
+        "%02d : %02d : %02d".format(hours, minutes, seconds)
     }
 }
 

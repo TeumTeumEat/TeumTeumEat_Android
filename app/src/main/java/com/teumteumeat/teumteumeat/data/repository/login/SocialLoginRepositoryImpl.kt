@@ -3,6 +3,7 @@ package com.teumteumeat.teumteumeat.data.repository.login
 import com.teumteumeat.teumteumeat.BuildConfig
 import com.teumteumeat.teumteumeat.data.api.auth.AuthApiService
 import com.teumteumeat.teumteumeat.data.api.user.UserApiService
+import com.teumteumeat.teumteumeat.data.datastore.LeagueResultDataStore
 import com.teumteumeat.teumteumeat.data.network.model.ApiResultV2
 import com.teumteumeat.teumteumeat.data.network.model.AuthToken
 import com.teumteumeat.teumteumeat.data.network.model.TokenLocalDataSource
@@ -19,6 +20,7 @@ class SocialLoginRepositoryImpl @Inject constructor(
     private val userApiService: UserApiService,
     private val authApiService: AuthApiService,
     private val tokenLocalDataSource: TokenLocalDataSource,
+    private val leagueResultDataStore: LeagueResultDataStore,
 ) : BaseRepository(authApiService, tokenLocalDataSource), SocialLoginRepository {
 
     override suspend fun logout(
@@ -35,14 +37,21 @@ class SocialLoginRepositoryImpl @Inject constructor(
     }
 
 
-    override suspend fun withdrawUser(): ApiResultV2<Unit> =
-        safeApiVer2(
+    override suspend fun withdrawUser(): ApiResultV2<Unit> {
+        // 탈퇴가 성공하면 호출부가 토큰을 지우므로, 계정 id 는 요청 전에 읽어 둔다.
+        val userId = tokenLocalDataSource.getUserId()
+        val result = safeApiVer2(
             apiCall = { authApiService.withdrawUser() },
             mapper = {
                 // data는 의미 없으므로 버림
                 Unit
             }
         )
+        // 탈퇴한 계정의 id 가 기기에 남지 않도록 리그 결과 확인 기록을 지운다.
+        // 삭제에 실패해도(디스크 오류 등) 이미 끝난 탈퇴 결과를 그대로 돌려줘야 호출부가 토큰 삭제·로그인 화면 이동을 이어갈 수 있다.
+        if (result is ApiResultV2.Success) leagueResultDataStore.clear(userId)
+        return result
+    }
 
     override suspend fun validateSession(): SessionResult {
 

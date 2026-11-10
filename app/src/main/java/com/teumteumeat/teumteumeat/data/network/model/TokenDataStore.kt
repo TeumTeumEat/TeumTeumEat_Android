@@ -6,6 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
+import com.teumteumeat.teumteumeat.utils.toJwtSubjectOrNull
 
 
 @Singleton
@@ -87,6 +88,9 @@ class TokenLocalDataSource @Inject constructor(
     fun getProvider(): String? = cachedProvider
 
     fun getIdToken(): String? = cachedIdToken
+
+    /** 액세스 토큰(JWT)의 `sub` — 유저 고유 id. 로그아웃 상태이거나 토큰 형식이 다르면 null. */
+    fun getUserId(): String? = cachedAccessToken?.toJwtSubjectOrNull()
 
 
     fun clear() {

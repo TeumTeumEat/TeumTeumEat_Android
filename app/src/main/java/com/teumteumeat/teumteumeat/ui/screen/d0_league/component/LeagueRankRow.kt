@@ -70,7 +70,7 @@ fun LeagueRankRow(
             horizontalArrangement = Arrangement.Center,
         ){
             Text(
-                text = "${ranker.snackCount}",
+                text = ranker.snackCountText,
                 style = typo.subtitleSemiBold20.copy(color = theme.textPointBlue),
             )
             Spacer(modifier= Modifier.width(2.dp))

@@ -17,7 +17,8 @@ fun AutoSizeText(
     modifier: Modifier = Modifier,
     baseStyle: TextStyle = LocalTextStyle.current,
     minFontSize: Float = 10f, // 최소 10sp까지 줄어들도록 설정
-    textAlign: TextAlign = TextAlign.Center
+    textAlign: TextAlign = TextAlign.Center,
+    maxLines: Int = 2,
 ) {
     // 현재 적용할 폰트 크기 상태 (기본값은 스타일의 크기 또는 16sp)
     var fontSizeValue by remember {
@@ -32,7 +33,7 @@ fun AutoSizeText(
             if (readyToDraw) drawContent() // 계산이 완료된 후에만 화면에 그림
         },
         style = baseStyle.copy(fontSize = fontSizeValue),
-        maxLines = 2,
+        maxLines = maxLines,
         softWrap = false,
         textAlign = textAlign,
         overflow = TextOverflow.Clip, // 넘치는 부분은 일단 자름
