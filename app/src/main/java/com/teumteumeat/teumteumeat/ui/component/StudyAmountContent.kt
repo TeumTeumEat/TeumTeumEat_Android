@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.StudyWeekOption
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.utils.appTypography
@@ -67,7 +67,7 @@ fun StudyAmountContent(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SpeechBubble(text = speechBubbleText)
+                    OnboardingSpeechBubble(text = speechBubbleText)
                     Image(
                         painter = painterResource(R.drawable.char_onboarding_five_four),
                         contentDescription = "앞을 보는 캐릭터",

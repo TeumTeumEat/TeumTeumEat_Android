@@ -29,6 +29,7 @@ import java.time.LocalDate
 class DailySummaryActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
         val id = intent.getLongExtra(
             DailySummaryArgs.KEY_ID,
@@ -50,13 +51,12 @@ class DailySummaryActivity : ComponentActivity() {
 
         // 🔐 안전성 체크
         if (id == -1L || type == null || date == null) {
-            Toast.makeText(applicationContext, "id=${id}, type=${type}, date=${date} null 값이 있스니다.",
+            Toast.makeText(applicationContext, "id=${id}, type=${type}, date=${date} null 값이 있습니다.",
                 Toast.LENGTH_SHORT).show()
             finish() // 잘못된 진입 방지
             return
         }
 
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             TeumTeumEatTheme {

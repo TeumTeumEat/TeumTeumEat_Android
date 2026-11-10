@@ -17,6 +17,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.on_boarding.GetOnboardingCompl
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.SocialProvider
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -97,6 +98,21 @@ class SplashViewModel @Inject constructor(
     /**
      * 🔥 로티 애니메이션 종료 시 호출
      */
+    // 푸시 진입 1회당 push_open 을 한 번만 기록하기 위한 플래그 (세션 만료 이벤트와 네비게이션 이벤트가 겹쳐도 1회)
+    private var pushOpenLogged = false
+
+    /**
+     * 푸시 알림 탭으로 들어온 경우 도착 화면이 정해진 시점에 [TeumAnalyticsEvent.PushOpen] 을 1회 기록한다.
+     *
+     * @param pushType 서버 data.type 그대로 (없으면 "unknown"). null 이면 푸시 진입이 아니므로 기록하지 않는다.
+     * @param destination 실제 도착 화면 — [TeumAnalyticsEvent.PushOpen] 의 DESTINATION_* 상수
+     */
+    fun logPushOpenOnce(pushType: String?, destination: String) {
+        if (pushType == null || pushOpenLogged) return
+        pushOpenLogged = true
+        analyticsLogger.logPushOpen(pushType, destination)
+    }
+
     fun onAnimationFinished() {
         remoteConfig.fetchAndActivate()
             .addOnCompleteListener { task ->
@@ -131,11 +147,18 @@ class SplashViewModel @Inject constructor(
 
             when (val result = autoLoginUseCase()) {
                 is AutoLogin.Success -> {
-                    Log.d("SplshVM", "리프래쉬 토큰 확인: ${tokenLocalDataSource.getRefreshToken()}")
                     analyticsLogger.setOsType()
                     val storedProvider = tokenLocalDataSource.getProvider()
                     if (storedProvider != null) {
-                        analyticsLogger.setLoginMethod(storedProvider.lowercase())
+                        val method = storedProvider.lowercase()
+                        analyticsLogger.setLoginMethod(method)
+                        // 📊 login_complete: 자동 로그인 — 재방문은 정의상 isFirstLogin=false,
+                        // 하루 1회 게이트는 TeumAnalyticsLogger.logLoginComplete 내부에서 처리
+                        analyticsLogger.logLoginComplete(
+                            method = method,
+                            isFirstLogin = false,
+                            loginType = TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO,
+                        )
                     } else {
                         syncLoginMethodFromServer()
                     }
@@ -167,6 +190,13 @@ class SplashViewModel @Inject constructor(
                     val providerStr = provider.name.lowercase()
                     tokenLocalDataSource.saveProvider(providerStr)
                     analyticsLogger.setLoginMethod(providerStr)
+                    // 📊 login_complete: 자동 로그인 — storedProvider가 없어 서버 동기화로 provider를
+                    // 받아온 경로도 동일하게 발화 (하루 1회 게이트는 로거 내부에서 처리)
+                    analyticsLogger.logLoginComplete(
+                        method = providerStr,
+                        isFirstLogin = false,
+                        loginType = TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO,
+                    )
                 }
             }
             else -> { /* Analytics 실패는 앱 흐름에 영향 없음 */ }

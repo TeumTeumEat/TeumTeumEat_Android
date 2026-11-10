@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -27,7 +26,7 @@ import com.teumteumeat.teumteumeat.utils.extendedColors
 
 
 @Composable
-fun SpeechBubble(
+fun OnboardingSpeechBubble(
     modifier: Modifier = Modifier,
     text: String,
     textStyle: TextStyle = MaterialTheme.appTypography.btnMedium18_h22,
@@ -91,8 +90,10 @@ private fun DrawScope.drawBubbleTail(
 
 @Preview
 @Composable
-fun SpeechBubbleSample() {
-    SpeechBubble(
-        text = "틈틈잇에 오신 걸 환영해요!\n저는 틈틈이에요"
-    )
+fun PreviewOnboardingSpeechBubble() {
+    TeumTeumEatTheme {
+        OnboardingSpeechBubble(
+            text = "틈틈잇에 오신 걸 환영해요!\n저는 틈틈이에요"
+        )
+    }
 }

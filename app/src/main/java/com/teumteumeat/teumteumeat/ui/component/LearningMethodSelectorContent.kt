@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.radio_group.BoxButtonRadioGroup
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
@@ -63,7 +63,7 @@ fun LearningMethodSelectorContent(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    SpeechBubble(text = "준비된 주제로 시작할까요,\n직접 자료를 가져올까요?")
+                    OnboardingSpeechBubble(text = "준비된 주제로 시작할까요,\n직접 자료를 가져올까요?")
                     Image(
                         painter = painterResource(R.drawable.char_onboarding_sel_learning_method),
                         contentDescription = "책을 보며 말하는 케릭터",

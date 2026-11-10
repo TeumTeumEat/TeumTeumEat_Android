@@ -31,6 +31,7 @@ data class AppTypography(
     val titleBold20: TextStyle,
 
     // subtitle
+    val subtitleSemiBold24: TextStyle,
     val subtitleSemiBold20: TextStyle,
     val subtitleSemiBold18: TextStyle,
     val subtitleSemiBold16: TextStyle,
@@ -68,6 +69,7 @@ data class AppTypography(
     val btnMedium18_h24: TextStyle,
     val btnMedium18_h22: TextStyle,
     val rodies_body_40: TextStyle,
+    val lableMedium12_h16: TextStyle,
 )
 
 private val DefaultTextColor = Black100
@@ -113,6 +115,11 @@ val DefaultAppTypography = AppTypography(
     ),
 
     // subtitle
+    subtitleSemiBold24 = BaseTextStyle.copy(
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 24.sp,
+        lineHeight = 24.sp,
+    ),
     subtitleSemiBold20 = BaseTextStyle.copy(
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
@@ -166,6 +173,12 @@ val DefaultAppTypography = AppTypography(
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 14.sp,
+    ),
+
+    lableMedium12_h16 = BaseTextStyle.copy(
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
     ),
 
     // caption

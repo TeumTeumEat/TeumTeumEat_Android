@@ -418,6 +418,39 @@ class Utils {
             }
         }
 
+        /**
+         * [destinationActivity] 를 실행하되, 그 아래 [backStackRootActivity] 가 백스택에 남도록
+         * 합성 백스택을 구성합니다. 딥링크 등으로 중간 화면에 바로 진입해도 뒤로가기 시
+         * 자연스럽게 [backStackRootActivity] 로 돌아가야 할 때 사용합니다.
+         *
+         * @param context 현재 컨텍스트 (보통 `Activity`)
+         * @param backStackRootActivity 백스택 가장 아래(새 태스크의 루트)에 둘 액티비티
+         * @param destinationActivity 실제로 화면에 보여줄(최상단) 액티비티
+         * @param exitFlag `true`이면 현재 액티비티를 종료 (기본값: `true`)
+         */
+        fun moveActivityWithBackStack(
+            context: Context,
+            backStackRootActivity: Class<out Activity>,
+            destinationActivity: Class<out Activity>,
+            exitFlag: Boolean = true,
+            destinationExtras: Bundle? = null,
+        ) {
+            if (context is Activity && context.isFinishing) return
+
+            val rootIntent = Intent(context, backStackRootActivity).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            val destinationIntent = Intent(context, destinationActivity).apply {
+                destinationExtras?.let { putExtras(it) }
+            }
+
+            context.startActivities(arrayOf(rootIntent, destinationIntent))
+
+            if (exitFlag && context is Activity) {
+                context.finish()
+            }
+        }
+
         fun isNotificationPermissionRequired(): Boolean {
             return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         }
@@ -569,7 +602,7 @@ class Utils {
         private const val KEY_FCM_TOKEN = "key_fcm_token"
 
         fun save(context: Context, token: String) {
-            Log.e("FCM_TOKEN_TRACE", "💾 토큰 저장 = $token")
+            Log.d("FCM_TOKEN_TRACE", "💾 토큰 저장")
 
             context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .edit {
@@ -583,7 +616,7 @@ class Utils {
                 .getSharedPreferences("fcm_token_pref", Context.MODE_PRIVATE)
                 .getString("key_fcm_token", null)
 
-            Log.e("FCM_TOKEN_TRACE", "📤 저장된 토큰 조회 = $token")
+            Log.d("FCM_TOKEN_TRACE", "📤 저장된 토큰 조회")
 
             return token
         }
@@ -643,9 +676,6 @@ class Utils {
                 .addOnSuccessListener { latestToken ->
 
                     val savedToken = FcmTokenStore.get(context)
-
-                    Log.d("FCM_SYNC", "🚀 AppStart token(latest)=$latestToken")
-                    Log.d("FCM_SYNC", "🚀 AppStart token(saved)=$savedToken")
 
                     if (latestToken.isNullOrBlank()) return@addOnSuccessListener
 
@@ -728,33 +758,6 @@ class Utils {
         // 유저가 한번이라도 요약글을 최초로 생성하였는지
         private const val KEY_SNACK_CONSUMED_DATE = "snack_consumed_date"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
-
-        // 앱 설치 후 최초 로그인 완료 여부 (Analytics is_first_login 파라미터 관리)
-        private const val KEY_FIRST_LOGIN_COMPLETED = "first_login_completed"
-
-
-        /**
-         * 앱 설치 후 첫 번째 로그인 성공 여부 확인
-         *
-         * - 기본값 `false` → 로그인 성공 전까지 첫 로그인으로 간주
-         * - [markFirstLoginCompleted] 호출 후 `true` 반환
-         * - 앱 재설치·데이터 삭제 시 자동 초기화 → 다시 `false`
-         */
-        fun isFirstLoginCompleted(context: Context): Boolean {
-            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            return prefs.getBoolean(KEY_FIRST_LOGIN_COMPLETED, false)
-        }
-
-        /**
-         * 첫 번째 로그인 완료 플래그 저장
-         *
-         * 로그인 성공 이벤트 전송 직후 호출하여,
-         * 이후 로그인부터 is_first_login = "false"가 전송되도록 합니다.
-         */
-        fun markFirstLoginCompleted(context: Context) {
-            val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_FIRST_LOGIN_COMPLETED, true).apply()
-        }
 
         /**
          * 온보딩 완료 상태 저장

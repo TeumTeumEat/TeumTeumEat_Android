@@ -14,6 +14,9 @@ import java.time.YearMonth
 
 object MainArgs {
     const val KEY_TARGET_SCREEN = "key_target_screen"
+
+    /** true로 전달되면, 홈 진입 시 간식이 없는 상태(SnackState.Available이 아님)라면 쿠폰 충전 팝업을 바로 띄운다. */
+    const val KEY_OPEN_COUPON_ON_NO_SNACK = "key_open_coupon_on_no_snack"
 }
 
 @AndroidEntryPoint
@@ -35,6 +38,7 @@ class MainActivity : BaseActivity() {
         val targetScreen = intent
             .getStringExtra(MainArgs.KEY_TARGET_SCREEN)
             ?.let { MainScreenType.valueOf(it) }
+        val openCouponOnNoSnack = intent.getBooleanExtra(MainArgs.KEY_OPEN_COUPON_ON_NO_SNACK, false)
 
 
         setContent {
@@ -52,6 +56,7 @@ class MainActivity : BaseActivity() {
                     viewModel = viewModel,
                     context = this.applicationContext,
                     activity = this@MainActivity,
+                    openCouponOnNoSnack = openCouponOnNoSnack,
                 )
             }
         }

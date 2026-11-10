@@ -9,6 +9,7 @@ import androidx.core.content.edit
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.teumteumeat.teumteumeat.domain.model.common.GoalTypeUiState
 import com.teumteumeat.teumteumeat.domain.model.goal.Difficulty
+import com.teumteumeat.teumteumeat.domain.model.league.LeagueResultTier
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import javax.inject.Inject
@@ -57,6 +58,13 @@ class TeumAnalyticsLogger @Inject constructor(
 
         /** PDF 업로드 시도 횟수 누적값 — 0부터 시작, [logPdfUploadStart] 호출 시마다 +1 */
         private const val KEY_PDF_UPLOAD_ATTEMPT_COUNT = "pdf_upload_attempt_count"
+
+        /**
+         * 자동 로그인 [TeumAnalyticsEvent.LoginComplete] 마지막 발송 날짜("yyyy-MM-dd").
+         * 자동 로그인은 앱을 열 때마다 발생하므로 같은 날 재발송을 막는 게이트로 사용한다.
+         * 수동 로그인([TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL])은 이 게이트 대상이 아니다.
+         */
+        private const val KEY_LAST_AUTO_LOGIN_COMPLETE_DATE = "last_auto_login_complete_date"
     }
 
     /**
@@ -800,19 +808,35 @@ class TeumAnalyticsLogger @Inject constructor(
     /**
      * 소셜 로그인 성공 이벤트 로깅 ([TeumAnalyticsEvent.LoginComplete])
      *
+     * `loginType`이 [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO]인 경우, 자동 로그인은
+     * 앱을 열 때마다 발생하므로 SharedPreferences(`analytics_prefs`)에 저장된 마지막 발송 날짜
+     * 기준으로 같은 날이면 발송을 건너뜁니다. `loginType`이
+     * [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL]인 경우에는 이 게이트를 적용하지
+     * 않습니다 — 수동 로그인은 하루 여러 번 발생하지 않고, 신규 가입 직후 최초 로그인을
+     * 놓치면 안 되기 때문입니다.
+     *
      * @param method       로그인 방식 — "kakao" 또는 "google"
      * @param isFirstLogin 앱 설치 후 첫 번째 로그인 여부
      *   - `true`  : 최초 로그인 (재설치·데이터 삭제 후 포함)
-     *   - `false` : 재로그인
+     *   - `false` : 재로그인 (자동 로그인은 정의상 항상 `false`)
      *   Firebase Analytics는 Boolean 타입을 지원하지 않으므로 "true"/"false" 문자열로 저장합니다.
+     * @param loginType    로그인 경로 — [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL] |
+     *   [TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO]
      */
-    fun logLoginComplete(method: String, isFirstLogin: Boolean) {
+    fun logLoginComplete(method: String, isFirstLogin: Boolean, loginType: String) {
+        if (loginType == TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_AUTO) {
+            val today = LocalDate.now().toString()
+            if (prefs.getString(KEY_LAST_AUTO_LOGIN_COMPLETE_DATE, null) == today) return
+            prefs.edit { putString(KEY_LAST_AUTO_LOGIN_COMPLETE_DATE, today) }
+        }
+
         val params = Bundle().apply {
             putString(TeumAnalyticsEvent.LoginComplete.PARAM_METHOD, method)
             putString(
                 TeumAnalyticsEvent.LoginComplete.PARAM_IS_FIRST_LOGIN,
                 isFirstLogin.toString()
             )
+            putString(TeumAnalyticsEvent.LoginComplete.PARAM_LOGIN_TYPE, loginType)
         }
         analytics.logEvent(TeumAnalyticsEvent.LoginComplete.NAME, params)
     }
@@ -848,5 +872,53 @@ class TeumAnalyticsLogger @Inject constructor(
             }
         }
         analytics.logEvent(TeumAnalyticsEvent.LoginFail.NAME, params)
+    }
+
+    /**
+     * 푸시 알림 탭 이벤트를 로깅합니다 ([TeumAnalyticsEvent.PushOpen]).
+     *
+     * @param pushType    서버 `data.type` 값 그대로. 값이 없으면 [TeumAnalyticsEvent.PushOpen.PUSH_TYPE_UNKNOWN]
+     * @param destination 탭 후 실제 도착 화면 — "home" | "league" | "login" | "onboarding"
+     */
+    fun logPushOpen(pushType: String, destination: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.PushOpen.PARAM_PUSH_TYPE, pushType)
+            putString(TeumAnalyticsEvent.PushOpen.PARAM_DESTINATION, destination)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.PushOpen.NAME, params)
+    }
+
+    /**
+     * 리그 화면 진입 이벤트를 로깅합니다 ([TeumAnalyticsEvent.LeagueView]).
+     *
+     * @param source 진입 경로 — "home" | "history" | "push"
+     */
+    fun logLeagueView(source: String) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.LeagueView.PARAM_SOURCE, source)
+        }
+        analytics.logEvent(TeumAnalyticsEvent.LeagueView.NAME, params)
+    }
+
+    /**
+     * 리그 공유 이벤트를 로깅합니다 ([TeumAnalyticsEvent.LeagueShare]).
+     *
+     * @param source     공유를 시작한 위치 — "header" | "result_modal"
+     * @param resultTier 결과 모달 공유일 때의 결과 구간. 헤더 공유면 null 이며 `result_tier` 파라미터를 담지 않는다
+     */
+    fun logLeagueShare(source: String, resultTier: LeagueResultTier? = null) {
+        val params = Bundle().apply {
+            putString(TeumAnalyticsEvent.LeagueShare.PARAM_SOURCE, source)
+            resultTier?.let {
+                putString(TeumAnalyticsEvent.LeagueShare.PARAM_RESULT_TIER, it.toAnalyticsValue())
+            }
+        }
+        analytics.logEvent(TeumAnalyticsEvent.LeagueShare.NAME, params)
+    }
+
+    private fun LeagueResultTier.toAnalyticsValue(): String = when (this) {
+        LeagueResultTier.FIRST -> TeumAnalyticsEvent.LeagueShare.RESULT_TIER_FIRST
+        LeagueResultTier.SECOND -> TeumAnalyticsEvent.LeagueShare.RESULT_TIER_TOP_10
+        LeagueResultTier.OUT_OF_RANK -> TeumAnalyticsEvent.LeagueShare.RESULT_TIER_OUT_OF_RANK
     }
 }

@@ -30,7 +30,7 @@ import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth1CategoryLabe
 import com.teumteumeat.teumteumeat.domain.model.on_boarding.toDepth2CategoryLabel
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
 import com.teumteumeat.teumteumeat.ui.component.category_pager.CategoryGrid
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.Category
 import com.teumteumeat.teumteumeat.ui.screen.a2_on_boarding.CategorySelectionState
 import com.teumteumeat.teumteumeat.ui.screen.common_screen.ErrorState
@@ -86,7 +86,7 @@ fun CategorySelectorContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        SpeechBubble(text = speechBubbleText)
+                        OnboardingSpeechBubble(text = speechBubbleText)
                         Image(
                             painter = painterResource(R.drawable.char_onboarding_five_one),
                             contentDescription = "앞을 보는 케릭터",

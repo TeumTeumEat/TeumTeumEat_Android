@@ -16,6 +16,7 @@ import com.teumteumeat.teumteumeat.domain.usecase.SessionManager
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.PendingSocialLogin
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.state.TermsAgreementState
 import com.teumteumeat.teumteumeat.utils.Utils.PrefsUtil
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -122,7 +123,7 @@ class LoginViewModel @Inject constructor(
     }
 
 
-    fun loginWithGoogle(idToken: String) {
+    fun loginWithGoogle(idToken: String, authCode: String?) {
         viewModelScope.launch {
             // 🔄 로딩 시작
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -132,7 +133,8 @@ class LoginViewModel @Inject constructor(
                 it.copy(
                     pendingSocialLogin = PendingSocialLogin(
                         provider = SocialProvider.GOOGLE,
-                        idToken = idToken
+                        idToken = idToken,
+                        authCode = authCode
                     )
                 )
             }
@@ -143,10 +145,7 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun loginWithKakaoServer(
-        idToken: String,
-        authCode: String?
-    ) {
+    fun loginWithKakaoServer(idToken: String) {
         viewModelScope.launch {
 
             // 1️⃣ pendingSocialLogin 세팅
@@ -155,8 +154,7 @@ class LoginViewModel @Inject constructor(
                     isLoading = true,
                     pendingSocialLogin = PendingSocialLogin(
                         provider = SocialProvider.KAKAO,
-                        idToken = idToken,
-                        authCode = authCode // ✅ 추후 Apple 대비용 (현재 미사용)
+                        idToken = idToken
                     )
                 )
             }
@@ -184,6 +182,7 @@ class LoginViewModel @Inject constructor(
                 request = SocialLoginRequest(
                     idToken = pending.idToken,
                     termsAgreed = termsAgreed,
+                    authCode = pending.authCode, // Google만 값이 채워짐 (Kakao는 항상 null)
                 )
             )
 
@@ -211,12 +210,15 @@ class LoginViewModel @Inject constructor(
                 }
 
                 // 📊 login_complete: 소셜 로그인 성공
-                // isFirstLogin: 플래그가 아직 저장되지 않은 경우가 첫 번째 로그인
-                val isFirstLogin = !PrefsUtil.isFirstLoginCompleted(context)
-                analyticsLogger.logLoginComplete(method = method, isFirstLogin = isFirstLogin)
+                // isFirstLogin: 서버가 계정 생성 시점 기준으로 판정한 신규가입 여부 (SCRUM-155)
+                val isFirstLogin = data.isNewUser
+                analyticsLogger.logLoginComplete(
+                    method = method,
+                    isFirstLogin = isFirstLogin,
+                    loginType = TeumAnalyticsEvent.LoginComplete.LOGIN_TYPE_MANUAL,
+                )
                 analyticsLogger.setLoginMethod(method)
                 analyticsLogger.setOsType()
-                if (isFirstLogin) PrefsUtil.markFirstLoginCompleted(context)
 
                 saveAuthToken(data)
 
@@ -370,7 +372,6 @@ class LoginViewModel @Inject constructor(
             )
         }
     }
-
 
 }
 

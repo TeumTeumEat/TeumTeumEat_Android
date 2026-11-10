@@ -43,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.teumteumeat.teumteumeat.domain.model.common.DomainGoalType_v1
 import com.teumteumeat.teumteumeat.domain.model.history.CategoryHistoryUiModel
 import com.teumteumeat.teumteumeat.domain.model.history.LearningHistoryUiModel
+import com.teumteumeat.teumteumeat.ui.component.Banner.LeagueEntryBanner
 import com.teumteumeat.teumteumeat.ui.component.CheckBoxCircle
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.card.CalendarDailyLearningCard
@@ -50,6 +51,8 @@ import com.teumteumeat.teumteumeat.ui.component.card.TopicCategoryCard
 import com.teumteumeat.teumteumeat.ui.screen.a1_login.LoginActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.MainActivity
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.a4_3_daily_summary_detail.DailySummaryActivity
+import com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity
+import com.teumteumeat.teumteumeat.utils.firebase.TeumAnalyticsEvent
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTabType
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.LibraryTopTab
 import com.teumteumeat.teumteumeat.ui.screen.a4_main.component.MotivationCard
@@ -144,7 +147,17 @@ fun LibraryScreen(
                             .padding(horizontal = 22.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Spacer(Modifier.height(32.dp))
+                        Spacer(Modifier.height(33.25.dp))
+
+                        LeagueEntryBanner(
+                            onClick = {
+                                activity.startActivity(
+                                    LeagueActivity.newIntent(activity, TeumAnalyticsEvent.LeagueView.SOURCE_HISTORY)
+                                )
+                            },
+                        )
+
+                        Spacer(Modifier.height(20.dp))
 
                         MotivationCard(
                             uiState = mapStreakToMotivationUiState(

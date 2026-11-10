@@ -50,9 +50,7 @@ object SseModule {
     fun provideSseOkHttpClient(
         authInterceptor: AuthInterceptor
     ): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.HEADERS
-        }
+        val logging = NetworkModule.createLoggingInterceptor(HttpLoggingInterceptor.Level.HEADERS)
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)

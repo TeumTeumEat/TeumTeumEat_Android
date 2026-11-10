@@ -16,18 +16,27 @@ object TeumAnalyticsEvent {
     /**
      * 소셜 로그인 성공
      *
-     * | 파라미터         | 타입   | 예시   | 목적                         |
-     * |----------------|--------|--------|------------------------------|
-     * | method         | String | kakao  | 로그인 방식별 전환율          |
-     * | is_first_login | String | true   | 앱 설치 후 첫 번째 로그인 여부 |
+     * | 파라미터         | 타입   | 예시     | 목적                         |
+     * |----------------|--------|----------|------------------------------|
+     * | method         | String | kakao    | 로그인 방식별 전환율          |
+     * | is_first_login | String | true     | 앱 설치 후 첫 번째 로그인 여부 |
+     * | login_type     | String | manual   | 로그인 경로 구분              |
      *
      * - `is_first_login`은 "true" | "false" 문자열로 저장 (Firebase Analytics Boolean 미지원)
-     * - 재설치·데이터 삭제 시 플래그 초기화 → "true" 재발생
+     * - 서버가 계정 생성 시점 기준으로 판정해 내려주는 `isNewUser` 값을 그대로 사용 (SCRUM-155)
+     *   → 재설치·멀티기기 여부와 무관하게 계정 기준으로 정확함
+     * - `login_type`: "manual"(소셜 로그인 버튼 클릭) | "auto"(토큰 기반 자동 로그인)
+     *   자동 로그인은 앱을 열 때마다 발생하므로 [TeumAnalyticsLogger.logLoginComplete]에서
+     *   하루 1회로 발송을 제한한다. 수동 로그인은 제한하지 않는다.
      */
     object LoginComplete {
         const val NAME = "login_complete"
         const val PARAM_METHOD = "method"           // "kakao" | "google"
         const val PARAM_IS_FIRST_LOGIN = "is_first_login" // "true" | "false"
+        const val PARAM_LOGIN_TYPE = "login_type"   // "manual" | "auto"
+
+        const val LOGIN_TYPE_MANUAL = "manual"
+        const val LOGIN_TYPE_AUTO = "auto"
     }
 
     /**
@@ -992,5 +1001,104 @@ object TeumAnalyticsEvent {
         const val NAME = "settings_change"
         const val PARAM_SETTING_TYPE = "setting_type" // "nickname" | "commute_time" | "quiz_count"
         const val PARAM_VALUE = "value" // "3 → 5", "08:00-18:00 → 09:00-18:00" (nickname은 미수집)
+    }
+
+    /**
+     * 푸시 알림 탭 이벤트 — iOS 와 동일 스키마 (SCRUM-184)
+     *
+     * | 파라미터     | 타입   | 예시              | 목적                                  |
+     * |-------------|--------|-------------------|---------------------------------------|
+     * | push_type   | String | "LEAGUE_RESULT"   | 알림 종류 — 서버 `data.type` 값 그대로  |
+     * | destination | String | "league"          | 알림 탭 후 실제로 도착하는 화면          |
+     *
+     * ## push_type
+     * - 서버 값을 그대로 보낸다 (현재 `DAILY_QUIZ` | `LEAGUE_DEADLINE` | `LEAGUE_RESULT`).
+     *   서버가 새 type 을 추가해도 앱 배포 없이 GA 에 잡히도록 모르는 값도 변환하지 않는다 (100자 초과 시 잘림).
+     * - `data.type` 자체가 없거나 비어 있을 때만 `"unknown"`.
+     *
+     * ## destination
+     * - `"home"` | `"league"` | `"login"` | `"onboarding"` | `"none"`
+     * - `"none"` : 알림을 눌러도 화면을 옮기지 않은 경우 (iOS 와 동일)
+     *   - 퀴즈 / 주제 추가 / 새 목표 설정 중 (Android: QuizActivity, QuizResultActivity, AddGoalActivity)
+     *   - 모르는 type 이거나 type 이 없을 때 (앱이 꺼진 상태에서는 일반 실행처럼 열리지만 `"none"` 으로 기록)
+     *
+     * ## 측정 목적
+     * - 알림 종류별 클릭 수 (클릭률의 분모는 앱이 아니라 서버 발송 건수 — 수신 이벤트는 만들지 않는다)
+     * - 푸시 후 리그 도착률 = `league_view(source=push)` / `push_open(push_type=LEAGUE_*)`
+     *
+     * ## 발생 시점
+     * - 도착 화면이 정해진 뒤 1회 — 스플래시에서 로그인/온보딩 진행도 분기가 끝나 이동 직전에 발화
+     * - 푸시 진입이 아닌 일반 실행, Activity 재생성(savedInstanceState != null)에서는 발화하지 않는다
+     * - 화면을 옮기지 않기로 한 경우(`none`)는 탭 즉시 발화한다
+     * - 강제 업데이트 등으로 이동 자체가 일어나지 않으면 발화하지 않는다
+     */
+    object PushOpen {
+        const val NAME = "push_open"
+        const val PARAM_PUSH_TYPE = "push_type"     // 서버 data.type 그대로 | "unknown"
+        const val PARAM_DESTINATION = "destination" // "home" | "league" | "login" | "onboarding" (| iOS: "none")
+
+        const val PUSH_TYPE_UNKNOWN = "unknown"
+        const val DESTINATION_HOME = "home"
+        const val DESTINATION_LEAGUE = "league"
+        const val DESTINATION_LOGIN = "login"
+        const val DESTINATION_ONBOARDING = "onboarding"
+        const val DESTINATION_NONE = "none"
+    }
+
+    /**
+     * 리그 화면 진입 이벤트 — iOS 와 동일 스키마 (SCRUM-184)
+     *
+     * | 파라미터 | 타입   | 예시      | 목적              |
+     * |---------|--------|-----------|-------------------|
+     * | source  | String | "push"    | 리그 진입 경로     |
+     *
+     * ## source
+     * - `"home"`    : 홈 "1등 도전" 말풍선
+     * - `"history"` : 히스토리(라이브러리) 상단 배너
+     * - `"push"`    : 리그 알림(`LEAGUE_DEADLINE` | `LEAGUE_RESULT`) 탭
+     *
+     * ## 발생 시점
+     * - [com.teumteumeat.teumteumeat.ui.screen.d0_league.LeagueActivity] 가 새로 생성될 때 1회
+     * - 이미 떠 있는 리그 화면으로 재진입(`onNewIntent`)하거나 Activity 재생성 시에는 발화하지 않는다
+     * - 경로를 알 수 없는 진입(공유 링크 등)은 발화하지 않는다
+     */
+    object LeagueView {
+        const val NAME = "league_view"
+        const val PARAM_SOURCE = "source" // "home" | "history" | "push"
+
+        const val SOURCE_HOME = "home"
+        const val SOURCE_HISTORY = "history"
+        const val SOURCE_PUSH = "push"
+    }
+
+    /**
+     * 리그 공유 이벤트
+     *
+     * | 파라미터     | 타입   | 예시      | 목적                                   |
+     * |-------------|--------|-----------|----------------------------------------|
+     * | source      | String | "header"  | 어느 공유 버튼에서 시작했는지            |
+     * | result_tier | String | "first"   | 결과 모달 공유일 때만, 공유한 결과 구간   |
+     *
+     * ## source
+     * - `"header"`       : 리그 화면 우상단 공유 버튼
+     * - `"result_modal"` : 주간 결과 모달의 '공유하기'
+     *
+     * ## result_tier (source=result_modal 일 때만 포함)
+     * - `"first"` 1위 / `"top10"` 2~10위 / `"out_of_rank"` 순위권 밖
+     *
+     * ## 발생 시점
+     * - 시스템 공유 시트를 띄우는 시점에 1회. 시트에서 실제로 전송까지 마쳤는지는 알 수 없다(공유 시도 기준)
+     */
+    object LeagueShare {
+        const val NAME = "league_share"
+        const val PARAM_SOURCE = "source"             // "header" | "result_modal"
+        const val PARAM_RESULT_TIER = "result_tier"   // "first" | "top10" | "out_of_rank" (result_modal 일 때만)
+
+        const val SOURCE_HEADER = "header"
+        const val SOURCE_RESULT_MODAL = "result_modal"
+
+        const val RESULT_TIER_FIRST = "first"
+        const val RESULT_TIER_TOP_10 = "top10"
+        const val RESULT_TIER_OUT_OF_RANK = "out_of_rank"
     }
 }

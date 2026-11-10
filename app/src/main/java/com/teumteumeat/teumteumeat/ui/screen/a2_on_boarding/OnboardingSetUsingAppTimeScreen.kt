@@ -28,7 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.teumteumeat.teumteumeat.R
 import com.teumteumeat.teumteumeat.ui.component.DefaultMonoBg
 import com.teumteumeat.teumteumeat.ui.component.button.BaseFillButton
-import com.teumteumeat.teumteumeat.ui.component.modal.bubble.SpeechBubble
+import com.teumteumeat.teumteumeat.ui.component.modal.bubble.OnboardingSpeechBubble
 import com.teumteumeat.teumteumeat.ui.component.radio_group.MinuteRadioGroup
 import com.teumteumeat.teumteumeat.ui.theme.TeumTeumEatTheme
 import com.teumteumeat.teumteumeat.ui.theme.Typography
@@ -65,7 +65,7 @@ fun OnBoardingSetUsingApptimeScreen(
                     horizontalAlignment = Alignment.Companion.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.Companion.height(4.dp))
-                    SpeechBubble(
+                    OnboardingSpeechBubble(
                         text = "틈틈잇 하루 목표 시간을\n" +
                                 "알려주세요!"
                     )

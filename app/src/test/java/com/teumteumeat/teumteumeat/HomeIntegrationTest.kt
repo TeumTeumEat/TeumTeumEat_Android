@@ -103,7 +103,7 @@ class HomeIntegrationTest {
             mockk(relaxed = true),
             context,
             adManager = ,
-            networkConnection = TODO(),
+            networkConnection = ,
         )
 
         // 2. When: 시스템 날짜 변경 브로드캐스트 전송

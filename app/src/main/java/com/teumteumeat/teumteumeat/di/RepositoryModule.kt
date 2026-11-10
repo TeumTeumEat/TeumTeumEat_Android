@@ -8,6 +8,10 @@ import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepository
 import com.teumteumeat.teumteumeat.data.repository.goal.GoalRepositoryImpl
 import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepositoryImpl
+import com.teumteumeat.teumteumeat.domain.repository.league.LeagueRepository
+import com.teumteumeat.teumteumeat.data.repository.league.LeagueRepositoryImpl
+import com.teumteumeat.teumteumeat.data.repository.league.LeagueTimeOffsetRepositoryImpl
+import com.teumteumeat.teumteumeat.domain.repository.league.LeagueTimeOffsetRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
@@ -53,6 +57,14 @@ abstract class RepositoryModule {
     @Binds abstract fun bindQuizRepository(
         impl: QuizRepositoryImpl
     ): QuizRepository
+
+    @Binds abstract fun bindLeagueRepository(
+        impl: LeagueRepositoryImpl
+    ): LeagueRepository
+
+    @Binds abstract fun bindLeagueTimeOffsetRepository(
+        impl: LeagueTimeOffsetRepositoryImpl
+    ): LeagueTimeOffsetRepository
 
     @Binds abstract fun bindCategoryRepository(
         impl: CategoryRepositoryImpl
