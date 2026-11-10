@@ -33,6 +33,17 @@ object NetworkModule {
     @Retention(AnnotationRetention.BINARY)
     annotation class SlowClient
 
+    /**
+     * 네트워크 로그 인터셉터를 생성한다.
+     * 요청/응답에 토큰·authCode 등 민감 값이 포함되므로 debug 빌드에서만 [debugLevel]로 동작하고,
+     * release 빌드에서는 로그를 남기지 않는다(NONE). Authorization 헤더는 마스킹한다.
+     */
+    fun createLoggingInterceptor(debugLevel: HttpLoggingInterceptor.Level): HttpLoggingInterceptor =
+        HttpLoggingInterceptor().apply {
+            redactHeader("Authorization")
+            level = if (BuildConfig.DEBUG) debugLevel else HttpLoggingInterceptor.Level.NONE
+        }
+
     /** [dev/local 전용] 리그 시각 오프셋 헤더 — 릴리즈 빌드에서는 헤더를 싣지 않는다. */
     @Provides @Singleton
     fun provideLeagueTimeOffsetInterceptor(
@@ -45,9 +56,7 @@ object NetworkModule {
         authInterceptor: AuthInterceptor,
         leagueTimeOffsetInterceptor: LeagueTimeOffsetInterceptor,
     ): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+        val logging = createLoggingInterceptor(HttpLoggingInterceptor.Level.BODY)
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(leagueTimeOffsetInterceptor)
@@ -82,9 +91,7 @@ object NetworkModule {
         authInterceptor: AuthInterceptor
     ): OkHttpClient {
 
-        val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+        val logging = createLoggingInterceptor(HttpLoggingInterceptor.Level.BODY)
 
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)

@@ -123,7 +123,7 @@ class LoginViewModel @Inject constructor(
     }
 
 
-    fun loginWithGoogle(idToken: String) {
+    fun loginWithGoogle(idToken: String, authCode: String?) {
         viewModelScope.launch {
             // 🔄 로딩 시작
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -133,7 +133,8 @@ class LoginViewModel @Inject constructor(
                 it.copy(
                     pendingSocialLogin = PendingSocialLogin(
                         provider = SocialProvider.GOOGLE,
-                        idToken = idToken
+                        idToken = idToken,
+                        authCode = authCode
                     )
                 )
             }
@@ -144,10 +145,7 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun loginWithKakaoServer(
-        idToken: String,
-        authCode: String?
-    ) {
+    fun loginWithKakaoServer(idToken: String) {
         viewModelScope.launch {
 
             // 1️⃣ pendingSocialLogin 세팅
@@ -156,8 +154,7 @@ class LoginViewModel @Inject constructor(
                     isLoading = true,
                     pendingSocialLogin = PendingSocialLogin(
                         provider = SocialProvider.KAKAO,
-                        idToken = idToken,
-                        authCode = authCode // ✅ 추후 Apple 대비용 (현재 미사용)
+                        idToken = idToken
                     )
                 )
             }
@@ -185,6 +182,7 @@ class LoginViewModel @Inject constructor(
                 request = SocialLoginRequest(
                     idToken = pending.idToken,
                     termsAgreed = termsAgreed,
+                    authCode = pending.authCode, // Google만 값이 채워짐 (Kakao는 항상 null)
                 )
             )
 

@@ -42,5 +42,8 @@ sealed class KakaoLoginError {
 
     object AuthFailed : KakaoLoginError()
 
+    /** Kakao SDK 가 원인 코드를 제공한 실패 (예: 키 해시 미등록 401) — 사용자 화면에 코드를 함께 노출한다. */
+    data class SdkFailed(val code: String) : KakaoLoginError()
+
     data class Unknown(val throwable: Throwable) : KakaoLoginError()
 }
