@@ -86,10 +86,6 @@
             android:name="com.kakao.sdk.user.ShippingAddressesHandlerActivity"
             tools:node="remove" />
         <activity
-            android:name=".ui.screen.a1_login.webView.KakaoLoginWebViewActivity"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
-        <activity
             android:name=".ui.screen.a2_on_boarding.OnBoardingActivity"
             android:exported="false"
             android:label="@string/title_activity_on_boarding"
