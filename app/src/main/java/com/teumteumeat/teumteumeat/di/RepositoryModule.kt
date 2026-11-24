@@ -10,6 +10,8 @@ import com.teumteumeat.teumteumeat.domain.repository.history.HistoryRepository
 import com.teumteumeat.teumteumeat.data.repository.history.HistoryRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepository
 import com.teumteumeat.teumteumeat.data.repository.login.SocialLoginRepositoryImpl
+import com.teumteumeat.teumteumeat.data.repository.notice.NoticeRepositoryImpl
+import com.teumteumeat.teumteumeat.domain.repository.notice.NoticeRepository
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepository
 import com.teumteumeat.teumteumeat.data.repository.notification.NotificationRepositoryImpl
 import com.teumteumeat.teumteumeat.data.repository.quiz.QuizRepository
@@ -61,6 +63,10 @@ abstract class RepositoryModule {
     @Binds abstract fun bindHistoryRepository(
         impl: HistoryRepositoryImpl
     ): HistoryRepository
+
+    @Binds abstract fun bindNoticeRepository(
+        impl: NoticeRepositoryImpl
+    ): NoticeRepository
 
     @Binds abstract fun bindNotificationRepository(
         impl: NotificationRepositoryImpl
