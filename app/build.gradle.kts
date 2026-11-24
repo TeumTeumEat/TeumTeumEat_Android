@@ -267,6 +267,13 @@ dependencies {
     // Turbine: StateFlow/Flow 순차 방출 검증
     testImplementation("app.cash.turbine:turbine:1.1.0")
 
+    // MockWebServer: Retrofit 요청 URL·쿼리·응답 파싱 계약 테스트 (okhttp 4.10.0과 버전 일치)
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.10.0")
+
+    // Compose UI 테스트를 Robolectric(JVM)에서 실행하기 위한 의존성 (에뮬레이터 없이 화면 상태별 렌더링·클릭 검증)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+
     // (선택 사항) JUnit4: 기본적인 테스트 프레임워크
     // AndroidX Test Core (ApplicationProvider 사용을 위해 필수)
     testImplementation("androidx.test:core-ktx:1.6.1")
