@@ -13,6 +13,11 @@ object DeepLinkConstants {
     const val LEAGUE_PATH = "/league"
     const val LEAGUE_SHARE_URL = "https://$LEAGUE_HOST$LEAGUE_PATH"
 
+    // 리그 결과 모달 공유 링크. 웹(teumteumeat.co.kr)이 경로별로 다른 OG 썸네일을 내려주도록 우상단 공유(/league)와 경로를 분리한다.
+    // 매니페스트 App Link 는 `pathPrefix="/league"` 라서 이 경로도 별도 설정 없이 앱으로 열린다.
+    const val LEAGUE_RESULT_PATH = "$LEAGUE_PATH/result"
+    const val LEAGUE_RESULT_SHARE_URL = "https://$LEAGUE_HOST$LEAGUE_RESULT_PATH"
+
     // FCM data payload 에서 이동할 딥링크를 담는 키 (예: {"link": "https://teumteumeat.co.kr/league"}).
     // 서버(푸시 발송)와 합의된 키여야 한다. 값은 [DeepLinkRouterActivity]가 판정하므로 허용되지 않는 링크는 홈으로 간다.
     const val PUSH_DATA_KEY_LINK = "link"

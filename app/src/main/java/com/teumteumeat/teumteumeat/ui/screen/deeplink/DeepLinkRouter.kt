@@ -40,8 +40,14 @@ object DeepLinkRouter {
     fun isLeaguePush(link: String?, type: String?): Boolean =
         isLeagueLink(link) || PushType.fromValue(type)?.opensLeague == true
 
+    // 우상단 공유(/league)와 결과 모달 공유(/league/result) 링크가 모두 리그 진입이다. 그 밖의 경로(/leagues, /league/x 등)는 제외한다.
+    private val LEAGUE_LINK_PATHS = setOf(
+        DeepLinkConstants.LEAGUE_PATH,
+        DeepLinkConstants.LEAGUE_RESULT_PATH,
+    )
+
     private fun matchesLeagueLink(scheme: String?, host: String?, path: String?): Boolean =
-        scheme == "https" && host == DeepLinkConstants.LEAGUE_HOST && path == DeepLinkConstants.LEAGUE_PATH
+        scheme == "https" && host == DeepLinkConstants.LEAGUE_HOST && path in LEAGUE_LINK_PATHS
 }
 
 sealed class DeepLinkDestination {

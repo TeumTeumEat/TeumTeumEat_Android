@@ -20,6 +20,21 @@ class DeepLinkRouterTest {
     }
 
     @Test
+    fun `결과 공유 링크도 리그 딥링크로 인정된다`() {
+        assertTrue(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/league/result"))
+        assertTrue(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/league/result?from=share"))
+    }
+
+    @Test
+    fun `리그 경로와 닮은 다른 경로는 인정하지 않는다`() {
+        assertFalse(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/league/results"))
+        assertFalse(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/league/result/extra"))
+        assertFalse(DeepLinkRouter.isLeagueLink("https://teumteumeat.co.kr/league/other"))
+        assertFalse(DeepLinkRouter.isLeagueLink("https://evil.example.com/league/result"))
+        assertFalse(DeepLinkRouter.isLeagueLink("http://teumteumeat.co.kr/league/result"))
+    }
+
+    @Test
     fun `null 빈 문자열 형식이 잘못된 값은 인정하지 않는다`() {
         assertFalse(DeepLinkRouter.isLeagueLink(null))
         assertFalse(DeepLinkRouter.isLeagueLink(""))

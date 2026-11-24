@@ -16,4 +16,10 @@ class DeepLinkManifestSyncTest {
         assertTrue(manifest.contains("android:host=\"${DeepLinkConstants.LEAGUE_HOST}\""))
         assertTrue(manifest.contains("android:pathPrefix=\"${DeepLinkConstants.LEAGUE_PATH}\""))
     }
+
+    @Test
+    fun `결과 공유 경로는 매니페스트 pathPrefix 범위 안이다`() {
+        // pathPrefix 밖의 경로로 공유하면 앱이 설치돼 있어도 링크가 브라우저로 열린다
+        assertTrue(DeepLinkConstants.LEAGUE_RESULT_PATH.startsWith(DeepLinkConstants.LEAGUE_PATH))
+    }
 }
