@@ -27,8 +27,8 @@ android {
         applicationId = "com.teumteumeat.teumteumeat"
         minSdk = 26
         targetSdk = 36 // 최신 버전(Android 16, API 36) 기준
-        versionCode = 23
-        versionName = "1.1.12"
+        versionCode = 24
+        versionName = "1.1.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
